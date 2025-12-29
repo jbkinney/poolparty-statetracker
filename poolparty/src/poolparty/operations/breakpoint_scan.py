@@ -181,7 +181,7 @@ class BreakpointScanOp(Operation):
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
-            'op_iteration_order': self.iteration_order,
+            'op_iteration_order': self.iter_order,
         }
 
 
@@ -222,7 +222,7 @@ def breakpoint_scan(
                       for i in range(op.num_outputs))
     # Set iteration_order on all output pools
     for pool in pools:
-        pool.iteration_order = pool_iteration_order
+        pool.iter_order = pool_iteration_order
     if names is not None:
         if len(names) != len(pools):
             raise ValueError(

@@ -34,10 +34,8 @@ class Pool:
             self.counter: sc.Counter = operation.build_pool_counter(
                 operation.parent_pools
             )
-        if not hasattr(self.counter, "pp_iteration_order"):
-            self.counter.pp_iteration_order = 0
         if iter_order is not None:  
-            self.iter_order = iter_order
+            self.counter.iter_order = iter_order
         self._name: str = ""
         self.name = name if name is not None else f'pool[{self._id}]'
         # Register pool with party after name is set
@@ -46,12 +44,12 @@ class Pool:
     @property
     def iter_order(self) -> Real:
         """Iteration order for this pool."""
-        return self.counter.pp_iteration_order
+        return self.counter.iter_order
     
     @iter_order.setter
     def iter_order(self, value: Real) -> None:
         """Set iteration order for this pool."""
-        self.counter.pp_iteration_order = value
+        self.counter.iter_order = value
     
     @property
     def name(self) -> str:
@@ -130,26 +128,17 @@ class Pool:
         return self
     
     @property
-    def iteration_order(self) -> Real:
+    def iter_order(self) -> Real:
         """Iteration order for this pool's counter.
         
         Lower values iterate faster (come first in product counters).
         """
-        return self.counter.pp_iteration_order
+        return self.counter.iter_order
     
-    @iteration_order.setter
-    def iteration_order(self, value: Real) -> None:
+    @iter_order.setter
+    def iter_order(self, value: Real) -> None:
         """Set iteration order on this pool's counter."""
-        self.counter.pp_iteration_order = value
-    
-    @beartype
-    def set_iteration_order(self, order: Real) -> Pool_type:
-        """Set the iteration order for this pool, return self for chaining.
-        
-        Lower values iterate faster (come first in product counters).
-        """
-        self.counter.pp_iteration_order = order
-        return self
+        self.counter.iter_order = value
     
     def copy(self, name: Optional[str] = None) -> Pool_type:
         """Create a copy of this pool with a copied operation.

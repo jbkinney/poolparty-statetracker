@@ -54,11 +54,7 @@ class Operation:
         self._seq_length = seq_length
         if mode == 'random':
             num_states = 1
-        self.counter = sc.Counter(num_states=num_states, name=f"{self._name}.state")
-        if not hasattr(self.counter, "pp_iteration_order"):
-            self.counter.pp_iteration_order = 0
-        if iter_order is not None:  
-            self.iter_order = iter_order
+        self.counter = sc.Counter(num_states=num_states, name=f"{self._name}.state", iter_order=iter_order)
         self.rng: np.random.Generator | None = None
         self.num_states = num_states
         # Register operation with party after name is set
@@ -67,12 +63,12 @@ class Operation:
     @property
     def iter_order(self) -> Real:
         """Iteration order for this operation."""
-        return self.counter.pp_iteration_order
+        return self.counter.iter_order
     
     @iter_order.setter
     def iter_order(self, value: Real) -> None:
         """Set iteration order for this operation."""
-        self.counter.pp_iteration_order = value
+        self.counter.iter_order = value
     
     @property
     def seq_length(self) -> Optional[int]:
@@ -110,50 +106,23 @@ class Operation:
             self._party._update_op_name(self, old_name, value)
     
     @property
-    def iteration_order(self) -> Real:
+    def iter_order(self) -> Real:
         """Iteration order for this operation's counter."""
-        return self.counter.pp_iteration_order
+        return self.counter.iter_order
     
-    @iteration_order.setter
-    def iteration_order(self, value: Real) -> None:
+    @iter_order.setter
+    def iter_order(self, value: Real) -> None:
         """Set iteration order on this operation's counter."""
-        self.counter.pp_iteration_order = value
+        self.counter.iter_order = value
     
     @beartype
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool_type],
     ) -> sc.Counter:
-        """Build the output Pool's counter from parent pool counters, sorted by iteration_order.
-        
-        Args:
-            parent_pools: List of parent pools. Their counters and iteration orders
-                will be extracted and combined with this operation's counter.
-        
-        Returns:
-            A Counter that is the product of unique parent counters and this op's counter,
-            sorted by iteration_order (lower values iterate faster).
-            The resulting counter's pp_iteration_order is set to the minimum of all inputs.
-        """
-        # Get counter info - iteration_order now comes from counter.pp_iteration_order
-        counters = [p.counter for p in parent_pools] + [self.counter]
-        counter_ids = [c._id for c in counters]
-        # Remove tuples that have duplicate counter_ids (keep first occurrence)
-        unique_counter_tuples = []
-        for i, ctr in enumerate(counters):
-            if ctr._id not in counter_ids[:i]:
-                unique_counter_tuples.append((ctr, ctr.pp_iteration_order, ctr._id))
-        # Sort by iteration_order, then by id
-        unique_counter_tuples.sort(key=lambda x: (x[1], x[2]))
-        sorted_counters = [x[0] for x in unique_counter_tuples]
-        # Compute product counter
-        product_counter = sc.product(sorted_counters)
-        # Set the product counter's iteration_order to min of all inputs
-        if unique_counter_tuples:
-            min_iteration_order = min(x[1] for x in unique_counter_tuples)
-            product_counter.pp_iteration_order = min_iteration_order
-        else:
-            product_counter.pp_iteration_order = 0
+        """Build the output Pool's counter from parent pool counters, sorted by iteration_order."""
+        parent_counters = [p.counter for p in parent_pools]
+        product_counter = sc.ordered_product(parent_counters + [self.counter])
         return product_counter
     
     @beartype

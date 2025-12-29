@@ -43,7 +43,7 @@ class FromSeqOp(Operation):
         return {
             'seq': self.seq,
             'name': None,
-            'iter_order': self.counter.pp_iteration_order,
+            'iter_order': self.iter_order,
         }
 
 
@@ -57,8 +57,5 @@ def from_seq(
 ) -> Pool_type:
     """Create a Pool from a single sequence."""
     op = FromSeqOp(seq, name=op_name, iter_order=op_iter_order)
-    pool = Pool(operation=op, output_index=0)
-    pool.counter.pp_iteration_order = iter_order
-    if name is not None:
-        pool.name = name
+    pool = Pool(operation=op, output_index=0, iter_order=iter_order, name=name)
     return pool

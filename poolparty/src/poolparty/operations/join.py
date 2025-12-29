@@ -68,7 +68,7 @@ class JoinOp(Operation):
             'parent_pools': self.parent_pools,
             'spacer_str': self.spacer_str,
             'name': None,
-            'op_iteration_order': self.iteration_order,
+            'op_iteration_order': self.iter_order,
         }
 
 
@@ -105,7 +105,7 @@ def join(
     op = JoinOp(parent_pools, spacer_str=spacer_str, name=op_name,
                 op_iteration_order=op_iteration_order)
     pool = Pool(operation=op, output_index=0)
-    pool.iteration_order = pool_iteration_order
+    pool.iter_order = pool_iteration_order
     if name is not None:
         pool.name = name
     return pool

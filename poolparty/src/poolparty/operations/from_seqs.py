@@ -88,7 +88,7 @@ class FromSeqsOp(Operation):
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
-            'iter_order': self.counter.pp_iteration_order,
+            'iter_order': self.iter_order,
         }
 
 
@@ -107,6 +107,5 @@ def from_seqs(
     op = FromSeqsOp(seqs, seq_names=seq_names, mode=mode, 
                     num_hybrid_states=num_hybrid_states, name=op_name,
                     iter_order=op_iter_order)
-    pool = Pool(operation=op, output_index=0, name=name)
-    pool.counter.pp_iteration_order = iter_order
+    pool = Pool(operation=op, output_index=0, name=name, iter_order=iter_order)
     return pool

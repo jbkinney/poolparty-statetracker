@@ -74,7 +74,7 @@ class SeqSliceOp(Operation):
             'parent_pool': self.parent_pools[0],
             'key': self.key,
             'name': None,
-            'op_iteration_order': self.iteration_order,
+            'op_iteration_order': self.iter_order,
         }
 
 
@@ -90,7 +90,7 @@ def seq_slice(
     """Slice sequences from a pool."""
     op = SeqSliceOp(parent, key=key, name=op_name, op_iteration_order=op_iteration_order)
     result_pool = Pool(operation=op, output_index=0)
-    result_pool.iteration_order = pool_iteration_order
+    result_pool.iter_order = pool_iteration_order
     if name is not None:
         result_pool.name = name
     return result_pool

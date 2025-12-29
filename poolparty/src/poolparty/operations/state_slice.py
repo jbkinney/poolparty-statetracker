@@ -72,7 +72,7 @@ class StateSliceOp(Operation):
             'stop': self.stop,
             'step': self.step,
             'name': None,
-            'op_iteration_order': self.iteration_order,
+            'op_iteration_order': self.iter_order,
         }
 
 
@@ -101,7 +101,7 @@ def state_slice(
     op = StateSliceOp(pool, start=start, stop=stop, step=step, name=op_name,
                       op_iteration_order=op_iteration_order)
     result_pool = Pool(operation=op, output_index=0)
-    result_pool.iteration_order = pool_iteration_order
+    result_pool.iter_order = pool_iteration_order
     if name is not None:
         result_pool.name = name
     return result_pool
