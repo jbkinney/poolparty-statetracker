@@ -11,6 +11,7 @@ from .ops import (
     InterleaveOp,
     PassthroughOp,
     product,
+    ordered_product,
     stack,
     sync,
     slice,
@@ -28,7 +29,7 @@ __all__ = [
     'Counter', 'Manager', 'Operation', 'ConflictingStateAssignmentError',
     'ProductOp', 'StackOp', 'SyncOp', 'SliceOp',
     'RepeatOp', 'ShuffleOp', 'InterleaveOp', 'PassthroughOp',
-    'product', 'stack', 'sync',
+    'product', 'ordered_product', 'stack', 'sync',
     'slice', 'repeat', 'shuffle',
     'split', 'interleave', 'passthrough',
 ]

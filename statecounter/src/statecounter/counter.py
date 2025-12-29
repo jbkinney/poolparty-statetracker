@@ -10,7 +10,7 @@ class ConflictingStateAssignmentError(RuntimeError):
 class Counter:
     """A counter that can be iterated and composed with other counters."""
     
-    def __init__(self, num_states=None, name=None, *, _parents=None, _op=None):
+    def __init__(self, num_states=None, name=None, iter_order=0, *, _parents=None, _op=None):
         """Create a counter."""
         # Require an active Manager
         if Manager._active_manager is None:
@@ -21,6 +21,7 @@ class Counter:
         self._state = 0
         self._parents = tuple(_parents) if _parents else ()
         self._op = _op
+        self._iter_order = iter_order
         
         if _parents and _op:
             parent_num_states = tuple(p.num_states for p in _parents)
@@ -34,6 +35,16 @@ class Counter:
         self._manager = Manager._active_manager
         self._manager.register(self)
     
+    @property
+    def iter_order(self):
+        """Iteration order for this counter."""
+        return self._iter_order
+    
+    @iter_order.setter
+    def iter_order(self, value):
+        """Set iteration order for this counter."""
+        self._iter_order = value
+        
     @property
     def num_states(self):
         """Number of states this counter can take (read-only)."""
