@@ -1,0 +1,141 @@
+"""DataFrame formatting utilities for poolparty."""
+from typing import Literal, TYPE_CHECKING
+import pandas as pd
+
+if TYPE_CHECKING:
+    from .counter import Counter
+
+
+def counter_col_name(counter: "Counter", index: int) -> str:
+    """Get column name for a counter's state.
+    
+    Args:
+        counter: The counter to get a column name for.
+        index: Fallback index if counter has no name or id.
+    
+    Returns:
+        A string column name for the counter.
+    """
+    if counter.name:
+        return counter.name
+    elif counter.id is not None:
+        return f"id_{counter.id}"
+    else:
+        return f"id_{index}"
+
+
+def get_pools_reverse_topo(pools: set) -> list:
+    """Get pools in reverse topological order (children before parents).
+    
+    Args:
+        pools: Set of Pool objects to order.
+    
+    Returns:
+        List of pools ordered with children before their parents.
+    """
+    visited: set[int] = set()
+    topo_order: list = []
+    
+    def visit(pool) -> None:
+        pool_id = id(pool)
+        if pool_id in visited:
+            return
+        for parent in pool.operation.parent_pools:
+            if parent in pools:
+                visit(parent)
+        visited.add(pool_id)
+        if pool in pools:
+            topo_order.append(pool)
+    
+    for pool in pools:
+        visit(pool)
+    return list(reversed(topo_order))
+
+
+def organize_columns(
+    df: pd.DataFrame,
+    pools_filter: set,
+    organize_by: Literal['pool', 'type'],
+) -> pd.DataFrame:
+    """Organize DataFrame columns by pool or by type.
+    
+    Args:
+        df: The DataFrame to reorganize.
+        pools_filter: Set of pools to consider for ordering.
+        organize_by: Either 'pool' (group by pool) or 'type' (group by column type).
+    
+    Returns:
+        DataFrame with columns reordered.
+    """
+    all_cols = set(df.columns)
+    pools_in_order = get_pools_reverse_topo(pools_filter)
+    
+    if organize_by == 'type':
+        pool_order = {pool.name: i for i, pool in enumerate(pools_in_order)}
+        op_order = {pool.operation.name: i for i, pool in enumerate(pools_in_order)}
+        
+        def pool_sort_key(col: str) -> int:
+            name = col.split('.')[0]
+            return pool_order.get(name, op_order.get(name, len(pool_order)))
+        
+        seq_cols = sorted([c for c in df.columns if c.endswith('.seq')], key=pool_sort_key)
+        pool_state_names = {f"{name}.state" for name in pool_order}
+        pool_state_cols = sorted([c for c in df.columns if c in pool_state_names], key=pool_sort_key)
+        op_state_cols = sorted([c for c in df.columns if c.endswith('.state') and c not in pool_state_names], key=pool_sort_key)
+        key_cols = sorted([c for c in df.columns if '.key.' in c], key=pool_sort_key)
+        ordered_cols = seq_cols + pool_state_cols + op_state_cols + key_cols
+    else:
+        ordered_cols = []
+        for pool in pools_in_order:
+            pool_name = pool.name
+            op_name = pool.operation.name
+            pool_cols = []
+            seq_col = f"{pool_name}.seq"
+            if seq_col in all_cols:
+                pool_cols.append(seq_col)
+            state_col = f"{pool_name}.state"
+            if state_col in all_cols:
+                pool_cols.append(state_col)
+            op_state_col = f"{op_name}.state"
+            if op_state_col in all_cols:
+                pool_cols.append(op_state_col)
+                all_cols.discard(op_state_col)
+            key_prefix = f"{op_name}.key."
+            key_cols = sorted([c for c in df.columns if c.startswith(key_prefix) and c in all_cols])
+            pool_cols.extend(key_cols)
+            for c in key_cols:
+                all_cols.discard(c)
+            ordered_cols.extend(pool_cols)
+    
+    remaining = [c for c in df.columns if c not in ordered_cols]
+    ordered_cols.extend(remaining)
+    return df[ordered_cols]
+
+
+def finalize_generate_df(
+    df: pd.DataFrame,
+    pool_name: str,
+    report_seq: bool,
+    report_pool_seqs: bool,
+) -> pd.DataFrame:
+    """Apply final column transforms to generated DataFrame.
+    
+    Optionally adds a 'seq' column as a copy of the pool's sequence (placed first),
+    and optionally drops all pool sequence columns.
+    
+    Args:
+        df: The DataFrame to finalize.
+        pool_name: Name of the primary pool (for the 'seq' column source).
+        report_seq: If True, add a 'seq' column as first column.
+        report_pool_seqs: If False, drop all columns ending in '.seq'.
+    
+    Returns:
+        The finalized DataFrame.
+    """
+    if report_seq:
+        df.insert(0, 'seq', df[f'{pool_name}.seq'])
+    if not report_pool_seqs:
+        seq_cols = [c for c in df.columns if c.endswith('.seq')]
+        df = df.drop(columns=seq_cols)
+    return df
+

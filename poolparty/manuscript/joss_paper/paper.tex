@@ -1,0 +1,270 @@
+% JOSS-style Paper: Counter - Composable Finite-State Iteration for Python
+% Based on the Journal of Open Source Software formatting
+
+\documentclass[10pt,a4paper,onecolumn]{article}
+
+% --- Required packages (from JOSS template) ---
+\usepackage{marginnote}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{authblk,etoolbox}
+\usepackage{titlesec}
+\usepackage{calc}
+\usepackage{tikz}
+\usepackage{hyperref}
+\hypersetup{colorlinks,breaklinks=true,
+            urlcolor=[rgb]{0.0, 0.5, 1.0},
+            linkcolor=[rgb]{0.0, 0.5, 1.0}}
+\usepackage{caption}
+\usepackage{amssymb,amsmath}
+\usepackage{listings}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+% --- Code listing style ---
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    stringstyle=\color{red!70!black},
+    commentstyle=\color{gray},
+    numbers=none,
+    frame=single,
+    backgroundcolor=\color{codebg},
+    breaklines=true,
+    showstringspaces=false,
+    columns=flexible
+}
+
+% --- Page layout (JOSS style with wide left margin) ---
+\usepackage[top=3.5cm, bottom=3cm, right=1.5cm, left=1.0cm,
+            headheight=2.2cm, reversemp, includemp, marginparwidth=4.5cm]{geometry}
+
+% --- Default font (sans-serif as per JOSS) ---
+\renewcommand\familydefault{\sfdefault}
+
+% --- Section styling (JOSS style) ---
+\titleformat{\section}
+  {\normalfont\sffamily\Large\bfseries}
+  {}{0pt}{}
+\titleformat{\subsection}
+  {\normalfont\sffamily\large\bfseries}
+  {}{0pt}{}
+\titleformat{\subsubsection}
+  {\normalfont\sffamily\bfseries}
+  {}{0pt}{}
+
+% --- Header / Footer ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0.25pt}
+\fancyfoot[L]{\footnotesize\sffamily Counter: Composable Finite-State Iteration for Python}
+\fancyfoot[R]{\sffamily \thepage}
+\fancyheadoffset[L]{4.5cm}
+\fancyfootoffset[L]{4.5cm}
+
+% --- Author block styling ---
+\renewcommand\Authfont{\sffamily\bfseries}
+\renewcommand\Affilfont{\sffamily\small\mdseries}
+\setlength{\affilsep}{1em}
+
+% --- Color definitions ---
+\definecolor{linky}{rgb}{0.0, 0.5, 1.0}
+
+% --- Paragraph spacing ---
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+
+% --- Remove section numbering ---
+\setcounter{secnumdepth}{0}
+
+% --- Title and Authors ---
+\title{Counter: Composable Finite-State Iteration for Python}
+
+\author[1]{[Author Name]}
+\affil[1]{[Institution], [City], [Country]}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+% --- Sidebar (marginnote for JOSS metadata) ---
+\marginpar{
+  \begin{flushleft}
+  \sffamily\small
+  
+  {\bfseries Software}
+  \begin{itemize}
+    \setlength\itemsep{0em}
+    \item \href{https://github.com/[username]/counter}{\color{linky}{Repository}}
+  \end{itemize}
+  
+  \vspace{2mm}
+  
+  {\bfseries Submitted:} December 2024
+  
+  \vspace{2mm}
+  
+  {\bfseries License}\\
+  Authors of papers retain copyright and release the work under a Creative Commons Attribution 4.0 International License (\href{http://creativecommons.org/licenses/by/4.0/}{\color{linky}{CC BY 4.0}}).
+  
+  \end{flushleft}
+}
+
+%-------------------------------------------------------------------------------
+\section{Summary}
+%-------------------------------------------------------------------------------
+
+Counter is a Python library for composable finite-state iteration with automatic 
+state propagation. It provides a \texttt{Counter} class representing finite state 
+spaces that can be combined using algebraic operations: product (\texttt{*}) for 
+Cartesian products, sum (\texttt{+}) for disjoint unions, and synchronization for 
+lockstep iteration. When iterating over a composite counter, all ancestor counters 
+automatically update their state properties, eliminating the need to manually 
+track indices across nested loops.
+
+The library enforces tree-structured computation graphs, ensuring unambiguous 
+state decomposition. A \texttt{CounterManager} context manager provides lifecycle 
+management for counter objects, including batch reset, inactivation, and iteration 
+testing utilities. Counter is designed for applications requiring systematic 
+enumeration of combinatorial spaces while maintaining explicit access to component 
+states.
+
+%-------------------------------------------------------------------------------
+\section{Statement of Need}
+%-------------------------------------------------------------------------------
+
+Many scientific and engineering applications require enumerating combinatorial 
+state spaces: experimental designs, parameter sweeps, sequence libraries, and 
+optimization landscapes. Python's standard library provides \texttt{itertools.product} 
+for Cartesian products and \texttt{itertools.chain} for concatenation, while NumPy 
+offers \texttt{ndindex} for multi-dimensional index iteration. However, these tools 
+yield tuples or indices without maintaining persistent state objects.
+
+Consider a common scenario: iterating over all combinations of positions and 
+mutations in a biological sequence. With \texttt{itertools.product}, one must 
+unpack tuples and track which component is which:
+
+\begin{lstlisting}
+for pos, mut in itertools.product(range(100), range(4)):
+    process(pos, mut)
+\end{lstlisting}
+
+For deeper nesting or when different code paths need access to component states, 
+this becomes unwieldy. Counter addresses this by providing stateful iteration 
+where component counters expose their current state as properties:
+
+\begin{lstlisting}
+position = Counter(100, name='position')
+mutation = Counter(4, name='mutation')
+experiment = position * mutation
+
+for _ in experiment:
+    process(position.state, mutation.state)
+\end{lstlisting}
+
+The state propagation is automatic: advancing \texttt{experiment} updates 
+\texttt{position.state} and \texttt{mutation.state} transparently.
+
+%-------------------------------------------------------------------------------
+\section{Functionality}
+%-------------------------------------------------------------------------------
+
+Counter provides the following core operations:
+
+\begin{itemize}
+    \item \textbf{Product} (\texttt{A * B}): Creates a counter over the Cartesian 
+    product with $|A| \times |B|$ states. Supports N-ary products via 
+    \texttt{multiply\_counters(A, B, C, ...)}.
+    
+    \item \textbf{Sum} (\texttt{A + B}): Creates a counter over the disjoint union 
+    with $|A| + |B|$ states. During iteration, exactly one parent is active 
+    (state $\geq 0$) while others are inactive (state $= -1$). Supports N-ary 
+    sums via \texttt{sum\_counters(A, B, C, ...)}.
+    
+    \item \textbf{Synchronize} (\texttt{synchronize\_counters(A, B)}): Creates a 
+    counter that keeps multiple equal-sized counters in lockstep.
+    
+    \item \textbf{Slice} (\texttt{A[start:stop:step]}): Creates a counter over a 
+    subset of states, supporting Python slice semantics including reversal.
+    
+    \item \textbf{Repeat} (\texttt{A * n} or \texttt{repeat\_counter(A, n)}): 
+    Creates a counter that cycles through A's states n times.
+\end{itemize}
+
+State propagation is implemented via a \texttt{decompose} method on each operation, 
+which maps a composite state to parent states. For products, this uses mixed-radix 
+decomposition; for sums, it identifies the active branch. The tree constraint 
+(no counter appearing multiple times in a graph) ensures decomposition is 
+unambiguous.
+
+From a mathematical perspective, these operations correspond to products and 
+coproducts in the category \textbf{FinSet} of finite sets, with the inactive 
+state extending each set to a pointed set.
+
+%-------------------------------------------------------------------------------
+\section{Example Usage}
+%-------------------------------------------------------------------------------
+
+The following example demonstrates composing counters and observing automatic 
+state propagation:
+
+\begin{lstlisting}
+from counter import Counter, CounterManager
+
+with CounterManager() as mgr:
+    # Define component counters
+    row = Counter(3, name='row')
+    col = Counter(4, name='col')
+    
+    # Compose via Cartesian product
+    grid = row * col
+    grid.name = 'grid'
+    
+    # Iterate and observe state propagation
+    for state in grid:
+        print(f"grid={state}, row={row.state}, col={col.state}")
+\end{lstlisting}
+
+Output:
+\begin{lstlisting}[language={}]
+grid=0, row=0, col=0
+grid=1, row=1, col=0
+grid=2, row=2, col=0
+grid=3, row=0, col=1
+...
+grid=11, row=2, col=3
+\end{lstlisting}
+
+The \texttt{CounterManager} provides utilities for inspecting iteration behavior:
+
+\begin{lstlisting}
+df = mgr.test_iteration(grid)  # Returns DataFrame of all states
+mgr.reset_all()                # Reset all counters to state 0
+mgr.inactivate_all()           # Set all counters to state -1
+\end{lstlisting}
+
+%-------------------------------------------------------------------------------
+\section{Acknowledgements}
+%-------------------------------------------------------------------------------
+
+[Acknowledgements to be added.]
+
+%-------------------------------------------------------------------------------
+\section{References}
+%-------------------------------------------------------------------------------
+
+\begin{enumerate}
+\item Harris, C. R., et al. (2020). Array programming with NumPy. \textit{Nature}, 585(7825), 357--362. \url{https://doi.org/10.1038/s41586-020-2649-2}
+
+\item Python Software Foundation. (2024). itertools --- Functions creating iterators for efficient looping. \url{https://docs.python.org/3/library/itertools.html}
+
+\item Mac Lane, S. (1998). \textit{Categories for the Working Mathematician} (2nd ed.). Springer.
+\end{enumerate}
+
+\end{document}

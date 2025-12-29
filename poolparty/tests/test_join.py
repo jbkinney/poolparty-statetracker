@@ -1,0 +1,423 @@
+"""Tests for the Join operation.
+
+Note: The + operator on Pools now does stacking (union of states), not joining.
+Use join() for sequence joining.
+"""
+
+import pytest
+import poolparty as pp
+from poolparty.operations.join import JoinOp, join
+
+
+class TestJoinFactory:
+    """Test join factory function."""
+    
+    def test_returns_pool(self):
+        """Test that join returns a Pool."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b])
+            assert combined is not None
+            assert hasattr(combined, 'operation')
+    
+    def test_creates_join_op(self):
+        """Test that join creates a JoinOp."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b])
+            assert isinstance(combined.operation, JoinOp)
+
+
+class TestJoinPools:
+    """Test joining multiple pools."""
+    
+    def test_two_pools(self):
+        """Test joining two pools."""
+        with pp.Party() as party:
+            left = pp.from_seqs(['AAA'])
+            right = pp.from_seqs(['TTT'])
+            combined = join([left, right]).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'AAATTT'
+    
+    def test_three_pools(self):
+        """Test joining three pools."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            c = pp.from_seqs(['GGG'])
+            combined = join([a, b, c]).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'AAATTTGGG'
+    
+    def test_many_pools(self):
+        """Test joining many pools."""
+        with pp.Party() as party:
+            pools = [pp.from_seqs([c]) for c in 'ABCDE']
+            combined = join(pools).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'ABCDE'
+
+
+class TestJoinWithStrings:
+    """Test joining pools with string literals."""
+    
+    def test_pool_and_string(self):
+        """Test joining pool with string."""
+        with pp.Party() as party:
+            pool = pp.from_seqs(['AAA'])
+            combined = join([pool, '...']).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'AAA...'
+    
+    def test_string_and_pool(self):
+        """Test joining string with pool."""
+        with pp.Party() as party:
+            pool = pp.from_seqs(['TTT'])
+            combined = join(['...', pool]).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == '...TTT'
+    
+    def test_pool_string_pool(self):
+        """Test pool-string-pool pattern."""
+        with pp.Party() as party:
+            left = pp.from_seqs(['AAA'])
+            right = pp.from_seqs(['TTT'])
+            combined = join([left, '...', right]).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'AAA...TTT'
+    
+    def test_multiple_strings(self):
+        """Test multiple string literals."""
+        with pp.Party() as party:
+            pool = pp.from_seqs(['X'])
+            combined = join(['[', pool, ']']).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == '[X]'
+    
+    def test_only_strings(self):
+        """Test joining only strings (converts to pools)."""
+        with pp.Party() as party:
+            combined = join(['A', 'B', 'C']).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'ABC'
+
+
+class TestJoinVsStack:
+    """Test that join and stack are different."""
+    
+    def test_join_joins_sequences(self):
+        """Test that join joins sequences."""
+        with pp.Party() as party:
+            left = pp.from_seqs(['AAA'])
+            right = pp.from_seqs(['TTT'])
+            
+            combined = join([left, right]).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'AAATTT'  # Joined
+    
+    def test_stack_unions_states(self):
+        """Test that + (stack) unions states."""
+        with pp.Party() as party:
+            left = pp.from_seqs(['AAA'])
+            right = pp.from_seqs(['TTT'])
+            
+            stacked = (left + right).named('seq')
+        
+        df = stacked.generate_seqs(num_complete_iterations=1)
+        assert list(df['seq']) == ['AAA', 'TTT']  # Union, not joined
+
+
+class TestJoinFixedMode:
+    """Test that JoinOp is always fixed mode."""
+    
+    def test_mode_is_fixed(self):
+        """Test that join creates fixed mode operation."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b])
+            assert combined.operation.mode == 'fixed'
+    
+    def test_num_states_is_one(self):
+        """Test that join has num_states=1."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b])
+            assert combined.operation.num_states == 1
+    
+    def test_variability_from_parents(self):
+        """Test that variability comes from parent pools."""
+        with pp.Party() as party:
+            # Each parent has 2 states = 4 combinations
+            left = pp.from_seqs(['A', 'B'], mode='sequential')
+            right = pp.from_seqs(['X', 'Y'], mode='sequential')
+            combined = join([left, right]).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=4)
+        # Should get all 4 combinations
+        expected = {'AX', 'AY', 'BX', 'BY'}
+        assert set(df['seq']) == expected or len(set(df['seq'])) == 4
+
+
+class TestJoinDesignCards:
+    """Test JoinOp design cards."""
+    
+    def test_no_design_card_keys(self):
+        """Test that join has no design card keys."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b])
+            assert len(combined.operation.design_card_keys) == 0
+    
+    def test_parent_design_cards_preserved(self):
+        """Test that parent design cards are still included."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'], names=['seq_a'])
+            b = pp.from_seqs(['TTT'], names=['seq_b'])
+            combined = join([a, b]).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        # Parent design cards should be present
+        assert 'from_seqs.seq_name' in df.columns or len([c for c in df.columns if 'seq_name' in c]) > 0
+
+
+class TestJoinCompute:
+    """Test JoinOp compute methods directly."""
+    
+    def test_compute_joins_sequences(self):
+        """Test compute method joins parent sequences."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b])
+        
+        card = combined.operation.compute_design_card(['AAA', 'TTT'])
+        result = combined.operation.compute_seq_from_card(['AAA', 'TTT'], card)
+        assert result['seq_0'] == 'AAATTT'
+    
+    def test_compute_empty_string(self):
+        """Test compute with empty string parent."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs([''])
+            combined = join([a, b])
+        
+        card = combined.operation.compute_design_card(['AAA', ''])
+        result = combined.operation.compute_seq_from_card(['AAA', ''], card)
+        assert result['seq_0'] == 'AAA'
+    
+    def test_compute_many_parents(self):
+        """Test compute with many parent sequences."""
+        with pp.Party() as party:
+            pools = [pp.from_seqs([c]) for c in 'ABCDE']
+            combined = join(pools)
+        
+        card = combined.operation.compute_design_card(['A', 'B', 'C', 'D', 'E'])
+        result = combined.operation.compute_seq_from_card(['A', 'B', 'C', 'D', 'E'], card)
+        assert result['seq_0'] == 'ABCDE'
+
+
+class TestJoinChaining:
+    """Test chaining join operations."""
+    
+    def test_nested_join(self):
+        """Test nested join operations."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['A'])
+            b = pp.from_seqs(['B'])
+            c = pp.from_seqs(['C'])
+            
+            ab = join([a, b])
+            abc = join([ab, c]).named('seq')
+        
+        df = abc.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'ABC'
+
+
+class TestJoinWithOtherOperations:
+    """Test join with other operation types."""
+    
+    def test_with_mutation_scan(self):
+        """Test joining with mutation scan output."""
+        with pp.Party() as party:
+            seq = pp.from_seqs(['ACGT'])
+            mutants = pp.mutation_scan(seq, k=1, mode='sequential')
+            barcode = pp.from_seqs(['NNNN'])
+            combined = join([mutants, '.', barcode]).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=3)
+        for s in df['seq']:
+            assert s.endswith('.NNNN')
+            assert len(s) == 9  # 4 + 1 + 4
+    
+    def test_with_get_kmers(self):
+        """Test joining with k-mers."""
+        with pp.Party() as party:
+            seq = pp.from_seqs(['ACGT'])
+            barcode = pp.get_kmers(length=4, alphabet='dna', mode='random')
+            combined = join([seq, '...', barcode]).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=10, seed=42)
+        for s in df['seq']:
+            assert s.startswith('ACGT...')
+            assert len(s) == 11  # 4 + 3 + 4
+    
+    def test_with_breakpoint_scan(self):
+        """Test joining synchronized breakpoint scan outputs.
+        
+        Breakpoint scan with synchronize_pools=True (default) creates pools
+        that share the same counter. When joined, the shared counter
+        is only included once in the product, so they iterate in lockstep.
+        """
+        with pp.Party() as party:
+            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1)
+            combined = join([left, '---', right]).named('seq')
+        
+        df = combined.generate_seqs(num_seqs=3)
+        # Verify segments are joined with separator
+        for s in df['seq']:
+            assert '---' in s
+
+
+class TestJoinCustomName:
+    """Test JoinOp name parameter."""
+    
+    def test_default_name(self):
+        """Test default operation name."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b])
+            assert combined.operation.name.startswith('op[')
+            assert ':join' in combined.operation.name
+    
+    def test_custom_name(self):
+        """Test custom operation name."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b], op_name='my_join')
+            assert combined.operation.name == 'my_join'
+
+
+class TestJoinSpacerStr:
+    """Test spacer_str parameter for join."""
+    
+    def test_default_spacer_is_empty(self):
+        """Test that default spacer is empty string."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b])
+            assert combined.operation.spacer_str == ''
+    
+    def test_spacer_str_basic(self):
+        """Test basic spacer_str usage."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b], spacer_str='-').named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'AAA-TTT'
+    
+    def test_spacer_str_multiple_chars(self):
+        """Test spacer_str with multiple characters."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b], spacer_str='---').named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'AAA---TTT'
+    
+    def test_spacer_str_with_three_pools(self):
+        """Test spacer_str with three pools."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['A'])
+            b = pp.from_seqs(['B'])
+            c = pp.from_seqs(['C'])
+            combined = join([a, b, c], spacer_str='.').named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'A.B.C'
+    
+    def test_spacer_str_seq_length_calculation(self):
+        """Test that seq_length includes spacer characters."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])  # length 3
+            b = pp.from_seqs(['TTT'])  # length 3
+            combined = join([a, b], spacer_str='--')  # spacer length 2
+            # Total should be 3 + 3 + 2 = 8
+            assert combined.seq_length == 8
+    
+    def test_spacer_str_seq_length_three_pools(self):
+        """Test seq_length with three pools and spacer."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AA'])  # length 2
+            b = pp.from_seqs(['BB'])  # length 2
+            c = pp.from_seqs(['CC'])  # length 2
+            combined = join([a, b, c], spacer_str='.')  # spacer length 1, 2 spacers
+            # Total should be 2 + 2 + 2 + 1 + 1 = 8
+            assert combined.seq_length == 8
+    
+    def test_spacer_str_stored_on_op(self):
+        """Test that spacer_str is stored on operation."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['A'])
+            b = pp.from_seqs(['B'])
+            combined = join([a, b], spacer_str='---')
+            assert combined.operation.spacer_str == '---'
+    
+    def test_spacer_str_with_strings(self):
+        """Test spacer_str when joining strings."""
+        with pp.Party() as party:
+            combined = join(['A', 'B', 'C'], spacer_str='-').named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'A-B-C'
+    
+    def test_spacer_str_compute_method(self):
+        """Test that compute_seq_from_card uses spacer_str."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b], spacer_str='.')
+        
+        card = combined.operation.compute_design_card(['AAA', 'TTT'])
+        result = combined.operation.compute_seq_from_card(['AAA', 'TTT'], card)
+        assert result['seq_0'] == 'AAA.TTT'
+    
+    def test_spacer_str_with_single_pool(self):
+        """Test spacer_str with single item (no spacer needed)."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            combined = join([a], spacer_str='-').named('seq')
+        
+        df = combined.generate_seqs(num_seqs=1)
+        assert df['seq'].iloc[0] == 'AAA'  # No spacer for single item
+    
+    def test_spacer_str_copy_params(self):
+        """Test that _get_copy_params includes spacer_str."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['AAA'])
+            b = pp.from_seqs(['TTT'])
+            combined = join([a, b], spacer_str='...')
+        
+        params = combined.operation._get_copy_params()
+        assert params['spacer_str'] == '...'
+

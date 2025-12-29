@@ -1,0 +1,113 @@
+%%
+%% Copyright 2024 OXFORD UNIVERSITY PRESS
+%%
+%% This file is part of the 'mam-authoring-template Bundle'.
+%% ---------------------------------------------
+%%
+%% It may be distributed under the conditions of the LaTeX Project Public
+%% License, either version 1.2 of this license or (at your option) any
+%% later version.  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.2 or later is part of all distributions of LaTeX
+%% version 1999/12/01 or later.
+%%
+%% The list of all files belonging to the 'mam-authoring-template Bundle' is
+%% given in the file `manifest.txt'.
+%%
+%% Template article for Microscopy and Microanalysis' document class `mam-authoring-template'
+%% with bibliographic references
+%%
+
+\documentclass[unnumsec,webpdf,modern,large]{mam-authoring-template}%
+\usepackage{amsmath,amssymb}
+\usepackage{upgreek}
+% natbib is already loaded by the document class
+\bibliographystyle{plainnat}
+
+% Suppress underfull hbox warnings
+\hbadness=10000
+
+\newcommand{\myfixed}{{\,\textrm{fixed}}}
+\newcommand{\set}[1]{\left\{ #1 \right\}}
+\newcommand{\myhier}{\textrm{hier}}
+\newcommand{\myall}{\textrm{all}}
+\newcommand{\mypair}{\textrm{pair}}
+\newcommand{\myvar}{\textrm{var}}
+\newcommand{\mygen}{\textrm{gen}}
+\newcommand{\mysubsets}{\textrm{subsets}}
+\newcommand{\mysource}{\textrm{source}}
+\newcommand{\mysink}{\textrm{sink}}
+\newcommand{\mytmp}{\textrm{tmp}}
+
+
+%\usepackage{showframe}
+\usepackage{upgreek}
+
+\graphicspath{{Fig/}}
+
+% line numbers
+%\usepackage[mathlines, switch]{lineno}
+%\usepackage[right]{lineno}
+
+\theoremstyle{thmstyleone}%
+\newtheorem{theorem}{Theorem}%  meant for continuous numbers
+%%\newtheorem{theorem}{Theorem}[section]% meant for sectionwise numbers
+%% optional argument [theorem] produces theorem numbering sequence instead of independent numbers for Proposition
+\newtheorem{proposition}[theorem]{Proposition}%
+%%\newtheorem{proposition}{Proposition}% to get separate numbers for theorem and proposition etc.
+\theoremstyle{thmstyletwo}%
+\newtheorem{example}{Example}%
+\newtheorem{remark}{Remark}%
+\theoremstyle{thmstylethree}%
+\newtheorem{definition}{Definition}
+
+\begin{document}
+
+\journaltitle{bioR$\upchi$i$\upnu$}
+%\DOI{DOI HERE}
+\copyrightyear{2025}
+\pubyear{2025}
+%\access{Advance Access Publication Date: Day Month Year}
+\appnotes{Original Article}
+
+\firstpage{1}
+
+%\subtitle{Subject Section}
+
+\title[Short Article Title]{PoolParty: Rapid design of oligonucletide pools Python}
+
+\author[1]{Zhihan Liu}
+\author[1,$\ast$]{Justin B. Kinney\ORCID{0000-0003-1897-3778}}
+
+\authormark{Liu and Kinney}
+
+\address[1]{\orgdiv{Simons Center for Quantitative Biology}, \orgname{Cold Spring Harbor Laboratory}, \orgaddress{\street{1 Bungtown Rd.}, \postcode{11724}, \state{New York}, \country{United States}}}
+
+\corresp[$\ast$]{Corresponding author. \href{email:jkinney@cshl.edu}{jkinney@cshl.edu}}
+
+\received{Date}{0}{Year}
+\revised{Date}{0}{Year}
+\accepted{Date}{0}{Year}
+
+\abstract{\textbf{Summary}: The use of designed oligonucleotide pools is rapidly expanding thanks to the development of massivley parallel reporter assay (MPRAs), protein deep mutational scanning (DMS), and other multiplex assays of variant effect (MAVEs). Designing these pool, however, is often tedious and time-consuming due to the lack of software for this task. Here introduce PoolParty, an easy-to-use yet powerful Python package for generating the sequences in oligonucleotide pools. PoolParty allows users to construct oligonucleotide pools in using the much of the same syntax used to construct individual strings, and provides easy-to-use methods to generate variant libraries commonly used in MPRAs and DMS experiments.  \\
+\textbf{Availability and implementation:} PoolParty can be installed using the pip package manager and is compatible
+with both Python $\geq$ 3.10. Documentation is provided at http://poolparty.readthedocs.io; source code is
+available at http://github.com/jbkinney/poolparty.\\
+\textbf{Contact:} jkinney@cshl.edu (J.B.K.)}
+
+
+\maketitle
+
+
+
+\section{Competing interests}
+The authors declare no competing interests. 
+
+\section{Author contributions statement}
+Z.L concieved the project. J.B.K designed the project, wrote the software, and wrote the manuscript. J.B.K supervised the research. 
+
+\section{Acknowledgments}
+This work was supported in part by: NIH grants R01HG011787 (J.B.K, Z.L.). Computational equiptment was supported by NIH grant S10OD028632.
+
+\bibliography{reference}
+\end{document}

@@ -1,0 +1,9 @@
+Here are ideas for a short Bioinformatics paper describing gaugefixer
+
+I want to aim for an Application Note in Bioinformatics. Tareen2020_logomaker_all.pdf provides a template for this. Here is the description from Bioinformatics website instructions to authors:
+
+    Application Notes
+    (Up to 4 pages; this is approx. 2,600 words or 2,000 words plus one figure)
+
+    Application Notes are short descriptions of novel software or new algorithm implementations, databases and network services (web servers, and interfaces). Software or data must be freely available to non-commercial users. Availability and Implementation must be clearly stated in the article. Authors must also ensure that the software is available for a full two years following publication. Web services must not require mandatory registration by the user. Additional supplementary data can be published online-only by the journal. This supplementary material should be referred to in the abstract of the Application Note. If describing software, the software should run under nearly all conditions on a wide range of machines. Web servers should not be browser specific. Application Notes must not describe trivial utilities, nor involve significant investment of time for the user to install. The name of the application should be included in the title.
+

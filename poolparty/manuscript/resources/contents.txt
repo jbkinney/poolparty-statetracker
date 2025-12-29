@@ -1,0 +1,85 @@
+Paper outline
+
+Title: PoolParty: painless design of complex oligonucleotide pools in Python
+
+Motivation
+- Modern assays (MPRA, DMS, high-throughput splicing) depend on designed oligo libraries.
+- Libraries encode systematic perturbations of regulatory and coding sequences.
+- Designs must combine mutagenesis, motif insertion, scans, codon-aware edits, barcodes under strict positional/reading-frame/diversity constraints.
+- Most labs use ad hoc scripts or rigid templates, which lack compositional structure, are hard to audit, and don’t scale to complex multi-region designs.
+
+Related and competing tools:
+- General-purpose sequence toolkits – competitor
+E.g. tangermeme, BioPython, pydna, SeqPro, GeneBlocks
+Low-level sequence ops: slice, mutate, shuffle, rc, insert, assemble, file I/O 
+No notion of a library as a structured object. 
+Users hand-code loops, region segmentation, and all bookkeeping
+
+Assay-template library designers – competitor
+E.g. MPRAnator, MPRA Design Tool, VaLiAnT, Oligo Calculator
+Assay-specific templates and pipelines (motif insertion, SNP libraries, barcoded reporters)
+Output synthesis-ready oligos (and sometimes analysis scripts) from user parameters
+Non-modular; hard to express non-standard library with multi-region, multi-stage designs.
+
+Constraint & optimization frameworks – complementary
+E.g. DnaChisel, CodonGenie, DNAWorks, j5, protlib-designer
+Optimize a small number of sequences under specified synthesis/biological constraints (e.g., GC, codon usage, forbidden motifs, overlaps)
+Do not define or traverse a large library design space.
+
+Saturation mutagenesis & tiling designers – complementary
+E.g. Mutation Maker, Primer3-based pipeline, GeneDesign mutagenesis modules
+Design mutagenic primers, saturation libraries, tilling amplicons, deletion scans.
+Typically focus on a single operation/region at a time (e.g., one ORF, one tiling scheme), not the full construct.
+Output primers/oligos for PCR-based mutagenesis, rather than complete synthetic oligopools
+
+Gap: No unified, extensible framework for declarative, provenance-aware specification of large heterogeneous oligo libraries.
+
+Core idea:
+Python package for declarative, composable oligo library design.
+Each design op is a Pool (stateful sequence generator)
+Pools compose algebraically (concat, repeat, slice) into a DAG that encodes region-specific, multi-stage transformations.
+A single global state index drives lazy generation, but each Pool can be in either sequential or random mode, allowing region- and stage-specific mixes of exhaustive enumeration and reproducible stochastic sampling within the same library.
+
+Capabilities and features:
+Pool library
+20 specialized Pools: nucleotide/codon mutagenesis, insertion/deletion scans, motif sampling, context-preserving shuffling, barcode generation.
+Pools can be freely combined to express designs that would otherwise require complex scripts.
+
+Design cards
+Per-sequence, machine-readable metadata describing which transformations fired at which region and which stage and with which internal states.
+Support reproducibility, auditing, and downstream model/assay analysis.
+
+Visualization
+Interactive view of the Pool computation graph, stacked linear sequence view, node details, and design cards.
+Shows which Pool produced each region, allowing inspection of regional architecture, multi-region workflows, and design errors.
+
+Intro summary:
+PoolParty is a unified framework for complex oligo-library construction that is transparent and reproducible by design.
+
+Shifts from imperative string manipulation to declarative generative specification of libraries.
+
+Reduces user burden, minimizes procedural errors, and turns library design into a structured, provenance-aware process for high-throughput genomics.
+
+Available as an open-source Python package with documentation and examples at the project URL.
+
+Methods outline:
+2.1 Overall architecture and Pool abstractions
+Pools as stateful generators
+Generator / Modifier / Mixer categories
+Composition into a DAG
+Region-specific, multi-stage pipelines
+
+2.2 Sequence generation: lazy evaluation and global state
+Lazy generation
+Global state index + mixed-radix decomposition
+Per-Pool sequential vs random mode
+Mixing exhaustive enumeration and stochastic sampling across regions/stages
+
+2.3 Provenance and visualization
+Design cards as per-sequence provenance
+Visualization of the graph + stacked linear sequence view
+How these work together for auditability / error detection
+
+2.4 Implementation and extensibility
+Python version, deps, open-source, docs
+Subclassing base Pool to add new operations that automatically inherit global-state, provenance, and viz support
