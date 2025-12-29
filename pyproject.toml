@@ -1,0 +1,18 @@
+[project]
+name = "poolparty-workspace"
+version = "0.0.0"
+requires-python = ">=3.10"
+
+[tool.uv]
+dev-dependencies = [
+    "ipykernel>=7.1.0",
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[tool.uv.workspace]
+members = ["poolparty", "statecounter"]
+
+[tool.uv.sources]
+poolparty = { workspace = true }
+statecounter = { workspace = true }
