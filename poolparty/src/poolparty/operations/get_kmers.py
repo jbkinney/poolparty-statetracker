@@ -18,15 +18,15 @@ class GetKmersOp(Operation):
         length: int,
         alphabet: AlphabetType = 'dna',
         mode: ModeType = 'sequential',
-        hybrid_mode_num_states: Optional[int] = None,
+        num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
         op_iteration_order: Real = 0,
     ) -> None:
         """Initialize GetKmersOp."""
         if length < 1:
             raise ValueError(f"length must be >= 1, got {length}")
-        if mode == 'hybrid' and hybrid_mode_num_states is None:
-            raise ValueError("hybrid_mode_num_states is required when mode='hybrid'")
+        if mode == 'hybrid' and num_hybrid_states is None:
+            raise ValueError("num_hybrid_states is required when mode='hybrid'")
         self.length = length
         self.alphabet = get_alphabet(alphabet)
         self.alpha_size = len(self.alphabet)
@@ -34,7 +34,7 @@ class GetKmersOp(Operation):
         if mode == 'sequential':
             num_states = self.validate_num_states(total_kmers, mode)
         elif mode == 'hybrid':
-            num_states = hybrid_mode_num_states
+            num_states = num_hybrid_states
         else:
             num_states = 1
         super().__init__(
@@ -101,7 +101,7 @@ class GetKmersOp(Operation):
             'length': self.length,
             'alphabet': self.alphabet,
             'mode': self.mode,
-            'hybrid_mode_num_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
             'op_iteration_order': self.iteration_order,
         }
@@ -112,7 +112,7 @@ def get_kmers(
     length: int,
     alphabet: AlphabetType = 'dna',
     mode: ModeType = 'sequential',
-    hybrid_mode_num_states: Optional[int] = None,
+    num_hybrid_states: Optional[int] = None,
     pool_iteration_order: Real = 0,
     op_iteration_order: Real = 0,
     op_name: Optional[str] = None,
@@ -120,7 +120,7 @@ def get_kmers(
 ) -> Pool_type:
     """Create a Pool that generates k-mers."""
     op = GetKmersOp(length, alphabet=alphabet, mode=mode, 
-                    hybrid_mode_num_states=hybrid_mode_num_states, name=op_name,
+                    num_hybrid_states=num_hybrid_states, name=op_name,
                     op_iteration_order=op_iteration_order)
     pool = Pool(operation=op, output_index=0)
     pool.iteration_order = pool_iteration_order

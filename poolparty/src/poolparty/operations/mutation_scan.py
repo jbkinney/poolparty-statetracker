@@ -21,15 +21,15 @@ class MutationScanOp(Operation):
         k: int = 1,
         alphabet: AlphabetType = 'dna',
         mode: ModeType = 'sequential',
-        hybrid_mode_num_states: Optional[int] = None,
+        num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
         op_iteration_order: Real = 0,
     ) -> None:
         """Initialize MutationScanOp."""
         if k < 1:
             raise ValueError(f"k must be >= 1, got {k}")
-        if mode == 'hybrid' and hybrid_mode_num_states is None:
-            raise ValueError("hybrid_mode_num_states is required when mode='hybrid'")
+        if mode == 'hybrid' and num_hybrid_states is None:
+            raise ValueError("num_hybrid_states is required when mode='hybrid'")
         self.k = k
         self.alphabet = get_alphabet(alphabet)
         self.alpha_size = len(self.alphabet)
@@ -52,7 +52,7 @@ class MutationScanOp(Operation):
             else:
                 num_states = 1
         elif mode == 'hybrid':
-            num_states = hybrid_mode_num_states
+            num_states = num_hybrid_states
         else:
             num_states = 1
         super().__init__(
@@ -160,7 +160,7 @@ class MutationScanOp(Operation):
             'k': self.k,
             'alphabet': self.alphabet,
             'mode': self.mode,
-            'hybrid_mode_num_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
             'op_iteration_order': self.iteration_order,
         }
@@ -172,7 +172,7 @@ def mutation_scan(
     k: int = 1,
     alphabet: AlphabetType = 'dna',
     mode: ModeType = 'sequential',
-    hybrid_mode_num_states: Optional[int] = None,
+    num_hybrid_states: Optional[int] = None,
     pool_iteration_order: Real = 0,
     op_iteration_order: Real = 0,
     op_name: Optional[str] = None,
@@ -183,7 +183,7 @@ def mutation_scan(
     if isinstance(parent, str):
         parent = from_seqs([parent], mode='fixed')
     op = MutationScanOp(parent, k=k, alphabet=alphabet, mode=mode, 
-                        hybrid_mode_num_states=hybrid_mode_num_states, name=op_name,
+                        num_hybrid_states=num_hybrid_states, name=op_name,
                         op_iteration_order=op_iteration_order)
     pool = Pool(operation=op, output_index=0)
     pool.iteration_order = pool_iteration_order

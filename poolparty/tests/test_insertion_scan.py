@@ -178,7 +178,7 @@ class TestInsertionScanModes:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             ins = pp.from_seqs(['TTT'])
             result = insertion_scan(bg, ins, mode='hybrid', 
-                                    hybrid_mode_num_states=5).named('result')
+                                    num_hybrid_states=5).named('result')
         
         df = result.generate_seqs(num_seqs=20, seed=42)
         assert len(df) == 20

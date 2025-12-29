@@ -17,7 +17,7 @@ class FromSeqsOp(Operation):
         seqs: Sequence[str],
         seq_names: Optional[Sequence[str]] = None,
         mode: ModeType = 'sequential',
-        hybrid_mode_num_states: Optional[int] = None,
+        num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
         op_iteration_order: Real = 0,
     ) -> None:
@@ -26,8 +26,8 @@ class FromSeqsOp(Operation):
             raise ValueError("seqs must not be empty")
         if mode == 'fixed' and len(seqs) != 1:
             raise ValueError("mode='fixed' requires exactly 1 sequence")
-        if mode == 'hybrid' and hybrid_mode_num_states is None:
-            raise ValueError("hybrid_mode_num_states is required when mode='hybrid'")
+        if mode == 'hybrid' and num_hybrid_states is None:
+            raise ValueError("num_hybrid_states is required when mode='hybrid'")
         self.seqs = list(seqs)
         self.seq_names = list(seq_names) if seq_names else [f"seq_{i}" for i in range(len(seqs))]
         if len(self.seq_names) != len(self.seqs):
@@ -35,7 +35,7 @@ class FromSeqsOp(Operation):
         if mode == 'sequential':
             num_states = len(seqs)
         elif mode == 'hybrid':
-            num_states = hybrid_mode_num_states
+            num_states = num_hybrid_states
         else:
             num_states = 1
         # Compute seq_length if all sequences have the same length
@@ -86,7 +86,7 @@ class FromSeqsOp(Operation):
             'seqs': self.seqs,
             'seq_names': self.seq_names,
             'mode': self.mode,
-            'hybrid_mode_num_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
             'op_iteration_order': self.iteration_order,
         }
@@ -97,7 +97,7 @@ def from_seqs(
     seqs: Sequence[str],
     seq_names: Optional[Sequence[str]] = None,
     mode: ModeType = 'sequential',
-    hybrid_mode_num_states: Optional[int] = None,
+    num_hybrid_states: Optional[int] = None,
     pool_iteration_order: Real = 0,
     op_iteration_order: Real = 0,
     op_name: Optional[str] = None,
@@ -105,7 +105,7 @@ def from_seqs(
 ) -> Pool_type:
     """Create a Pool from a list of sequences."""
     op = FromSeqsOp(seqs, seq_names=seq_names, mode=mode, 
-                    hybrid_mode_num_states=hybrid_mode_num_states, name=op_name,
+                    num_hybrid_states=num_hybrid_states, name=op_name,
                     op_iteration_order=op_iteration_order)
     pool = Pool(operation=op, output_index=0)
     pool.iteration_order = pool_iteration_order

@@ -145,7 +145,7 @@ class TestDeletionScanModes:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             result = deletion_scan(bg, deletion_length=3, mode='hybrid', 
-                                   hybrid_mode_num_states=5).named('result')
+                                   num_hybrid_states=5).named('result')
         
         df = result.generate_seqs(num_seqs=20, seed=42)
         assert len(df) == 20

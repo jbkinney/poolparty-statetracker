@@ -12,7 +12,7 @@ def deletion_scan(
     end: Optional[int] = None,
     step_size: int = 1,
     mode: ModeType = 'sequential',
-    hybrid_mode_num_states: Optional[int] = None,
+    num_hybrid_states: Optional[int] = None,
     pool_iteration_order: Real = 0,
     op_iteration_order: Real = 0,
     deletion_marker: Optional[str] = '-',
@@ -36,7 +36,7 @@ def deletion_scan(
         end: End position for deletion (default: bg_length - deletion_length).
         step_size: Step size for scanning positions (default: 1).
         mode: Iteration mode ('sequential', 'random', or 'hybrid').
-        hybrid_mode_num_states: Number of states for hybrid mode.
+        num_hybrid_states: Number of states for hybrid mode.
         pool_iteration_order: Sort key for the result pool (default 0).
         op_iteration_order: Sort key for the breakpoint_scan counter (default 0).
         deletion_marker: Character(s) to mark deletion (default: '-').
@@ -98,7 +98,7 @@ def deletion_scan(
         end=end,
         step_size=step_size,
         mode=mode,
-        hybrid_mode_num_states=hybrid_mode_num_states,
+        num_hybrid_states=num_hybrid_states,
         op_iteration_order=op_iteration_order,
     )
     

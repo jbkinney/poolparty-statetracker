@@ -25,15 +25,15 @@ class BreakpointScanOp(Operation):
         min_spacing: Optional[int] = None,
         max_spacing: Optional[int] = None,
         mode: ModeType = 'sequential',
-        hybrid_mode_num_states: Optional[int] = None,
+        num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
         op_iteration_order: Real = 0,
     ) -> None:
         """Initialize BreakpointScanOp."""
         if num_breakpoints < 1:
             raise ValueError(f"num_breakpoints must be >= 1, got {num_breakpoints}")
-        if mode == 'hybrid' and hybrid_mode_num_states is None:
-            raise ValueError("hybrid_mode_num_states is required when mode='hybrid'")
+        if mode == 'hybrid' and num_hybrid_states is None:
+            raise ValueError("num_hybrid_states is required when mode='hybrid'")
         self.num_breakpoints = num_breakpoints
         self.positions = list(positions) if positions is not None else None
         self.start = start
@@ -52,7 +52,7 @@ class BreakpointScanOp(Operation):
             else:
                 num_states = 1
         elif mode == 'hybrid':
-            num_states = hybrid_mode_num_states
+            num_states = num_hybrid_states
         else:
             num_states = 1
         super().__init__(
@@ -179,7 +179,7 @@ class BreakpointScanOp(Operation):
             'min_spacing': self.min_spacing,
             'max_spacing': self.max_spacing,
             'mode': self.mode,
-            'hybrid_mode_num_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
             'op_iteration_order': self.iteration_order,
         }
@@ -196,7 +196,7 @@ def breakpoint_scan(
     min_spacing: Optional[int] = None,
     max_spacing: Optional[int] = None,
     mode: ModeType = 'sequential',
-    hybrid_mode_num_states: Optional[int] = None,
+    num_hybrid_states: Optional[int] = None,
     pool_iteration_order: Real = 0,
     op_iteration_order: Real = 0,
     op_name: Optional[str] = None,
@@ -211,7 +211,7 @@ def breakpoint_scan(
                           positions=positions, start=start, end=end,
                           step_size=step_size, min_spacing=min_spacing,
                           max_spacing=max_spacing, mode=mode, 
-                          hybrid_mode_num_states=hybrid_mode_num_states, name=op_name,
+                          num_hybrid_states=num_hybrid_states, name=op_name,
                           op_iteration_order=op_iteration_order)
     shared_counter = op.build_pool_counter(op.parent_pools)
     if synchronize_pools:
