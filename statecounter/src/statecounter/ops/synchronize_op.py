@@ -21,7 +21,7 @@ class SyncOp(Operation):
 
 
 @beartype
-def sync(*counters: Counter_type, name: Optional[str] = None):
+def sync(counters: Sequence[Counter_type], name: Optional[str] = None):
     """Create sync counter from 0 or more counters."""
     from ..counter import Counter
     if len(counters) == 0:

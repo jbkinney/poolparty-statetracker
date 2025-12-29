@@ -136,7 +136,7 @@ class TestComplexGraphs:
             assert F.num_states == 6
             
             # Sync them together
-            G = sync(C, F, name='G')
+            G = sync([C, F], name='G')
             
             # Setting G should propagate to both branches
             G.state = 3
@@ -521,7 +521,7 @@ class TestConflictDetection:
             A = Counter(num_states=5, name='A')
             B = A[::-1]
             B.name = 'B'
-            C = sync(A, B, name='C')
+            C = sync([A, B], name='C')
             
             with pytest.raises(ConflictingStateAssignmentError):
                 C.state = 0
@@ -531,7 +531,7 @@ class TestConflictDetection:
         with Manager():
             A = Counter(num_states=5, name='A')
             B = passthrough(A, name='B')
-            C = sync(A, B, name='C')
+            C = sync([A, B], name='C')
             
             # Should not raise - A gets same value from both paths
             C.state = 3
@@ -554,7 +554,7 @@ class TestConflictDetection:
             A = Counter(num_states=5, name='A')
             B = A[::-1]
             B.name = 'B'
-            C = sync(A, B, name='C')
+            C = sync([A, B], name='C')
             
             with pytest.raises(ConflictingStateAssignmentError):
                 C.advance()  # advance() calls state setter

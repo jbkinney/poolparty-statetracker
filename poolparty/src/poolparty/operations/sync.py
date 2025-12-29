@@ -25,7 +25,7 @@ def sync(pools: list, name: Optional[str] = None) -> None:
         raise ValueError(f"Cannot sync pools with different num_states: {sizes}")
     
     counters = [p.counter for p in pools]
-    shared_counter = sc.sync(*counters, name=name)
+    shared_counter = sc.sync(counters, name=name)
     
     for pool in pools:
         pool.counter = shared_counter
