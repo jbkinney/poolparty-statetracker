@@ -15,7 +15,7 @@ class FromSeqsOp(Operation):
     def __init__(
         self,
         seqs: Sequence[str],
-        names: Optional[Sequence[str]] = None,
+        seq_names: Optional[Sequence[str]] = None,
         mode: ModeType = 'sequential',
         hybrid_mode_num_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -29,9 +29,9 @@ class FromSeqsOp(Operation):
         if mode == 'hybrid' and hybrid_mode_num_states is None:
             raise ValueError("hybrid_mode_num_states is required when mode='hybrid'")
         self.seqs = list(seqs)
-        self.names = list(names) if names else [f"seq_{i}" for i in range(len(seqs))]
-        if len(self.names) != len(self.seqs):
-            raise ValueError("names must have same length as seqs")
+        self.seq_names = list(seq_names) if seq_names else [f"seq_{i}" for i in range(len(seqs))]
+        if len(self.seq_names) != len(self.seqs):
+            raise ValueError("seq_names must have same length as seqs")
         if mode == 'sequential':
             num_states = len(seqs)
         elif mode == 'hybrid':
@@ -66,7 +66,7 @@ class FromSeqsOp(Operation):
             state = self.counter.state
             idx = (0 if state is None else state) % len(self.seqs)
         return {
-            'seq_name': self.names[idx],
+            'seq_name': self.seq_names[idx],
             'seq_index': idx,
         }
     
@@ -84,7 +84,7 @@ class FromSeqsOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'seqs': self.seqs,
-            'names': self.names,
+            'seq_names': self.seq_names,
             'mode': self.mode,
             'hybrid_mode_num_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
@@ -104,7 +104,7 @@ def from_seqs(
     pool_name: Optional[str] = None,
 ) -> Pool_type:
     """Create a Pool from a list of sequences."""
-    op = FromSeqsOp(seqs, names=seq_names, mode=mode, 
+    op = FromSeqsOp(seqs, seq_names=seq_names, mode=mode, 
                     hybrid_mode_num_states=hybrid_mode_num_states, name=op_name,
                     op_iteration_order=op_iteration_order)
     pool = Pool(operation=op, output_index=0)
