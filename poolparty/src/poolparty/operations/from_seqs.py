@@ -32,15 +32,14 @@ class FromSeqsOp(Operation):
         self.seq_names = list(seq_names) if seq_names else [f"seq_{i}" for i in range(len(seqs))]
         if len(self.seq_names) != len(self.seqs):
             raise ValueError("seq_names must have same length as seqs")
-        if mode == 'sequential':
-            num_states = len(seqs)
-        elif mode == 'hybrid':
-            num_states = num_hybrid_states
-        else:
-            num_states = 1
-        # Compute seq_length if all sequences have the same length
-        lengths = set(len(s) for s in self.seqs)
-        seq_length = lengths.pop() if len(lengths) == 1 else None
+        match mode:
+            case 'sequential':
+                num_states = len(seqs)
+            case 'hybrid':
+                num_states = num_hybrid_states
+            case _:
+                num_states = 1
+        seq_length = len(self.seqs[0]) if all(len(s) == len(self.seqs[0]) for s in self.seqs) else None
         super().__init__(
             parent_pools=[],
             num_states=num_states,
@@ -98,12 +97,38 @@ def from_seqs(
     seq_names: Optional[Sequence[str]] = None,
     mode: ModeType = 'sequential',
     num_hybrid_states: Optional[int] = None,
+    name: Optional[str] = None,
+    op_name: Optional[str] = None,
     iter_order: Real = 0,
     op_iter_order: Real = 0,
-    op_name: Optional[str] = None,
-    name: Optional[str] = None,
 ) -> Pool_type:
-    """Create a Pool from a list of sequences."""
+    """
+    Construct a Pool containing sequences provided in `seqs`.
+
+    Parameters
+    ----------
+    seqs : Sequence[str]
+        List of sequences to be included in the pool.
+    seq_names : Optional[Sequence[str]], default=None
+        Optional names for each sequence provided.
+    mode : ModeType, default='sequential'
+        Mode for sequence selection ('sequential', 'random', or 'hybrid').
+    num_hybrid_states : Optional[int], default=None
+        Number of states for 'hybrid' mode; ignored otherwise.
+    name : Optional[str], default=None
+        Name for the created Pool instance.
+    op_name : Optional[str], default=None
+        Name for the internal operation.
+    iter_order : Real, default=0
+        Pool's iteration order (priority in design).
+    op_iter_order : Real, default=0
+        Operation's internal iteration order.
+
+    Returns
+    -------
+    Pool_type
+        A Pool object containing the given sequences and configuration.
+    """
     op = FromSeqsOp(seqs, seq_names=seq_names, mode=mode, 
                     num_hybrid_states=num_hybrid_states, name=op_name,
                     iter_order=op_iter_order)
