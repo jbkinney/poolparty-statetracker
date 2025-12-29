@@ -1,5 +1,6 @@
 """Tests for RepeatOp and repeat_counter()."""
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 from statecounter import Counter, Manager, RepeatOp, repeat, stack
 
 
@@ -95,8 +96,8 @@ class TestRepeatCounter:
                 repeat(A, -1)
     
     def test_repeat_counter_non_counter_raises(self):
-        """repeat_counter with non-Counter raises TypeError."""
-        with pytest.raises(TypeError, match="Expected Counter"):
+        """repeat_counter with non-Counter raises BeartypeCallHintParamViolation."""
+        with pytest.raises(BeartypeCallHintParamViolation):
             repeat("not a counter", 3)
     
     def test_repeat_counter_with_name(self):

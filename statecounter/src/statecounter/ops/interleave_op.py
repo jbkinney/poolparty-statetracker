@@ -1,7 +1,9 @@
 """InterleaveOp - Interleave states from N counters."""
+from ..imports import beartype, Optional, Counter_type
 from ..operation import Operation
 
 
+@beartype
 class InterleaveOp(Operation):
     """Interleave states from N counters with equal num_states."""
     
@@ -21,14 +23,12 @@ class InterleaveOp(Operation):
         return tuple(parent_state if i == active_idx else None for i in range(k))
 
 
-def interleave(*counters, name=None):
+@beartype
+def interleave(*counters: Counter_type, name: Optional[str] = None):
     """Create an interleaved counter from multiple counters."""
     from ..counter import Counter
     if len(counters) < 2:
         raise ValueError("interleave_counters() requires at least 2 counters")
-    for c in counters:
-        if not isinstance(c, Counter):
-            raise TypeError(f"Expected Counter, got {type(c)}")
     result = Counter(_parents=counters, _op=InterleaveOp())
     if name is not None:
         result.name = name

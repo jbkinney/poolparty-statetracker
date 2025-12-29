@@ -1,5 +1,6 @@
 """Tests for SynchronizeOp and synchronize_counters()."""
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 from statecounter import Counter, Manager, SyncOp, sync
 
 
@@ -155,7 +156,7 @@ class TestSynchronizeCounters:
         """synchronize_counters raises for non-Counter arguments."""
         with Manager():
             A = Counter(num_states=2, name='A')
-            with pytest.raises(TypeError, match="Expected Counter"):
+            with pytest.raises(BeartypeCallHintParamViolation):
                 sync(A, "not a counter")
     
     def test_sync_different_num_states_three_counters(self):

@@ -1,12 +1,14 @@
 """SliceOp - Slice a counter to select a subset of states."""
+from ..imports import beartype, Optional, Integral, Counter_type
 from ..operation import Operation
 import builtins
 
 
+@beartype
 class SliceOp(Operation):
     """Slice a counter to select a subset of states."""
     
-    def __init__(self, start, stop, step):
+    def __init__(self, start: Integral, stop: Integral, step: Integral):
         self.start = start
         self.stop = stop
         self.step = step
@@ -21,11 +23,10 @@ class SliceOp(Operation):
         return (parent_state,)
 
 
-def slice(counter, start=None, stop=None, step=None, name=None):
+@beartype
+def slice(counter: Counter_type, start: Optional[Integral] = None, stop: Optional[Integral] = None, step: Optional[Integral] = None, name: Optional[str] = None):
     """Create a sliced counter from a subset of states."""
     from ..counter import Counter
-    if not isinstance(counter, Counter):
-        raise TypeError(f"Expected Counter, got {type(counter)}")
     s = builtins.slice(start, stop, step)
     start_norm, stop_norm, step_norm = s.indices(counter.num_states)
     result = Counter(_parents=(counter,), _op=SliceOp(start_norm, stop_norm, step_norm))

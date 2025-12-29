@@ -1,5 +1,6 @@
 """Tests for SliceOp and slice_counter()."""
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 from statecounter import Counter, Manager, SliceOp, slice, product
 
 
@@ -263,7 +264,7 @@ class TestSliceCounterFunction:
             assert B.name == 'Sliced'
     
     def test_slice_counter_not_counter_raises(self):
-        with pytest.raises(TypeError, match="Expected Counter"):
+        with pytest.raises(BeartypeCallHintParamViolation):
             slice("not a counter", 0, 5)
     
     def test_slice_counter_partial_args(self):

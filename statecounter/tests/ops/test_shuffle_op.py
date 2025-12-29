@@ -1,5 +1,6 @@
 """Tests for ShuffleOp and shuffle_counter()."""
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 from statecounter import Counter, Manager, ShuffleOp, shuffle, product
 
 
@@ -227,8 +228,8 @@ class TestShuffleCounterFunction:
             assert B.name == 'Shuffled'
     
     def test_shuffle_counter_not_counter_raises(self):
-        """shuffle_counter with non-Counter raises TypeError."""
-        with pytest.raises(TypeError, match="Expected Counter"):
+        """shuffle_counter with non-Counter raises BeartypeCallHintParamViolation."""
+        with pytest.raises(BeartypeCallHintParamViolation):
             shuffle("not a counter", seed=42)
     
     def test_shuffle_counter_no_seed(self):

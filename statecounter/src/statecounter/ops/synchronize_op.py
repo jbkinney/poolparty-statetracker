@@ -1,7 +1,9 @@
 """SynchronizeOp - Keep N counters in lockstep."""
+from ..imports import beartype, Sequence, Optional, Counter_type
 from ..operation import Operation
 
 
+@beartype
 class SyncOp(Operation):
     """Keep N counters in lockstep."""
     
@@ -18,15 +20,13 @@ class SyncOp(Operation):
         return tuple(state for _ in parent_num_states)
 
 
-def sync(*counters, name=None):
+@beartype
+def sync(*counters: Counter_type, name: Optional[str] = None):
     """Create sync counter from 0 or more counters."""
     from ..counter import Counter
     if len(counters) == 0:
         result = Counter(1)
     else:
-        for c in counters:
-            if not isinstance(c, Counter):
-                raise TypeError(f"Expected Counter, got {type(c)}")
         result = Counter(_parents=counters, _op=SyncOp())
     if name is not None:
         result.name = name

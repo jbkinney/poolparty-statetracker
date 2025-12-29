@@ -24,4 +24,5 @@ __all__ = [
     'Real',
     'Integral',
     'Counter_type',
+    'math',
 ]

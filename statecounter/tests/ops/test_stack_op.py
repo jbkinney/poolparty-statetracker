@@ -1,5 +1,6 @@
 """Tests for StackOp and sum_counters()."""
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 from statecounter import Counter, Manager, StackOp, stack
 
 
@@ -164,7 +165,7 @@ class TestSumCounters:
         """sum_counters raises for non-Counter arguments."""
         with Manager():
             A = Counter(num_states=2, name='A')
-            with pytest.raises(TypeError, match="Expected Counter"):
+            with pytest.raises(BeartypeCallHintParamViolation):
                 stack([A, 123])
     
     def test_stack_with_name(self):

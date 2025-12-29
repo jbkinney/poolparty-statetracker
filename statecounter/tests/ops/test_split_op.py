@@ -1,5 +1,6 @@
 """Tests for split_counter() function."""
 import pytest
+from beartype.roar import BeartypeCallHintParamViolation
 from statecounter import Counter, Manager, split
 
 
@@ -105,8 +106,8 @@ class TestSplitCounterValidation:
                 split(A, 1)
     
     def test_not_counter_raises(self):
-        """Passing non-Counter raises TypeError."""
-        with pytest.raises(TypeError, match="Expected Counter"):
+        """Passing non-Counter raises BeartypeCallHintParamViolation."""
+        with pytest.raises(BeartypeCallHintParamViolation):
             split("not a counter", 2)
     
     def test_too_few_states_for_parts_raises(self):

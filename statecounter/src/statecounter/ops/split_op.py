@@ -1,27 +1,23 @@
 """split_counter - Split a counter into multiple counters."""
-from numbers import Real
-from collections.abc import Sequence
+from ..imports import beartype, Sequence, Optional, Real, Integral, Union, Counter_type
 from .slice_op import SliceOp
 
 
-def split(counter, split_spec, names=None):
+@beartype
+def split(counter: Counter_type, split_spec: Union[Integral, Sequence[Real]], names: Optional[Sequence[str]] = None):
     """Split a counter into multiple counters."""
     from ..counter import Counter
-    if not isinstance(counter, Counter):
-        raise TypeError(f"Expected Counter, got {type(counter)}")
     num_states = counter.num_states
-    if isinstance(split_spec, int):
+    if isinstance(split_spec, Integral):
         if split_spec < 2:
             raise ValueError(f"split_spec must be >= 2, got {split_spec}")
         sizes = _compute_equal_sizes(num_states, split_spec)
-    elif isinstance(split_spec, Sequence) and not isinstance(split_spec, str):
+    else:
         if len(split_spec) < 2:
             raise ValueError(f"split_spec sequence must have length >= 2, got {len(split_spec)}")
-        if not all(isinstance(p, Real) and p > 0 for p in split_spec):
+        if not all(p > 0 for p in split_spec):
             raise ValueError("All proportions must be positive numbers")
         sizes = _compute_proportional_sizes(num_states, split_spec)
-    else:
-        raise TypeError(f"split_spec must be int or Sequence[float], got {type(split_spec)}")
     num_parts = len(sizes)
     if names is not None:
         if len(names) != num_parts:

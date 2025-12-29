@@ -1,7 +1,9 @@
 """StackOp - Disjoint union of N counters."""
+from ..imports import beartype, Sequence, Optional, Counter_type
 from ..operation import Operation
 
 
+@beartype
 class StackOp(Operation):    
     def compute_num_states(self, parent_num_states):
         return sum(parent_num_states)
@@ -20,14 +22,12 @@ class StackOp(Operation):
         raise ValueError(f"Invalid state {state}")
 
 
-def stack(counters, name=None):
+@beartype
+def stack(counters: Sequence[Counter_type], name: Optional[str] = None):
     from ..counter import Counter
     if len(counters) == 0:
         result = Counter(0)
     else:
-        for c in counters:
-            if not isinstance(c, Counter):
-                raise TypeError(f"Expected Counter, got {type(c)}")
         result = Counter(_parents=counters, _op=StackOp())
     if name is not None:
         result.name = name
