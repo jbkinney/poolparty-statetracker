@@ -55,11 +55,24 @@ class Operation:
         if mode == 'random':
             num_states = 1
         self.counter = sc.Counter(num_states=num_states, name=f"{self._name}.state")
-        self.counter.pp_iteration_order = iter_order
+        if not hasattr(self.counter, "pp_iteration_order"):
+            self.counter.pp_iteration_order = 0
+        if iter_order is not None:  
+            self.iter_order = iter_order
         self.rng: np.random.Generator | None = None
         self.num_states = num_states
         # Register operation with party after name is set
         party._register_operation(self)
+    
+    @property
+    def iter_order(self) -> Real:
+        """Iteration order for this operation."""
+        return self.counter.pp_iteration_order
+    
+    @iter_order.setter
+    def iter_order(self, value: Real) -> None:
+        """Set iteration order for this operation."""
+        self.counter.pp_iteration_order = value
     
     @property
     def seq_length(self) -> Optional[int]:

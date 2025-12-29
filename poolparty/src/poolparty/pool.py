@@ -14,6 +14,7 @@ class Pool:
         output_index: int = 0,
         name: Optional[str] = None,
         counter: Optional[sc.Counter] = None,
+        iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize Pool and build its counter."""
         from .party import get_active_party
@@ -33,10 +34,24 @@ class Pool:
             self.counter: sc.Counter = operation.build_pool_counter(
                 operation.parent_pools
             )
+        if not hasattr(self.counter, "pp_iteration_order"):
+            self.counter.pp_iteration_order = 0
+        if iter_order is not None:  
+            self.iter_order = iter_order
         self._name: str = ""
         self.name = name if name is not None else f'pool[{self._id}]'
         # Register pool with party after name is set
         party._register_pool(self)
+    
+    @property
+    def iter_order(self) -> Real:
+        """Iteration order for this pool."""
+        return self.counter.pp_iteration_order
+    
+    @iter_order.setter
+    def iter_order(self, value: Real) -> None:
+        """Set iteration order for this pool."""
+        self.counter.pp_iteration_order = value
     
     @property
     def name(self) -> str:

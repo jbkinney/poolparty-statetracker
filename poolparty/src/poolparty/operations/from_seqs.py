@@ -107,8 +107,6 @@ def from_seqs(
     op = FromSeqsOp(seqs, seq_names=seq_names, mode=mode, 
                     num_hybrid_states=num_hybrid_states, name=op_name,
                     iter_order=op_iter_order)
-    pool = Pool(operation=op, output_index=0)
+    pool = Pool(operation=op, output_index=0, name=name)
     pool.counter.pp_iteration_order = iter_order
-    if name is not None:
-        pool.name = name
     return pool
