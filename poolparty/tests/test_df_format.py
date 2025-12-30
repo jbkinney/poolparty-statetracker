@@ -60,7 +60,7 @@ class TestGetPoolsReverseTopo:
         """Test that children come before parents."""
         with pp.Party() as party:
             parent = pp.from_seqs(['AAA', 'TTT'])
-            child = pp.mutation_scan(parent, k=1)
+            child = pp.mutation_scan(parent, num_mutations=1)
             
             result = get_pools_reverse_topo({parent, child})
             
@@ -73,8 +73,8 @@ class TestGetPoolsReverseTopo:
         """Test with a chain of operations."""
         with pp.Party() as party:
             p1 = pp.from_seqs(['AAA'])
-            p2 = pp.mutation_scan(p1, k=1)
-            p3 = pp.mutation_scan(p2, k=1)
+            p2 = pp.mutation_scan(p1, num_mutations=1)
+            p3 = pp.mutation_scan(p2, num_mutations=1)
             
             result = get_pools_reverse_topo({p1, p2, p3})
             
@@ -219,7 +219,7 @@ class TestIntegrationWithGenerate:
         """Test generate with organize_columns_by='pool'."""
         with pp.Party() as party:
             parent = pp.from_seqs(['AAA', 'TTT']).named('parent')
-            child = pp.mutation_scan(parent, k=1).named('child')
+            child = pp.mutation_scan(parent, num_mutations=1).named('child')
             
             df = child.generate_seqs(
                 num_seqs=5,

@@ -391,7 +391,7 @@ class TestBreakpointScanWithOtherOperations:
         """
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential')
-            mutated_right = pp.mutation_scan(right, k=1, mode='sequential')
+            mutated_right = pp.mutation_scan(right, num_mutations=1, mode='sequential')
             combined = pp.join([left, mutated_right]).named('seq')
         
         with pytest.raises(sc.ConflictingStateAssignmentError):
@@ -631,7 +631,7 @@ class TestSynchronizePoolsParameter:
         """
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential')
-            mutated_right = pp.mutation_scan(right, k=1, mode='sequential')
+            mutated_right = pp.mutation_scan(right, num_mutations=1, mode='sequential')
             combined = pp.join([left, mutated_right]).named('seq')
         
         

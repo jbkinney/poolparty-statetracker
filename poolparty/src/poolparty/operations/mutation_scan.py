@@ -2,7 +2,7 @@
 from itertools import combinations
 from math import comb
 from numbers import Real
-from ..types import Pool_type, Union, AlphabetType, ModeType, Optional, beartype
+from ..types import Union, AlphabetType, ModeType, Optional, Real, Integral, beartype
 from ..operation import Operation
 from ..pool import Pool
 from ..alphabet import get_alphabet
@@ -17,20 +17,20 @@ class MutationScanOp(Operation):
     @beartype
     def __init__(
         self,
-        parent_pool: Pool_type,
-        k: int = 1,
+        parent_pool: Pool,
+        num_mutations: Integral = 1,
         alphabet: AlphabetType = 'dna',
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
-        op_iteration_order: Real = 0,
+        iter_order: Real = 0,
     ) -> None:
         """Initialize MutationScanOp."""
-        if k < 1:
-            raise ValueError(f"k must be >= 1, got {k}")
+        if num_mutations < 1:
+            raise ValueError(f"num_mutations must be >= 1, got {num_mutations}")
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
-        self.k = k
+        self.num_mutations = num_mutations
         self.alphabet = get_alphabet(alphabet)
         self.alpha_size = len(self.alphabet)
         self._mode = mode
@@ -43,10 +43,10 @@ class MutationScanOp(Operation):
         self._sequential_cache = None
         if mode == 'sequential':
             if self._seq_length is not None:
-                if self._seq_length < k:
+                if self._seq_length < num_mutations:
                     raise ValueError(
-                        f"k={k} exceeds sequence length={self._seq_length}. "
-                        f"Cannot apply {k} mutations to a sequence of length {self._seq_length}."
+                        f"{num_mutations=} exceeds sequence length={self._seq_length}. "
+                        f"Cannot apply {num_mutations} mutations to a sequence of length {self._seq_length}."
                     )
                 num_states = self._build_caches()
             else:
@@ -61,7 +61,7 @@ class MutationScanOp(Operation):
             mode=mode,
             seq_length=self._seq_length,
             name=name,
-            iter_order=op_iteration_order,
+            iter_order=iter_order,
         )
     
     @beartype
@@ -70,14 +70,14 @@ class MutationScanOp(Operation):
         if self._seq_length is None:
             return 1
         alpha_minus_1 = self.alpha_size - 1
-        num_combinations = comb(self._seq_length, self.k) * (alpha_minus_1 ** self.k)
-        num_mut_patterns = alpha_minus_1 ** self.k
+        num_combinations = comb(self._seq_length, self.num_mutations) * (alpha_minus_1 ** self.num_mutations)
+        num_mut_patterns = alpha_minus_1 ** self.num_mutations
         cache = []
-        for positions in combinations(range(self._seq_length), self.k):
+        for positions in combinations(range(self._seq_length), self.num_mutations):
             for mut_pattern in range(num_mut_patterns):
                 mut_indices = []
                 remaining = mut_pattern
-                for _ in range(self.k):
+                for _ in range(self.num_mutations):
                     mut_indices.append(remaining % alpha_minus_1)
                     remaining //= alpha_minus_1
                 cache.append((positions, tuple(reversed(mut_indices))))
@@ -88,7 +88,7 @@ class MutationScanOp(Operation):
     def _random_mutation(self, seq: str, rng: np.random.Generator) -> tuple:
         """Generate random mutation positions and characters."""
         seq_len = len(seq)
-        positions = tuple(sorted(rng.choice(seq_len, size=self.k, replace=False)))
+        positions = tuple(sorted(rng.choice(seq_len, size=self.num_mutations, replace=False)))
         wt_chars = []
         mut_chars = []
         for pos in positions:
@@ -108,8 +108,8 @@ class MutationScanOp(Operation):
         """Return design card with mutation positions and characters."""
         seq = parent_seqs[0]
         seq_len = len(seq)
-        if self.k > seq_len:
-            raise ValueError(f"Cannot apply {self.k} mutations to sequence of length {seq_len}")
+        if self.num_mutations > seq_len:
+            raise ValueError(f"Cannot apply {self.num_mutations} mutations to sequence of length {seq_len}")
         if self.mode in ('random', 'hybrid'):
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
@@ -157,36 +157,32 @@ class MutationScanOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'parent_pool': self.parent_pools[0],
-            'k': self.k,
+            'num_mutations': self.num_mutations,
             'alphabet': self.alphabet,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
-            'op_iteration_order': self.iter_order,
+            'iter_order': self.iter_order,
         }
 
 
 @beartype
 def mutation_scan(
-    parent: Union[Pool_type, str],
-    k: int = 1,
+    pool: Union[Pool, str],
+    num_mutations: Integral = 1,
     alphabet: AlphabetType = 'dna',
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
-    pool_iteration_order: Real = 0,
-    op_iteration_order: Real = 0,
-    op_name: Optional[str] = None,
     name: Optional[str] = None,
-) -> Pool_type:
-    """Create a Pool that applies k mutations to a sequence."""
-    from .from_seqs import from_seqs
-    if isinstance(parent, str):
-        parent = from_seqs([parent], mode='fixed')
-    op = MutationScanOp(parent, k=k, alphabet=alphabet, mode=mode, 
+    op_name: Optional[str] = None,
+    iter_order: Real = 0,
+    op_iter_order: Real = 0,
+) -> Pool:
+    """Create a Pool that applies num_mutations mutations to a sequence."""
+    from .from_seq import from_seq
+    pool = from_seq(pool) if isinstance(pool, str) else pool
+    op = MutationScanOp(parent_pool=pool, num_mutations=num_mutations, alphabet=alphabet, mode=mode, 
                         num_hybrid_states=num_hybrid_states, name=op_name,
-                        op_iteration_order=op_iteration_order)
-    pool = Pool(operation=op, output_index=0)
-    pool.iter_order = pool_iteration_order
-    if name is not None:
-        pool.name = name
+                        iter_order=op_iter_order)
+    pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool

@@ -15,19 +15,19 @@ class TestHybridModeBasic:
     def test_num_hybrid_states(self):
         """Test that hybrid mode uses num_hybrid_states for counter."""
         with pp.Party() as party:
-            pool = mutation_scan('ACGT', k=1, mode='hybrid', num_hybrid_states=100)
+            pool = mutation_scan('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=100)
             assert pool.operation.num_states == 100
     
     def test_hybrid_mode_requires_num_states(self):
         """Test that hybrid mode requires num_hybrid_states."""
         with pp.Party() as party:
             with pytest.raises(ValueError, match="num_hybrid_states is required"):
-                mutation_scan('ACGT', k=1, mode='hybrid')
+                mutation_scan('ACGT', num_mutations=1, mode='hybrid')
     
     def test_hybrid_mode_generates_correct_count(self):
         """Test that hybrid mode generates the expected number of sequences."""
         with pp.Party() as party:
-            pool = mutation_scan('ACGT', k=1, mode='hybrid', num_hybrid_states=50).named('mutant')
+            pool = mutation_scan('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=50).named('mutant')
         
         df = pool.generate_seqs(num_complete_iterations=1)
         assert len(df) == 50
@@ -40,13 +40,13 @@ class TestHybridModeReproducibility:
         """Test that same seed produces same results."""
         results1 = []
         with pp.Party() as party:
-            pool = mutation_scan('ACGTACGT', k=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutation_scan('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
             df = pool.generate_seqs(num_complete_iterations=1, seed=42)
             results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
-            pool = mutation_scan('ACGTACGT', k=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutation_scan('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
             df = pool.generate_seqs(num_complete_iterations=1, seed=42)
             results2 = list(df['seq'])
         
@@ -56,13 +56,13 @@ class TestHybridModeReproducibility:
         """Test that different seeds produce different results."""
         results1 = []
         with pp.Party() as party:
-            pool = mutation_scan('ACGTACGT', k=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutation_scan('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
             df = pool.generate_seqs(num_complete_iterations=1, seed=42)
             results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
-            pool = mutation_scan('ACGTACGT', k=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutation_scan('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
             df = pool.generate_seqs(num_complete_iterations=1, seed=123)
             results2 = list(df['seq'])
         
@@ -71,7 +71,7 @@ class TestHybridModeReproducibility:
     def test_same_state_same_output(self):
         """Test that same state always produces same output with same seed."""
         with pp.Party() as party:
-            pool = mutation_scan('ACGTACGT', k=1, mode='hybrid', num_hybrid_states=20).named('mutant')
+            pool = mutation_scan('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=20).named('mutant')
             df = pool.generate_seqs(num_seqs=40, seed=42)  # 2 complete iterations
         
         # First and second iteration should be identical
@@ -87,8 +87,8 @@ class TestHybridModeOperationIsolation:
         """Test that different hybrid operations at same state produce different results."""
         with pp.Party() as party:
             # Two mutation_scan operations with same config but different op.id
-            pool1 = mutation_scan('ACGTACGT', k=1, mode='hybrid', num_hybrid_states=10).named('mutant1')
-            pool2 = mutation_scan('ACGTACGT', k=1, mode='hybrid', num_hybrid_states=10).named('mutant2')
+            pool1 = mutation_scan('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant1')
+            pool2 = mutation_scan('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant2')
             df = pool1.generate_seqs(num_complete_iterations=1, seed=42, aux_pools=[pool2])
         
         # They should produce different results because op.id is part of the seed
@@ -106,7 +106,7 @@ class TestHybridModeMutationScan:
     def test_mutation_scan_hybrid_valid_mutations(self):
         """Test that hybrid mutation_scan produces valid mutations."""
         with pp.Party() as party:
-            pool = mutation_scan('ACGT', k=1, mode='hybrid', num_hybrid_states=20).named('mutant')
+            pool = mutation_scan('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=20).named('mutant')
             df = pool.generate_seqs(num_complete_iterations=1, seed=42)
         
         # All outputs should be valid single mutants
@@ -116,9 +116,9 @@ class TestHybridModeMutationScan:
             assert diffs == 1
     
     def test_mutation_scan_hybrid_double_mutation(self):
-        """Test hybrid mode with k=2."""
+        """Test hybrid mode with num_mutations=2."""
         with pp.Party() as party:
-            pool = mutation_scan('ACGTACGT', k=2, mode='hybrid', num_hybrid_states=30).named('mutant')
+            pool = mutation_scan('ACGTACGT', num_mutations=2, mode='hybrid', num_hybrid_states=30).named('mutant')
             df = pool.generate_seqs(num_complete_iterations=1, seed=42)
         
         assert len(df) == 30
@@ -277,8 +277,8 @@ class TestHybridModeVsRandomMode:
     def test_hybrid_has_multiple_states(self):
         """Test that hybrid mode has multiple states unlike random."""
         with pp.Party() as party:
-            random_pool = mutation_scan('ACGT', k=1, mode='random')
-            hybrid_pool = mutation_scan('ACGT', k=1, mode='hybrid', num_hybrid_states=50)
+            random_pool = mutation_scan('ACGT', num_mutations=1, mode='random')
+            hybrid_pool = mutation_scan('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=50)
             
             assert random_pool.operation.num_states == 1
             assert hybrid_pool.operation.num_states == 50
@@ -286,14 +286,14 @@ class TestHybridModeVsRandomMode:
     def test_hybrid_iterates_deterministically(self):
         """Test that hybrid mode iterates through states deterministically."""
         with pp.Party() as party:
-            pool = mutation_scan('ACGTACGT', k=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutation_scan('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
         
         # Run twice with same seed
         df1 = pool.generate_seqs(num_seqs=30, seed=42, init_state=0)
         
         # Create a new pool to test reproducibility
         with pp.Party() as party:
-            pool2 = mutation_scan('ACGTACGT', k=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool2 = mutation_scan('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
         df2 = pool2.generate_seqs(num_seqs=30, seed=42, init_state=0)
         
         # Should be identical
@@ -302,7 +302,7 @@ class TestHybridModeVsRandomMode:
     def test_random_does_not_cycle(self):
         """Test that random mode doesn't cycle like hybrid does."""
         with pp.Party() as party:
-            pool = mutation_scan('ACGTACGT', k=1, mode='random').named('mutant')
+            pool = mutation_scan('ACGTACGT', num_mutations=1, mode='random').named('mutant')
         df = pool.generate_seqs(num_seqs=50, seed=42)
         
         # Random mode should have varied results, not cycling patterns
@@ -330,7 +330,7 @@ class TestHybridModeComposability:
         """Test hybrid operation with sequential parent."""
         with pp.Party() as party:
             seqs = from_seqs(['AAAA', 'TTTT'], mode='sequential')
-            mutants = mutation_scan(seqs, k=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            mutants = mutation_scan(seqs, num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
         
         df = mutants.generate_seqs(num_seqs=20, seed=42)
         
@@ -343,7 +343,7 @@ class TestHybridModeComposability:
         """Test hybrid operation with hybrid parent."""
         with pp.Party() as party:
             seqs = from_seqs(['AAAA', 'TTTT', 'GGGG'], mode='hybrid', num_hybrid_states=5)
-            mutants = mutation_scan(seqs, k=1, mode='hybrid', num_hybrid_states=3).named('mutant')
+            mutants = mutation_scan(seqs, num_mutations=1, mode='hybrid', num_hybrid_states=3).named('mutant')
         
         df = mutants.generate_seqs(num_complete_iterations=1, seed=42)
         

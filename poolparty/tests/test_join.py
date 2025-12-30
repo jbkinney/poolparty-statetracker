@@ -255,7 +255,7 @@ class TestJoinWithOtherOperations:
         """Test joining with mutation scan output."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], mode='sequential')
-            mutants = pp.mutation_scan(seq, k=1, mode='sequential')
+            mutants = pp.mutation_scan(seq, num_mutations=1, mode='sequential')
             barcode = pp.from_seqs(['NNNN'], mode='sequential')
             combined = join([mutants, '.', barcode]).named('seq')
         
