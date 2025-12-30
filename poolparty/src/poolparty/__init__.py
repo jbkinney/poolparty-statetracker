@@ -20,10 +20,12 @@ from .operations import (
     insertion_scan,
     replacement_scan,
     deletion_scan,
+    seq_shuffle, SeqShuffleOp,
     stack, StackOp,
     repeat, RepeatOp,
     state_slice, StateSliceOp,
     state_shuffle, StateShuffleOp,
+    state_sample, StateSampleOp,
     sync,
 )
 
@@ -42,10 +44,12 @@ __all__ = [
     'insertion_scan',
     'replacement_scan',
     'deletion_scan',
+    'seq_shuffle', 'SeqShuffleOp',
     'stack', 'StackOp',
     'repeat', 'RepeatOp',
     'state_slice', 'StateSliceOp',
     'state_shuffle', 'StateShuffleOp',
+    'state_sample', 'StateSampleOp',
     'sync',
 ]
 

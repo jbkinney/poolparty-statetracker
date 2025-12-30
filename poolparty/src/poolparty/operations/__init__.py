@@ -11,8 +11,10 @@ from .deletion_scan import deletion_scan
 from .seq_slice import seq_slice, SeqSliceOp
 from .state_slice import state_slice, StateSliceOp
 from .state_shuffle import state_shuffle, StateShuffleOp
+from .state_sample import state_sample, StateSampleOp
 from .stack import stack, StackOp
 from .repeat import repeat, RepeatOp
+from .seq_shuffle import seq_shuffle, SeqShuffleOp
 from .sync import sync
 
 __all__ = [
@@ -28,7 +30,9 @@ __all__ = [
     'deletion_scan',
     'stack', 'StackOp',
     'repeat', 'RepeatOp',
+    'seq_shuffle', 'SeqShuffleOp',
     'state_slice', 'StateSliceOp',
     'state_shuffle', 'StateShuffleOp',
+    'state_sample', 'StateSampleOp',
     'sync',
 ]
