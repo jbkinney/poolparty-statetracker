@@ -8,6 +8,7 @@ from .ops import (
     SliceOp,
     RepeatOp,
     ShuffleOp,
+    SampleOp,
     InterleaveOp,
     PassthroughOp,
     product,
@@ -17,6 +18,7 @@ from .ops import (
     slice,
     repeat,
     shuffle,
+    sample,
     split,
     interleave,
     passthrough,
@@ -28,8 +30,8 @@ __version__ = "0.1.0"
 __all__ = [
     'Counter', 'Manager', 'Operation', 'ConflictingStateAssignmentError',
     'ProductOp', 'StackOp', 'SyncOp', 'SliceOp',
-    'RepeatOp', 'ShuffleOp', 'InterleaveOp', 'PassthroughOp',
+    'RepeatOp', 'ShuffleOp', 'SampleOp', 'InterleaveOp', 'PassthroughOp',
     'product', 'ordered_product', 'stack', 'sync',
-    'slice', 'repeat', 'shuffle',
+    'slice', 'repeat', 'shuffle', 'sample',
     'split', 'interleave', 'passthrough',
 ]
