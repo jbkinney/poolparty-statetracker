@@ -6,12 +6,12 @@ from ..pool import Pool
 import numpy as np
 
 
+@beartype
 class RepeatOp(Operation):
     """Repeat a pool's states n times."""
     factory_name = "repeat"
     design_card_keys = ['repeat_index']
     
-    @beartype
     def __init__(
         self,
         parent_pool: Pool_type,
@@ -32,7 +32,6 @@ class RepeatOp(Operation):
             iter_order=iter_order,
         )
     
-    @beartype
     def compute_design_card(
         self,
         parent_seqs: list[str],
@@ -43,7 +42,6 @@ class RepeatOp(Operation):
         repeat_index = 0 if state is None else state
         return {'repeat_index': repeat_index}
     
-    @beartype
     def compute_seq_from_card(
         self,
         parent_seqs: list[str],

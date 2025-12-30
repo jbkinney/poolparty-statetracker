@@ -8,12 +8,12 @@ from ..pool import Pool
 import numpy as np
 
 
+@beartype
 class BreakpointScanOp(Operation):
     """Split a sequence at breakpoint positions."""
     factory_name = "breakpoint_scan"
     design_card_keys = ['breakpoints']
     
-    @beartype
     def __init__(
         self,
         parent_pool: Pool,
@@ -76,7 +76,6 @@ class BreakpointScanOp(Operation):
                 return False
         return True
     
-    @beartype
     def _build_caches(self) -> int:
         """Build caches for sequential enumeration."""
         if self._seq_length is None:
@@ -126,7 +125,6 @@ class BreakpointScanOp(Operation):
                 return positions
         raise RuntimeError("Could not find valid breakpoint positions after 1000 attempts")
     
-    @beartype
     def compute_design_card(
         self,
         parent_seqs: list[str],
@@ -150,7 +148,6 @@ class BreakpointScanOp(Operation):
             breakpoints = self._sequential_cache[state % len(self._sequential_cache)]
         return {'breakpoints': breakpoints}
     
-    @beartype
     def compute_seq_from_card(
         self,
         parent_seqs: list[str],

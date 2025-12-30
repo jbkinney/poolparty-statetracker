@@ -5,6 +5,7 @@ from .types import Pool_type, Sequence, ModeType, Optional, beartype
 import numpy as np
 
 
+@beartype
 class Operation:
     """Base class for all operations."""
     design_card_keys: Sequence[str] = []
@@ -27,7 +28,6 @@ class Operation:
             return np.inf
         return num_states
     
-    @beartype
     def __init__(
         self,
         parent_pools: Sequence[Pool_type],
@@ -115,7 +115,6 @@ class Operation:
         """Set iteration order on this operation's counter."""
         self.counter.iter_order = value
     
-    @beartype
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool_type],
@@ -125,7 +124,6 @@ class Operation:
         product_counter = sc.ordered_product(parent_counters + [self.counter])
         return product_counter
     
-    @beartype
     def compute_design_card(
         self,
         parent_seqs: list[str],
@@ -138,7 +136,6 @@ class Operation:
         """
         raise NotImplementedError("Subclasses must implement compute_design_card()")
     
-    @beartype
     def compute_seq_from_card(
         self,
         parent_seqs: list[str],

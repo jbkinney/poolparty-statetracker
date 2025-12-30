@@ -7,12 +7,12 @@ from ..pool import Pool
 import numpy as np
 
 
+@beartype
 class StackOp(Operation):
     """Stack multiple pools sequentially (disjoint union)."""
     factory_name = "stack"
     design_card_keys = ['active_parent']
     
-    @beartype
     def __init__(
         self,
         parent_pools: Sequence[Pool],
@@ -34,7 +34,6 @@ class StackOp(Operation):
             iter_order=iter_order,
         )
     
-    @beartype
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool],
@@ -43,7 +42,6 @@ class StackOp(Operation):
         parent_counters = [p.counter for p in parent_pools]
         return sc.stack(parent_counters)
     
-    @beartype
     def compute_design_card(
         self,
         parent_seqs: list[str],
@@ -55,7 +53,6 @@ class StackOp(Operation):
                 return {'active_parent': i}
         return {'active_parent': None}
     
-    @beartype
     def compute_seq_from_card(
         self,
         parent_seqs: list[str],

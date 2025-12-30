@@ -4,7 +4,8 @@ import statecounter as sc
 from .types import Pool_type, Operation_type, Union, Optional, beartype
 import pandas as pd
 
-# TODO: add @beartype to class and remove from individual methods in class. 
+
+@beartype
 class Pool:
     """A node in the computation DAG."""
     
@@ -93,24 +94,20 @@ class Pool:
     # Counter-based operators
     #########################################################################
     
-    @beartype
     def __add__(self, other: Pool_type) -> Pool_type:
         """Stack two pools (union of states via sum_counters)."""
         from .operations.stack import stack
         return stack([self, other])
     
-    @beartype
     def __mul__(self, n: int) -> Pool_type:
         """Repeat this pool n times (repeat states)."""
         from .operations.repeat import repeat
         return repeat(self, n)
     
-    @beartype
     def __rmul__(self, n: int) -> Pool_type:
         """Repeat this pool n times (repeat states)."""
         return self.__mul__(n)
     
-    @beartype
     def __getitem__(self, key: Union[int, slice]) -> Pool_type:
         """Slice this pool's states (not sequences)."""
         from .operations.state_slice import state_slice

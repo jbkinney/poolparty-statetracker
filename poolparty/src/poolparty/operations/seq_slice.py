@@ -7,12 +7,12 @@ from ..pool import Pool
 import numpy as np
 
 
+@beartype
 class SeqSliceOp(Operation):
     """Slice sequences using Python slice notation."""
     factory_name = "seq_slice"
     design_card_keys = []
     
-    @beartype
     def __init__(
         self,
         parent_pool: Pool,
@@ -40,7 +40,6 @@ class SeqSliceOp(Operation):
             iter_order=iter_order,
         )
     
-    @beartype
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool],
@@ -48,7 +47,6 @@ class SeqSliceOp(Operation):
         """Return parent counter directly (no state added)."""
         return parent_pools[0].counter
     
-    @beartype
     def compute_design_card(
         self,
         parent_seqs: list[str],
@@ -57,7 +55,6 @@ class SeqSliceOp(Operation):
         """Return empty design card (no design decisions)."""
         return {}
     
-    @beartype
     def compute_seq_from_card(
         self,
         parent_seqs: list[str],

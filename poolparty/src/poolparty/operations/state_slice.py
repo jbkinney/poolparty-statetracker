@@ -7,12 +7,12 @@ from ..pool import Pool
 import numpy as np
 
 
+@beartype
 class StateSliceOp(Operation):
     """Slice a pool's states to select a subset."""
     factory_name = "state_slice"
     design_card_keys = []
     
-    @beartype
     def __init__(
         self,
         parent_pool: Pool,
@@ -33,7 +33,6 @@ class StateSliceOp(Operation):
             iter_order=iter_order,
         )
     
-    @beartype
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool],
@@ -46,7 +45,6 @@ class StateSliceOp(Operation):
             step=self.step,
         )
     
-    @beartype
     def compute_design_card(
         self,
         parent_seqs: list[str],
@@ -55,7 +53,6 @@ class StateSliceOp(Operation):
         """Return empty design card (no design decisions)."""
         return {}
     
-    @beartype
     def compute_seq_from_card(
         self,
         parent_seqs: list[str],

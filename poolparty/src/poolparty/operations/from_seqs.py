@@ -6,12 +6,12 @@ from ..pool import Pool
 import numpy as np
 
 
+@beartype
 class FromSeqsOp(Operation):
     """Create a pool from a list of sequences."""
     factory_name = "from_seqs"
     design_card_keys = ['seq_name', 'seq_index']
     
-    @beartype
     def __init__(
         self,
         seqs: Sequence[str],
@@ -49,7 +49,6 @@ class FromSeqsOp(Operation):
             iter_order=iter_order,
         )
     
-    @beartype
     def compute_design_card(
         self,
         parent_seqs: list[str],
@@ -69,7 +68,6 @@ class FromSeqsOp(Operation):
             'seq_index': idx,
         }
     
-    @beartype
     def compute_seq_from_card(
         self,
         parent_seqs: list[str],

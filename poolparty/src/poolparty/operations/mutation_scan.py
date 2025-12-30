@@ -1,7 +1,6 @@
 """MutationScan operation - apply k mutations to a sequence."""
 from itertools import combinations
 from math import comb
-from numbers import Real
 from ..types import Union, AlphabetType, ModeType, Optional, Real, Integral, beartype
 from ..operation import Operation
 from ..pool import Pool
@@ -9,12 +8,12 @@ from ..alphabet import get_alphabet
 import numpy as np
 
 
+@beartype
 class MutationScanOp(Operation):
     """Apply k mutations to a parent sequence."""
     factory_name = "mutation_scan"
     design_card_keys = ['positions', 'wt_chars', 'mut_chars']
     
-    @beartype
     def __init__(
         self,
         parent_pool: Pool,
@@ -64,7 +63,6 @@ class MutationScanOp(Operation):
             iter_order=iter_order,
         )
     
-    @beartype
     def _build_caches(self) -> int:
         """Build caches for sequential enumeration."""
         if self._seq_length is None:
@@ -84,7 +82,6 @@ class MutationScanOp(Operation):
         self._sequential_cache = cache
         return num_combinations
     
-    @beartype
     def _random_mutation(self, seq: str, rng: np.random.Generator) -> tuple:
         """Generate random mutation positions and characters."""
         seq_len = len(seq)
@@ -99,7 +96,6 @@ class MutationScanOp(Operation):
             mut_chars.append(mut)
         return positions, tuple(wt_chars), tuple(mut_chars)
     
-    @beartype
     def compute_design_card(
         self,
         parent_seqs: list[str],
@@ -138,7 +134,6 @@ class MutationScanOp(Operation):
             'mut_chars': mut_chars,
         }
     
-    @beartype
     def compute_seq_from_card(
         self,
         parent_seqs: list[str],

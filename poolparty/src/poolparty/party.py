@@ -10,11 +10,10 @@ def get_active_party() -> Optional["Party"]:
     """Get the currently active Party context, or None if not in a context."""
     return _active_party
 
-
+@beartype
 class Party:
     """Context manager for building and executing sequence libraries."""
     
-    @beartype
     def __init__(self) -> None:
         """Initialize a new Party."""
         self._operations: list = []
@@ -29,14 +28,12 @@ class Party:
         self._pools_by_name: dict[str, Pool_type] = {}
         self._ops_by_name: dict[str, Operation_type] = {}
     
-    @beartype
     def _get_next_pool_id(self) -> int:
         """Get the next unique pool ID."""
         id_ = self._next_pool_id
         self._next_pool_id += 1
         return id_
-    
-    @beartype
+
     def _get_next_op_id(self) -> int:
         """Get the next unique operation ID."""
         id_ = self._next_op_id
@@ -48,7 +45,6 @@ class Party:
         """Access the statecounter Manager for debugging counter iteration."""
         return self._counter_manager
     
-    @beartype
     def __enter__(self) -> "Party":
         """Enter the Party context."""
         global _active_party
@@ -59,7 +55,6 @@ class Party:
         self._counter_manager.__enter__()
         return self
     
-    @beartype
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit the Party context."""
         global _active_party
@@ -67,7 +62,6 @@ class Party:
         _active_party = None
         self._is_active = False
     
-    @beartype
     def _validate_pool_name(self, name: str, pool: Optional[Pool_type] = None) -> str:
         """Validate that a pool name is unique.
         
@@ -86,7 +80,6 @@ class Party:
             raise ValueError(f"Pool name '{name}' already exists")
         return name
     
-    @beartype
     def _validate_op_name(self, name: str, op: Optional[Operation_type] = None) -> str:
         """Validate that an operation name is unique.
         
@@ -105,20 +98,17 @@ class Party:
             raise ValueError(f"Operation name '{name}' already exists")
         return name
     
-    @beartype
     def _register_pool(self, pool: Pool_type) -> None:
         """Register a pool with this party."""
         self._pools_by_id.append(pool)
         self._pools_by_name[pool.name] = pool
     
-    @beartype
     def _update_pool_name(self, pool: Pool_type, old_name: str, new_name: str) -> None:
         """Update a pool's name in the tracking dict."""
         if old_name in self._pools_by_name:
             del self._pools_by_name[old_name]
         self._pools_by_name[new_name] = pool
     
-    @beartype
     def _register_operation(self, operation: Operation_type) -> None:
         """Register an operation with this party."""
         if operation not in self._operations:
@@ -126,14 +116,12 @@ class Party:
         self._ops_by_id.append(operation)
         self._ops_by_name[operation.name] = operation
     
-    @beartype
     def _update_op_name(self, op: Operation_type, old_name: str, new_name: str) -> None:
         """Update an operation's name in the tracking dict."""
         if old_name in self._ops_by_name:
             del self._ops_by_name[old_name]
         self._ops_by_name[new_name] = op
     
-    @beartype
     def get_pool_by_id(self, id_: int) -> Pool_type:
         """Get a pool by its ID.
         
@@ -148,7 +136,6 @@ class Party:
         """
         return self._pools_by_id[id_]
     
-    @beartype
     def get_pool_by_name(self, name: str) -> Pool_type:
         """Get a pool by its name.
         
@@ -163,7 +150,6 @@ class Party:
         """
         return self._pools_by_name[name]
     
-    @beartype
     def get_op_by_id(self, id_: int) -> Operation_type:
         """Get an operation by its ID.
         
@@ -178,7 +164,6 @@ class Party:
         """
         return self._ops_by_id[id_]
     
-    @beartype
     def get_op_by_name(self, name: str) -> Operation_type:
         """Get an operation by its name.
         
@@ -193,7 +178,6 @@ class Party:
         """
         return self._ops_by_name[name]
     
-    @beartype
     def output(self, pool: Pool_type, name: Optional[str] = None) -> None:
         """Mark a pool as an output of this library."""
         if name is None:

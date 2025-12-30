@@ -7,12 +7,12 @@ from ..alphabet import get_alphabet
 import numpy as np
 
 
+@beartype
 class GetKmersOp(Operation):
     """Generate k-mers from an alphabet."""
     factory_name = "get_kmers"
     design_card_keys = ['kmer_index']
     
-    @beartype
     def __init__(
         self,
         length: int,
@@ -46,7 +46,6 @@ class GetKmersOp(Operation):
             iter_order=iter_order,
         )
     
-    @beartype
     def _state_to_kmer(self, state: int) -> str:
         """Convert a state index to a k-mer string."""
         result = []
@@ -56,13 +55,11 @@ class GetKmersOp(Operation):
             remaining //= self.alpha_size
         return ''.join(reversed(result))
     
-    @beartype
     def _random_kmer(self, rng: np.random.Generator) -> str:
         """Generate a random k-mer."""
         indices = rng.integers(0, self.alpha_size, size=self.length)
         return ''.join(self.alphabet[i] for i in indices)
     
-    @beartype
     def compute_design_card(
         self,
         parent_seqs: list[str],
@@ -80,7 +77,6 @@ class GetKmersOp(Operation):
             idx = 0 if idx is None else idx
             return {'kmer_index': idx}
     
-    @beartype
     def compute_seq_from_card(
         self,
         parent_seqs: list[str],
