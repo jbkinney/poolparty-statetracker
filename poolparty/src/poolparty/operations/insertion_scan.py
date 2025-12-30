@@ -82,14 +82,14 @@ def insertion_scan(
     
     # Split background at breakpoint positions
     left, right = breakpoint_scan(
-        parent=bg_pool,
+        pool=bg_pool,
         num_breakpoints=1,
         start=start,
         end=end,
         step_size=step_size,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
-        op_iteration_order=op_iteration_order,
+        op_iter_order=op_iteration_order,
     )
     
     # Join left, insert, and right (no clipping - insert is added)

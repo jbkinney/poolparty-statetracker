@@ -279,9 +279,9 @@ class TestJoinWithOtherOperations:
     def test_with_breakpoint_scan(self):
         """Test joining synchronized breakpoint scan outputs.
         
-        Breakpoint scan with synchronize_pools=True (default) creates pools
-        that share the same counter. When joined, the shared counter
-        is only included once in the product, so they iterate in lockstep.
+        Breakpoint scan creates synchronized pools that share the same counter.
+        When joined, the shared counter is only included once in the product, so they
+        iterate together in lockstep.
         """
         with pp.Party() as party:
             left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1)

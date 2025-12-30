@@ -599,17 +599,9 @@ class TestSynchronizePoolsParameter:
     def test_synchronize_pools_true_shares_counter(self):
         """Test that synchronize_pools=True shares counter across pools."""
         with pp.Party() as party:
-            left, right = breakpoint_scan('ACGT', num_breakpoints=1, synchronize_pools=True)
+            left, right = breakpoint_scan('ACGT', num_breakpoints=1)
             assert left.counter is right.counter
     
-    def test_synchronize_pools_false_independent_counters(self):
-        """Test that synchronize_pools=False creates independent counters."""
-        with pp.Party() as party:
-            left, right = breakpoint_scan('ACGT', num_breakpoints=1, synchronize_pools=False)
-            # Counters are different objects
-            assert left.counter is not right.counter
-            # But they have the same num_states
-            assert left.counter.num_states == right.counter.num_states
     
     def test_synchronized_pools_can_join(self):
         """Test that synchronized pools can be joined.
@@ -619,7 +611,7 @@ class TestSynchronizePoolsParameter:
         iterate together in lockstep.
         """
         with pp.Party() as party:
-            left, right = breakpoint_scan('ACGT', num_breakpoints=1, synchronize_pools=True)
+            left, right = breakpoint_scan('ACGT', num_breakpoints=1)
             combined = pp.join([left, '---', right]).named('combined')
         
         df = combined.generate_seqs(num_seqs=3)
@@ -627,12 +619,6 @@ class TestSynchronizePoolsParameter:
         for seq in df['seq']:
             assert '---' in seq
     
-    def test_decoupled_pools_can_join(self):
-        """Test that decoupled pools can also be joined."""
-        with pp.Party() as party:
-            left, right = breakpoint_scan('ACGT', num_breakpoints=1, synchronize_pools=False)
-            combined = pp.join([left, '---', right]).named('combined')
-        
         df = combined.generate_seqs(num_seqs=3)
         for seq in df['seq']:
             assert '---' in seq
@@ -644,42 +630,17 @@ class TestSynchronizePoolsParameter:
         with a mutation of the other creates conflicting state assignments.
         """
         with pp.Party() as party:
-            left, right = breakpoint_scan('ACGT', num_breakpoints=1, 
-                                          mode='sequential', synchronize_pools=True)
+            left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential')
             mutated_right = pp.mutation_scan(right, k=1, mode='sequential')
             combined = pp.join([left, mutated_right]).named('seq')
         
-        with pytest.raises(sc.ConflictingStateAssignmentError):
-            combined.generate_seqs(num_seqs=10)
-    
-    def test_decoupled_with_mutation_scan(self):
-        """Test decoupled pools with downstream mutation."""
-        with pp.Party() as party:
-            left, right = breakpoint_scan('ACGT', num_breakpoints=1, 
-                                          mode='sequential', synchronize_pools=False)
-            mutated_right = pp.mutation_scan(right, k=1, mode='sequential')
-            combined = pp.join([left, mutated_right]).named('seq')
         
-        df = combined.generate_seqs(num_seqs=10)
-        assert len(df) == 10
     
     def test_three_pools_synchronized(self):
-        """Test three pools with synchronize_pools=True."""
+        """Test three pools are synchronized."""
         with pp.Party() as party:
-            seg0, seg1, seg2 = breakpoint_scan('ACGTACGT', num_breakpoints=2, 
-                                               synchronize_pools=True)
+            seg0, seg1, seg2 = breakpoint_scan('ACGTACGT', num_breakpoints=2)
             # All three share the same counter
             assert seg0.counter is seg1.counter
             assert seg1.counter is seg2.counter
     
-    def test_three_pools_decoupled(self):
-        """Test three pools with synchronize_pools=False."""
-        with pp.Party() as party:
-            seg0, seg1, seg2 = breakpoint_scan('ACGTACGT', num_breakpoints=2, 
-                                               synchronize_pools=False)
-            # All three have different counters
-            assert seg0.counter is not seg1.counter
-            assert seg1.counter is not seg2.counter
-            assert seg0.counter is not seg2.counter
-            # But same num_states
-            assert seg0.counter.num_states == seg1.counter.num_states == seg2.counter.num_states

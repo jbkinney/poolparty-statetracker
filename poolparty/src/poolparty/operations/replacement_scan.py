@@ -1,62 +1,70 @@
 """ReplacementScan - replace a segment of background with insert sequences."""
 from numbers import Real
-from ..types import Pool_type, Union, ModeType, Optional, beartype
+from ..types import Union, ModeType, Optional, Integral, beartype
 from ..pool import Pool
 
 
 @beartype
 def replacement_scan(
-    bg_pool: Union[Pool_type, str],
-    ins_pool: Union[Pool_type, str],
-    start: Optional[int] = None,
-    end: Optional[int] = None,
-    step_size: int = 1,
-    mode: ModeType = 'random',
-    num_hybrid_states: Optional[int] = None,
-    pool_iteration_order: Real = 0,
-    op_iteration_order: Real = 0,
+    bg_pool: Union[Pool, str],
+    ins_pool: Union[Pool, str],
     spacer_str: str = '',
-    op_name: Optional[str] = None,
+    start: Optional[Integral] = None,
+    end: Optional[Integral] = None,
+    step_size: Integral = 1,
+    mode: ModeType = 'random',
+    num_hybrid_states: Optional[Integral] = None,
     name: Optional[str] = None,
-) -> Pool_type:
-    """Replace a segment of background with insert sequences at scanning positions.
-    
-    This is a convenience wrapper around breakpoint_scan, seq_slice, and join
-    that replaces a segment of bg_pool with sequences from ins_pool at various 
-    positions. The output length equals bg_pool.seq_length (the insert replaces
-    an equal-length segment of the background).
-    
-    Args:
-        bg_pool: Background pool or sequence string.
-        ins_pool: Insert pool or sequence string.
-        start: Start position for replacement (default: 0).
-        end: End position for replacement (default: bg_length - ins_length).
-        step_size: Step size for scanning positions (default: 1).
-        mode: Iteration mode ('sequential', 'random', or 'hybrid').
-        num_hybrid_states: Number of states for hybrid mode.
-        pool_iteration_order: Sort key for the result pool (default 0).
-        op_iteration_order: Sort key for the breakpoint_scan counter (default 0).
-        spacer_str: String to insert between segments (default: '').
-        op_name: Optional name for the join operation.
-        name: Optional name for the result pool.
-    
-    Returns:
-        A pool with replaced sequences at scanning positions.
-        Output length = bg_pool.seq_length.
-    
-    Raises:
-        ValueError: If pools don't have defined seq_length or if end exceeds maximum.
+    op_name: Optional[str] = None,
+    iter_order: Real = 0,
+    op_iter_order: Real = 0,
+) -> Pool:
     """
-    from .from_seqs import from_seqs
+    Replace a segment of a background sequence with an insert sequence at multiple positions.
+
+    Parameters
+    ----------
+    bg_pool : Union[Pool, str]
+        Background sequence or pool.
+    ins_pool : Union[Pool, str]
+        Insert sequence or pool.
+    spacer_str : str, default=''
+        String to insert between sequence segments when joining (optional).
+    start : Optional[Integral], default=0
+        Start position for replacement scanning (0-indexed, inclusive).
+    end : Optional[Integral], default=None
+        End position for replacement scanning (0-indexed, inclusive; defaults to
+        bg_pool.seq_length - ins_pool.seq_length).
+    step_size : Integral, default=1
+        Step size for scanning replacement positions.
+    mode : ModeType, default='random'
+        Scanning mode: 'sequential', 'random', or 'hybrid'.
+    num_hybrid_states : Optional[Integral], default=None
+        Number of states for hybrid mode (ignored for other modes).
+    name : Optional[str], default=None
+        Name to assign to the resulting Pool.
+    op_name : Optional[str], default=None
+        Name to assign to underlying breakpoint/join operations.
+    iter_order : Real, default=0
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Real, default=0
+        Iteration order priority for the underlying operations.
+
+    Returns
+    -------
+    Pool
+        A Pool containing sequences where an equal-length segment of the background
+        is replaced by the insert, for each scan position.
+        Output sequence length = bg_pool.seq_length.
+    """
+    from .from_seq import from_seq
     from .seq_slice import seq_slice
     from .join import join
     from .breakpoint_scan import breakpoint_scan
     
     # Convert string inputs to pools if needed
-    if isinstance(bg_pool, str):
-        bg_pool = from_seqs([bg_pool], mode='fixed')
-    if isinstance(ins_pool, str):
-        ins_pool = from_seqs([ins_pool], mode='fixed')
+    bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+    ins_pool = from_seq(ins_pool) if isinstance(ins_pool, str) else ins_pool
     
     # Validate that both pools have defined seq_length
     bg_length = bg_pool.seq_length
@@ -81,26 +89,25 @@ def replacement_scan(
         start = 0
     
     # Split background at breakpoint positions
+    breakpoint_scan_op_name = op_name+'.breakpoint_scan' if op_name is not None else None
     left, right = breakpoint_scan(
-        parent=bg_pool,
+        pool=bg_pool,
         num_breakpoints=1,
         start=start,
         end=end,
         step_size=step_size,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
-        op_iteration_order=op_iteration_order,
+        op_iter_order=op_iter_order,
+        op_name=op_name,
     )
     
     # Clip the right segment by removing the first ins_length characters
     right_clipped = seq_slice(right, slice(ins_length, None, None))
     
     # Join left, insert, and right_clipped
-    result = join([left, ins_pool, right_clipped], spacer_str=spacer_str, op_name=op_name)
-    
-    result.iteration_order = pool_iteration_order
-    if name is not None:
-        result.name = name
-    
-    return result
+    result_pool = join([left, ins_pool, right_clipped], 
+                       spacer_str=spacer_str, name=name, op_name=op_name,
+                       iter_order=iter_order)
+    return result_pool
 

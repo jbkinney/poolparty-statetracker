@@ -2,7 +2,7 @@
 from itertools import combinations
 from math import comb
 from numbers import Real
-from ..types import Pool_type, Union, Sequence, ModeType, Optional, beartype
+from ..types import Union, Sequence, ModeType, Optional, Integral, Real, beartype
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -16,18 +16,18 @@ class BreakpointScanOp(Operation):
     @beartype
     def __init__(
         self,
-        parent_pool: Pool_type,
-        num_breakpoints: int = 1,
-        positions: Optional[Sequence[int]] = None,
-        start: Optional[int] = None,
-        end: Optional[int] = None,
-        step_size: int = 1,
-        min_spacing: Optional[int] = None,
-        max_spacing: Optional[int] = None,
+        parent_pool: Pool,
+        num_breakpoints: Integral = 1,
+        positions: Optional[Sequence[Integral]] = None,
+        start: Optional[Integral] = None,
+        end: Optional[Integral] = None,
+        step_size: Integral = 1,
+        min_spacing: Optional[Integral] = None,
+        max_spacing: Optional[Integral] = None,
         mode: ModeType = 'random',
-        num_hybrid_states: Optional[int] = None,
+        num_hybrid_states: Optional[Integral] = None,
         name: Optional[str] = None,
-        op_iteration_order: Real = 0,
+        iter_order: Real = 0,
     ) -> None:
         """Initialize BreakpointScanOp."""
         if num_breakpoints < 1:
@@ -61,10 +61,10 @@ class BreakpointScanOp(Operation):
             mode=mode,
             seq_length=None,  # Variable output lengths
             name=name,
-            iter_order=op_iteration_order,
+            iter_order=iter_order,
         )
     
-    def _is_valid_spacing(self, breakpoints) -> bool:
+    def _is_valid_spacing(self, breakpoints: Sequence[Integral]) -> bool:
         """Check if breakpoints satisfy spacing constraints."""
         if len(breakpoints) < 2:
             return True
@@ -181,54 +181,86 @@ class BreakpointScanOp(Operation):
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
-            'op_iteration_order': self.iter_order,
+            'iter_order': self.iter_order,
         }
 
 
 @beartype
 def breakpoint_scan(
-    parent: Union[Pool_type, str],
-    num_breakpoints: int = 1,
-    positions: Optional[Sequence[int]] = None,
-    start: Optional[int] = None,
-    end: Optional[int] = None,
-    step_size: int = 1,
-    min_spacing: Optional[int] = None,
-    max_spacing: Optional[int] = None,
+    pool: Union[Pool, str],
+    num_breakpoints: Integral,
+    positions: Optional[Sequence[Integral]] = None,
+    start: Optional[Integral] = None,
+    end: Optional[Integral] = None,
+    step_size: Integral = 1,
+    min_spacing: Optional[Integral] = None,
+    max_spacing: Optional[Integral] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[int] = None,
-    pool_iteration_order: Real = 0,
-    op_iteration_order: Real = 0,
+    num_hybrid_states: Optional[Integral] = None,
     op_name: Optional[str] = None,
     names: Optional[Sequence[str]] = None,
-    synchronize_pools: bool = True,
-) -> tuple:
-    """Split a sequence at breakpoint positions."""
-    from .from_seqs import from_seqs
-    if isinstance(parent, str):
-        parent = from_seqs([parent], mode='fixed')
-    op = BreakpointScanOp(parent, num_breakpoints=num_breakpoints, 
+    iter_order: Real = 0,
+    op_iter_order: Real = 0
+) -> tuple[Pool, ...]:
+    """
+    Split a sequence or pool at specified breakpoints, returning the segments as individual pools.
+
+    Parameters
+    ----------
+    pool : Union[Pool, str]
+        The input sequence or Pool to be split at breakpoints.
+    num_breakpoints : Integral
+        The number of breakpoints to insert, splitting the sequence into `num_breakpoints + 1` segments.
+    positions : Optional[Sequence[Integral]], default=None
+        If provided, explicit positions at which to split (overrides start/end/step_size).
+    start : Optional[Integral], default=None
+        The minimum allowed position for the first breakpoint (0-indexed, inclusive).
+        If None, defaults to 0.
+    end : Optional[Integral], default=None
+        The maximum allowed position for the last breakpoint (0-indexed, inclusive).
+        If None, defaults to the end of the sequence.
+    step_size : Integral, default=1
+        Step size between allowed positions for breakpoints (only for 'sequential' mode).
+    min_spacing : Optional[Integral], default=None
+        Minimum spacing between consecutive breakpoints (if applicable).
+    max_spacing : Optional[Integral], default=None
+        Maximum spacing between consecutive breakpoints (if applicable).
+    mode : ModeType, default='random'
+        Selection mode for breakpoints: 'sequential', 'random', or 'hybrid'.
+    num_hybrid_states : Optional[Integral], default=None
+        Number of pool states for hybrid mode (ignored in other modes).
+    op_name : Optional[str], default=None
+        Name for the underlying BreakpointScanOp operation.
+    names : Optional[Sequence[str]], default=None
+        Optional list of names for each resulting Pool (must be length `num_breakpoints + 1`).
+        Names are assigned in order to the returned Pool segments. If not provided, names default to None.
+    iter_order : Real, default=0
+        Iteration order priority for the resulting Pools.
+    op_iter_order : Real, default=0
+        Iteration order priority for the underlying BreakpointScanOp operation.
+
+    Returns
+    -------
+    tuple[Pool, ...]
+        Tuple of Pools corresponding to the segments of the original sequence, split at the computed breakpoints.
+    """
+    from .from_seq import from_seq
+    if names is None:
+        names = [None] * (num_breakpoints + 1)
+    elif len(names) != num_breakpoints + 1:
+        raise ValueError(f"({len(names)=}) must match ({num_breakpoints + 1=}).")
+    pool = from_seq(pool) if isinstance(pool, str) else pool
+    op = BreakpointScanOp(pool, num_breakpoints=num_breakpoints, 
                           positions=positions, start=start, end=end,
                           step_size=step_size, min_spacing=min_spacing,
                           max_spacing=max_spacing, mode=mode, 
                           num_hybrid_states=num_hybrid_states, name=op_name,
-                          op_iteration_order=op_iteration_order)
+                          iter_order=op_iter_order)
     shared_counter = op.build_pool_counter(op.parent_pools)
-    if synchronize_pools:
-        pools = tuple(Pool(operation=op, output_index=i, counter=shared_counter) 
-                      for i in range(op.num_outputs))
-    else:
-        pools = tuple(Pool(operation=op, output_index=i, counter=shared_counter.deepcopy()) 
-                      for i in range(op.num_outputs))
-    # Set iteration_order on all output pools
-    for pool in pools:
-        pool.iter_order = pool_iteration_order
-    if names is not None:
-        if len(names) != len(pools):
-            raise ValueError(
-                f"names length ({len(names)}) must match "
-                f"num_outputs ({len(pools)})"
-            )
-        for pool, name in zip(pools, names):
-            pool.name = name
-    return pools
+    result_pools = tuple(Pool(operation=op, 
+                       output_index=i, 
+                       counter=shared_counter, 
+                       iter_order=iter_order, 
+                       name=names[i]) 
+                  for i in range(op.num_outputs))
+    return result_pools

@@ -2,6 +2,7 @@
 from typing import TypeAlias, Literal, Union, Optional
 from collections.abc import Sequence, Callable
 from beartype import beartype
+from numbers import Real, Integral
 
 # Forward reference type aliases (resolve circular imports)
 Pool_type: TypeAlias = "poolparty.pool.Pool"
