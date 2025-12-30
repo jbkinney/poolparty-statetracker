@@ -10,6 +10,7 @@ from .replacement_scan import replacement_scan
 from .deletion_scan import deletion_scan
 from .seq_slice import seq_slice, SeqSliceOp
 from .state_slice import state_slice, StateSliceOp
+from .state_shuffle import state_shuffle, StateShuffleOp
 from .stack import stack, StackOp
 from .repeat import repeat, RepeatOp
 from .sync import sync
@@ -28,5 +29,6 @@ __all__ = [
     'stack', 'StackOp',
     'repeat', 'RepeatOp',
     'state_slice', 'StateSliceOp',
+    'state_shuffle', 'StateShuffleOp',
     'sync',
 ]

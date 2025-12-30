@@ -23,6 +23,7 @@ from .operations import (
     stack, StackOp,
     repeat, RepeatOp,
     state_slice, StateSliceOp,
+    state_shuffle, StateShuffleOp,
     sync,
 )
 
@@ -44,6 +45,7 @@ __all__ = [
     'stack', 'StackOp',
     'repeat', 'RepeatOp',
     'state_slice', 'StateSliceOp',
+    'state_shuffle', 'StateShuffleOp',
     'sync',
 ]
 
