@@ -88,6 +88,18 @@ class Party:
         else:
             self._alphabet = alphabet
     
+    def get_effective_seq_length(self, seq: str) -> int:
+        """Get effective sequence length (alphabet characters only, excluding markers)."""
+        return self._alphabet.get_seq_length(seq)
+    
+    def get_length_without_markers(self, seq: str) -> int:
+        """Get sequence length excluding only marker tags (includes all chars)."""
+        return self._alphabet.get_length_without_markers(seq)
+    
+    def get_valid_char_positions(self, seq: str) -> list[int]:
+        """Get raw string positions of valid alphabet characters, excluding marker interiors."""
+        return self._alphabet.get_valid_seq_positions(seq)
+    
     def __enter__(self) -> "Party":
         """Enter the Party context."""
         global _active_party

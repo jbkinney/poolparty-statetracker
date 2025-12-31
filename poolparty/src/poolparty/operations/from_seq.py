@@ -52,12 +52,21 @@ class FromSeqOp(Operation):
         iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize FromSeqOp."""
+        from ..party import get_active_party
+        party = get_active_party()
+        if party is None:
+            raise RuntimeError(
+                "from_seq requires an active Party context. "
+                "Use 'with pp.Party() as party:' to create one."
+            )
         self.seq = seq
+        # Use length without markers (includes all chars except marker tags)
+        seq_length = party._alphabet.get_length_without_markers(seq)
         super().__init__(
             parent_pools=[],
             num_states=1,
             mode='fixed',
-            seq_length=len(seq),
+            seq_length=seq_length,
             name=name,
             iter_order=iter_order,
         )

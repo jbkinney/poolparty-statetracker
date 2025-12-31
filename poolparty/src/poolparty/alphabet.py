@@ -185,6 +185,26 @@ class Alphabet:
         char_set = set(self.all_chars)
         return sum(1 for c in seq_no_markers if c in char_set)
     
+    def get_length_without_markers(self, seq: str) -> int:
+        """Get sequence length excluding only marker tags.
+        
+        Counts all characters except those inside marker tags (e.g., {marker_name}).
+        Unlike get_seq_length(), this includes non-alphabet characters.
+        """
+        return len(MARKER_PATTERN.sub('', seq))
+    
+    def get_positions_without_markers(self, seq: str) -> list[int]:
+        """Get raw string positions of all characters excluding marker interiors.
+        
+        Returns positions of all characters that are not inside marker tags.
+        Use for operations that work on the full sequence (like breakpoint_scan).
+        """
+        marker_spans: set[int] = set()
+        for match in MARKER_PATTERN.finditer(seq):
+            for i in range(match.start(), match.end()):
+                marker_spans.add(i)
+        return [i for i in range(len(seq)) if i not in marker_spans]
+    
     def get_valid_seq_positions(self, seq: str) -> list[int]:
         """Get the indices of valid alphabet characters in a sequence.
         

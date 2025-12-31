@@ -69,6 +69,13 @@ class FromIupacMotifOp(Operation):
         iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize FromIupacMotifOp."""
+        from ..party import get_active_party
+        party = get_active_party()
+        if party is None:
+            raise RuntimeError(
+                "from_iupac_motif requires an active Party context. "
+                "Use 'with pp.Party() as party:' to create one."
+            )
         if not iupac_seq:
             raise ValueError("iupac_seq must be a non-empty string")
         if mode == 'hybrid' and num_hybrid_states is None:
@@ -107,11 +114,13 @@ class FromIupacMotifOp(Operation):
                 num_states = 1
 
         self._total_states = total_states
+        # Use length without markers for consistency
+        seq_length = party._alphabet.get_length_without_markers(iupac_seq)
         super().__init__(
             parent_pools=[],
             num_states=num_states,
             mode=mode,
-            seq_length=len(iupac_seq),
+            seq_length=seq_length,
             name=name,
             iter_order=iter_order,
         )

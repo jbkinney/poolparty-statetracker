@@ -179,8 +179,9 @@ class MutagenizeOp(Operation):
         return num_combinations
     
     def _random_mutation(self, seq: str, rng: np.random.Generator) -> tuple:
-        """Generate random mutation positions and characters."""
-        seq_len = len(seq)
+        """Generate random mutation positions (logical) and characters."""
+        seq_len = self._get_effective_seq_length(seq)
+        valid_char_positions = self._get_valid_char_positions(seq)
         
         # Determine number of mutations
         if self.num_mutations is not None:
@@ -191,14 +192,15 @@ class MutagenizeOp(Operation):
             if num_mut == 0:
                 return tuple(), tuple(), tuple()
         
-        # Choose random positions
+        # Choose random logical positions (indices into valid_char_positions)
         positions = tuple(sorted(rng.choice(seq_len, size=num_mut, replace=False)))
         
-        # Determine wild-type and mutant characters
+        # Determine wild-type and mutant characters using raw positions
         wt_chars = []
         mut_chars = []
-        for pos in positions:
-            wt = seq[pos]
+        for logical_pos in positions:
+            raw_pos = valid_char_positions[logical_pos]
+            wt = seq[raw_pos]
             wt_chars.append(wt)
             mut_idx = rng.integers(0, self.alpha_size - 1)
             mut = self._mutation_map[(wt, mut_idx)]
@@ -211,9 +213,10 @@ class MutagenizeOp(Operation):
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with mutation positions and characters."""
+        """Return design card with mutation positions (logical) and characters."""
         seq = parent_seqs[0]
-        seq_len = len(seq)
+        seq_len = self._get_effective_seq_length(seq)
+        valid_char_positions = self._get_valid_char_positions(seq)
         
         if self.num_mutations is not None and self.num_mutations > seq_len:
             raise ValueError(f"Cannot apply {self.num_mutations} mutations to sequence of length {seq_len}")
@@ -234,8 +237,9 @@ class MutagenizeOp(Operation):
             positions, mut_indices = self._sequential_cache[state % len(self._sequential_cache)]
             wt_chars = []
             mut_chars = []
-            for pos, mut_idx in zip(positions, mut_indices):
-                wt = seq[pos]
+            for logical_pos, mut_idx in zip(positions, mut_indices):
+                raw_pos = valid_char_positions[logical_pos]
+                wt = seq[raw_pos]
                 wt_chars.append(wt)
                 mut = self._mutation_map[(wt, mut_idx)]
                 mut_chars.append(mut)
@@ -255,11 +259,14 @@ class MutagenizeOp(Operation):
     ) -> dict:
         """Apply mutations to the parent sequence based on design card."""
         seq = parent_seqs[0]
-        positions = card['positions']
+        positions = card['positions']  # Logical positions
         mut_chars = card['mut_chars']
+        valid_char_positions = self._get_valid_char_positions(seq)
+        
         seq_list = list(seq)
-        for pos, mut in zip(positions, mut_chars):
-            seq_list[pos] = mut
+        for logical_pos, mut in zip(positions, mut_chars):
+            raw_pos = valid_char_positions[logical_pos]
+            seq_list[raw_pos] = mut
         return {'seq_0': ''.join(seq_list)}
     
     def _get_copy_params(self) -> dict:

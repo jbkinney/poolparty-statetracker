@@ -75,6 +75,22 @@ class Operation:
         """Sequence length produced by this operation (None if variable)."""
         return self._seq_length
     
+    def _get_effective_seq_length(self, seq: str) -> int:
+        """Get effective sequence length (alphabet characters only, excluding markers)."""
+        return self._party._alphabet.get_seq_length(seq)
+    
+    def _get_length_without_markers(self, seq: str) -> int:
+        """Get sequence length excluding only marker tags (includes all other chars)."""
+        return self._party._alphabet.get_length_without_markers(seq)
+    
+    def _get_positions_without_markers(self, seq: str) -> list[int]:
+        """Get raw string positions of all chars excluding marker interiors."""
+        return self._party._alphabet.get_positions_without_markers(seq)
+    
+    def _get_valid_char_positions(self, seq: str) -> list[int]:
+        """Get raw string positions of valid alphabet characters, excluding marker interiors."""
+        return self._party._alphabet.get_valid_seq_positions(seq)
+    
     @property
     def id(self) -> int:
         """Unique ID for this operation."""

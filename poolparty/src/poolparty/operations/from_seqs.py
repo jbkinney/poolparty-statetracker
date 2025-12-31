@@ -67,6 +67,13 @@ class FromSeqsOp(Operation):
         iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize FromSeqsOp."""
+        from ..party import get_active_party
+        party = get_active_party()
+        if party is None:
+            raise RuntimeError(
+                "from_seqs requires an active Party context. "
+                "Use 'with pp.Party() as party:' to create one."
+            )
         if len(seqs) == 0:
             raise ValueError("seqs must not be empty")
         if mode == 'fixed' and len(seqs) != 1:
@@ -84,7 +91,9 @@ class FromSeqsOp(Operation):
                 num_states = num_hybrid_states
             case _:
                 num_states = 1
-        seq_length = len(self.seqs[0]) if all(len(s) == len(self.seqs[0]) for s in self.seqs) else None
+        # Use lengths without markers (includes all chars except marker tags)
+        lengths = [party._alphabet.get_length_without_markers(s) for s in self.seqs]
+        seq_length = lengths[0] if all(L == lengths[0] for L in lengths) else None
         super().__init__(
             parent_pools=[],
             num_states=num_states,

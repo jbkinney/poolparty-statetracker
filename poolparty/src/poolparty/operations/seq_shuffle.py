@@ -105,8 +105,11 @@ class SeqShuffleOp(Operation):
         )
     
     def _validate_region(self, seq: str) -> tuple[int, int, int]:
-        """Validate and return (start, end, region_len) for this sequence."""
-        seq_len = len(seq)
+        """Validate and return (start, end, region_len) for this sequence.
+        
+        start and end are positions in the marker-free sequence.
+        """
+        seq_len = self._get_length_without_markers(seq)
         end = self.end if self.end is not None else seq_len
         if end > seq_len:
             raise ValueError(
@@ -149,7 +152,12 @@ class SeqShuffleOp(Operation):
         parent_seqs: list[str],
         card: dict,
     ) -> dict:
-        """Apply the permutation to the target region."""
+        """Apply the permutation to the target region.
+        
+        The shuffle region is defined in the marker-free sequence. Within that
+        region, all characters are shuffled (markers don't appear in normal sequences
+        at this stage).
+        """
         seq = parent_seqs[0]
         start, end, region_len = self._validate_region(seq)
         permutation = card['permutation']
@@ -157,17 +165,29 @@ class SeqShuffleOp(Operation):
             raise ValueError(
                 f"Permutation length ({len(permutation)}) does not match region length ({region_len})"
             )
-        region = seq[start:end]
+        
         if region_len == 0:
-            shuffled_region = ''
-        else:
-            new_region = [''] * region_len
-            for i, ch in enumerate(region):
-                dest = permutation[i]
-                new_region[dest] = ch
-            shuffled_region = ''.join(new_region)
-        shuffled_seq = seq[:start] + shuffled_region + seq[end:]
-        return {'seq_0': shuffled_seq}
+            return {'seq_0': seq}
+        
+        # Get raw positions corresponding to the logical region
+        positions_without_markers = self._get_positions_without_markers(seq)
+        region_raw_positions = positions_without_markers[start:end]
+        
+        # Extract chars at those positions
+        region_chars = [seq[pos] for pos in region_raw_positions]
+        
+        # Apply permutation: permutation[i] tells us where char i should go
+        shuffled_chars = [''] * region_len
+        for i, ch in enumerate(region_chars):
+            dest = permutation[i]
+            shuffled_chars[dest] = ch
+        
+        # Build result by replacing chars at raw positions
+        seq_list = list(seq)
+        for i, pos in enumerate(region_raw_positions):
+            seq_list[pos] = shuffled_chars[i]
+        
+        return {'seq_0': ''.join(seq_list)}
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""

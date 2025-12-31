@@ -200,9 +200,9 @@ class BreakpointScanOp(Operation):
         parent_seqs: list[str],
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
-        """Return design card with breakpoint positions."""
+        """Return design card with breakpoint positions (logical)."""
         seq = parent_seqs[0]
-        seq_len = len(seq)
+        seq_len = self._get_length_without_markers(seq)
         if self.mode in ('random', 'hybrid'):
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
@@ -225,9 +225,21 @@ class BreakpointScanOp(Operation):
     ) -> dict:
         """Split sequence at breakpoints based on design card."""
         seq = parent_seqs[0]
-        seq_len = len(seq)
-        breakpoints = card['breakpoints']
-        boundaries = [0] + list(breakpoints) + [seq_len]
+        raw_len = len(seq)
+        logical_breakpoints = card['breakpoints']  # Logical positions (in marker-free seq)
+        positions_without_markers = self._get_positions_without_markers(seq)
+        seq_len = len(positions_without_markers)
+        
+        # Translate logical breakpoints to raw positions
+        # Logical position k means "split before the k-th char in marker-free sequence"
+        raw_breakpoints = []
+        for logical_pos in logical_breakpoints:
+            if logical_pos >= seq_len:
+                raw_breakpoints.append(raw_len)
+            else:
+                raw_breakpoints.append(positions_without_markers[logical_pos])
+        
+        boundaries = [0] + raw_breakpoints + [raw_len]
         segments = [seq[boundaries[i]:boundaries[i+1]] for i in range(self.num_outputs)]
         result = {}
         for i, segment in enumerate(segments):

@@ -2,11 +2,13 @@
 from itertools import combinations
 from math import comb
 from numbers import Real, Integral
+import re
 from ..types import Union, ModeType, Optional, Sequence, beartype
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
 from ..orf_utils import validate_orf_extent
+from ..alphabet import MARKER_PATTERN
 import numpy as np
 from ..codon_table import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
 
@@ -129,10 +131,12 @@ class MutagenizeOrfOp(Operation):
         self._mode = mode
         self.codon_table = party.codon_table
         
+        # Use effective seq_length (excluding markers)
         parent_seq_length = parent_pool.seq_length
         if parent_seq_length is None:
             raise ValueError("parent_pool must have a defined seq_length")
         
+        # orf_extent uses logical positions (in marker-free sequence)
         self.orf_start, self.orf_end, self.num_codons = validate_orf_extent(
             orf_extent, parent_seq_length
         )
@@ -193,8 +197,36 @@ class MutagenizeOrfOp(Operation):
         self._sequential_cache = cache
         return num_combinations * num_mut_patterns
     
+    def _strip_markers(self, seq: str) -> tuple[str, list[tuple[int, str]]]:
+        """Strip markers from sequence and record their positions.
+        
+        Returns:
+            (clean_seq, markers) where markers is a list of (position, marker_text) tuples.
+        """
+        markers = []
+        offset = 0
+        for match in MARKER_PATTERN.finditer(seq):
+            # Record position in original string
+            markers.append((match.start(), match.group()))
+        # Remove all markers
+        clean_seq = MARKER_PATTERN.sub('', seq)
+        return clean_seq, markers
+    
+    def _restore_markers(self, seq: str, markers: list[tuple[int, str]]) -> str:
+        """Restore markers to their original positions in the sequence."""
+        if not markers:
+            return seq
+        # Insert markers from end to start to preserve positions
+        result = list(seq)
+        for pos, marker_text in reversed(markers):
+            result.insert(pos, marker_text)
+        return ''.join(result)
+    
     def _extract_codons(self, seq: str) -> tuple[str, list[str], str]:
-        """Extract (upstream, codons, downstream) from sequence."""
+        """Extract (upstream, codons, downstream) from marker-free sequence.
+        
+        Uses logical positions (orf_start, orf_end) in the marker-free sequence.
+        """
         upstream = seq[:self.orf_start]
         orf_seq = seq[self.orf_start:self.orf_end]
         downstream = seq[self.orf_end:]
@@ -238,7 +270,9 @@ class MutagenizeOrfOp(Operation):
     ) -> dict:
         """Return design card with codon mutation details."""
         seq = parent_seqs[0]
-        _, codons, _ = self._extract_codons(seq)
+        # Strip markers before extracting codons
+        clean_seq, _ = self._strip_markers(seq)
+        _, codons, _ = self._extract_codons(clean_seq)
         
         if self.mode in ('random', 'hybrid'):
             if rng is None:
@@ -276,13 +310,24 @@ class MutagenizeOrfOp(Operation):
         parent_seqs: list[str],
         card: dict,
     ) -> dict:
-        """Apply mutations from design card to produce output sequence."""
+        """Apply mutations from design card to produce output sequence.
+        
+        Markers are stripped before codon processing and restored afterward.
+        """
         seq = parent_seqs[0]
-        upstream, codons, downstream = self._extract_codons(seq)
+        # Strip markers and record their positions
+        clean_seq, markers = self._strip_markers(seq)
+        
+        # Extract and mutate codons on clean sequence
+        upstream, codons, downstream = self._extract_codons(clean_seq)
         mutated_codons = codons.copy()
         for pos, mut in zip(card['codon_positions'], card['mut_codons']):
             mutated_codons[pos] = mut
-        return {'seq_0': upstream + ''.join(mutated_codons) + downstream}
+        mutated_clean_seq = upstream + ''.join(mutated_codons) + downstream
+        
+        # Restore markers at original positions
+        result_seq = self._restore_markers(mutated_clean_seq, markers)
+        return {'seq_0': result_seq}
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
