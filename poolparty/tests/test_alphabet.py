@@ -214,11 +214,11 @@ class TestAlphabetValidateSequence:
         with pytest.raises(ValueError, match="invalid characters"):
             alph.validate_sequence('ACGTX')
     
-    def test_lowercase_invalid_for_dna(self):
-        """Test that lowercase is invalid for DNA alphabet."""
+    def test_lowercase_valid_for_dna(self):
+        """Test that lowercase is valid for DNA alphabet (support_both_cases=True by default)."""
         alph = get_alphabet('dna')
-        with pytest.raises(ValueError, match="invalid characters"):
-            alph.validate_sequence('acgt')
+        alph.validate_sequence('acgt')  # Should not raise
+        alph.validate_sequence('AcGt')  # Mixed case should also be valid
     
     def test_error_message_shows_valid_alphabet(self):
         """Test that error message shows valid alphabet."""
@@ -366,3 +366,177 @@ class TestAlphabetModuleExports:
         """Test NAMED_ALPHABETS is exported."""
         from poolparty import NAMED_ALPHABETS
         assert isinstance(NAMED_ALPHABETS, dict)
+
+
+class TestSupportBothCases:
+    """Test support_both_cases functionality."""
+    
+    def test_all_chars_includes_lowercase(self):
+        """Test all_chars includes lowercase variants for DNA."""
+        alph = get_alphabet('dna')
+        assert alph.chars == ['A', 'C', 'G', 'T']
+        assert 'a' in alph.all_chars
+        assert 'c' in alph.all_chars
+        assert 'g' in alph.all_chars
+        assert 't' in alph.all_chars
+    
+    def test_all_chars_includes_both_cases(self):
+        """Test all_chars includes both uppercase and lowercase."""
+        alph = Alphabet(chars=['A', 'B', 'C'])
+        assert 'A' in alph.all_chars
+        assert 'a' in alph.all_chars
+        assert 'B' in alph.all_chars
+        assert 'b' in alph.all_chars
+        assert 'C' in alph.all_chars
+        assert 'c' in alph.all_chars
+    
+    def test_support_both_cases_default_true(self):
+        """Test support_both_cases defaults to True."""
+        alph = Alphabet(chars=['A', 'B'])
+        assert alph.support_both_cases is True
+        assert 'a' in alph.all_chars
+        assert 'b' in alph.all_chars
+    
+    def test_support_both_cases_false(self):
+        """Test support_both_cases=False disables lowercase support."""
+        alph = Alphabet(chars=['A', 'B'], support_both_cases=False)
+        assert alph.support_both_cases is False
+        assert alph.all_chars == ['A', 'B']
+        assert 'a' not in alph.all_chars
+        with pytest.raises(ValueError, match="invalid characters"):
+            alph.validate_sequence('ab')
+    
+    def test_binary_no_case_variants(self):
+        """Test binary alphabet has no case variants (non-alphabetic)."""
+        alph = get_alphabet('binary')
+        assert alph.chars == ['0', '1']
+        # Binary chars are not alphabetic, so all_chars should be same as chars
+        assert set(alph.all_chars) == {'0', '1'}
+
+
+class TestCasePreservingComplement:
+    """Test case-preserving complement mappings."""
+    
+    def test_uppercase_complement(self):
+        """Test uppercase complement returns uppercase."""
+        alph = get_alphabet('dna')
+        assert alph.get_complement('A') == 'T'
+        assert alph.get_complement('T') == 'A'
+        assert alph.get_complement('G') == 'C'
+        assert alph.get_complement('C') == 'G'
+    
+    def test_lowercase_complement(self):
+        """Test lowercase complement returns lowercase."""
+        alph = get_alphabet('dna')
+        assert alph.get_complement('a') == 't'
+        assert alph.get_complement('t') == 'a'
+        assert alph.get_complement('g') == 'c'
+        assert alph.get_complement('c') == 'g'
+    
+    def test_rna_lowercase_complement(self):
+        """Test RNA lowercase complement."""
+        alph = get_alphabet('rna')
+        assert alph.get_complement('a') == 'u'
+        assert alph.get_complement('u') == 'a'
+        assert alph.get_complement('g') == 'c'
+        assert alph.get_complement('c') == 'g'
+    
+    def test_complement_dict_has_both_cases(self):
+        """Test complement dict contains both cases."""
+        alph = get_alphabet('dna')
+        assert 'A' in alph.complement
+        assert 'a' in alph.complement
+        assert alph.complement['A'] == 'T'
+        assert alph.complement['a'] == 't'
+    
+    def test_custom_complement_case_preserved(self):
+        """Test custom complement with case preservation."""
+        alph = Alphabet(
+            chars=['X', 'Y'],
+            complement={'X': 'Y', 'Y': 'X'}
+        )
+        assert alph.get_complement('X') == 'Y'
+        assert alph.get_complement('x') == 'y'
+        assert alph.get_complement('Y') == 'X'
+        assert alph.get_complement('y') == 'x'
+
+
+class TestCasePreservingMutationMap:
+    """Test case-preserving mutation map."""
+    
+    def test_uppercase_mutations(self):
+        """Test uppercase mutations return uppercase."""
+        alph = get_alphabet('dna')
+        assert alph.get_mutations('A') == ['C', 'G', 'T']
+    
+    def test_lowercase_mutations(self):
+        """Test lowercase mutations return lowercase."""
+        alph = get_alphabet('dna')
+        assert alph.get_mutations('a') == ['c', 'g', 't']
+    
+    def test_mutation_map_has_both_cases(self):
+        """Test mutation_map contains both cases."""
+        alph = Alphabet(chars=['A', 'B', 'C'])
+        assert 'A' in alph.mutation_map
+        assert 'a' in alph.mutation_map
+        assert alph.mutation_map['A'] == ['B', 'C']
+        assert alph.mutation_map['a'] == ['b', 'c']
+    
+    def test_protein_lowercase_mutations(self):
+        """Test protein alphabet lowercase mutations."""
+        alph = get_alphabet('protein')
+        uppercase_muts = alph.get_mutations('M')
+        lowercase_muts = alph.get_mutations('m')
+        assert 'A' in uppercase_muts
+        assert 'a' in lowercase_muts
+        assert len(uppercase_muts) == len(lowercase_muts) == 19
+
+
+class TestCaseSensitiveMode:
+    """Test case-sensitive mode (support_both_cases=False)."""
+    
+    def test_mutation_map_no_lowercase(self):
+        """Test mutation_map has no lowercase with support_both_cases=False."""
+        alph = Alphabet(chars=['A', 'B', 'C'], support_both_cases=False)
+        assert 'A' in alph.mutation_map
+        assert 'a' not in alph.mutation_map
+    
+    def test_complement_no_lowercase(self):
+        """Test complement has no lowercase with support_both_cases=False."""
+        alph = Alphabet(
+            chars=['A', 'B'],
+            complement={'A': 'B', 'B': 'A'},
+            support_both_cases=False
+        )
+        assert 'A' in alph.complement
+        assert 'a' not in alph.complement
+    
+    def test_validate_rejects_lowercase(self):
+        """Test validate_sequence rejects lowercase with support_both_cases=False."""
+        alph = Alphabet(chars=['A', 'B'], support_both_cases=False)
+        alph.validate_sequence('AB')  # Should not raise
+        with pytest.raises(ValueError, match="invalid characters"):
+            alph.validate_sequence('ab')
+
+
+class TestMixedCaseSequences:
+    """Test handling of mixed case sequences."""
+    
+    def test_validate_mixed_case(self):
+        """Test validation of mixed case sequence."""
+        alph = get_alphabet('dna')
+        alph.validate_sequence('AcGt')  # Should not raise
+        alph.validate_sequence('aCgT')  # Should not raise
+    
+    def test_seq_length_mixed_case(self):
+        """Test get_seq_length counts both cases."""
+        alph = get_alphabet('dna')
+        assert alph.get_seq_length('AcGt') == 4
+        assert alph.get_seq_length('acgt') == 4
+        assert alph.get_seq_length('ACGT') == 4
+    
+    def test_valid_positions_mixed_case(self):
+        """Test get_valid_seq_positions finds both cases."""
+        alph = get_alphabet('dna')
+        assert alph.get_valid_seq_positions('AcGt') == [0, 1, 2, 3]
+        assert alph.get_valid_seq_positions('a-c-g-t') == [0, 2, 4, 6]

@@ -23,11 +23,13 @@ class Alphabet:
     """Alphabet configuration for sequence operations.
     
     Attributes:
-        chars: List of allowed characters
-        size: Number of characters in alphabet
-        mutation_map: Dict mapping each char to list of chars it can mutate to
-        complement: Dict mapping each char to its complement (or None)
+        chars: List of canonical characters (used for random generation/drawing)
+        all_chars: List of all valid characters (includes case variants if support_both_cases=True)
+        size: Number of canonical characters in alphabet
+        mutation_map: Dict mapping each char to list of chars it can mutate to (case-preserving)
+        complement: Dict mapping each char to its complement (case-preserving, or None)
         ignore_chars: Set of characters to ignore during validation
+        support_both_cases: Whether both uppercase and lowercase are supported
     """
     
     def __init__(
@@ -35,8 +37,17 @@ class Alphabet:
         chars: Sequence[str],
         complement: Optional[dict[str, str]] = None,
         ignore_chars: Sequence[str] = DEFAULT_IGNORE_CHARS,
+        support_both_cases: bool = True,
     ) -> None:
         """Initialize Alphabet with custom characters.
+        
+        Args:
+            chars: Sequence of canonical alphabet characters (typically uppercase).
+            complement: Optional dict mapping each char to its complement.
+            ignore_chars: Characters to ignore during sequence validation.
+            support_both_cases: If True, automatically expand to support both
+                uppercase and lowercase versions of alphabetic characters.
+                Complement and mutation_map will preserve case.
         
         For named alphabets ('dna', 'rna', etc.), use get_alphabet() instead.
         """
@@ -52,12 +63,45 @@ class Alphabet:
         
         self.chars: list[str] = char_list
         self.size: int = len(char_list)
+        self.support_both_cases: bool = support_both_cases
         
-        # Build mutation map: each char -> all other chars
+        # Build all_chars: canonical chars plus case variants if support_both_cases
+        if support_both_cases:
+            all_chars_set = set(char_list)
+            for c in char_list:
+                if c.isalpha():
+                    all_chars_set.add(c.lower())
+                    all_chars_set.add(c.upper())
+            self.all_chars: list[str] = char_list + [
+                c for c in sorted(all_chars_set) if c not in char_list
+            ]
+        else:
+            self.all_chars = char_list.copy()
+        
+        # Build mutation map: each char -> all other chars (case-preserving)
         self.mutation_map: dict[str, list[str]] = {
             c: [other for other in char_list if other != c]
             for c in char_list
         }
+        
+        # Add case variants to mutation_map if support_both_cases
+        if support_both_cases:
+            for c in char_list:
+                if c.isalpha():
+                    c_lower = c.lower()
+                    c_upper = c.upper()
+                    # Add lowercase variant if not already canonical
+                    if c_lower not in self.mutation_map:
+                        self.mutation_map[c_lower] = [
+                            other.lower() if other.isalpha() else other
+                            for other in char_list if other != c
+                        ]
+                    # Add uppercase variant if not already canonical
+                    if c_upper not in self.mutation_map:
+                        self.mutation_map[c_upper] = [
+                            other.upper() if other.isalpha() else other
+                            for other in char_list if other != c
+                        ]
         
         # Store complement (validate if provided)
         if complement is not None:
@@ -66,14 +110,31 @@ class Alphabet:
                     raise ValueError(f"Complement mapping missing for character '{c}'")
                 if complement[c] not in char_list:
                     raise ValueError(f"Complement '{complement[c]}' for '{c}' not in alphabet")
-        self.complement: Optional[dict[str, str]] = complement
+            # Create expanded complement with case variants if support_both_cases
+            if support_both_cases:
+                expanded_complement = dict(complement)
+                for c, comp in complement.items():
+                    if c.isalpha():
+                        c_lower = c.lower()
+                        c_upper = c.upper()
+                        comp_lower = comp.lower() if comp.isalpha() else comp
+                        comp_upper = comp.upper() if comp.isalpha() else comp
+                        if c_lower not in expanded_complement:
+                            expanded_complement[c_lower] = comp_lower
+                        if c_upper not in expanded_complement:
+                            expanded_complement[c_upper] = comp_upper
+                self.complement: Optional[dict[str, str]] = expanded_complement
+            else:
+                self.complement = dict(complement)
+        else:
+            self.complement = None
         
         # Store ignore chars as a set
         self.ignore_chars: set[str] = set(ignore_chars)
     
     def validate_sequence(self, seq: str) -> None:
         """Validate that a sequence contains only alphabet characters (plus ignore chars)."""
-        valid_chars = set(self.chars) | self.ignore_chars
+        valid_chars = set(self.all_chars) | self.ignore_chars
         invalid = set(seq) - valid_chars
         if invalid:
             raise ValueError(
@@ -101,7 +162,7 @@ class Alphabet:
         Counts only characters in the alphabet, ignoring any ignore_chars.
         Useful for determining the effective length of a gapped alignment.
         """
-        char_set = set(self.chars)
+        char_set = set(self.all_chars)
         return sum(1 for c in seq if c in char_set)
     
     def get_valid_seq_positions(self, seq: str) -> list[int]:
@@ -111,7 +172,7 @@ class Alphabet:
         skipping any ignore_chars (gaps, spaces, etc.).
         Useful for determining which positions are eligible for mutagenesis.
         """
-        char_set = set(self.chars)
+        char_set = set(self.all_chars)
         return [i for i, c in enumerate(seq) if c in char_set]
     
     def __repr__(self) -> str:
