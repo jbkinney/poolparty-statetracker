@@ -2,6 +2,7 @@
 from .from_seq import from_seq, FromSeqOp
 from .from_seqs import from_seqs, FromSeqsOp
 from .from_iupac_motif import from_iupac_motif, FromIupacMotifOp
+from .from_prob_motif import from_prob_motif, FromProbMotifOp
 from .get_kmers import get_kmers, GetKmersOp
 from .join import join, JoinOp
 from .mutagenize import mutagenize, MutagenizeOp
@@ -24,6 +25,7 @@ __all__ = [
     'from_seq', 'FromSeqOp',
     'from_seqs', 'FromSeqsOp',
     'from_iupac_motif', 'FromIupacMotifOp',
+    'from_prob_motif', 'FromProbMotifOp',
     'get_kmers', 'GetKmersOp',
     'join', 'JoinOp',
     'seq_slice', 'SeqSliceOp',
