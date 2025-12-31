@@ -266,9 +266,9 @@ class TestJoinWithOtherOperations:
     
     def test_with_get_kmers(self):
         """Test joining with k-mers."""
-        with pp.Party() as party:
+        with pp.Party(alphabet='dna') as party:
             seq = pp.from_seqs(['ACGT'])
-            barcode = pp.get_kmers(length=4, alphabet='dna', mode='random')
+            barcode = pp.get_kmers(length=4, mode='random')
             combined = join([seq, '...', barcode]).named('seq')
         
         df = combined.generate_seqs(num_seqs=10, seed=42)

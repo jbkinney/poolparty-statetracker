@@ -31,8 +31,10 @@ class TestBasicUsage:
     
     def test_get_kmers_sequential(self):
         """Test generating k-mers in sequential mode."""
-        with pp.Party() as party:
-            pool = pp.get_kmers(length=2, alphabet='AB', mode='sequential').named('kmer')
+        from poolparty.alphabet import Alphabet
+        custom_alph = Alphabet(chars=['A', 'B'])
+        with pp.Party(alphabet=custom_alph) as party:
+            pool = pp.get_kmers(length=2, mode='sequential').named('kmer')
         
         df = pool.generate_seqs(num_complete_iterations=1)
         assert len(df) == 4  # 2^2 = 4 k-mers
@@ -40,8 +42,8 @@ class TestBasicUsage:
     
     def test_get_kmers_random(self):
         """Test generating k-mers in random mode."""
-        with pp.Party() as party:
-            pool = pp.get_kmers(length=5, alphabet='dna', mode='random').named('kmer')
+        with pp.Party(alphabet='dna') as party:
+            pool = pp.get_kmers(length=5, mode='random').named('kmer')
         
         df = pool.generate_seqs(num_seqs=10, seed=42)
         assert len(df) == 10
@@ -62,9 +64,9 @@ class TestBasicUsage:
     
     def test_join_with_kmer(self):
         """Test joining a sequence with a random barcode."""
-        with pp.Party() as party:
+        with pp.Party(alphabet='dna') as party:
             seq_pool = pp.from_seqs(['ACGT'])
-            barcode = pp.get_kmers(length=4, alphabet='dna', mode='random')
+            barcode = pp.get_kmers(length=4, mode='random')
             oligo = join([seq_pool, '...', barcode]).named('oligo')
         
         df = oligo.generate_seqs(num_seqs=5, seed=42)
@@ -199,9 +201,9 @@ class TestMixedModes:
     
     def test_sequential_with_random_barcode(self):
         """Test sequential mutations with random barcodes."""
-        with pp.Party() as party:
+        with pp.Party(alphabet='dna') as party:
             mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential')
-            barcode = pp.get_kmers(length=4, alphabet='dna', mode='random')
+            barcode = pp.get_kmers(length=4, mode='random')
             oligo = join([mutants, '.', barcode]).named('oligo')
         
         df = oligo.generate_seqs(num_complete_iterations=1, seed=42)
@@ -453,10 +455,10 @@ class TestCounterManagerIntegration:
     
     def test_complex_dag_counters_registered(self):
         """Test that counters from a complex DAG are all registered."""
-        with pp.Party() as party:
+        with pp.Party(alphabet='dna') as party:
             seq = pp.from_seqs(['ACGT'], mode='sequential')
             mutants = pp.mutagenize(seq, num_mutations=1, mode='sequential')
-            barcode = pp.get_kmers(length=4, alphabet='dna', mode='random')
+            barcode = pp.get_kmers(length=4, mode='random')
             oligo = pp.join([mutants, '---', barcode]).named('oligo')
             
             # Should have multiple counters registered

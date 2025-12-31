@@ -28,8 +28,10 @@ class TestGetKmersSequentialMode:
     
     def test_sequential_all_kmers(self):
         """Test sequential mode generates all k-mers in order."""
-        with pp.Party() as party:
-            pool = get_kmers(length=2, alphabet='AB', mode='sequential').named('kmer')
+        from poolparty.alphabet import Alphabet
+        custom_alph = Alphabet(chars=['A', 'B'])
+        with pp.Party(alphabet=custom_alph) as party:
+            pool = get_kmers(length=2, mode='sequential').named('kmer')
         
         df = pool.generate_seqs(num_complete_iterations=1)
         assert len(df) == 4  # 2^2 = 4
@@ -37,8 +39,8 @@ class TestGetKmersSequentialMode:
     
     def test_sequential_dna_2mers(self):
         """Test sequential mode with DNA 2-mers."""
-        with pp.Party() as party:
-            pool = get_kmers(length=2, alphabet='dna', mode='sequential').named('kmer')
+        with pp.Party(alphabet='dna') as party:
+            pool = get_kmers(length=2, mode='sequential').named('kmer')
         
         df = pool.generate_seqs(num_complete_iterations=1)
         assert len(df) == 16  # 4^2 = 16
@@ -48,16 +50,18 @@ class TestGetKmersSequentialMode:
     
     def test_sequential_cycling(self):
         """Test that sequential mode cycles."""
-        with pp.Party() as party:
-            pool = get_kmers(length=1, alphabet='AB', mode='sequential').named('kmer')
+        from poolparty.alphabet import Alphabet
+        custom_alph = Alphabet(chars=['A', 'B'])
+        with pp.Party(alphabet=custom_alph) as party:
+            pool = get_kmers(length=1, mode='sequential').named('kmer')
         
         df = pool.generate_seqs(num_seqs=5)
         assert list(df['seq']) == ['A', 'B', 'A', 'B', 'A']
     
     def test_sequential_num_states(self):
         """Test num_states calculation."""
-        with pp.Party() as party:
-            pool = get_kmers(length=3, alphabet='dna', mode='sequential')
+        with pp.Party(alphabet='dna') as party:
+            pool = get_kmers(length=3, mode='sequential')
             assert pool.operation.num_states == 64  # 4^3
 
 
@@ -66,8 +70,8 @@ class TestGetKmersRandomMode:
     
     def test_random_sampling(self):
         """Test random sampling of k-mers."""
-        with pp.Party() as party:
-            pool = get_kmers(length=5, alphabet='dna', mode='random').named('kmer')
+        with pp.Party(alphabet='dna') as party:
+            pool = get_kmers(length=5, mode='random').named('kmer')
         
         df = pool.generate_seqs(num_seqs=100, seed=42)
         assert len(df) == 100
@@ -78,8 +82,8 @@ class TestGetKmersRandomMode:
     
     def test_random_variability(self):
         """Test that random mode produces varied outputs."""
-        with pp.Party() as party:
-            pool = get_kmers(length=4, alphabet='dna', mode='random').named('kmer')
+        with pp.Party(alphabet='dna') as party:
+            pool = get_kmers(length=4, mode='random').named('kmer')
         
         df = pool.generate_seqs(num_seqs=100, seed=42)
         unique_kmers = df['seq'].nunique()
@@ -87,8 +91,8 @@ class TestGetKmersRandomMode:
     
     def test_random_reproducible(self):
         """Test that random mode is reproducible with seed."""
-        with pp.Party() as party:
-            pool = get_kmers(length=4, alphabet='dna', mode='random').named('kmer')
+        with pp.Party(alphabet='dna') as party:
+            pool = get_kmers(length=4, mode='random').named('kmer')
         
         df1 = pool.generate_seqs(num_seqs=10, seed=42, init_state=0)
         df2 = pool.generate_seqs(num_seqs=10, seed=42, init_state=0)
@@ -103,12 +107,12 @@ class TestGetKmersRandomMode:
 
 
 class TestGetKmersAlphabets:
-    """Test GetKmers with different alphabets."""
+    """Test GetKmers with different alphabets via Party."""
     
     def test_dna_alphabet(self):
         """Test DNA alphabet."""
-        with pp.Party() as party:
-            pool = get_kmers(length=3, alphabet='dna', mode='sequential').named('kmer')
+        with pp.Party(alphabet='dna') as party:
+            pool = get_kmers(length=3, mode='sequential').named('kmer')
         
         df = pool.generate_seqs(num_seqs=10)
         for kmer in df['seq']:
@@ -116,8 +120,8 @@ class TestGetKmersAlphabets:
     
     def test_rna_alphabet(self):
         """Test RNA alphabet."""
-        with pp.Party() as party:
-            pool = get_kmers(length=3, alphabet='rna', mode='sequential').named('kmer')
+        with pp.Party(alphabet='rna') as party:
+            pool = get_kmers(length=3, mode='sequential').named('kmer')
         
         df = pool.generate_seqs(num_seqs=10)
         for kmer in df['seq']:
@@ -125,8 +129,8 @@ class TestGetKmersAlphabets:
     
     def test_protein_alphabet(self):
         """Test protein alphabet."""
-        with pp.Party() as party:
-            pool = get_kmers(length=2, alphabet='protein', mode='random').named('kmer')
+        with pp.Party(alphabet='protein') as party:
+            pool = get_kmers(length=2, mode='random').named('kmer')
         
         df = pool.generate_seqs(num_seqs=10, seed=42)
         for kmer in df['seq']:
@@ -136,25 +140,29 @@ class TestGetKmersAlphabets:
     
     def test_binary_alphabet(self):
         """Test binary alphabet."""
-        with pp.Party() as party:
-            pool = get_kmers(length=4, alphabet='binary', mode='sequential').named('kmer')
+        with pp.Party(alphabet='binary') as party:
+            pool = get_kmers(length=4, mode='sequential').named('kmer')
         
         df = pool.generate_seqs(num_complete_iterations=1)
         assert len(df) == 16  # 2^4
         assert all(all(c in '01' for c in kmer) for kmer in df['seq'])
     
-    def test_custom_alphabet_string(self):
-        """Test custom alphabet from string."""
-        with pp.Party() as party:
-            pool = get_kmers(length=2, alphabet='XY', mode='sequential').named('kmer')
+    def test_custom_alphabet(self):
+        """Test custom alphabet."""
+        from poolparty.alphabet import Alphabet
+        custom_alph = Alphabet(chars=['X', 'Y'])
+        with pp.Party(alphabet=custom_alph) as party:
+            pool = get_kmers(length=2, mode='sequential').named('kmer')
         
         df = pool.generate_seqs(num_complete_iterations=1)
         assert list(df['seq']) == ['XX', 'XY', 'YX', 'YY']
     
-    def test_custom_alphabet_list(self):
-        """Test custom alphabet from list."""
-        with pp.Party() as party:
-            pool = get_kmers(length=2, alphabet=['A', 'B', 'C'], mode='sequential').named('kmer')
+    def test_custom_alphabet_three_chars(self):
+        """Test custom alphabet with three characters."""
+        from poolparty.alphabet import Alphabet
+        custom_alph = Alphabet(chars=['A', 'B', 'C'])
+        with pp.Party(alphabet=custom_alph) as party:
+            pool = get_kmers(length=2, mode='sequential').named('kmer')
         
         df = pool.generate_seqs(num_complete_iterations=1)
         assert len(df) == 9  # 3^2
@@ -165,8 +173,8 @@ class TestGetKmersStateToKmer:
     
     def test_state_to_kmer_binary(self):
         """Test state to k-mer conversion for binary alphabet."""
-        with pp.Party() as party:
-            pool = get_kmers(length=3, alphabet='01', mode='sequential')
+        with pp.Party(alphabet='binary') as party:
+            pool = get_kmers(length=3, mode='sequential')
             op = pool.operation
             
             assert op._state_to_kmer(0) == '000'
@@ -176,8 +184,10 @@ class TestGetKmersStateToKmer:
     
     def test_state_to_kmer_ab(self):
         """Test state to k-mer conversion for AB alphabet."""
-        with pp.Party() as party:
-            pool = get_kmers(length=2, alphabet='AB', mode='sequential')
+        from poolparty.alphabet import Alphabet
+        custom_alph = Alphabet(chars=['A', 'B'])
+        with pp.Party(alphabet=custom_alph) as party:
+            pool = get_kmers(length=2, mode='sequential')
             op = pool.operation
             
             assert op._state_to_kmer(0) == 'AA'
@@ -191,8 +201,10 @@ class TestGetKmersDesignCards:
     
     def test_kmer_index_in_output(self):
         """Test kmer_index is in output."""
-        with pp.Party() as party:
-            pool = get_kmers(length=2, alphabet='AB', mode='sequential', op_name='kmers').named('mypool')
+        from poolparty.alphabet import Alphabet
+        custom_alph = Alphabet(chars=['A', 'B'])
+        with pp.Party(alphabet=custom_alph) as party:
+            pool = get_kmers(length=2, mode='sequential', op_name='kmers').named('mypool')
         
         df = pool.generate_seqs(num_seqs=4)
         assert 'mypool.op.key.kmer_index' in df.columns
@@ -210,13 +222,20 @@ class TestGetKmersErrors:
     
     def test_length_zero_error(self):
         """Test error for length=0."""
-        with pytest.raises(ValueError, match="length must be >= 1"):
-            get_kmers(length=0)
+        with pp.Party() as party:
+            with pytest.raises(ValueError, match="length must be >= 1"):
+                get_kmers(length=0)
     
     def test_length_negative_error(self):
         """Test error for negative length."""
-        with pytest.raises(ValueError, match="length must be >= 1"):
-            get_kmers(length=-1)
+        with pp.Party() as party:
+            with pytest.raises(ValueError, match="length must be >= 1"):
+                get_kmers(length=-1)
+    
+    def test_requires_party_context(self):
+        """Test error when called outside Party context."""
+        with pytest.raises(RuntimeError, match="requires an active Party context"):
+            get_kmers(length=4)
 
 
 class TestGetKmersLargeSpace:
@@ -224,9 +243,9 @@ class TestGetKmersLargeSpace:
     
     def test_large_kmer_random_mode(self):
         """Test large k-mer space works in random mode."""
-        with pp.Party() as party:
+        with pp.Party(alphabet='dna') as party:
             # 4^20 = huge number, but random mode should work
-            pool = get_kmers(length=20, alphabet='dna', mode='random').named('kmer')
+            pool = get_kmers(length=20, mode='random').named('kmer')
         
         df = pool.generate_seqs(num_seqs=10, seed=42)
         assert len(df) == 10
@@ -235,9 +254,9 @@ class TestGetKmersLargeSpace:
     
     def test_large_kmer_random_num_states_is_one(self):
         """Test that random mode with large k-mer still has num_states=1."""
-        with pp.Party() as party:
+        with pp.Party(alphabet='dna') as party:
             # Random mode always has num_states=1
-            pool = get_kmers(length=20, alphabet='dna', mode='random')
+            pool = get_kmers(length=20, mode='random')
             assert pool.operation.num_states == 1
 
 
@@ -246,8 +265,10 @@ class TestGetKmersCompute:
     
     def test_compute_sequential(self):
         """Test compute in sequential mode."""
-        with pp.Party() as party:
-            pool = get_kmers(length=2, alphabet='AB', mode='sequential')
+        from poolparty.alphabet import Alphabet
+        custom_alph = Alphabet(chars=['A', 'B'])
+        with pp.Party(alphabet=custom_alph) as party:
+            pool = get_kmers(length=2, mode='sequential')
         
         pool.operation.counter._state = 0
         card = pool.operation.compute_design_card([])
@@ -263,8 +284,8 @@ class TestGetKmersCompute:
     
     def test_compute_random(self):
         """Test compute in random mode."""
-        with pp.Party() as party:
-            pool = get_kmers(length=4, alphabet='dna', mode='random')
+        with pp.Party(alphabet='dna') as party:
+            pool = get_kmers(length=4, mode='random')
         
         rng = np.random.default_rng(42)
         card = pool.operation.compute_design_card([], rng)

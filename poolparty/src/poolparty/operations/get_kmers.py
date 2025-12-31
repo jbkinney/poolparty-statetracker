@@ -1,9 +1,9 @@
 """GetKmers operation - generate k-mers from an alphabet."""
 from numbers import Real
-from ..types import Pool_type, AlphabetType, ModeType, Optional, beartype
+from ..types import Pool_type, ModeType, Optional, beartype
 from ..operation import Operation
 from ..pool import Pool
-from ..alphabet import get_alphabet
+from ..party import get_active_party
 import numpy as np
 
 
@@ -16,20 +16,31 @@ class GetKmersOp(Operation):
     def __init__(
         self,
         length: int,
-        alphabet: AlphabetType = 'dna',
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
-        """Initialize GetKmersOp."""
+        """Initialize GetKmersOp.
+        
+        Raises:
+            RuntimeError: If called outside of a Party context.
+        """
+        # Get alphabet from active Party context
+        party = get_active_party()
+        if party is None:
+            raise RuntimeError(
+                "get_kmers requires an active Party context. "
+                "Use 'with pp.Party() as party:' to create one."
+            )
+        
         if length < 1:
             raise ValueError(f"length must be >= 1, got {length}")
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
         self.length = length
-        self.alphabet = get_alphabet(alphabet)
-        self.alpha_size = len(self.alphabet)
+        self.alphabet = party.alphabet
+        self.alpha_size = self.alphabet.size
         total_kmers = self.alpha_size ** length
         if mode == 'sequential':
             num_states = self.validate_num_states(total_kmers, mode)
@@ -51,14 +62,14 @@ class GetKmersOp(Operation):
         result = []
         remaining = state
         for _ in range(self.length):
-            result.append(self.alphabet[remaining % self.alpha_size])
+            result.append(self.alphabet.chars[remaining % self.alpha_size])
             remaining //= self.alpha_size
         return ''.join(reversed(result))
     
     def _random_kmer(self, rng: np.random.Generator) -> str:
         """Generate a random k-mer."""
         indices = rng.integers(0, self.alpha_size, size=self.length)
-        return ''.join(self.alphabet[i] for i in indices)
+        return ''.join(self.alphabet.chars[i] for i in indices)
     
     def compute_design_card(
         self,
@@ -95,7 +106,6 @@ class GetKmersOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'length': self.length,
-            'alphabet': self.alphabet,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
@@ -106,7 +116,6 @@ class GetKmersOp(Operation):
 @beartype
 def get_kmers(
     length: int,
-    alphabet: AlphabetType = 'dna',
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -114,15 +123,15 @@ def get_kmers(
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
 ) -> Pool_type:
-    """
-    Create a Pool that generates k-mers from an alphabet.
+    """Create a Pool that generates k-mers from an alphabet.
+    
+    Must be called within a Party context. The alphabet is set via the Party
+    constructor or Party.set_alphabet() method.
 
     Parameters
     ----------
     length : int
         Length of k-mers to generate.
-    alphabet : AlphabetType, default='dna'
-        Alphabet to use for generating k-mers ('dna', 'rna', 'protein', or a custom iterable/list).
     mode : ModeType, default='random'
         Sequence selection mode: 'sequential', 'random', or 'hybrid'.
     num_hybrid_states : Optional[int], default=None
@@ -140,9 +149,13 @@ def get_kmers(
     -------
     Pool_type
         A Pool whose states yield k-mers of the specified length and alphabet.
+    
+    Raises
+    ------
+    RuntimeError
+        If called outside of a Party context.
     """
-    op = GetKmersOp(length, alphabet=alphabet, mode=mode, 
-                    num_hybrid_states=num_hybrid_states, name=op_name,
-                    iter_order=op_iter_order)
+    op = GetKmersOp(length, mode=mode, num_hybrid_states=num_hybrid_states,
+                    name=op_name, iter_order=op_iter_order)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool

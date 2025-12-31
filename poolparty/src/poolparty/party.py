@@ -3,6 +3,7 @@ from typing import Union
 import statecounter as sc
 from .types import Pool_type, Operation_type, Optional, beartype
 from .codon_table import CodonTable
+from .alphabet import Alphabet, get_alphabet
 
 _active_party: Optional["Party"] = None
 
@@ -16,7 +17,11 @@ def get_active_party() -> Optional["Party"]:
 class Party:
     """Context manager for building and executing sequence libraries."""
     
-    def __init__(self, genetic_code: Union[str, dict] = 'standard') -> None:
+    def __init__(
+        self,
+        alphabet: Union[str, Alphabet] = 'dna',
+        genetic_code: Union[str, dict] = 'standard',
+    ) -> None:
         self._operations: list = []
         self._outputs: dict[str, Pool_type] = {}
         self._is_active: bool = False
@@ -28,6 +33,11 @@ class Party:
         self._ops_by_id: list[Operation_type] = []
         self._pools_by_name: dict[str, Pool_type] = {}
         self._ops_by_name: dict[str, Operation_type] = {}
+        # Build alphabet for sequence operations
+        if isinstance(alphabet, str):
+            self._alphabet: Alphabet = get_alphabet(alphabet)
+        else:
+            self._alphabet = alphabet
         # Build codon table for ORF operations
         self._codon_table: CodonTable = CodonTable(genetic_code)
     
@@ -56,6 +66,18 @@ class Party:
     def set_genetic_code(self, genetic_code: Union[str, dict]) -> None:
         """Set or change the genetic code used for ORF operations."""
         self._codon_table = CodonTable(genetic_code)
+    
+    @property
+    def alphabet(self) -> Alphabet:
+        """Access the Alphabet for sequence operations."""
+        return self._alphabet
+    
+    def set_alphabet(self, alphabet: Union[str, Alphabet]) -> None:
+        """Set or change the alphabet used for sequence operations."""
+        if isinstance(alphabet, str):
+            self._alphabet = get_alphabet(alphabet)
+        else:
+            self._alphabet = alphabet
     
     def __enter__(self) -> "Party":
         """Enter the Party context."""

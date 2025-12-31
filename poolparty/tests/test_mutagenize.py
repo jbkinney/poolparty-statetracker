@@ -441,12 +441,12 @@ class TestMutagenizeRateStatistics:
 # =============================================================================
 
 class TestMutagenizeAlphabets:
-    """Test different alphabet support."""
+    """Test different alphabet support via Party."""
     
     def test_dna_alphabet_with_num(self):
         """DNA alphabet mutations use only ACGT (num_mutations)."""
-        with pp.Party() as party:
-            pool = mutagenize('ACGT', num_mutations=1, alphabet='dna', mode='sequential').named('mutant')
+        with pp.Party(alphabet='dna') as party:
+            pool = mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
         
         df = pool.generate_seqs(num_complete_iterations=1)
         for mutant in df['seq']:
@@ -454,8 +454,8 @@ class TestMutagenizeAlphabets:
     
     def test_dna_alphabet_with_rate(self):
         """DNA alphabet mutations use only ACGT (mutation_rate)."""
-        with pp.Party() as party:
-            pool = mutagenize('ACGT', mutation_rate=0.3, alphabet='dna', mode='random').named('mutant')
+        with pp.Party(alphabet='dna') as party:
+            pool = mutagenize('ACGT', mutation_rate=0.3, mode='random').named('mutant')
         
         df = pool.generate_seqs(num_seqs=20, seed=42)
         for mutant in df['seq']:
@@ -463,8 +463,8 @@ class TestMutagenizeAlphabets:
     
     def test_rna_alphabet(self):
         """RNA alphabet mutations use only ACGU."""
-        with pp.Party() as party:
-            pool = mutagenize('ACGU', num_mutations=1, alphabet='rna', mode='sequential').named('mutant')
+        with pp.Party(alphabet='rna') as party:
+            pool = mutagenize('ACGU', num_mutations=1, mode='sequential').named('mutant')
         
         df = pool.generate_seqs(num_complete_iterations=1)
         for mutant in df['seq']:
@@ -472,8 +472,8 @@ class TestMutagenizeAlphabets:
     
     def test_rna_alphabet_with_rate(self):
         """RNA alphabet mutations use only ACGU (mutation_rate)."""
-        with pp.Party() as party:
-            pool = mutagenize('ACGU', mutation_rate=0.3, alphabet='rna', mode='random').named('mutant')
+        with pp.Party(alphabet='rna') as party:
+            pool = mutagenize('ACGU', mutation_rate=0.3, mode='random').named('mutant')
         
         df = pool.generate_seqs(num_seqs=20, seed=42)
         for mutant in df['seq']:
@@ -481,8 +481,10 @@ class TestMutagenizeAlphabets:
     
     def test_custom_alphabet_with_num(self):
         """Custom alphabet mutations use only specified characters (num_mutations)."""
-        with pp.Party() as party:
-            pool = mutagenize('AB', num_mutations=1, alphabet='AB', mode='sequential').named('mutant')
+        from poolparty.alphabet import Alphabet
+        custom_alph = Alphabet(chars=['A', 'B'])
+        with pp.Party(alphabet=custom_alph) as party:
+            pool = mutagenize('AB', num_mutations=1, mode='sequential').named('mutant')
         
         df = pool.generate_seqs(num_complete_iterations=1)
         # 2 positions * 1 mutation each = 2 mutants
@@ -491,8 +493,10 @@ class TestMutagenizeAlphabets:
     
     def test_custom_alphabet_with_rate(self):
         """Custom alphabet mutations use only specified characters (mutation_rate)."""
-        with pp.Party() as party:
-            pool = mutagenize('AB', mutation_rate=0.5, alphabet='AB', mode='random').named('mutant')
+        from poolparty.alphabet import Alphabet
+        custom_alph = Alphabet(chars=['A', 'B'])
+        with pp.Party(alphabet=custom_alph) as party:
+            pool = mutagenize('AB', mutation_rate=0.5, mode='random').named('mutant')
         
         df = pool.generate_seqs(num_seqs=20, seed=42)
         for mutant in df['seq']:
@@ -583,8 +587,8 @@ class TestMutagenizeMutationMap:
     
     def test_all_mutations_covered(self):
         """Test that all possible mutations are covered."""
-        with pp.Party() as party:
-            pool = mutagenize('A', num_mutations=1, alphabet='dna', mode='sequential').named('mutant')
+        with pp.Party(alphabet='dna') as party:
+            pool = mutagenize('A', num_mutations=1, mode='sequential').named('mutant')
         
         df = pool.generate_seqs(num_complete_iterations=1)
         # A can mutate to C, G, T
