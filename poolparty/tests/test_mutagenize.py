@@ -651,7 +651,8 @@ class TestMutagenizeWithParentPool:
     def test_with_breakpoint_output(self):
         """Test mutation scan on breakpoint output."""
         with pp.Party() as party:
-            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1)
+            # Use positions=[1, 2, 3] to avoid empty segments
+            left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1, positions=[1, 2, 3])
             mutated_right = mutagenize(right, num_mutations=1, mode='sequential').named('mutant')
         
         df = mutated_right.generate_seqs(num_seqs=5)

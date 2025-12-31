@@ -84,17 +84,17 @@ class TestReplacementScanStringInputs:
             assert len(seq) == 10
 
 
-class TestReplacementScanStartEndStep:
-    """Test start, end, and step_size parameters."""
+class TestReplacementScanSlicePositions:
+    """Test positions parameter with slice syntax."""
     
-    def test_custom_start(self):
-        """Test custom start position."""
+    def test_slice_start(self):
+        """Test slice with start offset."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = replacement_scan(bg, ins, start=3, mode='sequential').named('result')
+            # slice(3, None) on valid range [0, 7] gives positions 3, 4, 5, 6, 7
+            result = replacement_scan(bg, ins, positions=slice(3, None), mode='sequential').named('result')
         
-        # start=3, end=7 (default), step_size=1 => 5 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 5
         
@@ -103,14 +103,14 @@ class TestReplacementScanStartEndStep:
             idx = seq.index('TTT')
             assert idx >= 3
     
-    def test_custom_end(self):
-        """Test custom end position."""
+    def test_slice_stop(self):
+        """Test slice with stop limit."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = replacement_scan(bg, ins, end=4, mode='sequential').named('result')
+            # slice(None, 5) on valid range [0, 7] gives positions 0, 1, 2, 3, 4
+            result = replacement_scan(bg, ins, positions=slice(None, 5), mode='sequential').named('result')
         
-        # start=0 (default), end=4, step_size=1 => 5 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 5
         
@@ -119,25 +119,25 @@ class TestReplacementScanStartEndStep:
             idx = seq.index('TTT')
             assert idx <= 4
     
-    def test_custom_step_size(self):
-        """Test custom step_size."""
+    def test_slice_step(self):
+        """Test slice with step."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = replacement_scan(bg, ins, step_size=2, mode='sequential').named('result')
+            # slice(None, None, 2) on valid range [0, 7] gives positions 0, 2, 4, 6
+            result = replacement_scan(bg, ins, positions=slice(None, None, 2), mode='sequential').named('result')
         
-        # start=0, end=7, step_size=2 => positions 0, 2, 4, 6 = 4 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 4
     
-    def test_combined_start_end_step(self):
-        """Test combining start, end, and step_size."""
+    def test_slice_combined(self):
+        """Test slice with start, stop, and step."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = replacement_scan(bg, ins, start=2, end=6, step_size=2, mode='sequential').named('result')
+            # slice(2, 7, 2) on valid range [0, 7] gives positions 2, 4, 6
+            result = replacement_scan(bg, ins, positions=slice(2, 7, 2), mode='sequential').named('result')
         
-        # positions 2, 4, 6 = 3 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 3
 
@@ -249,15 +249,15 @@ class TestReplacementScanValidation:
             with pytest.raises(ValueError, match="ins_pool must have a defined seq_length"):
                 replacement_scan(bg, left)
     
-    def test_end_exceeds_maximum(self):
-        """Test error when end exceeds maximum allowed value."""
+    def test_position_exceeds_maximum(self):
+        """Test error when position exceeds maximum allowed value."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            # max_end = 10 - 3 = 7
+            # max_position = 10 - 3 = 7
             
-            with pytest.raises(ValueError, match="end .* exceeds maximum allowed value"):
-                replacement_scan(bg, ins, end=8)
+            with pytest.raises(ValueError, match="out of range"):
+                replacement_scan(bg, ins, positions=[8])
 
 
 class TestReplacementScanWithMultipleSeqs:
@@ -313,7 +313,7 @@ class TestReplacementScanEdgeCases:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             ins = pp.from_seqs(['TTT'])
-            result = replacement_scan(bg, ins, start=0, end=0, mode='sequential').named('result')
+            result = replacement_scan(bg, ins, positions=[0], mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1
@@ -324,8 +324,8 @@ class TestReplacementScanEdgeCases:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            # max_end = 7
-            result = replacement_scan(bg, ins, start=7, end=7, mode='sequential').named('result')
+            # max_position = 7
+            result = replacement_scan(bg, ins, positions=[7], mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1

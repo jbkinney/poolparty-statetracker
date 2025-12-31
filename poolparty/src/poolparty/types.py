@@ -18,6 +18,9 @@ AlphabetType: TypeAlias = Union[str, Sequence[str]]
 # Filter function type
 FilterFunc: TypeAlias = Callable[[str, list[str] | None], bool]
 
+# Positions type for scan operations
+PositionsType: TypeAlias = Union[Sequence[Integral], slice, None]
+
 __all__ = [
     'beartype',
     'Union',
@@ -25,10 +28,13 @@ __all__ = [
     'Sequence',
     'Callable',
     'Literal',
+    'Integral',
+    'Real',
     'Pool_type',
     'Operation_type',
     'Counter_type',
     'ModeType',
     'AlphabetType',
     'FilterFunc',
+    'PositionsType',
 ]

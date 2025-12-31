@@ -70,16 +70,16 @@ class TestDeletionScanStringInputs:
             assert len(seq) == 10
 
 
-class TestDeletionScanStartEndStep:
-    """Test start, end, and step_size parameters."""
+class TestDeletionScanSlicePositions:
+    """Test positions parameter with slice syntax."""
     
-    def test_custom_start(self):
-        """Test custom start position."""
+    def test_slice_start(self):
+        """Test slice with start offset."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
-            result = deletion_scan(bg, deletion_length=3, start=3, mode='sequential').named('result')
+            # slice(3, None) on valid range [0, 7] gives positions 3, 4, 5, 6, 7
+            result = deletion_scan(bg, deletion_length=3, positions=slice(3, None), mode='sequential').named('result')
         
-        # start=3, end=7 (default), step_size=1 => 5 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 5
         
@@ -88,13 +88,13 @@ class TestDeletionScanStartEndStep:
             idx = seq.index('---')
             assert idx >= 3
     
-    def test_custom_end(self):
-        """Test custom end position."""
+    def test_slice_stop(self):
+        """Test slice with stop limit."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
-            result = deletion_scan(bg, deletion_length=3, end=4, mode='sequential').named('result')
+            # slice(None, 5) on valid range [0, 7] gives positions 0, 1, 2, 3, 4
+            result = deletion_scan(bg, deletion_length=3, positions=slice(None, 5), mode='sequential').named('result')
         
-        # start=0 (default), end=4, step_size=1 => 5 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 5
         
@@ -103,23 +103,23 @@ class TestDeletionScanStartEndStep:
             idx = seq.index('---')
             assert idx <= 4
     
-    def test_custom_step_size(self):
-        """Test custom step_size."""
+    def test_slice_step(self):
+        """Test slice with step."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
-            result = deletion_scan(bg, deletion_length=3, step_size=2, mode='sequential').named('result')
+            # slice(None, None, 2) on valid range [0, 7] gives positions 0, 2, 4, 6
+            result = deletion_scan(bg, deletion_length=3, positions=slice(None, None, 2), mode='sequential').named('result')
         
-        # start=0, end=7, step_size=2 => positions 0, 2, 4, 6 = 4 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 4
     
-    def test_combined_start_end_step(self):
-        """Test combining start, end, and step_size."""
+    def test_slice_combined(self):
+        """Test slice with start, stop, and step."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
-            result = deletion_scan(bg, deletion_length=3, start=2, end=6, step_size=2, mode='sequential').named('result')
+            # slice(2, 7, 2) on valid range [0, 7] gives positions 2, 4, 6
+            result = deletion_scan(bg, deletion_length=3, positions=slice(2, 7, 2), mode='sequential').named('result')
         
-        # positions 2, 4, 6 = 3 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 3
 
@@ -282,14 +282,14 @@ class TestDeletionScanValidation:
             with pytest.raises(ValueError, match="deletion_length .* must be < bg_pool.seq_length"):
                 deletion_scan(bg, deletion_length=15)
     
-    def test_end_exceeds_maximum(self):
-        """Test error when end exceeds maximum allowed value."""
+    def test_position_exceeds_maximum(self):
+        """Test error when position exceeds maximum allowed value."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
-            # max_end = 10 - 3 = 7
+            # max_position = 10 - 3 = 7
             
-            with pytest.raises(ValueError, match="end .* exceeds maximum allowed value"):
-                deletion_scan(bg, deletion_length=3, end=8)
+            with pytest.raises(ValueError, match="out of range"):
+                deletion_scan(bg, deletion_length=3, positions=[8])
 
 
 class TestDeletionScanWithMultipleSeqs:
@@ -317,7 +317,7 @@ class TestDeletionScanEdgeCases:
         """Test deletion at position 0."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
-            result = deletion_scan(bg, deletion_length=3, start=0, end=0, mode='sequential').named('result')
+            result = deletion_scan(bg, deletion_length=3, positions=[0], mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1
@@ -327,8 +327,8 @@ class TestDeletionScanEdgeCases:
         """Test deletion at maximum position."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
-            # max_end = 7
-            result = deletion_scan(bg, deletion_length=3, start=7, end=7, mode='sequential').named('result')
+            # max_position = 7
+            result = deletion_scan(bg, deletion_length=3, positions=[7], mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1

@@ -58,8 +58,8 @@ class TestBreakpointScanSingleBreakpoint:
             right = right.named('right')
         
         df = left.generate_seqs(num_complete_iterations=1, aux_pools=[right])
-        # 3 possible breakpoint positions (after 1, 2, 3)
-        assert len(df) == 3
+        # 5 possible breakpoint positions (0, 1, 2, 3, 4)
+        assert len(df) == 5
     
     def test_single_breakpoint_splits(self):
         """Test that splits are correct."""
@@ -84,7 +84,7 @@ class TestBreakpointScanSingleBreakpoint:
         df = left.generate_seqs(num_complete_iterations=1, aux_pools=[right])
         
         splits = set(zip(df['seq'], df['right.seq']))
-        expected = {('A', 'BCD'), ('AB', 'CD'), ('ABC', 'D')}
+        expected = {('', 'ABCD'), ('A', 'BCD'), ('AB', 'CD'), ('ABC', 'D'), ('ABCD', '')}
         assert splits == expected
 
 
@@ -139,22 +139,22 @@ class TestBreakpointScanSequentialMode:
             left = left.named('left')
         
         df = left.generate_seqs(num_complete_iterations=1)
-        # 4 possible positions
-        assert len(df) == 4
+        # 6 possible positions (0, 1, 2, 3, 4, 5)
+        assert len(df) == 6
     
     def test_sequential_num_states(self):
         """Test num_states calculation."""
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential')
-            # C(3, 1) = 3 (3 positions between 4 chars)
-            assert left.operation.num_states == 3
+            # C(5, 1) = 5 (positions 0, 1, 2, 3, 4)
+            assert left.operation.num_states == 5
     
     def test_sequential_num_states_double(self):
         """Test num_states for double breakpoint."""
         with pp.Party() as party:
             pools = breakpoint_scan('ABCDEF', num_breakpoints=2, mode='sequential')
-            # 5 positions, choose 2: C(5,2) = 10
-            assert pools[0].operation.num_states == 10
+            # 7 positions (0-6), choose 2: C(7,2) = 21
+            assert pools[0].operation.num_states == 21
 
 
 class TestBreakpointScanRandomMode:
@@ -208,42 +208,44 @@ class TestBreakpointScanPositions:
         expected = {('AB', 'CDE'), ('ABCD', 'E')}
         assert splits == expected
     
-    def test_positions_filters_invalid(self):
-        """Test that positions outside range are filtered."""
+    def test_positions_rejects_invalid(self):
+        """Test that positions outside range raise ValueError."""
         with pp.Party() as party:
-            # Position 0 and 5 should be filtered (not valid for length 5)
-            left, right = breakpoint_scan('ABCDE', num_breakpoints=1,
-                                           positions=[0, 2, 5], mode='sequential')
-            left = left.named('left')
-        
-        df = left.generate_seqs(num_complete_iterations=1)
-        # Only position 2 is valid
-        assert len(df) == 1
+            # Position -1 is not valid (min is 0)
+            with pytest.raises(ValueError, match="out of range"):
+                breakpoint_scan('ABCDE', num_breakpoints=1,
+                               positions=[-1, 2], mode='sequential')
+            # Position 6 is not valid (max is 5 for length 5)
+            with pytest.raises(ValueError, match="out of range"):
+                breakpoint_scan('ABCDE', num_breakpoints=1,
+                               positions=[2, 6], mode='sequential')
 
 
-class TestBreakpointScanStartEndStep:
-    """Test start/end/step_size parameters."""
+class TestBreakpointScanSlicePositions:
+    """Test positions parameter with slice syntax."""
     
-    def test_start_parameter(self):
-        """Test start parameter."""
+    def test_slice_start(self):
+        """Test slice with start offset."""
         with pp.Party() as party:
+            # slice(2, None) on valid range [0, 6] gives positions 2, 3, 4, 5, 6
             left, right = breakpoint_scan('ABCDEF', num_breakpoints=1,
-                                           start=3, mode='sequential')
+                                           positions=slice(2, None), mode='sequential')
             left = left.named('left')
         
         df = left.generate_seqs(num_complete_iterations=1)
-        # Positions 3, 4, 5 (3 positions)
-        assert len(df) == 3
+        # Positions 2, 3, 4, 5, 6 (5 positions)
+        assert len(df) == 5
         
-        # All left segments should have at least 3 chars
+        # All left segments should have at least 2 chars
         for left_seq in df['seq']:
-            assert len(left_seq) >= 3
+            assert len(left_seq) >= 2
     
-    def test_end_parameter(self):
-        """Test end parameter."""
+    def test_slice_stop(self):
+        """Test slice with stop limit."""
         with pp.Party() as party:
+            # slice(None, 2) on valid range [1, 5] gives positions 1, 2
             left, right = breakpoint_scan('ABCDEF', num_breakpoints=1,
-                                           end=2, mode='sequential')
+                                           positions=slice(None, 2), mode='sequential')
             left = left.named('left')
         
         df = left.generate_seqs(num_complete_iterations=1)
@@ -254,23 +256,24 @@ class TestBreakpointScanStartEndStep:
         for left_seq in df['seq']:
             assert len(left_seq) <= 2
     
-    def test_step_size_parameter(self):
-        """Test step_size parameter."""
+    def test_slice_step(self):
+        """Test slice with step."""
         with pp.Party() as party:
+            # slice(None, None, 2) on valid range [0, 8] gives positions 0, 2, 4, 6, 8
             left, right = breakpoint_scan('ABCDEFGH', num_breakpoints=1,
-                                           step_size=2, mode='sequential')
+                                           positions=slice(None, None, 2), mode='sequential')
             left = left.named('left')
         
         df = left.generate_seqs(num_complete_iterations=1)
-        # Positions 1, 3, 5, 7 (4 positions with step 2)
-        assert len(df) == 4
+        # Positions 0, 2, 4, 6, 8 (5 positions with step 2)
+        assert len(df) == 5
     
-    def test_combined_start_end_step(self):
-        """Test combining start, end, and step_size."""
+    def test_slice_combined(self):
+        """Test slice with start, stop, and step."""
         with pp.Party() as party:
+            # slice(1, 8, 2) on valid range [1, 9] gives positions 2, 4, 6, 8
             left, right = breakpoint_scan('ABCDEFGHIJ', num_breakpoints=1,
-                                           start=2, end=8, step_size=2, 
-                                           mode='sequential')
+                                           positions=slice(1, 8, 2), mode='sequential')
             left = left.named('left')
         
         df = left.generate_seqs(num_complete_iterations=1)
@@ -324,8 +327,8 @@ class TestBreakpointScanErrors:
         """Test error when not enough valid positions."""
         with pp.Party() as party:
             with pytest.raises(ValueError, match="Not enough valid positions"):
-                # Only 3 positions available, but need 5 breakpoints
-                breakpoint_scan('ACGT', num_breakpoints=5, mode='sequential')
+                # Only 5 positions available (0-4), but need 6 breakpoints
+                breakpoint_scan('ACGT', num_breakpoints=6, mode='sequential')
 
 
 class TestBreakpointScanMultiOutput:
@@ -510,17 +513,17 @@ class TestBreakpointScanSpacing:
     
     def test_num_states_reflects_filtered_count(self):
         """Test that num_states is the filtered count, not the unfiltered count."""
-        # Positions 1-9, choose 2: C(9,2) = 36 unfiltered combinations
+        # Positions 0-10 (11 positions), choose 2: C(11,2) = 55 unfiltered combinations
         # With min_spacing=5, only pairs with spacing >= 5 are valid
-        # Valid pairs: (1,6), (1,7), (1,8), (1,9), (2,7), (2,8), (2,9),
-        #              (3,8), (3,9), (4,9) = 10 combinations
+        # Valid pairs: (0,5), (0,6), (0,7), (0,8), (0,9), (0,10), (1,6), (1,7), ...
+        # Total = 6 + 5 + 4 + 3 + 2 + 1 = 21 combinations
         with pp.Party() as party:
             pools = breakpoint_scan(
                 'ABCDEFGHIJ', num_breakpoints=2,
                 min_spacing=5, mode='sequential'
             )
-            # Count should be 10, not 36
-            assert pools[0].operation.num_states == 10
+            # Count should be 21, not 55
+            assert pools[0].operation.num_states == 21
     
     def test_spacing_error_no_valid_combinations(self):
         """Test error when no valid combinations after filtering."""
@@ -540,8 +543,8 @@ class TestBreakpointScanSpacing:
             left = left.named('left')
         
         df = left.generate_seqs(num_complete_iterations=1)
-        # Should still have all 5 possible positions
-        assert len(df) == 5
+        # Should still have all 7 possible positions (0-6)
+        assert len(df) == 7
     
     def test_spacing_with_random_mode(self):
         """Test that spacing constraints work in random mode."""

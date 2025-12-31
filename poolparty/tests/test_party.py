@@ -123,8 +123,8 @@ class TestBreakpointScan:
             right = right.named('right')
         
         df = left.generate_seqs(num_complete_iterations=1, aux_pools=[right])
-        # 3 possible breakpoint positions
-        assert len(df) == 3
+        # 5 possible breakpoint positions (0, 1, 2, 3, 4)
+        assert len(df) == 5
         
         # Check all splits are valid
         for _, row in df.iterrows():

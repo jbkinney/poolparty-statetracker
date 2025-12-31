@@ -1,8 +1,7 @@
 """BreakpointScan operation - split sequences at breakpoint positions."""
 from itertools import combinations
-from math import comb
-from numbers import Real
-from ..types import Union, Sequence, ModeType, Optional, Integral, Real, beartype
+from ..types import Union, Sequence, ModeType, Optional, Integral, Real, PositionsType, beartype
+from ..seq_utils import validate_positions
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -18,10 +17,7 @@ class BreakpointScanOp(Operation):
         self,
         parent_pool: Pool,
         num_breakpoints: Integral = 1,
-        positions: Optional[Sequence[Integral]] = None,
-        start: Optional[Integral] = None,
-        end: Optional[Integral] = None,
-        step_size: Integral = 1,
+        positions: PositionsType = None,
         min_spacing: Optional[Integral] = None,
         max_spacing: Optional[Integral] = None,
         mode: ModeType = 'random',
@@ -35,10 +31,7 @@ class BreakpointScanOp(Operation):
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
         self.num_breakpoints = num_breakpoints
-        self.positions = list(positions) if positions is not None else None
-        self.start = start
-        self.end = end
-        self.step_size = step_size
+        self._positions = positions
         self.min_spacing = min_spacing
         self.max_spacing = max_spacing
         self._mode = mode
@@ -80,12 +73,11 @@ class BreakpointScanOp(Operation):
         """Build caches for sequential enumeration."""
         if self._seq_length is None:
             return 1
-        if self.positions is not None:
-            self._valid_positions = [p for p in self.positions if 0 < p < self._seq_length]
-        else:
-            start = self.start if self.start is not None else 1
-            end = self.end if self.end is not None else self._seq_length - 1
-            self._valid_positions = list(range(start, end + 1, self.step_size))
+        self._valid_positions = validate_positions(
+            self._positions,
+            max_position=self._seq_length,
+            min_position=0,
+        )
         if len(self._valid_positions) < self.num_breakpoints:
             raise ValueError(
                 f"Not enough valid positions ({len(self._valid_positions)}) "
@@ -103,12 +95,11 @@ class BreakpointScanOp(Operation):
     def _random_breakpoints(self, seq_len: int, rng: np.random.Generator) -> tuple:
         """Generate random breakpoint positions."""
         if self._valid_positions is None:
-            if self.positions is not None:
-                self._valid_positions = [p for p in self.positions if 0 < p < seq_len]
-            else:
-                start = self.start if self.start is not None else 1
-                end = self.end if self.end is not None else seq_len - 1
-                self._valid_positions = list(range(start, end + 1, self.step_size))
+            self._valid_positions = validate_positions(
+                self._positions,
+                max_position=seq_len,
+                min_position=0,
+            )
         if len(self._valid_positions) < self.num_breakpoints:
             raise ValueError(
                 f"Not enough valid positions ({len(self._valid_positions)}) "
@@ -169,10 +160,7 @@ class BreakpointScanOp(Operation):
         return {
             'parent_pool': self.parent_pools[0],
             'num_breakpoints': self.num_breakpoints,
-            'positions': self.positions,
-            'start': self.start,
-            'end': self.end,
-            'step_size': self.step_size,
+            'positions': self._positions,
             'min_spacing': self.min_spacing,
             'max_spacing': self.max_spacing,
             'mode': self.mode,
@@ -186,10 +174,7 @@ class BreakpointScanOp(Operation):
 def breakpoint_scan(
     pool: Union[Pool, str],
     num_breakpoints: Integral,
-    positions: Optional[Sequence[Integral]] = None,
-    start: Optional[Integral] = None,
-    end: Optional[Integral] = None,
-    step_size: Integral = 1,
+    positions: PositionsType = None,
     min_spacing: Optional[Integral] = None,
     max_spacing: Optional[Integral] = None,
     mode: ModeType = 'random',
@@ -199,65 +184,33 @@ def breakpoint_scan(
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None
 ) -> tuple[Pool, ...]:
-    """
-    Split a sequence or pool at specified breakpoints, returning the segments as individual pools.
-
-    Parameters
-    ----------
-    pool : Union[Pool, str]
-        The input sequence or Pool to be split at breakpoints.
-    num_breakpoints : Integral
-        The number of breakpoints to insert, splitting the sequence into `num_breakpoints + 1` segments.
-    positions : Optional[Sequence[Integral]], default=None
-        If provided, explicit positions at which to split (overrides start/end/step_size).
-    start : Optional[Integral], default=None
-        The minimum allowed position for the first breakpoint (0-indexed, inclusive).
-        If None, defaults to 0.
-    end : Optional[Integral], default=None
-        The maximum allowed position for the last breakpoint (0-indexed, inclusive).
-        If None, defaults to the end of the sequence.
-    step_size : Integral, default=1
-        Step size between allowed positions for breakpoints (only for 'sequential' mode).
-    min_spacing : Optional[Integral], default=None
-        Minimum spacing between consecutive breakpoints (if applicable).
-    max_spacing : Optional[Integral], default=None
-        Maximum spacing between consecutive breakpoints (if applicable).
-    mode : ModeType, default='random'
-        Selection mode for breakpoints: 'sequential', 'random', or 'hybrid'.
-    num_hybrid_states : Optional[Integral], default=None
-        Number of pool states for hybrid mode (ignored in other modes).
-    op_name : Optional[str], default=None
-        Name for the underlying BreakpointScanOp operation.
-    names : Optional[Sequence[str]], default=None
-        Optional list of names for each resulting Pool (must be length `num_breakpoints + 1`).
-        Names are assigned in order to the returned Pool segments. If not provided, names default to None.
-    iter_order : Real, default=0
-        Iteration order priority for the resulting Pools.
-    op_iter_order : Real, default=0
-        Iteration order priority for the underlying BreakpointScanOp operation.
-
-    Returns
-    -------
-    tuple[Pool, ...]
-        Tuple of Pools corresponding to the segments of the original sequence, split at the computed breakpoints.
-    """
+    """Split a sequence at breakpoints, returning the segments as individual pools."""
     from .from_seq import from_seq
     if names is None:
         names = [None] * (num_breakpoints + 1)
     elif len(names) != num_breakpoints + 1:
         raise ValueError(f"({len(names)=}) must match ({num_breakpoints + 1=}).")
     pool = from_seq(pool) if isinstance(pool, str) else pool
-    op = BreakpointScanOp(pool, num_breakpoints=num_breakpoints, 
-                          positions=positions, start=start, end=end,
-                          step_size=step_size, min_spacing=min_spacing,
-                          max_spacing=max_spacing, mode=mode, 
-                          num_hybrid_states=num_hybrid_states, name=op_name,
-                          iter_order=op_iter_order)
+    op = BreakpointScanOp(
+        pool,
+        num_breakpoints=num_breakpoints,
+        positions=positions,
+        min_spacing=min_spacing,
+        max_spacing=max_spacing,
+        mode=mode,
+        num_hybrid_states=num_hybrid_states,
+        name=op_name,
+        iter_order=op_iter_order,
+    )
     shared_counter = op.build_pool_counter(op.parent_pools)
-    result_pools = tuple(Pool(operation=op, 
-                       output_index=i, 
-                       counter=shared_counter, 
-                       iter_order=iter_order, 
-                       name=names[i]) 
-                  for i in range(op.num_outputs))
+    result_pools = tuple(
+        Pool(
+            operation=op,
+            output_index=i,
+            counter=shared_counter,
+            iter_order=iter_order,
+            name=names[i],
+        )
+        for i in range(op.num_outputs)
+    )
     return result_pools

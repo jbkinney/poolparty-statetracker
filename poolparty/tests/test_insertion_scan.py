@@ -97,17 +97,17 @@ class TestInsertionScanStringInputs:
             assert len(seq) == 13
 
 
-class TestInsertionScanStartEndStep:
-    """Test start, end, and step_size parameters."""
+class TestInsertionScanSlicePositions:
+    """Test positions parameter with slice syntax."""
     
-    def test_custom_start(self):
-        """Test custom start position."""
+    def test_slice_start(self):
+        """Test slice with start offset."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = insertion_scan(bg, ins, start=3, mode='sequential').named('result')
+            # slice(3, None) on valid range [0, 10] gives positions 3, 4, ..., 10
+            result = insertion_scan(bg, ins, positions=slice(3, None), mode='sequential').named('result')
         
-        # start=3, end=10 (default), step_size=1 => 8 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 8
         
@@ -116,14 +116,14 @@ class TestInsertionScanStartEndStep:
             idx = seq.index('TTT')
             assert idx >= 3
     
-    def test_custom_end(self):
-        """Test custom end position."""
+    def test_slice_stop(self):
+        """Test slice with stop limit."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = insertion_scan(bg, ins, end=4, mode='sequential').named('result')
+            # slice(None, 5) on valid range [0, 10] gives positions 0, 1, 2, 3, 4
+            result = insertion_scan(bg, ins, positions=slice(None, 5), mode='sequential').named('result')
         
-        # start=0 (default), end=4, step_size=1 => 5 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 5
         
@@ -132,25 +132,25 @@ class TestInsertionScanStartEndStep:
             idx = seq.index('TTT')
             assert idx <= 4
     
-    def test_custom_step_size(self):
-        """Test custom step_size."""
+    def test_slice_step(self):
+        """Test slice with step."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = insertion_scan(bg, ins, step_size=2, mode='sequential').named('result')
+            # slice(None, None, 2) on valid range [0, 10] gives positions 0, 2, 4, 6, 8, 10
+            result = insertion_scan(bg, ins, positions=slice(None, None, 2), mode='sequential').named('result')
         
-        # start=0, end=10, step_size=2 => positions 0, 2, 4, 6, 8, 10 = 6 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 6
     
-    def test_combined_start_end_step(self):
-        """Test combining start, end, and step_size."""
+    def test_slice_combined(self):
+        """Test slice with start, stop, and step."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = insertion_scan(bg, ins, start=2, end=8, step_size=2, mode='sequential').named('result')
+            # slice(2, 9, 2) on valid range [0, 10] gives positions 2, 4, 6, 8
+            result = insertion_scan(bg, ins, positions=slice(2, 9, 2), mode='sequential').named('result')
         
-        # positions 2, 4, 6, 8 = 4 positions
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 4
 
@@ -262,15 +262,15 @@ class TestInsertionScanValidation:
             with pytest.raises(ValueError, match="ins_pool must have a defined seq_length"):
                 insertion_scan(bg, left)
     
-    def test_end_exceeds_maximum(self):
-        """Test error when end exceeds maximum allowed value."""
+    def test_position_exceeds_maximum(self):
+        """Test error when position exceeds maximum allowed value."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            # max_end = 10 (can insert at any position including after last char)
+            # max_position = 10 (can insert at any position including after last char)
             
-            with pytest.raises(ValueError, match="end .* exceeds maximum allowed value"):
-                insertion_scan(bg, ins, end=11)
+            with pytest.raises(ValueError, match="out of range"):
+                insertion_scan(bg, ins, positions=[11])
 
 
 class TestInsertionScanWithMultipleSeqs:
@@ -326,7 +326,7 @@ class TestInsertionScanEdgeCases:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             ins = pp.from_seqs(['TTT'])
-            result = insertion_scan(bg, ins, start=0, end=0, mode='sequential').named('result')
+            result = insertion_scan(bg, ins, positions=[0], mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1
@@ -337,8 +337,8 @@ class TestInsertionScanEdgeCases:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            # max_end = 10
-            result = insertion_scan(bg, ins, start=10, end=10, mode='sequential').named('result')
+            # max_position = 10
+            result = insertion_scan(bg, ins, positions=[10], mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1
@@ -349,7 +349,7 @@ class TestInsertionScanEdgeCases:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
-            result = insertion_scan(bg, ins, start=5, end=5, mode='sequential').named('result')
+            result = insertion_scan(bg, ins, positions=[5], mode='sequential').named('result')
         
         df = result.generate_seqs(num_complete_iterations=1)
         assert len(df) == 1
@@ -382,8 +382,8 @@ class TestInsertionVsReplacement:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
             
-            insert_result = insertion_scan(bg, ins, start=5, end=5).named('insert')
-            replace_result = pp.replacement_scan(bg, ins, start=5, end=5).named('replace')
+            insert_result = insertion_scan(bg, ins, positions=[5]).named('insert')
+            replace_result = pp.replacement_scan(bg, ins, positions=[5]).named('replace')
         
         insert_df = insert_result.generate_seqs(num_seqs=1)
         replace_df = replace_result.generate_seqs(num_seqs=1)
