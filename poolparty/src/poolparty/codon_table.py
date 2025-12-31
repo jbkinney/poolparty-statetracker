@@ -1,55 +1,10 @@
-"""Codon table utilities for ORF-aware operations.
-
-Provides codon table management including:
-- Standard genetic code with human codon usage ordering
-- Custom genetic code support
-- Pre-computed mutation lookup tables for efficient codon mutations
-"""
+"""Codon table utilities for ORF-aware operations."""
 from typing import Union
-import copy
-
-
-# Human codon usage table - codons sorted by frequency (high → low)
-# Source: Kazusa Codon Usage Database - Homo sapiens
-# https://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?species=9606
-#
-# This ordering is important for mutation types like 'missense_only_first'
-# and 'nonsynonymous_first' which select the first (most frequent) codon.
-STANDARD_GENETIC_CODE: dict[str, list[str]] = {
-    "F": ["TTC", "TTT"],
-    "L": ["CTG", "CTC", "CTT", "TTG", "TTA", "CTA"],
-    "I": ["ATC", "ATT", "ATA"],
-    "M": ["ATG"],
-    "V": ["GTG", "GTC", "GTT", "GTA"],
-    "S": ["AGC", "TCC", "TCT", "TCA", "AGT", "TCG"],
-    "P": ["CCC", "CCT", "CCA", "CCG"],
-    "T": ["ACC", "ACA", "ACT", "ACG"],
-    "A": ["GCC", "GCT", "GCA", "GCG"],
-    "Y": ["TAC", "TAT"],
-    "H": ["CAC", "CAT"],
-    "Q": ["CAG", "CAA"],
-    "N": ["AAC", "AAT"],
-    "K": ["AAG", "AAA"],
-    "D": ["GAC", "GAT"],
-    "E": ["GAG", "GAA"],
-    "C": ["TGC", "TGT"],
-    "W": ["TGG"],
-    "R": ["AGA", "AGG", "CGG", "CGC", "CGA", "CGT"],
-    "G": ["GGC", "GGA", "GGG", "GGT"],
-    "*": ["TGA", "TAA", "TAG"],
-}
+from .orf import STANDARD_GENETIC_CODE
 
 
 class CodonTable:
     """Codon table with pre-computed mutation lookup tables.
-    
-    Provides efficient access to:
-    - Codon-to-amino acid mappings
-    - Amino acid-to-codon mappings
-    - Synonymous codon lists
-    - Pre-computed mutation alternatives for each mutation type
-    
-    Uses class-level caching for standard genetic code (shared across instances).
     
     Attributes:
         aa_to_codons: Dict mapping amino acid -> list of codons
@@ -60,44 +15,16 @@ class CodonTable:
         mutation_lookup: Dict mapping mutation_type -> codon -> list of alternative codons
     """
     
-    # Class-level cache for standard genetic code
-    _STANDARD_CACHE: dict | None = None
-    
-    def __init__(self, codon_table: Union[str, dict] = 'standard'):
-        """Initialize CodonTable.
-        
-        Args:
-            codon_table: Either 'standard' to use the standard genetic code,
-                or a custom dict mapping amino acid -> list of codons.
-        
-        Raises:
-            ValueError: If codon_table is invalid.
-        """
-        if codon_table == 'standard':
-            self._use_cached_standard()
-        elif isinstance(codon_table, dict):
-            self._build_from_dict(codon_table)
+    def __init__(self, genetic_code: Union[str, dict] = 'standard'):
+        # Set the genetic code
+        if genetic_code == 'standard':
+            aa_to_codons = STANDARD_GENETIC_CODE
+        elif isinstance(genetic_code, dict):
+            aa_to_codons = genetic_code
         else:
-            raise ValueError(
-                f"codon_table must be 'standard' or a dict, got {type(codon_table)}"
-            )
-    
-    def _use_cached_standard(self) -> None:
-        """Use class-level cached standard genetic code tables."""
-        if CodonTable._STANDARD_CACHE is None:
-            CodonTable._STANDARD_CACHE = self._build_tables(STANDARD_GENETIC_CODE)
+            raise ValueError(f"genetic_code must be 'standard' or a dict, got {type(genetic_code)}")
         
-        cached = CodonTable._STANDARD_CACHE
-        # Copy so instances can't mutate the shared cache
-        self.aa_to_codons = {aa: codons[:] for aa, codons in cached['aa_to_codons'].items()}
-        self.codon_to_aa = cached['codon_to_aa'].copy()
-        self.synonymous = {codon: syns[:] for codon, syns in cached['synonymous'].items()}
-        self.stop_codons = cached['stop_codons'][:]
-        self.all_codons = cached['all_codons'][:]
-        self.mutation_lookup = copy.deepcopy(cached['mutation_lookup'])
-    
-    def _build_from_dict(self, aa_to_codons: dict) -> None:
-        """Build tables from a custom genetic code dict."""
+        # Build the lookup tables
         tables = self._build_tables(aa_to_codons)
         self.aa_to_codons = tables['aa_to_codons']
         self.codon_to_aa = tables['codon_to_aa']
@@ -129,10 +56,11 @@ class CodonTable:
             for codon in codon_list:
                 synonymous[codon] = [c for c in codon_list if c != codon]
         
+        # Get the stop codons and all codons
         stop_codons = aa_to_codons.get("*", [])
         all_codons = list(codon_to_aa.keys())
         
-        # Build mutation lookup tables
+        # Build the mutation lookup table
         mutation_lookup = CodonTable._build_mutation_lookup(
             aa_to_codons, codon_to_aa, synonymous, stop_codons, all_codons
         )
@@ -230,84 +158,27 @@ class CodonTable:
         return lookup
     
     def get_mutations(self, codon: str, mutation_type: str) -> list[str]:
-        """Get available mutations for a codon.
-        
-        Args:
-            codon: The codon to mutate (uppercase)
-            mutation_type: Type of mutation
-        
-        Returns:
-            List of alternative codons
-        
-        Raises:
-            ValueError: If mutation_type is invalid
-            KeyError: If codon is not in the codon table
-        """
+        """Get available mutations for a codon."""
         if mutation_type not in self.mutation_lookup:
             valid_types = list(self.mutation_lookup.keys())
-            raise ValueError(
-                f"mutation_type must be one of {valid_types}, got '{mutation_type}'"
-            )
+            raise ValueError(f"mutation_type must be one of {valid_types}, got '{mutation_type}'")
         return self.mutation_lookup[mutation_type][codon.upper()]
     
     def num_mutations(self, codon: str, mutation_type: str) -> int:
-        """Get number of available mutations for a codon.
-        
-        Args:
-            codon: The codon to mutate (uppercase)
-            mutation_type: Type of mutation
-        
-        Returns:
-            Number of alternative codons available
-        """
+        """Get number of available mutations for a codon."""
         return len(self.get_mutations(codon, mutation_type))
     
     def is_uniform(self, mutation_type: str) -> bool:
-        """Check if a mutation type has uniform alternatives across all codons.
-        
-        Uniform means every codon has the same number of mutation alternatives.
-        This is required for sequential mode enumeration.
-        
-        Args:
-            mutation_type: Type of mutation to check
-        
-        Returns:
-            True if uniform, False otherwise
-        """
+        """Check if a mutation type has uniform alternatives across all codons."""
         counts = [
             len(alts) for alts in self.mutation_lookup[mutation_type].values()
         ]
         return len(set(counts)) == 1
     
     def uniform_num_mutations(self, mutation_type: str) -> int | None:
-        """Get the uniform number of mutations for a mutation type.
-        
-        Args:
-            mutation_type: Type of mutation
-        
-        Returns:
-            Number of alternatives if uniform, None if non-uniform
-        """
+        """Get the uniform number of mutations for a mutation type."""
         if not self.is_uniform(mutation_type):
             return None
         # All counts are the same, return the first
         first_codon = next(iter(self.mutation_lookup[mutation_type]))
         return len(self.mutation_lookup[mutation_type][first_codon])
-
-
-# Pre-instantiated standard codon table for convenience
-STANDARD_CODON_TABLE = CodonTable('standard')
-
-
-def get_codon_table(codon_table: Union[str, dict] = 'standard') -> CodonTable:
-    """Get a CodonTable instance.
-    
-    Args:
-        codon_table: Either 'standard' or a custom dict mapping AA -> codons
-    
-    Returns:
-        CodonTable instance
-    """
-    if codon_table == 'standard':
-        return STANDARD_CODON_TABLE
-    return CodonTable(codon_table)

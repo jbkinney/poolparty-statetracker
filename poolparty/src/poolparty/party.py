@@ -1,6 +1,8 @@
 """Party class - context manager for building and executing sequence libraries."""
+from typing import Union
 import statecounter as sc
 from .types import Pool_type, Operation_type, Optional, beartype
+from .codon_table import CodonTable
 
 _active_party: Optional["Party"] = None
 
@@ -14,8 +16,7 @@ def get_active_party() -> Optional["Party"]:
 class Party:
     """Context manager for building and executing sequence libraries."""
     
-    def __init__(self) -> None:
-        """Initialize a new Party."""
+    def __init__(self, genetic_code: Union[str, dict] = 'standard') -> None:
         self._operations: list = []
         self._outputs: dict[str, Pool_type] = {}
         self._is_active: bool = False
@@ -27,6 +28,8 @@ class Party:
         self._ops_by_id: list[Operation_type] = []
         self._pools_by_name: dict[str, Pool_type] = {}
         self._ops_by_name: dict[str, Operation_type] = {}
+        # Build codon table for ORF operations
+        self._codon_table: CodonTable = CodonTable(genetic_code)
     
     def _get_next_pool_id(self) -> int:
         """Get the next unique pool ID."""
@@ -44,6 +47,15 @@ class Party:
     def counter_manager(self) -> sc.Manager:
         """Access the statecounter Manager for debugging counter iteration."""
         return self._counter_manager
+    
+    @property
+    def codon_table(self) -> CodonTable:
+        """Access the CodonTable for ORF operations."""
+        return self._codon_table
+    
+    def set_genetic_code(self, genetic_code: Union[str, dict]) -> None:
+        """Set or change the genetic code used for ORF operations."""
+        self._codon_table = CodonTable(genetic_code)
     
     def __enter__(self) -> "Party":
         """Enter the Party context."""
@@ -63,36 +75,14 @@ class Party:
         self._is_active = False
     
     def _validate_pool_name(self, name: str, pool: Optional[Pool_type] = None) -> str:
-        """Validate that a pool name is unique.
-        
-        Args:
-            name: The proposed name.
-            pool: The pool being renamed (excluded from uniqueness check).
-        
-        Returns:
-            The validated name.
-        
-        Raises:
-            ValueError: If the name is already used by another pool.
-        """
+        """Validate that a pool name is unique."""
         existing = self._pools_by_name.get(name)
         if existing is not None and existing is not pool:
             raise ValueError(f"Pool name '{name}' already exists")
         return name
     
     def _validate_op_name(self, name: str, op: Optional[Operation_type] = None) -> str:
-        """Validate that an operation name is unique.
-        
-        Args:
-            name: The proposed name.
-            op: The operation being renamed (excluded from uniqueness check).
-        
-        Returns:
-            The validated name.
-        
-        Raises:
-            ValueError: If the name is already used by another operation.
-        """
+        """Validate that an operation name is unique."""
         existing = self._ops_by_name.get(name)
         if existing is not None and existing is not op:
             raise ValueError(f"Operation name '{name}' already exists")
@@ -123,59 +113,19 @@ class Party:
         self._ops_by_name[new_name] = op
     
     def get_pool_by_id(self, id_: int) -> Pool_type:
-        """Get a pool by its ID.
-        
-        Args:
-            id_: The pool's unique ID.
-        
-        Returns:
-            The pool with the given ID.
-        
-        Raises:
-            IndexError: If no pool exists with the given ID.
-        """
+        """Get a pool by its ID."""
         return self._pools_by_id[id_]
     
     def get_pool_by_name(self, name: str) -> Pool_type:
-        """Get a pool by its name.
-        
-        Args:
-            name: The pool's name.
-        
-        Returns:
-            The pool with the given name.
-        
-        Raises:
-            KeyError: If no pool exists with the given name.
-        """
+        """Get a pool by its name."""
         return self._pools_by_name[name]
     
     def get_op_by_id(self, id_: int) -> Operation_type:
-        """Get an operation by its ID.
-        
-        Args:
-            id_: The operation's unique ID.
-        
-        Returns:
-            The operation with the given ID.
-        
-        Raises:
-            IndexError: If no operation exists with the given ID.
-        """
+        """Get an operation by its ID."""
         return self._ops_by_id[id_]
     
     def get_op_by_name(self, name: str) -> Operation_type:
-        """Get an operation by its name.
-        
-        Args:
-            name: The operation's name.
-        
-        Returns:
-            The operation with the given name.
-        
-        Raises:
-            KeyError: If no operation exists with the given name.
-        """
+        """Get an operation by its name."""
         return self._ops_by_name[name]
     
     def output(self, pool: Pool_type, name: Optional[str] = None) -> None:

@@ -5,53 +5,15 @@ from numbers import Real, Integral
 from ..types import Union, ModeType, Optional, Sequence, beartype
 from ..operation import Operation
 from ..pool import Pool
-from ..codon_tables import CodonTable, get_codon_table
+from ..party import get_active_party
+from ..codon_table import CodonTable
 import numpy as np
-
-
-# Mutation types that are uniform for valid ORF sequences (no internal stop codons)
-# Maps mutation_type -> number of alternatives per codon
-# Note: missense_only_first and nonsense are uniform for non-stop codons only
-UNIFORM_MUTATION_TYPES = {
-    'any_codon': 63,           # All 64 - 1 (self)
-    'nonsynonymous_first': 20, # 21 AAs - 1 (current)
-    'missense_only_first': 19, # 20 non-stop AAs - 1 (current)
-    'nonsense': 3,             # 3 stop codons
-}
-
-# All valid mutation types
-VALID_MUTATION_TYPES = {
-    'any_codon',
-    'nonsynonymous_first',
-    'nonsynonymous_random',
-    'missense_only_first',
-    'missense_only_random',
-    'synonymous',
-    'nonsense',
-}
+from ..orf import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
 
 
 @beartype
 class MutagenizeOrfOp(Operation):
-    """Apply codon-level mutations to an ORF sequence.
-    
-    Supports two mutation modes:
-    - num_mutations: Apply exactly this many codon mutations to each sequence
-    - mutation_rate: Apply a random number of mutations based on a binomial distribution
-    
-    Exactly one of num_mutations or mutation_rate must be provided.
-    Sequential mode is only available when num_mutations is specified and 
-    mutation_type is uniform (any_codon, nonsynonymous_first, missense_only_first, nonsense).
-    
-    Mutation types:
-    - any_codon: Any of the 63 other codons (uniform)
-    - nonsynonymous_first: Different AA/stop, first codon (uniform)
-    - nonsynonymous_random: Different AA/stop, random codon (non-uniform)
-    - missense_only_first: Different AA, first codon, NO stop (uniform)
-    - missense_only_random: Different AA, random codon, NO stop (non-uniform)
-    - synonymous: Synonymous codons only (non-uniform)
-    - nonsense: Stop codons only (uniform)
-    """
+    """Apply codon-level mutations to an ORF sequence."""
     factory_name = "mutagenize_orf"
     design_card_keys = ['codon_positions', 'wt_codons', 'mut_codons', 'wt_aas', 'mut_aas']
     
@@ -61,7 +23,6 @@ class MutagenizeOrfOp(Operation):
         num_mutations: Optional[Integral] = None,
         mutation_rate: Optional[Real] = None,
         mutation_type: str = 'missense_only_first',
-        codon_table: Union[str, dict] = 'standard',
         orf_start: Integral = 0,
         orf_end: Optional[Integral] = None,
         codon_positions: Optional[Sequence[Integral]] = None,
@@ -80,7 +41,6 @@ class MutagenizeOrfOp(Operation):
             num_mutations: Fixed number of codon mutations to apply (mutually exclusive with mutation_rate).
             mutation_rate: Probability of mutation at each codon position (mutually exclusive with num_mutations).
             mutation_type: Type of codon mutation to apply.
-            codon_table: Genetic code specification ('standard' or custom dict).
             orf_start: Start index of ORF within sequence (0-based, inclusive).
             orf_end: End index of ORF within sequence (0-based, exclusive). Default: len(seq).
             codon_positions: Explicit codon indices eligible for mutation (overrides start/end/step_size).
@@ -91,7 +51,17 @@ class MutagenizeOrfOp(Operation):
             num_hybrid_states: Required when mode='hybrid'.
             name: Optional name for the operation.
             iter_order: Optional iteration order.
+        
+        Raises:
+            RuntimeError: If called outside of a Party context.
         """
+        # Get codon table from active Party context
+        party = get_active_party()
+        if party is None:
+            raise RuntimeError(
+                "mutagenize_orf requires an active Party context. "
+                "Use 'with pp.Party() as party:' to create one."
+            )
         # Validate mutually exclusive parameters
         if num_mutations is None and mutation_rate is None:
             raise ValueError("Either num_mutations or mutation_rate must be provided")
@@ -131,8 +101,8 @@ class MutagenizeOrfOp(Operation):
         self.mutation_type = mutation_type
         self._mode = mode
         
-        # Get codon table
-        self.codon_table = get_codon_table(codon_table)
+        # Get codon table from Party context
+        self.codon_table = party.codon_table
         
         # Store ORF boundary parameters
         self.orf_start = int(orf_start)
@@ -402,7 +372,6 @@ class MutagenizeOrfOp(Operation):
             'num_mutations': self.num_mutations,
             'mutation_rate': self.mutation_rate,
             'mutation_type': self.mutation_type,
-            'codon_table': 'standard',  # Always use standard for copies
             'orf_start': self.orf_start,
             'orf_end': self.orf_end,
             'codon_positions': self.eligible_positions if hasattr(self, 'eligible_positions') else None,
@@ -419,7 +388,6 @@ def mutagenize_orf(
     num_mutations: Optional[Integral] = None,
     mutation_rate: Optional[Real] = None,
     mutation_type: str = 'missense_only_first',
-    codon_table: Union[str, dict] = 'standard',
     orf_start: Integral = 0,
     orf_end: Optional[Integral] = None,
     codon_positions: Optional[Sequence[Integral]] = None,
@@ -434,6 +402,9 @@ def mutagenize_orf(
     op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """Create a Pool that applies codon-level mutations to an ORF sequence.
+    
+    Must be called within a Party context. The genetic code is set via the Party
+    constructor or Party.set_genetic_code() method.
     
     Supports two mutation modes (exactly one must be specified):
     - num_mutations: Apply exactly this many codon mutations to each sequence.
@@ -453,7 +424,6 @@ def mutagenize_orf(
             - 'missense_only_random': Different AA, random codon, NO stop (non-uniform)
             - 'synonymous': Synonymous codons only (non-uniform)
             - 'nonsense': Stop codons only (uniform)
-        codon_table: Genetic code ('standard' or custom dict mapping AA -> codons).
         orf_start: Start index of ORF within sequence (0-based, inclusive). Default: 0.
         orf_end: End index of ORF within sequence (0-based, exclusive). Default: len(seq).
         codon_positions: Explicit list of codon indices eligible for mutation (overrides start/end/step_size).
@@ -470,18 +440,25 @@ def mutagenize_orf(
     Returns:
         A Pool that generates codon-mutated sequences.
     
+    Raises:
+        RuntimeError: If called outside of a Party context.
+    
     Examples:
         # Apply exactly 2 missense mutations
-        >>> mutants = mutagenize_orf('ATGAAATTT', num_mutations=2)
+        >>> with pp.Party() as party:
+        ...     mutants = mutagenize_orf('ATGAAATTT', num_mutations=2)
         
         # Apply mutations with 10% rate per codon
-        >>> mutants = mutagenize_orf('ATGAAATTT', mutation_rate=0.1)
+        >>> with pp.Party() as party:
+        ...     mutants = mutagenize_orf('ATGAAATTT', mutation_rate=0.1)
         
         # Enumerate all single nonsense mutations
-        >>> mutants = mutagenize_orf('ATGAAATTT', num_mutations=1, mutation_type='nonsense', mode='sequential')
+        >>> with pp.Party() as party:
+        ...     mutants = mutagenize_orf('ATGAAATTT', num_mutations=1, mutation_type='nonsense', mode='sequential')
         
         # Mutate only codons 1 and 2 (0-indexed)
-        >>> mutants = mutagenize_orf('ATGAAATTTTTT', num_mutations=1, codon_positions=[1, 2])
+        >>> with pp.Party() as party:
+        ...     mutants = mutagenize_orf('ATGAAATTTTTT', num_mutations=1, codon_positions=[1, 2])
     """
     from .from_seq import from_seq
     pool = from_seq(pool) if isinstance(pool, str) else pool
@@ -490,7 +467,6 @@ def mutagenize_orf(
         num_mutations=num_mutations,
         mutation_rate=mutation_rate,
         mutation_type=mutation_type,
-        codon_table=codon_table,
         orf_start=orf_start,
         orf_end=orf_end,
         codon_positions=codon_positions,
