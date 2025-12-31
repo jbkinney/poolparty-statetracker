@@ -20,47 +20,36 @@ def mutagenize(
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
 ) -> Pool:
-    """Create a Pool that applies mutations to a sequence.
-    
-    Must be called within a Party context. The alphabet is set via the Party
-    constructor or Party.set_alphabet() method.
-    
-    Supports two mutation modes (exactly one must be specified):
-    - num_mutations: Apply exactly this many mutations to each sequence.
-      Supports 'random', 'sequential', and 'hybrid' modes.
-    - mutation_rate: Apply a random number of mutations based on a binomial distribution.
-      Only supports 'random' and 'hybrid' modes.
-    
-    Args:
-        pool: Parent pool or sequence string to mutate.
-        num_mutations: Fixed number of mutations to apply (mutually exclusive with mutation_rate).
-        mutation_rate: Probability of mutation at each position (mutually exclusive with num_mutations).
-        mode: 'random', 'sequential', or 'hybrid'. Sequential only available with num_mutations.
-        num_hybrid_states: Required when mode='hybrid'.
-        name: Optional name for the output pool.
-        op_name: Optional name for the operation.
-        iter_order: Optional iteration order for the pool.
-        op_iter_order: Optional iteration order for the operation.
-    
-    Returns:
-        A Pool that generates mutated sequences.
-    
-    Raises:
-        RuntimeError: If called outside of a Party context.
-    
-    Examples:
-        # Apply exactly 2 mutations
-        >>> with pp.Party() as party:
-        ...     mutants = mutagenize('ACGTACGT', num_mutations=2)
-        
-        # Apply mutations with 10% rate per position
-        >>> with pp.Party() as party:
-        ...     mutants = mutagenize('ACGTACGT', mutation_rate=0.1)
-        
-        # Enumerate all single mutants
-        >>> with pp.Party() as party:
-        ...     mutants = mutagenize('ACGT', num_mutations=1, mode='sequential')
     """
+    Create a Pool that applies mutations to a sequence.
+
+    Parameters
+    ----------
+    pool : Union[Pool, str]
+        Parent pool or sequence string to mutate.
+    num_mutations : Optional[Integral], default=None
+        Fixed number of mutations to apply (mutually exclusive with mutation_rate).
+    mutation_rate : Optional[Real], default=None
+        Probability of mutation at each position (mutually exclusive with num_mutations).
+    mode : ModeType, default='random'
+        Selection mode: 'random', 'sequential', or 'hybrid'. Sequential only available with num_mutations.
+    num_hybrid_states : Optional[int], default=None
+        Required when mode='hybrid'.
+    name : Optional[str], default=None
+        Name for the resulting Pool.
+    op_name : Optional[str], default=None
+        Name for the underlying Operation.
+    iter_order : Optional[Real], default=None
+        Iteration order for the Pool.
+    op_iter_order : Optional[Real], default=None
+        Iteration order for the Operation.
+
+    Returns
+    -------
+    Pool
+        A Pool that generates mutated sequences.
+    """
+    
     from .from_seq import from_seq
     pool = from_seq(pool) if isinstance(pool, str) else pool
     op = MutagenizeOp(
@@ -100,20 +89,6 @@ class MutagenizeOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
-        """Initialize MutagenizeOp.
-        
-        Args:
-            parent_pool: The parent pool to mutate.
-            num_mutations: Fixed number of mutations to apply (mutually exclusive with mutation_rate).
-            mutation_rate: Probability of mutation at each position (mutually exclusive with num_mutations).
-            mode: 'random', 'sequential', or 'hybrid'. Sequential only available with num_mutations.
-            num_hybrid_states: Required when mode='hybrid'.
-            name: Optional name for the operation.
-            iter_order: Optional iteration order.
-        
-        Raises:
-            RuntimeError: If called outside of a Party context.
-        """
         # Get alphabet from active Party context
         party = get_active_party()
         if party is None:
@@ -298,71 +273,3 @@ class MutagenizeOp(Operation):
             'name': None,
             'iter_order': self.iter_order,
         }
-
-
-@beartype
-def mutagenize(
-    pool: Union[Pool, str],
-    num_mutations: Optional[Integral] = None,
-    mutation_rate: Optional[Real] = None,
-    mode: ModeType = 'random',
-    num_hybrid_states: Optional[int] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
-    iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
-) -> Pool:
-    """Create a Pool that applies mutations to a sequence.
-    
-    Must be called within a Party context. The alphabet is set via the Party
-    constructor or Party.set_alphabet() method.
-    
-    Supports two mutation modes (exactly one must be specified):
-    - num_mutations: Apply exactly this many mutations to each sequence.
-      Supports 'random', 'sequential', and 'hybrid' modes.
-    - mutation_rate: Apply a random number of mutations based on a binomial distribution.
-      Only supports 'random' and 'hybrid' modes.
-    
-    Args:
-        pool: Parent pool or sequence string to mutate.
-        num_mutations: Fixed number of mutations to apply (mutually exclusive with mutation_rate).
-        mutation_rate: Probability of mutation at each position (mutually exclusive with num_mutations).
-        mode: 'random', 'sequential', or 'hybrid'. Sequential only available with num_mutations.
-        num_hybrid_states: Required when mode='hybrid'.
-        name: Optional name for the output pool.
-        op_name: Optional name for the operation.
-        iter_order: Optional iteration order for the pool.
-        op_iter_order: Optional iteration order for the operation.
-    
-    Returns:
-        A Pool that generates mutated sequences.
-    
-    Raises:
-        RuntimeError: If called outside of a Party context.
-    
-    Examples:
-        # Apply exactly 2 mutations
-        >>> with pp.Party() as party:
-        ...     mutants = mutagenize('ACGTACGT', num_mutations=2)
-        
-        # Apply mutations with 10% rate per position
-        >>> with pp.Party() as party:
-        ...     mutants = mutagenize('ACGTACGT', mutation_rate=0.1)
-        
-        # Enumerate all single mutants
-        >>> with pp.Party() as party:
-        ...     mutants = mutagenize('ACGT', num_mutations=1, mode='sequential')
-    """
-    from .from_seq import from_seq
-    pool = from_seq(pool) if isinstance(pool, str) else pool
-    op = MutagenizeOp(
-        parent_pool=pool,
-        num_mutations=num_mutations,
-        mutation_rate=mutation_rate,
-        mode=mode,
-        num_hybrid_states=num_hybrid_states,
-        name=op_name,
-        iter_order=op_iter_order,
-    )
-    pool = Pool(operation=op, name=name, iter_order=iter_order)
-    return pool
