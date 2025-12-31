@@ -8,7 +8,7 @@ from ..pool import Pool
 from ..party import get_active_party
 from ..codon_table import CodonTable
 import numpy as np
-from ..orf import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
+from ..codon_table import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
 
 
 @beartype

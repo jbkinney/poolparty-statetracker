@@ -5,7 +5,7 @@ import numpy as np
 import poolparty as pp
 from poolparty.operations.mutagenize_orf import MutagenizeOrfOp, mutagenize_orf
 from poolparty.codon_table import CodonTable
-from poolparty.orf import STANDARD_GENETIC_CODE
+from poolparty.codon_table import STANDARD_GENETIC_CODE
 
 
 class TestCodonTable:
