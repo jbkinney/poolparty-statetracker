@@ -114,48 +114,46 @@ Here is an example of PoolParty code that uses \inpy{'random'} and \inpy{'fixed'
 \begin{minted}{python}
 import poolparty as pp
 
-# Define sequences (lowercase wild-type so changes appear uppercase)
-wt_seq = 'ATCGATCGAT'                  # 10 nt wild-type
-adapter_5_seq = 'GAA'                  # 3 nt 5' adapter
-adapter_3_iupac = 'GGA.NNNNN.CAG'      # 3 + 5N barcode + 3
+# Mark changes by changing case of affected bases
+pp.set_default('mark_changes',True)
+
+# Define component sequences 
+wt_seq  = 'ATCGATCGATATCGATCGAT'        # 10 nt wild-type
+ad5_seq = 'GAAC'                        # 3 nt 5' adapter
+ad3_seq = 'TGGANNNNNCCAG'               # 3 + 5N barcode + 3
 
 # Create pool of randomly mutagenized wt_seq sequences
-mut_pool = pp.mutagenize(wt_seq, mutation_rate=0.10)
+mut_pool = pp.mutagenize(wt_seq, num_mutations=3)
 
 # Create pool of 3' adaptors with random barcodes
-adapter_3_pool = pp.from_iupac_motif(adapter_3_iupac)
+ad3_pool = pp.from_iupac_motif(ad3_seq, mode='random')
 
 # Join into final oligo pool
-oligo_pool = pp.join(
-    [adapter_5_seq, mut_pool, adapter_3_pool], 
-    spacer_str=' ')
+oligo_pool = pp.join([ad5_seq, mut_pool, ad3_pool], spacer_str=' ')
 
 # Sample 5 sequences
 df = oligo_pool.generate_seqs(num_seqs=5, seed=42)
-# ... rename columns for brevity
-display(df['seq', 'positions', 'wt_chars', 'mut_chars'])
+print(df['seq'])
 \end{minted}
-
-\noindent\textbf{Example output} (mutations in UPPERCASE, degenerate positions in lowercase):
-
-% \scriptsize
-% \begin{minted}{python}
-%   seq                                       ... positions      wt_chars      mut_chars
-% 0 GAAC.ATCGATCGtTAaCGATCGAa.TGGA.gacgt.CCAG ... (8,11,19)      (A,T,T)       (t,a,a)
-% 1 GAAC.ATCGATCGATATCtAcCcAT.TGGA.cctgt.CCAG ... (13,15,17)     (G,T,G)       (t,c,c)
-% 2 GAAC.ATCGATCaATAaCcATtGAT.TGGA.acaac.CCAG ... (7,11,13,16)   (G,T,G,C)     (a,a,c,t)
-% 3 GAAC.ATCccTCGATATtGATCGAT.TGGA.ctaga.CCAG ... (3,4,12)       (G,A,C)       (c,c,t)
-% 4 GAAC.ATCcATCGATATCGcTgGAT.TGGA.agctc.CCAG ... (3,14,16)      (G,A,C)       (c,c,g)
-% \end{minted}
-% \normalsize
 
 Key points:
 \begin{itemize}
-    \item \inpy{mode='random'} is the default---random sampling from the combinatorial space
-    \item \mintinline{python}{mark_changes=True} highlights mutations in UPPERCASE
-    \item \mintinline{python}{mark_degenerate=True} shows randomly-resolved degenerate positions in lowercase
-    \item \mintinline{python}{generate_seqs(num_seqs=N)} samples $N$ sequences
-    \item Plain strings can be passed directly to \mintinline{python}{join()} and \mintinline{python}{mutagenize()}
+    \item \inpy{pp.set_default('mark_changes',True)} sets the default option to mark all changes (mutations) in the generated sequences, typically displaying them in a different case for easy identification.
+    \item \inpy{pp.mutagenize()} generates a pool of sequences containing different combinations of mutations at within a specified wild-type sequence. Here we instruct poolparty to introduce 3 mutations into each sequence. This operation runs in random mode by default, which means that the specific mutations that each sequence recieves is random. 
+    \item \inpy{pp.from_iupac_motif()} generates a pool of sequences derived from an IUPAC sequence, i.e., a DNA sequence in which special characters (such as \'N\') signify degenerate bases. This too runs in random mode by default. 
+    \item \inpy{pp.join()} joins together multiple sequences/Pools. It has no variable internal state so always runs in fixed mode. It also takes an argment, \inpy{spacer_str}, which we use here to add a space between the mutagenized region and adaptor sequences. 
+    \item \inpy{generate_seqs(num_seqs=N, seed)} instructs \inpy{oligo_pool} to construct $N$ sequences using the specified random seed. It retuns a Pandas dataframe, here called \inpy{df}. The first column is named \inpy{'seq'} and contains the resulting sequences:
+    \begin{center}
+        \includegraphics[width=\textwidth]{example1_seqs.png}
+    \end{center}
+    \item The other columns of the dataframe contain design card information, i.e., the  information that was used to create each sequence variant (Note: columns have been pruned and renamed for simplicity).
+    \begin{center}
+        \includegraphics[width=\textwidth]{example1_df.png}
+    \end{center}
+    \item During the execution of \inpy{oligo_pool.generate_seqs()}, each sequence is computed one-at-a-time using a computation tree that can be visualized by running \inpy{oligo_pool.print_tree()}:
+    \begin{center}
+        \includegraphics[width=\textwidth]{example1_tree.png}
+    \end{center}
 \end{itemize}
 
 \subsection{Example 2: Sequential Mode (Cartesian Product + Stack Enumeration)}
