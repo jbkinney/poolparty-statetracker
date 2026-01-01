@@ -13,7 +13,7 @@ def mutagenize(
     pool: Union[Pool, str],
     num_mutations: Optional[Integral] = None,
     mutation_rate: Optional[Real] = None,
-    mark_changes: bool = False,
+    mark_changes: Optional[bool] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -32,8 +32,8 @@ def mutagenize(
         Fixed number of mutations to apply (mutually exclusive with mutation_rate).
     mutation_rate : Optional[Real], default=None
         Probability of mutation at each position (mutually exclusive with num_mutations).
-    mark_changes : bool, default=False
-        If True, apply swapcase() to mutated positions for visualization.
+    mark_changes : Optional[bool], default=None
+        If True, apply swapcase() to mutated positions. If None, uses party default.
     mode : ModeType, default='random'
         Selection mode: 'random', 'sequential', or 'hybrid'. Sequential only available with num_mutations.
     num_hybrid_states : Optional[int], default=None
@@ -88,7 +88,7 @@ class MutagenizeOp(Operation):
         parent_pool: Pool,
         num_mutations: Optional[Integral] = None,
         mutation_rate: Optional[Real] = None,
-        mark_changes: bool = False,
+        mark_changes: Optional[bool] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -124,6 +124,9 @@ class MutagenizeOp(Operation):
         
         self.num_mutations = num_mutations
         self.mutation_rate = mutation_rate
+        # Resolve mark_changes from party defaults if not explicitly set
+        if mark_changes is None:
+            mark_changes = party.get_default('mark_changes', False)
         self.mark_changes = mark_changes
         self.alphabet = party.alphabet
         self.alpha_size = self.alphabet.size

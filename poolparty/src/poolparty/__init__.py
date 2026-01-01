@@ -40,6 +40,7 @@ from .operations import (
 __all__ = [
     '__version__',
     'Party', 'get_active_party', 'reset_default_party',
+    'set_default', 'load_defaults',
     'Pool', 'Operation', 'Marker', 'Counter', 'CounterManager', 'generate_seqs',
     'get_alphabet', 'NAMED_ALPHABETS',
     'from_seq', 'FromSeqOp',
@@ -74,3 +75,13 @@ CounterManager = sc.Manager
 
 # Initialize default Party context on import
 _init_default_party()
+
+
+def set_default(key: str, value) -> None:
+    """Set a default parameter on the active Party."""
+    get_active_party().set_default(key, value)
+
+
+def load_defaults(filepath: str) -> None:
+    """Load default parameters from a TOML file into the active Party."""
+    get_active_party().load_defaults(filepath)

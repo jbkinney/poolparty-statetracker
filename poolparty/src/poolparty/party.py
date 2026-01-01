@@ -1,5 +1,10 @@
 """Party class - context manager for building and executing sequence libraries."""
-from typing import Union
+import sys
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+from typing import Union, Any
 import statecounter as sc
 from .types import Pool_type, Operation_type, Marker_type, Optional, beartype
 from .codon_table import CodonTable
@@ -71,6 +76,8 @@ class Party:
             self._alphabet = alphabet
         # Build codon table for ORF operations
         self._codon_table: CodonTable = CodonTable(genetic_code)
+        # Default parameter values for operations
+        self._defaults: dict[str, Any] = {}
     
     def _get_next_pool_id(self) -> int:
         """Get the next unique pool ID."""
@@ -115,6 +122,20 @@ class Party:
             self._alphabet = get_alphabet(alphabet)
         else:
             self._alphabet = alphabet
+    
+    def set_default(self, key: str, value: Any) -> None:
+        """Set a default parameter value for operations in this party."""
+        self._defaults[key] = value
+    
+    def get_default(self, key: str, fallback: Any = None) -> Any:
+        """Get a default parameter value, or fallback if not set."""
+        return self._defaults.get(key, fallback)
+    
+    def load_defaults(self, filepath: str) -> None:
+        """Load default parameter values from a TOML file."""
+        with open(filepath, 'rb') as f:
+            defaults = tomllib.load(f)
+        self._defaults.update(defaults)
     
     def get_effective_seq_length(self, seq: str) -> int:
         """Get effective sequence length (alphabet characters only, excluding markers)."""

@@ -120,39 +120,34 @@ adapter_5_seq = 'GAA'                  # 3 nt 5' adapter
 adapter_3_iupac = 'GGA.NNNNN.CAG'      # 3 + 5N barcode + 3
 
 # Create pool of randomly mutagenized wt_seq sequences
-mut_pool = pp.mutagenize(
-    wt_seq, 
-    mutation_rate=0.10, 
-    mark_changes=True, 
-    op_name='op1')
+mut_pool = pp.mutagenize(wt_seq, mutation_rate=0.10)
 
 # Create pool of 3' adaptors with random barcodes
-adapter_3_pool = pp.from_iupac_motif(
-    adapter_3_iupac, 
-    mark_changes=True, 
-    op_name='op2')
+adapter_3_pool = pp.from_iupac_motif(adapter_3_iupac)
 
 # Join into final oligo pool
 oligo_pool = pp.join(
     [adapter_5_seq, mut_pool, adapter_3_pool], 
-    spacer_str=' ',
-    op_name='op3')
+    spacer_str=' ')
 
 # Sample 5 sequences
 df = oligo_pool.generate_seqs(num_seqs=5, seed=42)
-cols = ['seq','op2.key.iupac_state','op1.key.positions','op1.key.wt_chars', 'op1.key.mut_chars']
-display(df[cols])
+# ... rename columns for brevity
+display(df['seq', 'positions', 'wt_chars', 'mut_chars'])
 \end{minted}
 
 \noindent\textbf{Example output} (mutations in UPPERCASE, degenerate positions in lowercase):
 
-\begin{minted}[fontsize=\footnotesize]{text}
-GAATTC.atcgatcgaTAgatcgatcg.GGATCC.agtcgtatca.CTGCAG
-GAATTC.atcgCtcgatcgatcgatcg.GGATCC.tcagctgatc.CTGCAG
-GAATTC.atcgatcgatcgatcgatGg.GGATCC.gcatgctagc.CTGCAG
-GAATTC.atcgatcAatcgatcgatcg.GGATCC.atcgatcgat.CTGCAG
-GAATTC.atcgatcgatcgatcgGtcg.GGATCC.tgcatgcatg.CTGCAG
-\end{minted}
+% \scriptsize
+% \begin{minted}{python}
+%   seq                                       ... positions      wt_chars      mut_chars
+% 0 GAAC.ATCGATCGtTAaCGATCGAa.TGGA.gacgt.CCAG ... (8,11,19)      (A,T,T)       (t,a,a)
+% 1 GAAC.ATCGATCGATATCtAcCcAT.TGGA.cctgt.CCAG ... (13,15,17)     (G,T,G)       (t,c,c)
+% 2 GAAC.ATCGATCaATAaCcATtGAT.TGGA.acaac.CCAG ... (7,11,13,16)   (G,T,G,C)     (a,a,c,t)
+% 3 GAAC.ATCccTCGATATtGATCGAT.TGGA.ctaga.CCAG ... (3,4,12)       (G,A,C)       (c,c,t)
+% 4 GAAC.ATCcATCGATATCGcTgGAT.TGGA.agctc.CCAG ... (3,14,16)      (G,A,C)       (c,c,g)
+% \end{minted}
+% \normalsize
 
 Key points:
 \begin{itemize}

@@ -10,7 +10,7 @@ import numpy as np
 @beartype
 def from_iupac_motif(
     iupac_seq: str,
-    mark_changes: bool = False,
+    mark_changes: Optional[bool] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -26,8 +26,8 @@ def from_iupac_motif(
     iupac_seq : str
         IUPAC sequence string (e.g., 'RN' for purine + any base).
         Valid characters: A, C, G, T, U, R, Y, S, W, K, M, B, D, H, V, N.
-    mark_changes : bool, default=False
-        If True, apply swapcase() to degenerate positions for visualization.
+    mark_changes : Optional[bool], default=None
+        If True, apply swapcase() to degenerate positions. If None, uses party default.
     mode : ModeType, default='random'
         Sequence selection mode: 'sequential', 'random', or 'hybrid'.
     num_hybrid_states : Optional[int], default=None
@@ -67,7 +67,7 @@ class FromIupacMotifOp(Operation):
     def __init__(
         self,
         iupac_seq: str,
-        mark_changes: bool = False,
+        mark_changes: Optional[bool] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -117,6 +117,9 @@ class FromIupacMotifOp(Operation):
 
         self.iupac_seq = iupac_seq
         self.position_options = position_options
+        # Resolve mark_changes from party defaults if not explicitly set
+        if mark_changes is None:
+            mark_changes = party.get_default('mark_changes', False)
         self.mark_changes = mark_changes
         self.degenerate_positions = set(degenerate_positions)
 
