@@ -156,69 +156,83 @@ Key points:
     \end{center}
 \end{itemize}
 
-\subsection{Example 2: Sequential Mode (Cartesian Product + Stack Enumeration)}
+\subsection{Example 2: Sequential Mode Operations}
 \label{subsec:example-sequential}
 
-This example demonstrates sequential enumeration of a combinatorial library. We create 
-a replacement scan (with two insert variants at four positions) and a deletion scan, 
-then stack them to enumerate all 12 combinations.
+In many experimental contexts, such as systematic mutagenesis studies or deletion scanning, users need to enumerate \emph{all} possible sequence variants rather than randomly sample from them. This requires \inpy{'sequential'} mode operations, which cycle through a finite set of internal states in a deterministic order.
+
+A key challenge arises when multiple sequential operations are combined: how should their internal states advance as sequences are generated? For instance, if one operation scans through 4 positions and another cycles through 2 insert variants, should all $4 \times 2 = 8$ combinations be enumerated (Cartesian product), or should the operations advance in lockstep yielding only 4 sequences (synchronized iteration)?
+
+PoolParty addresses this challenge using an underlying library called StateCounter. Each sequential operation maintains an internal ``counter'' that tracks its current state. When operations are combined, their counters are composed using algebraic rules that determine how states propagate during sequence generation. The two most common compositions are:
+\begin{itemize}
+    \item \textbf{Cartesian product}: Enumerate all combinations of states from multiple operations. If operation A has $m$ states and operation B has $n$ states, the product has $m \times n$ states.
+    \item \textbf{Stack (union)}: Treat operations as alternatives, activating one at a time. If A has $m$ states and B has $n$ states, the stack has $m + n$ states.
+\end{itemize}
+
+The following example demonstrates these concepts. We perform a replacement scan (inserting either \inpy{'AAAAA'} or \inpy{'TTTTT'} at each of 4 positions) and a deletion scan (deleting 5 nucleotides at each of the same 4 positions), then stack these two scanning operations together.
 
 \begin{minted}{python}
-# Create insert pool with two variants
+# Create pool of two insert variants (2 states)
 ins_pool = pp.from_seqs(['AAAAA', 'TTTTT'], mode='sequential')
 
-# Replacement scan at step=5 intervals
-rep_scan_pool = pp.replacement_scan(
+# Replacement scan: 2 inserts x 4 positions = 8 states (Cartesian product)
+rep_pool = pp.replacement_scan(
     wt_seq, ins_pool, 
     positions=range(0, 20, 5),  # [0, 5, 10, 15]
-    mode='sequential',
-    mark_inserts=True
+    mode='sequential'
 )
 
-# Deletion scan at same positions
-del_scan_pool = pp.deletion_scan(
+# Deletion scan: 4 positions = 4 states
+del_pool = pp.deletion_scan(
     wt_seq, 
     deletion_length=5,
     positions=range(0, 20, 5),
-    mode='sequential',
-    mark_deletions=True
+    mode='sequential'
 )
 
-# Stack replacement scan and deletion scan (union of states)
-combo_scan_pool = pp.stack([rep_scan_pool, del_scan_pool])
+# Stack the two scans: 8 + 4 = 12 states (union)
+combo_pool = pp.stack([rep_pool, del_pool])
 
-# Join into final oligo (reusing adapter_3_pool from above)
-oligo_pool_2 = pp.join([adapter_5_seq, combo_scan_pool, adapter_3_pool], spacer_str='.')
+# Join with adapters (reusing ad5_seq and ad3_pool from Example 1)
+oligo_pool_2 = pp.join([ad5_seq, combo_pool, ad3_pool], spacer_str=' ')
 
-# Enumerate all 12 combinations: (2 inserts x 4 positions) + (4 deletions)
+# Enumerate all 12 states exactly once
 df = oligo_pool_2.generate_seqs(num_complete_iterations=1, seed=42)
-print(df['seq'].tolist())
-\end{minted}
-
-\noindent\textbf{Example output} (12 sequences, all same length, inserts in UPPERCASE):
-
-\begin{minted}[fontsize=\footnotesize]{text}
-GAATTC.AAAAAcgatcgatcgatcg.GGATCC.agtcgtatca.CTGCAG  # AAAAA at pos 0
-GAATTC.atcgAAAAAcgatcgatcg.GGATCC.tcagctgatc.CTGCAG  # AAAAA at pos 5
-GAATTC.atcgatcgAAAAAatcgatcg.GGATCC.gcatgctagc.CTGCAG  # AAAAA at pos 10
-GAATTC.atcgatcgatcgAAAAAcg.GGATCC.atcgatcgat.CTGCAG  # AAAAA at pos 15
-GAATTC.TTTTTcgatcgatcgatcg.GGATCC.tgcatgcatg.CTGCAG  # TTTTT at pos 0
-GAATTC.atcgTTTTTcgatcgatcg.GGATCC.cgatcgatcg.CTGCAG  # TTTTT at pos 5
-GAATTC.atcgatcgTTTTTatcgatcg.GGATCC.atgcatgcat.CTGCAG  # TTTTT at pos 10
-GAATTC.atcgatcgatcgTTTTTcg.GGATCC.gctagctagc.CTGCAG  # TTTTT at pos 15
-GAATTC.-----cgatcgatcgatcg.GGATCC.agtcgtatca.CTGCAG  # del at pos 0
-GAATTC.atcg-----cgatcgatcg.GGATCC.tcagctgatc.CTGCAG  # del at pos 5
-GAATTC.atcgatcg-----atcgatcg.GGATCC.gcatgctagc.CTGCAG  # del at pos 10
-GAATTC.atcgatcgatcg-----cg.GGATCC.atcgatcgat.CTGCAG  # del at pos 15
+print(df['seq'])
 \end{minted}
 
 Key points:
 \begin{itemize}
-    \item \mintinline{python}{mode='sequential'} enables deterministic enumeration of all states
-    \item Cartesian product: insert variants $\times$ scan positions gives $2 \times 4 = 8$ replacement states
-    \item \mintinline{python}{pp.stack()} creates a union of states ($8 + 4 = 12$ total)
-    \item \mintinline{python}{mark_inserts=True} highlights inserted sequences in UPPERCASE
-    \item \mintinline{python}{generate_seqs(num_complete_iterations=N)} iterates through all states $N$ times
+    \item \inpy{pp.from_seqs(..., mode='sequential')} creates a pool that cycles through its sequences in order. Here it has 2 states: state 0 yields \inpy{'AAAAA'}, state 1 yields \inpy{'TTTTT'}.
+    
+    \item \inpy{pp.replacement_scan()} replaces a segment of the input sequence with an insert at each specified position. With \inpy{mode='sequential'}, it systematically enumerates all position states. Since \inpy{ins_pool} also has sequential states, the two are combined via Cartesian product: $2 \text{ inserts} \times 4 \text{ positions} = 8$ total states.
+    \begin{center}
+        \texttt{[PLACEHOLDER: example2\_rep\_states.png showing the 8 replacement states]}
+    \end{center}
+    
+    \item \inpy{pp.deletion_scan()} removes a segment of specified length at each position, replacing it with deletion markers (\inpy{'-'}). With 4 positions, this yields 4 states.
+    \begin{center}
+        \texttt{[PLACEHOLDER: example2\_del\_states.png showing the 4 deletion states]}
+    \end{center}
+    
+    \item \inpy{pp.stack()} combines pools as a union: only one pool is ``active'' at any given state. The first 8 states come from \inpy{rep_pool}, the next 4 from \inpy{del_pool}, for a total of 12 states.
+    
+    \item \inpy{generate_seqs(num_complete_iterations=1)} iterates through all 12 states exactly once. Unlike \inpy{num_seqs=N} which samples $N$ sequences (potentially with repetition for random operations), \inpy{num_complete_iterations=N} guarantees that every state is visited exactly $N$ times.
+    
+    \item The resulting sequences all have the same length because \inpy{replacement_scan} replaces 5 nucleotides with a 5-nucleotide insert, and \inpy{deletion_scan} replaces 5 nucleotides with 5 deletion markers.
+    \begin{center}
+        \texttt{[PLACEHOLDER: example2\_seqs.png showing all 12 output sequences]}
+    \end{center}
+    
+    \item The computation tree for this example shows how the counters are composed:
+    \begin{center}
+        \texttt{[PLACEHOLDER: example2\_tree.png showing the computation tree with counter states]}
+    \end{center}
+    
+    \item The design card columns in the output dataframe track which state each operation was in when generating each sequence, enabling downstream analysis:
+    \begin{center}
+        \texttt{[PLACEHOLDER: example2\_df.png showing the design card columns]}
+    \end{center}
 \end{itemize}
 
 \medskip
