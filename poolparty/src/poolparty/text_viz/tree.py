@@ -1,5 +1,5 @@
 """Generic tree building utilities for text-based visualization."""
-from typing import Callable, Any
+from poolparty.types import Callable, Any
 
 
 def build_tree_lines(

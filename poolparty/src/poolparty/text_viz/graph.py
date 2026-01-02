@@ -1,5 +1,5 @@
 """High-level graph visualization functions."""
-from typing import Literal
+from poolparty.types import Literal
 from .counter_tree import print_counter_tree
 from .pool_op_tree import print_pool_tree
 

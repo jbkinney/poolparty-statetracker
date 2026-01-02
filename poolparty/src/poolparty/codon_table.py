@@ -1,5 +1,5 @@
 """Codon table utilities for ORF-aware operations."""
-from typing import Union
+from .types import Union
 
 
 # Mutation types that are uniform for valid ORF sequences (no internal stop codons)

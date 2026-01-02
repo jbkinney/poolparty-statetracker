@@ -1,6 +1,6 @@
 """Extract content from a marker region as a new Pool."""
 from numbers import Real
-from typing import Union, Optional
+from poolparty.types import Union, Optional
 
 from .parsing import validate_single_marker
 

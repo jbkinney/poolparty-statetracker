@@ -1,5 +1,5 @@
 """Counter-specific tree visualization utilities."""
-from typing import Literal
+from poolparty.types import Literal
 from .tree import print_tree
 
 StyleType = Literal['clean', 'minimal', 'repr']

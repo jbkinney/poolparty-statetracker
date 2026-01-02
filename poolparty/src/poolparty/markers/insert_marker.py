@@ -1,6 +1,6 @@
 """Insert a marker at a fixed position in sequences."""
 from numbers import Real
-from typing import Union, Optional
+from poolparty.types import Union, Optional
 
 from .parsing import build_marker_tag, get_length_without_markers
 

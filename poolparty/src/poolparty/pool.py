@@ -1,5 +1,4 @@
 """Pool class for poolparty."""
-from typing import Set
 import statecounter as sc
 from .types import Pool_type, Operation_type, Union, Optional, Real, beartype
 from .marker import Marker
@@ -17,7 +16,7 @@ class Pool:
         name: Optional[str] = None,
         counter: Optional[sc.Counter] = None,
         iter_order: Optional[Real] = None,
-        markers: Optional[Set[Marker]] = None,
+        markers: Optional[set[Marker]] = None,
     ) -> None:
         """Initialize Pool and build its counter."""
         from .party import get_active_party
@@ -46,7 +45,7 @@ class Pool:
         
         # Track markers: inherit from parents if not explicitly provided
         if markers is not None:
-            self._markers: Set[Marker] = set(markers)
+            self._markers: set[Marker] = set(markers)
         else:
             # Inherit markers from all parent pools
             self._markers = set()
@@ -122,7 +121,7 @@ class Pool:
         return self.operation.seq_length
     
     @property
-    def markers(self) -> Set[Marker]:
+    def markers(self) -> set[Marker]:
         """Set of Marker objects present in this pool's sequences."""
         return self._markers
     

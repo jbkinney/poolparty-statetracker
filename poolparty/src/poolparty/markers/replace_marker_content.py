@@ -1,6 +1,6 @@
 """Replace marker content with sequences from another Pool."""
 from numbers import Real
-from typing import Optional
+from poolparty.types import Optional
 import numpy as np
 
 from .parsing import validate_single_marker

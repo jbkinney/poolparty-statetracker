@@ -1,5 +1,5 @@
 """Centralized type definitions for poolparty."""
-from typing import TypeAlias, Literal, Union, Optional, Set
+from typing import TypeAlias, Literal, Union, Optional, Any
 from collections.abc import Sequence, Callable
 from beartype import beartype
 from numbers import Real, Integral
@@ -30,7 +30,7 @@ __all__ = [
     'Literal',
     'Integral',
     'Real',
-    'Set',
+    'Any',
     'Pool_type',
     'Operation_type',
     'Counter_type',

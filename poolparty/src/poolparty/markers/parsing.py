@@ -1,7 +1,7 @@
 """XML-style marker parsing utilities for poolparty."""
 import re
 from dataclasses import dataclass
-from typing import Optional, Literal
+from poolparty.types import Optional, Literal
 
 
 @dataclass

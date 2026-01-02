@@ -1,13 +1,10 @@
 """DataFrame formatting utilities for poolparty."""
-from typing import Literal, TYPE_CHECKING
+from poolparty.types import Literal
 import statecounter as sc
 import pandas as pd
 
-if TYPE_CHECKING:
-    Counter = sc.Counter
 
-
-def counter_col_name(counter: "Counter", index: int) -> str:
+def counter_col_name(counter: "sc.Counter", index: int) -> str:
     """Get column name for a counter's state.
     
     Args:

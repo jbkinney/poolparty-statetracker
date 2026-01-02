@@ -1,5 +1,5 @@
 """Utility functions for poolparty."""
-from typing import Sequence
+from poolparty.types import Sequence
 import pandas as pd
 
 

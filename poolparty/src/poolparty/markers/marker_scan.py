@@ -1,5 +1,5 @@
 """MarkerScan operation - insert XML markers at scanning positions."""
-from typing import Union, Optional, Literal
+from poolparty.types import Union, Optional, Literal
 from numbers import Integral, Real
 import numpy as np
 

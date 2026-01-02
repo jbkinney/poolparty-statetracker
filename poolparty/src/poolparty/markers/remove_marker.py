@@ -1,6 +1,6 @@
 """Remove a marker and its content from sequences."""
 from numbers import Real
-from typing import Optional
+from poolparty.types import Optional
 
 from .parsing import validate_single_marker
 

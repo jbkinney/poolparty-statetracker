@@ -1,5 +1,5 @@
 """Insert multiple XML markers into a sequence."""
-from typing import Union, Optional, Sequence as TypingSequence
+from poolparty.types import Union, Optional, Sequence
 from numbers import Integral, Real
 import numpy as np
 
@@ -170,7 +170,7 @@ class MarkerMultiScanOp(Operation):
         )
 
     def _coerce_markers(
-        self, markers: Union[TypingSequence[str], str]
+        self, markers: Union[Sequence[str], str]
     ) -> list[str]:
         """Normalize markers input to a list of marker names."""
         if isinstance(markers, str):

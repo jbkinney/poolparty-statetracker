@@ -4,9 +4,8 @@ if sys.version_info >= (3, 11):
     import tomllib
 else:
     import tomli as tomllib
-from typing import Union, Any
 import statecounter as sc
-from .types import Pool_type, Operation_type, Optional, beartype
+from .types import Pool_type, Operation_type, Optional, beartype, Union, Any
 from .codon_table import CodonTable
 from .alphabet import Alphabet, get_alphabet
 from .marker import Marker

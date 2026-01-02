@@ -1,6 +1,6 @@
 """Marker class for poolparty - represents a registered marker with its properties."""
 from dataclasses import dataclass, field
-from typing import Optional
+from poolparty.types import Optional
 
 
 @dataclass
