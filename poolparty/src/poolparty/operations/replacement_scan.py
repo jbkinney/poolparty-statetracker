@@ -1,6 +1,7 @@
 """ReplacementScan - replace a segment of background with insert sequences."""
 from ..types import Union, ModeType, Optional, Integral, Real, PositionsType, beartype
 from ..seq_utils import validate_positions
+from ..party import get_active_party
 from ..pool import Pool
 
 
@@ -10,6 +11,7 @@ def replacement_scan(
     ins_pool: Union[Pool, str],
     positions: PositionsType = None,
     spacer_str: str = '',
+    mark_changes: Optional[bool] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[Integral] = None,
     name: Optional[str] = None,
@@ -30,6 +32,8 @@ def replacement_scan(
         Positions at which to place the start of the replacement (0-based, inclusive). If None, all valid positions are considered.
     spacer_str : str, default=''
         String to insert as a spacer between segments when joining (optional).
+    mark_changes : Optional[bool], default=None
+        If True, apply swapcase() to the insert sequence. If None, uses party default.
     mode : ModeType, default='random'
         Selection mode for replacement positions: 'sequential', 'random', or 'hybrid'.
     num_hybrid_states : Optional[Integral], default=None
@@ -53,10 +57,20 @@ def replacement_scan(
     from .seq_slice import seq_slice
     from .join import join
     from .breakpoint_scan import breakpoint_scan
+    from .swap_case import swap_case
     
     # Convert string inputs to pools if needed
     bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     ins_pool = from_seq(ins_pool) if isinstance(ins_pool, str) else ins_pool
+    
+    # Resolve mark_changes from party defaults if not explicitly set
+    party = get_active_party()
+    if mark_changes is None:
+        mark_changes = party.get_default('mark_changes', False) if party else False
+    
+    # Apply swap_case to insert pool if mark_changes is True
+    if mark_changes:
+        ins_pool = swap_case(ins_pool)
     
     # Validate that both pools have defined seq_length
     bg_length = bg_pool.seq_length

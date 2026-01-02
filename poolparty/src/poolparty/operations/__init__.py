@@ -19,6 +19,7 @@ from .stack import stack, StackOp
 from .repeat import repeat, RepeatOp
 from .seq_shuffle import seq_shuffle, SeqShuffleOp
 from .reverse_complement import reverse_complement, ReverseComplementOp
+from .swap_case import swap_case, SwapCaseOp
 from .marker_scan import marker_scan, MarkerScanOp
 from .marker_multiscan import marker_multiscan, MarkerMultiScanOp
 from .replace_marker import replace_marker, ReplaceMarkerOp
@@ -45,6 +46,7 @@ __all__ = [
     'repeat', 'RepeatOp',
     'seq_shuffle', 'SeqShuffleOp',
     'reverse_complement', 'ReverseComplementOp',
+    'swap_case', 'SwapCaseOp',
     'state_slice', 'StateSliceOp',
     'state_shuffle', 'StateShuffleOp',
     'state_sample', 'StateSampleOp',
