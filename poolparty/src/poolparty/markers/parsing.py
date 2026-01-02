@@ -1,6 +1,7 @@
 """XML-style marker parsing utilities for poolparty."""
 import re
 from dataclasses import dataclass
+from xml.etree import ElementTree as ET
 from poolparty.types import Optional, Literal
 
 
@@ -70,23 +71,13 @@ def _parse_attributes(attrs_str: str) -> tuple[str, Optional[int]]:
     return strand, declared_seq_length
 
 
-# Regex patterns for XML-style markers
-# Matches: <name>, <name strand='+'>, <name seq_length='6'>, <name strand='-' seq_length='6'>, etc.
-_OPENING_TAG = r"<(\w+)((?:\s+(?:strand|seq_length)=['\"][^'\"]+['\"])*)\s*>"
-# Matches: </name>
-_CLOSING_TAG = r"</(\w+)>"
-# Matches: <name/>, <name strand='+'/>, <name seq_length='0'/>, etc.
-_SELF_CLOSING_TAG = r"<(\w+)((?:\s+(?:strand|seq_length)=['\"][^'\"]+['\"])*)\s*/>"
+# Unified regex pattern for all XML-style marker tags
+# Captures: (1) closing slash, (2) name, (3) attributes, (4) self-closing slash
+# Matches: <name>, <name/>, </name>, <name attr='val'>, <name attr='val'/>, etc.
+TAG_PATTERN = re.compile(r'<(/?)(\w+)((?:\s+\w+=[\'"][^\'"]*[\'"])*)\s*(/?)>')
 
-# Combined pattern to find any marker tag (for stripping/length calculations)
-MARKER_PATTERN = re.compile(
-    rf"(?:{_SELF_CLOSING_TAG})|(?:{_OPENING_TAG})|(?:{_CLOSING_TAG})"
-)
-
-# Compiled patterns for parsing
-_OPENING_PATTERN = re.compile(_OPENING_TAG)
-_CLOSING_PATTERN = re.compile(_CLOSING_TAG)
-_SELF_CLOSING_PATTERN = re.compile(_SELF_CLOSING_TAG)
+# Alias for backward compatibility (used by strip_all_markers, get_nonmarker_positions)
+MARKER_PATTERN = TAG_PATTERN
 
 
 def find_all_markers(seq: str) -> list[RegionMarker]:
@@ -94,94 +85,72 @@ def find_all_markers(seq: str) -> list[RegionMarker]:
     
     Returns a list of RegionMarker objects for each marker found.
     Raises ValueError if markers are malformed (unmatched open/close tags).
+    Supports nested markers.
     """
+    # Validate structure with stdlib XML parser
+    try:
+        ET.fromstring(f"<_root_>{seq}</_root_>")
+    except ET.ParseError as e:
+        raise ValueError(f"Invalid marker syntax: {e}")
+    
     markers = []
+    open_stack = []  # [(name, strand, declared_seq_length, tag_start, content_start)]
     
-    # First, find all self-closing markers
-    for match in _SELF_CLOSING_PATTERN.finditer(seq):
-        name = match.group(1)
-        attrs_str = match.group(2) or ''
-        strand, declared_seq_length = _parse_attributes(attrs_str)
+    for match in TAG_PATTERN.finditer(seq):
+        is_close = match.group(1) == '/'
+        name = match.group(2)
+        attrs = match.group(3) or ''
+        is_self_close = match.group(4) == '/'
         
-        # For self-closing markers, validate seq_length if declared
-        if declared_seq_length is not None and declared_seq_length != 0 and declared_seq_length != -1:
-            raise ValueError(
-                f"Self-closing marker '<{name}/>' has seq_length='{declared_seq_length}' "
-                f"but contains no content. Use seq_length='0' or omit the attribute."
-            )
-        
-        markers.append(RegionMarker(
-            name=name,
-            start=match.start(),
-            end=match.end(),
-            content_start=match.end(),  # No content
-            content_end=match.end(),
-            strand=strand,
-            content='',
-            declared_seq_length=declared_seq_length,
-        ))
+        if is_self_close:
+            # Self-closing tag: <name/>
+            strand, decl_len = _parse_attributes(attrs)
+            # Validate seq_length for self-closing
+            if decl_len is not None and decl_len not in (0, -1):
+                raise ValueError(
+                    f"Self-closing marker '<{name}/>' has seq_length='{decl_len}' "
+                    f"but contains no content. Use seq_length='0' or omit the attribute."
+                )
+            markers.append(RegionMarker(
+                name=name,
+                start=match.start(),
+                end=match.end(),
+                content_start=match.end(),
+                content_end=match.end(),
+                strand=strand,
+                content='',
+                declared_seq_length=decl_len,
+            ))
+        elif is_close:
+            # Closing tag: </name> - pop innermost matching open tag
+            for i in range(len(open_stack) - 1, -1, -1):
+                if open_stack[i][0] == name:
+                    oname, strand, decl_len, ostart, cstart = open_stack.pop(i)
+                    content = seq[cstart:match.start()]
+                    # Validate seq_length if declared
+                    if decl_len is not None and decl_len >= 0:
+                        if len(content) != decl_len:
+                            raise ValueError(
+                                f"Marker '<{oname}>' has seq_length='{decl_len}' "
+                                f"but content has length {len(content)}: '{content}'"
+                            )
+                    markers.append(RegionMarker(
+                        name=oname,
+                        start=ostart,
+                        end=match.end(),
+                        content_start=cstart,
+                        content_end=match.start(),
+                        strand=strand,
+                        content=content,
+                        declared_seq_length=decl_len,
+                    ))
+                    break
+        else:
+            # Opening tag: <name>
+            strand, decl_len = _parse_attributes(attrs)
+            open_stack.append((name, strand, decl_len, match.start(), match.end()))
     
-    # Find all opening tags that aren't self-closing
-    open_tags = []
-    for match in _OPENING_PATTERN.finditer(seq):
-        # Skip if this position is inside a self-closing marker we already found
-        if any(m.start <= match.start() < m.end for m in markers):
-            continue
-        attrs_str = match.group(2) or ''
-        strand, declared_seq_length = _parse_attributes(attrs_str)
-        open_tags.append((match.group(1), strand, declared_seq_length, match.start(), match.end()))
-    
-    # Find all closing tags
-    close_tags = []
-    for match in _CLOSING_PATTERN.finditer(seq):
-        # Skip if inside a self-closing marker
-        if any(m.start <= match.start() < m.end for m in markers):
-            continue
-        close_tags.append((match.group(1), match.start(), match.end()))
-    
-    # Match opening tags with closing tags
-    used_closes = set()
-    for open_name, strand, declared_seq_length, open_start, open_end in open_tags:
-        # Find the first unused closing tag with matching name after this opening tag
-        found = False
-        for i, (close_name, close_start, close_end) in enumerate(close_tags):
-            if i in used_closes:
-                continue
-            if close_name == open_name and close_start > open_end:
-                used_closes.add(i)
-                content = seq[open_end:close_start]
-                
-                # Validate content length against declared seq_length
-                if declared_seq_length is not None and declared_seq_length >= 0:
-                    if len(content) != declared_seq_length:
-                        raise ValueError(
-                            f"Marker '<{open_name}>' has seq_length='{declared_seq_length}' "
-                            f"but content has length {len(content)}: '{content}'"
-                        )
-                
-                markers.append(RegionMarker(
-                    name=open_name,
-                    start=open_start,
-                    end=close_end,
-                    content_start=open_end,
-                    content_end=close_start,
-                    strand=strand,
-                    content=content,
-                    declared_seq_length=declared_seq_length,
-                ))
-                found = True
-                break
-        if not found:
-            raise ValueError(f"Unmatched opening tag '<{open_name}>' at position {open_start}")
-    
-    # Check for unmatched closing tags
-    for i, (close_name, close_start, close_end) in enumerate(close_tags):
-        if i not in used_closes:
-            raise ValueError(f"Unmatched closing tag '</{close_name}>' at position {close_start}")
-    
-    # Sort by start position
-    markers.sort(key=lambda m: m.start)
-    return markers
+    return sorted(markers, key=lambda m: m.start)
 
 
 def has_marker(seq: str, name: str) -> bool:
@@ -243,12 +212,7 @@ def strip_all_markers(seq: str) -> str:
         'ACG<region>TT</region>AA' -> 'ACGTTAA'
         'ACG<ins/>TT' -> 'ACGTT'
     """
-    # Remove self-closing tags first
-    result = _SELF_CLOSING_PATTERN.sub('', seq)
-    # Remove opening and closing tags
-    result = _OPENING_PATTERN.sub('', result)
-    result = _CLOSING_PATTERN.sub('', result)
-    return result
+    return TAG_PATTERN.sub('', seq)
 
 
 def get_length_without_markers(seq: str) -> int:
@@ -264,24 +228,7 @@ def get_nonmarker_positions(seq: str) -> list[int]:
     """
     # Find all marker tag spans (the tags themselves, not content)
     tag_spans: set[int] = set()
-    
-    # Self-closing tags: entire match is a tag
-    for match in _SELF_CLOSING_PATTERN.finditer(seq):
-        for i in range(match.start(), match.end()):
-            tag_spans.add(i)
-    
-    # Opening tags
-    for match in _OPENING_PATTERN.finditer(seq):
-        # Skip if inside self-closing marker
-        if match.start() in tag_spans:
-            continue
-        for i in range(match.start(), match.end()):
-            tag_spans.add(i)
-    
-    # Closing tags
-    for match in _CLOSING_PATTERN.finditer(seq):
-        if match.start() in tag_spans:
-            continue
+    for match in TAG_PATTERN.finditer(seq):
         for i in range(match.start(), match.end()):
             tag_spans.add(i)
     
