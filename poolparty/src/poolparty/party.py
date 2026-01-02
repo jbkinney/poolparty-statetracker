@@ -6,9 +6,10 @@ else:
     import tomli as tomllib
 from typing import Union, Any
 import statecounter as sc
-from .types import Pool_type, Operation_type, Marker_type, Optional, beartype
+from .types import Pool_type, Operation_type, Optional, beartype
 from .codon_table import CodonTable
 from .alphabet import Alphabet, get_alphabet
+from .marker import Marker
 
 _active_party: Optional["Party"] = None
 _default_party: Optional["Party"] = None
@@ -62,13 +63,14 @@ class Party:
         self._next_pool_id: int = 0
         self._next_op_id: int = 0
         self._next_marker_id: int = 0
-        # Track pools, operations, and markers by ID (list) and name (dict)
+        # Track pools and operations by ID (list) and name (dict)
         self._pools_by_id: list[Pool_type] = []
         self._ops_by_id: list[Operation_type] = []
-        self._markers_by_id: list[Marker_type] = []
         self._pools_by_name: dict[str, Pool_type] = {}
         self._ops_by_name: dict[str, Operation_type] = {}
-        self._markers_by_name: dict[str, Marker_type] = {}
+        # Track markers by ID (list) and name (dict)
+        self._markers_by_id: list[Marker] = []
+        self._markers_by_name: dict[str, Marker] = {}
         # Build alphabet for sequence operations
         if isinstance(alphabet, str):
             self._alphabet: Alphabet = get_alphabet(alphabet)
@@ -89,12 +91,6 @@ class Party:
         """Get the next unique operation ID."""
         id_ = self._next_op_id
         self._next_op_id += 1
-        return id_
-
-    def _get_next_marker_id(self) -> int:
-        """Get the next unique marker ID."""
-        id_ = self._next_marker_id
-        self._next_marker_id += 1
         return id_
     
     @property
@@ -182,13 +178,6 @@ class Party:
             raise ValueError(f"Operation name '{name}' already exists")
         return name
     
-    def _validate_marker_name(self, name: str, marker: Optional[Marker_type] = None) -> str:
-        """Validate that a marker name is unique."""
-        existing = self._markers_by_name.get(name)
-        if existing is not None and existing is not marker:
-            raise ValueError(f"Marker name '{name}' already exists")
-        return name
-    
     def _register_pool(self, pool: Pool_type) -> None:
         """Register a pool with this party."""
         self._pools_by_id.append(pool)
@@ -213,17 +202,6 @@ class Party:
             del self._ops_by_name[old_name]
         self._ops_by_name[new_name] = op
     
-    def _register_marker(self, marker: Marker_type) -> None:
-        """Register a marker with this party."""
-        self._markers_by_id.append(marker)
-        self._markers_by_name[marker.name] = marker
-    
-    def _update_marker_name(self, marker: Marker_type, old_name: str, new_name: str) -> None:
-        """Update a marker's name in the tracking dict."""
-        if old_name in self._markers_by_name:
-            del self._markers_by_name[old_name]
-        self._markers_by_name[new_name] = marker
-    
     def get_pool_by_id(self, id_: int) -> Pool_type:
         """Get a pool by its ID."""
         return self._pools_by_id[id_]
@@ -240,13 +218,77 @@ class Party:
         """Get an operation by its name."""
         return self._ops_by_name[name]
     
-    def get_marker_by_id(self, id_: int) -> Marker_type:
+    def _get_next_marker_id(self) -> int:
+        """Get the next unique marker ID."""
+        id_ = self._next_marker_id
+        self._next_marker_id += 1
+        return id_
+    
+    def register_marker(self, name: str, seq_length: Optional[int]) -> Marker:
+        """
+        Register a marker with this party.
+        
+        If a marker with the same name already exists:
+        - If it has the same seq_length, return the existing marker
+        - If it has a different seq_length, raise ValueError
+        
+        Parameters
+        ----------
+        name : str
+            The marker name.
+        seq_length : Optional[int]
+            The expected content length (None for variable, 0 for zero-length).
+        
+        Returns
+        -------
+        Marker
+            The registered marker (existing or newly created).
+        
+        Raises
+        ------
+        ValueError
+            If a marker with the same name but different seq_length exists.
+        """
+        existing = self._markers_by_name.get(name)
+        if existing is not None:
+            if existing.seq_length == seq_length:
+                return existing
+            else:
+                # Format lengths for error message
+                existing_len = 'variable' if existing.seq_length is None else str(existing.seq_length)
+                new_len = 'variable' if seq_length is None else str(seq_length)
+                raise ValueError(
+                    f"Marker '{name}' already registered with seq_length={existing_len}, "
+                    f"cannot re-register with seq_length={new_len}. "
+                    f"Marker lengths must be consistent within a Party."
+                )
+        
+        # Create and register new marker
+        marker = Marker(name=name, seq_length=seq_length, _id=self._get_next_marker_id())
+        self._markers_by_id.append(marker)
+        self._markers_by_name[name] = marker
+        return marker
+    
+    def get_marker_by_id(self, id_: int) -> Marker:
         """Get a marker by its ID."""
+        if id_ < 0 or id_ >= len(self._markers_by_id):
+            raise ValueError(f"No marker with ID {id_}")
         return self._markers_by_id[id_]
     
-    def get_marker_by_name(self, name: str) -> Marker_type:
+    def get_marker_by_name(self, name: str) -> Marker:
         """Get a marker by its name."""
-        return self._markers_by_name[name]
+        marker = self._markers_by_name.get(name)
+        if marker is None:
+            available = list(self._markers_by_name.keys())
+            if available:
+                raise ValueError(f"Marker '{name}' not found. Available: {available}")
+            else:
+                raise ValueError(f"Marker '{name}' not found. No markers registered.")
+        return marker
+    
+    def has_marker(self, name: str) -> bool:
+        """Check if a marker with the given name is registered."""
+        return name in self._markers_by_name
     
     def output(self, pool: Pool_type, name: Optional[str] = None) -> None:
         """Mark a pool as an output of this library."""

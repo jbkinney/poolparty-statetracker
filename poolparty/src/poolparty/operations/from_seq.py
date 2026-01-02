@@ -33,6 +33,7 @@ def from_seq(
         A Pool object yielding the provided sequence as its only state.
     """
     from ..party import get_active_party
+    from ..markers.parsing import _validate_markers
     from .fixed import fixed_operation
     
     party = get_active_party()
@@ -42,9 +43,12 @@ def from_seq(
             "Use 'with pp.Party() as party:' to create one."
         )
     
+    # Validate and register any markers in the sequence
+    markers = _validate_markers(seq)
+    
     seq_length = party._alphabet.get_length_without_markers(seq)
     
-    return fixed_operation(
+    pool = fixed_operation(
         parents=[],
         seq_from_seqs_fn=lambda _: seq,
         seq_length_from_pools_fn=lambda _: seq_length,
@@ -53,3 +57,9 @@ def from_seq(
         iter_order=iter_order,
         op_iter_order=op_iter_order,
     )
+    
+    # Add validated markers to the pool
+    for marker in markers:
+        pool.add_marker(marker)
+    
+    return pool

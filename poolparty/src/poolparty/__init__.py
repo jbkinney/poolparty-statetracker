@@ -22,9 +22,6 @@ from .operations import (
     mutagenize, MutagenizeOp,
     mutagenize_orf, MutagenizeOrfOp,
     breakpoint_scan, BreakpointScanOp,
-    marker_scan, MarkerScanOp,
-    marker_multiscan, MarkerMultiScanOp,
-    replace_marker, ReplaceMarkerOp,
     insertion_scan,
     replacement_scan,
     deletion_scan,
@@ -37,6 +34,16 @@ from .operations import (
     state_shuffle, StateShuffleOp,
     state_sample, StateSampleOp,
     sync,
+)
+# Import from markers module
+from .markers import (
+    insert_marker,
+    marker_scan,
+    marker_multiscan,
+    extract_marker_content,
+    replace_marker_content,
+    apply_at_marker,
+    remove_marker,
 )
 
 __all__ = [
@@ -56,9 +63,6 @@ __all__ = [
     'mutagenize', 'MutagenizeOp',
     'mutagenize_orf', 'MutagenizeOrfOp',
     'breakpoint_scan', 'BreakpointScanOp',
-    'marker_scan', 'MarkerScanOp',
-    'marker_multiscan', 'MarkerMultiScanOp',
-    'replace_marker', 'ReplaceMarkerOp',
     'insertion_scan',
     'replacement_scan',
     'deletion_scan',
@@ -71,6 +75,14 @@ __all__ = [
     'state_shuffle', 'StateShuffleOp',
     'state_sample', 'StateSampleOp',
     'sync',
+    # Marker operations
+    'insert_marker',
+    'marker_scan',
+    'marker_multiscan',
+    'extract_marker_content',
+    'replace_marker_content',
+    'apply_at_marker',
+    'remove_marker',
 ]
 
 # Re-export statecounter primitives for backward compatibility

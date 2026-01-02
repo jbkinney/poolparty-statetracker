@@ -8,7 +8,7 @@ from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
 from ..orf_utils import validate_orf_extent
-from ..alphabet import MARKER_PATTERN
+from ..markers.parsing import MARKER_PATTERN, strip_all_markers, find_all_markers
 import numpy as np
 from ..codon_table import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
 
@@ -197,30 +197,71 @@ class MutagenizeOrfOp(Operation):
         self._sequential_cache = cache
         return num_combinations * num_mut_patterns
     
-    def _strip_markers(self, seq: str) -> tuple[str, list[tuple[int, str]]]:
+    def _strip_markers(self, seq: str) -> tuple[str, list[tuple[int, int, str, str]]]:
         """Strip markers from sequence and record their positions.
         
         Returns:
-            (clean_seq, markers) where markers is a list of (position, marker_text) tuples.
+            (clean_seq, markers_info) where markers_info is a list of
+            (clean_content_start, content_length, opening_tag, closing_tag) tuples.
+            For self-closing markers, content_length is 0 and closing_tag is empty.
         """
-        markers = []
-        offset = 0
-        for match in MARKER_PATTERN.finditer(seq):
-            # Record position in original string
-            markers.append((match.start(), match.group()))
-        # Remove all markers
-        clean_seq = MARKER_PATTERN.sub('', seq)
-        return clean_seq, markers
+        markers_info = []
+        found_markers = find_all_markers(seq)
+        
+        # Calculate clean position for each marker
+        tag_offset = 0  # Cumulative length of tags removed before this marker
+        
+        for marker in found_markers:
+            # In clean sequence, content starts at marker.content_start - tag_offset
+            clean_content_start = marker.content_start - tag_offset
+            content_length = marker.content_end - marker.content_start
+            
+            # Extract opening and closing tags
+            opening_tag = seq[marker.start:marker.content_start]
+            closing_tag = seq[marker.content_end:marker.end]
+            
+            markers_info.append((clean_content_start, content_length, opening_tag, closing_tag))
+            
+            # Update offset: tags removed = opening_tag_len + closing_tag_len
+            tag_offset += len(opening_tag) + len(closing_tag)
+        
+        # Remove all marker tags but keep content
+        clean_seq = strip_all_markers(seq)
+        return clean_seq, markers_info
     
-    def _restore_markers(self, seq: str, markers: list[tuple[int, str]]) -> str:
-        """Restore markers to their original positions in the sequence."""
-        if not markers:
+    def _restore_markers(self, seq: str, markers_info: list[tuple[int, int, str, str]]) -> str:
+        """Restore markers to their original positions in the sequence.
+        
+        Args:
+            seq: The clean (mutated) sequence with marker content but no tags.
+            markers_info: List of (clean_content_start, content_length, opening_tag, closing_tag).
+        
+        Returns:
+            Sequence with marker tags restored around their content.
+        """
+        if not markers_info:
             return seq
-        # Insert markers from end to start to preserve positions
-        result = list(seq)
-        for pos, marker_text in reversed(markers):
-            result.insert(pos, marker_text)
-        return ''.join(result)
+        
+        # Sort by clean position (should already be sorted, but ensure it)
+        sorted_markers = sorted(markers_info, key=lambda x: x[0])
+        
+        # Build result by inserting tags, working from start to end
+        result = seq
+        offset = 0  # Track how much we've added
+        
+        for clean_content_start, content_length, opening_tag, closing_tag in sorted_markers:
+            # Insert opening tag before content
+            insert_pos = clean_content_start + offset
+            result = result[:insert_pos] + opening_tag + result[insert_pos:]
+            offset += len(opening_tag)
+            
+            # Insert closing tag after content (if not self-closing)
+            if closing_tag:
+                close_pos = insert_pos + len(opening_tag) + content_length
+                result = result[:close_pos] + closing_tag + result[close_pos:]
+                offset += len(closing_tag)
+        
+        return result
     
     def _extract_codons(self, seq: str) -> tuple[str, list[str], str]:
         """Extract (upstream, codons, downstream) from marker-free sequence.

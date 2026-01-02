@@ -1,49 +1,73 @@
-"""Marker class for poolparty - placeholder tags for sequence insertion."""
-from .types import Optional, beartype
+"""Marker class for poolparty - represents a registered marker with its properties."""
+from dataclasses import dataclass, field
+from typing import Optional
 
 
-@beartype
+@dataclass
 class Marker:
-    """A marker placeholder that can be inserted into sequences."""
+    """
+    Represents a registered marker in a poolparty Party.
     
-    def __init__(self, name: Optional[str] = None) -> None:
-        """Initialize Marker and register with the active Party."""
-        from .party import get_active_party
-        party = get_active_party()
-        if party is None:
-            raise RuntimeError(
-                "Markers must be created inside a Party context. "
-                "Use: with pp.Party() as party: ..."
+    Markers identify regions of sequences for later modification. Each marker
+    has a name and a seq_length that specifies the expected length of content
+    within the marker tags.
+    
+    Attributes
+    ----------
+    name : str
+        The marker name (used in XML tags like <name>...</name>).
+    seq_length : Optional[int]
+        The expected length of content within the marker:
+        - None: Variable-length marker (content length not fixed)
+        - 0: Zero-length marker (insertion point, <name/>)
+        - >0: Fixed-length marker (content must be this length)
+    _id : int
+        Unique identifier assigned by the Party upon registration.
+    
+    Examples
+    --------
+    Markers are typically created through marker operations, not directly:
+    
+    >>> with pp.Party() as party:
+    ...     # insert_marker registers a marker with the party
+    ...     pool = pp.insert_marker(bg, 'orf', start=10, stop=100)
+    ...     
+    ...     # Retrieve the registered marker
+    ...     marker = party.get_marker_by_name('orf')
+    ...     print(marker.seq_length)  # 90
+    """
+    name: str
+    seq_length: Optional[int]  # None for variable-length, 0 for zero-length, >0 for fixed
+    _id: int = field(default=-1, repr=False)
+    
+    def __post_init__(self):
+        """Validate marker attributes."""
+        if not self.name:
+            raise ValueError("Marker name cannot be empty")
+        if not self.name.isidentifier():
+            raise ValueError(
+                f"Marker name '{self.name}' is not a valid identifier. "
+                "Use only letters, numbers, and underscores, starting with a letter."
             )
-        self._party = party
-        self._id = party._get_next_marker_id()
-        self._name: str = ""
-        self.name = name if name is not None else f'marker[{self._id}]'
-        party._register_marker(self)
+        if self.seq_length is not None and self.seq_length < 0:
+            raise ValueError(f"seq_length must be None or >= 0, got {self.seq_length}")
     
     @property
-    def id(self) -> int:
-        """Unique ID for this marker."""
-        return self._id
+    def is_variable_length(self) -> bool:
+        """True if this marker has variable length (seq_length is None)."""
+        return self.seq_length is None
     
     @property
-    def name(self) -> str:
-        """Name of this marker."""
-        return self._name
+    def is_zero_length(self) -> bool:
+        """True if this marker is a zero-length insertion point."""
+        return self.seq_length == 0
     
-    @name.setter
-    def name(self, value: str) -> None:
-        """Set marker name, validating uniqueness with the Party."""
-        self._party._validate_marker_name(value, self)
-        old_name = self._name
-        self._name = value
-        if old_name:
-            self._party._update_marker_name(self, old_name, value)
+    def __hash__(self):
+        """Hash based on name (markers with same name should be the same)."""
+        return hash(self.name)
     
-    @property
-    def tag(self) -> str:
-        """Return the marker tag string, e.g., '{marker[0]}'."""
-        return f'{{{self.name}}}'
-    
-    def __repr__(self) -> str:
-        return f"Marker(id={self._id}, name={self.name!r}, tag={self.tag!r})"
+    def __eq__(self, other):
+        """Equality based on name."""
+        if isinstance(other, Marker):
+            return self.name == other.name
+        return False

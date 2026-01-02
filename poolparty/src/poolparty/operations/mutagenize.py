@@ -142,17 +142,20 @@ class MutagenizeOp(Operation):
         
         self._seq_length = parent_pool.seq_length
         self._sequential_cache = None
+        self._num_mutable_positions = None  # Actual mutable positions, set on first use
         
         # Determine num_states based on mode
         if mode == 'sequential':
             # Sequential mode only available with num_mutations
+            # If seq_length is known, eagerly build cache assuming all chars are mutable
+            # This will be verified/rebuilt at runtime if actual mutable positions differ
             if self._seq_length is not None:
                 if self._seq_length < num_mutations:
                     raise ValueError(
                         f"{num_mutations=} exceeds sequence length={self._seq_length}. "
                         f"Cannot apply {num_mutations} mutations to a sequence of length {self._seq_length}."
                     )
-                num_states = self._build_caches()
+                num_states = self._build_caches(self._seq_length)
             else:
                 num_states = 1
         elif mode == 'hybrid':
@@ -169,15 +172,24 @@ class MutagenizeOp(Operation):
             iter_order=iter_order,
         )
     
-    def _build_caches(self) -> int:
-        """Build caches for sequential enumeration."""
-        if self._seq_length is None:
-            return 1
+    def _build_caches(self, num_positions: int) -> int:
+        """Build caches for sequential enumeration.
+        
+        Parameters
+        ----------
+        num_positions : int
+            Number of mutable positions (valid alphabet characters only).
+        """
+        if num_positions < self.num_mutations:
+            raise ValueError(
+                f"num_mutations={self.num_mutations} exceeds mutable positions={num_positions}. "
+                f"Cannot apply {self.num_mutations} mutations."
+            )
         alpha_minus_1 = self.alpha_size - 1
-        num_combinations = comb(self._seq_length, self.num_mutations) * (alpha_minus_1 ** self.num_mutations)
+        num_combinations = comb(num_positions, self.num_mutations) * (alpha_minus_1 ** self.num_mutations)
         num_mut_patterns = alpha_minus_1 ** self.num_mutations
         cache = []
-        for positions in combinations(range(self._seq_length), self.num_mutations):
+        for positions in combinations(range(num_positions), self.num_mutations):
             for mut_pattern in range(num_mut_patterns):
                 mut_indices = []
                 remaining = mut_pattern
@@ -186,6 +198,7 @@ class MutagenizeOp(Operation):
                     remaining //= alpha_minus_1
                 cache.append((positions, tuple(reversed(mut_indices))))
         self._sequential_cache = cache
+        self._num_mutable_positions = num_positions
         return num_combinations
     
     def _random_mutation(self, seq: str, rng: np.random.Generator) -> tuple:
@@ -237,9 +250,15 @@ class MutagenizeOp(Operation):
             positions, wt_chars, mut_chars = self._random_mutation(seq, rng)
         else:
             # Sequential mode (only available with num_mutations)
+            # Build or rebuild cache based on actual mutable positions
+            num_mutable = len(valid_char_positions)
             if self._sequential_cache is None:
-                self._seq_length = seq_len
-                self._build_caches()
+                # First use - build cache
+                self._build_caches(num_mutable)
+                self.counter._num_states = len(self._sequential_cache)
+            elif self._num_mutable_positions != num_mutable:
+                # Actual mutable positions differ from cached - rebuild
+                self._build_caches(num_mutable)
                 self.counter._num_states = len(self._sequential_cache)
             # Use state 0 when inactive (state is None)
             state = self.counter.state

@@ -1,9 +1,12 @@
 """Alphabet utilities for poolparty."""
-import re
 from .types import beartype, Optional, Sequence, Union
 
-# Regex pattern for detecting marker tags like {marker_name}
-MARKER_PATTERN = re.compile(r'\{[^}]+\}')
+# Import XML-style marker pattern from markers module
+from .markers.parsing import (
+    MARKER_PATTERN,
+    get_length_without_markers as _get_length_without_markers,
+    get_positions_without_markers as _get_positions_without_markers,
+)
 
 # Named alphabet character lists
 NAMED_ALPHABETS: dict[str, list[str]] = {
@@ -182,21 +185,22 @@ class Alphabet:
         """Get the number of valid alphabet characters in a sequence.
         
         Counts only characters in the alphabet, ignoring any ignore_chars
-        and marker tags (e.g., {marker_name}).
+        and marker tags.
         Useful for determining the effective length of a gapped alignment.
         """
+        from .markers.parsing import strip_all_markers
         # Remove all marker tags first
-        seq_no_markers = MARKER_PATTERN.sub('', seq)
+        seq_no_markers = strip_all_markers(seq)
         char_set = set(self.all_chars)
         return sum(1 for c in seq_no_markers if c in char_set)
     
     def get_length_without_markers(self, seq: str) -> int:
         """Get sequence length excluding only marker tags.
         
-        Counts all characters except those inside marker tags (e.g., {marker_name}).
+        Counts all characters except those inside marker tags.
         Unlike get_seq_length(), this includes non-alphabet characters.
         """
-        return len(MARKER_PATTERN.sub('', seq))
+        return _get_length_without_markers(seq)
     
     def get_positions_without_markers(self, seq: str) -> list[int]:
         """Get raw string positions of all characters excluding marker interiors.
@@ -204,28 +208,21 @@ class Alphabet:
         Returns positions of all characters that are not inside marker tags.
         Use for operations that work on the full sequence (like breakpoint_scan).
         """
-        marker_spans: set[int] = set()
-        for match in MARKER_PATTERN.finditer(seq):
-            for i in range(match.start(), match.end()):
-                marker_spans.add(i)
-        return [i for i in range(len(seq)) if i not in marker_spans]
+        return _get_positions_without_markers(seq)
     
     def get_valid_seq_positions(self, seq: str) -> list[int]:
         """Get the indices of valid alphabet characters in a sequence.
         
         Returns positions of characters that are in the alphabet,
         skipping any ignore_chars (gaps, spaces, etc.) and positions
-        that overlap with marker tags (e.g., {marker_name}).
+        that overlap with marker tags.
         Useful for determining which positions are eligible for mutagenesis.
         """
-        # Find all marker spans (start, end positions)
-        marker_spans: set[int] = set()
-        for match in MARKER_PATTERN.finditer(seq):
-            for i in range(match.start(), match.end()):
-                marker_spans.add(i)
+        # Get positions that are not inside marker tags
+        positions_without_markers = set(_get_positions_without_markers(seq))
         
         char_set = set(self.all_chars)
-        return [i for i, c in enumerate(seq) if c in char_set and i not in marker_spans]
+        return [i for i, c in enumerate(seq) if c in char_set and i in positions_without_markers]
     
     def __repr__(self) -> str:
         return f"Alphabet({''.join(self.chars)})"

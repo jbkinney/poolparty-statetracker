@@ -1,7 +1,8 @@
 """Pool class for poolparty."""
-from numbers import Real
+from typing import Set
 import statecounter as sc
-from .types import Pool_type, Operation_type, Union, Optional, beartype
+from .types import Pool_type, Operation_type, Union, Optional, Real, beartype
+from .marker import Marker
 import pandas as pd
 
 
@@ -16,9 +17,12 @@ class Pool:
         name: Optional[str] = None,
         counter: Optional[sc.Counter] = None,
         iter_order: Optional[Real] = None,
+        markers: Optional[Set[Marker]] = None,
     ) -> None:
         """Initialize Pool and build its counter."""
         from .party import get_active_party
+        from .marker import Marker
+        
         party = get_active_party()
         if party is None:
             raise RuntimeError(
@@ -39,6 +43,17 @@ class Pool:
             self.counter.iter_order = iter_order
         self._name: str = ""
         self.name = name if name is not None else f'pool[{self._id}]'
+        
+        # Track markers: inherit from parents if not explicitly provided
+        if markers is not None:
+            self._markers: Set[Marker] = set(markers)
+        else:
+            # Inherit markers from all parent pools
+            self._markers = set()
+            for parent in operation.parent_pools:
+                if hasattr(parent, '_markers'):
+                    self._markers.update(parent._markers)
+        
         # Register pool with party after name is set
         party._register_pool(self)
     
@@ -105,6 +120,23 @@ class Pool:
     def seq_length(self) -> Optional[int]:
         """Sequence length (None if variable)."""
         return self.operation.seq_length
+    
+    @property
+    def markers(self) -> Set[Marker]:
+        """Set of Marker objects present in this pool's sequences."""
+        return self._markers
+    
+    def has_marker(self, name: str) -> bool:
+        """Check if a marker with the given name is present in this pool."""
+        return any(m.name == name for m in self._markers)
+    
+    def add_marker(self, marker: Marker) -> None:
+        """Add a marker to this pool's marker set."""
+        self._markers.add(marker)
+    
+    def remove_marker(self, name: str) -> None:
+        """Remove a marker from this pool's marker set by name."""
+        self._markers = {m for m in self._markers if m.name != name}
     
     #########################################################################
     # Counter-based operators

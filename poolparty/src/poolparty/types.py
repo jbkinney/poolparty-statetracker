@@ -1,5 +1,5 @@
 """Centralized type definitions for poolparty."""
-from typing import TypeAlias, Literal, Union, Optional
+from typing import TypeAlias, Literal, Union, Optional, Set
 from collections.abc import Sequence, Callable
 from beartype import beartype
 from numbers import Real, Integral
@@ -8,7 +8,6 @@ from numbers import Real, Integral
 Pool_type: TypeAlias = "poolparty.pool.Pool"
 Operation_type: TypeAlias = "poolparty.operation.Operation"
 Counter_type: TypeAlias = "poolparty.counter.Counter"
-Marker_type: TypeAlias = "poolparty.marker.Marker"
 
 # Mode type for operations
 ModeType: TypeAlias = Literal['random', 'sequential', 'fixed', 'hybrid']
@@ -31,10 +30,10 @@ __all__ = [
     'Literal',
     'Integral',
     'Real',
+    'Set',
     'Pool_type',
     'Operation_type',
     'Counter_type',
-    'Marker_type',
     'ModeType',
     'AlphabetType',
     'FilterFunc',
