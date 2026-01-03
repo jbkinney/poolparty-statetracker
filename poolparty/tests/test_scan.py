@@ -3,7 +3,7 @@
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 import poolparty as pp
-from poolparty.operations.scan import scan
+from poolparty.operations.scan import scan, shuffle_scan
 
 
 class TestScanInsertAction:
@@ -157,6 +157,141 @@ class TestScanDeleteAction:
         with pp.Party():
             with pytest.raises(ValueError, match="del_length .* must be <"):
                 scan('delete', 'AAAAAAAAAA', del_length=10)
+
+
+class TestScanShuffleAction:
+    """Test scan() with action='shuffle'."""
+
+    def test_shuffle_returns_pool(self):
+        """Test that scan('shuffle', ...) returns a Pool."""
+        with pp.Party():
+            bg = pp.from_seqs(['AAAAAAAAAA'])
+            result = scan('shuffle', bg, shuffle_length=3)
+            assert hasattr(result, 'operation')
+
+    def test_shuffle_preserves_length(self):
+        """Test that output length equals background length."""
+        with pp.Party():
+            result = scan('shuffle', 'AAACCCGGGTTT', shuffle_length=3,
+                         mode='random').named('result')
+
+        df = result.generate_seqs(num_seqs=10, seed=42)
+        for seq in df['seq']:
+            assert len(seq) == 12
+
+    def test_shuffle_at_specific_position(self):
+        """Test shuffling at specific position."""
+        with pp.Party():
+            result = scan('shuffle', 'AAACCCGGG', shuffle_length=3,
+                         positions=[3], mode='sequential').named('result')
+
+        df = result.generate_seqs(num_seqs=10, seed=42)
+        # Position 3 is where 'CCC' starts - shuffled 'CCC' is still 'CCC'
+        # since all chars are the same
+        for seq in df['seq']:
+            assert len(seq) == 9
+            # First 3 and last 3 should be unchanged
+            assert seq[:3] == 'AAA'
+            assert seq[6:] == 'GGG'
+
+    def test_shuffle_changes_content(self):
+        """Test that shuffle actually changes the content (with mixed chars)."""
+        with pp.Party():
+            # Use ACGT to ensure shuffling produces different results
+            result = scan('shuffle', 'AAAACGTAAAA', shuffle_length=4,
+                         positions=[3], mode='sequential').named('result')
+
+        # Generate multiple sequences - they should vary due to random shuffling
+        df = result.generate_seqs(num_seqs=50, seed=42)
+        shuffled_regions = [seq[3:7] for seq in df['seq']]
+        # All should contain same characters but may be in different orders
+        for region in shuffled_regions:
+            assert sorted(region) == ['A', 'C', 'G', 'T']
+        # Should have variability (not all the same)
+        assert len(set(shuffled_regions)) > 1
+
+    def test_shuffle_requires_shuffle_length(self):
+        """Test that shuffle_length is required for shuffle action."""
+        with pp.Party():
+            with pytest.raises(ValueError, match="shuffle_length is required"):
+                scan('shuffle', 'AAAAAAAAAA')
+
+    def test_shuffle_length_must_be_positive(self):
+        """Test that shuffle_length must be > 0."""
+        with pp.Party():
+            with pytest.raises(ValueError, match="shuffle_length must be > 0"):
+                scan('shuffle', 'AAAAAAAAAA', shuffle_length=0)
+
+    def test_shuffle_length_must_be_less_than_bg(self):
+        """Test that shuffle_length must be < bg_length."""
+        with pp.Party():
+            with pytest.raises(ValueError, match="shuffle_length .* must be <"):
+                scan('shuffle', 'AAAAAAAAAA', shuffle_length=10)
+
+    def test_shuffle_mark_changes_applies_swap_case(self):
+        """Test that mark_changes=True applies swap_case to shuffled region."""
+        with pp.Party():
+            result = scan('shuffle', 'AAACCCAAA', shuffle_length=3,
+                         positions=[3], mode='sequential',
+                         mark_changes=True).named('result')
+
+        df = result.generate_seqs(num_seqs=1, seed=42)
+        seq = df['seq'].iloc[0]
+        # Shuffled region should be lowercase
+        assert seq[:3] == 'AAA'
+        assert seq[3:6].islower()  # 'ccc' (lowercase)
+        assert seq[6:] == 'AAA'
+
+    def test_shuffle_sequential_mode_all_positions(self):
+        """Test sequential mode generates all positions."""
+        with pp.Party():
+            result = scan('shuffle', 'AAAAA', shuffle_length=2,
+                         mode='sequential').named('result')
+
+        # Sequential mode should now work without ConflictingStateAssignmentError
+        df = result.generate_seqs(num_complete_iterations=1)
+        # 4 positions (0, 1, 2, 3) for shuffling 2-char window in 5-char sequence
+        assert len(df) == 4
+        for seq in df['seq']:
+            assert len(seq) == 5
+
+
+class TestShuffleScanWrapper:
+    """Test shuffle_scan() wrapper function."""
+
+    def test_shuffle_scan_basic(self):
+        """Test basic shuffle_scan functionality."""
+        with pp.Party():
+            result = shuffle_scan('AAACCCGGG', shuffle_length=3).named('result')
+
+        df = result.generate_seqs(num_seqs=5, seed=42)
+        assert len(df) == 5
+        for seq in df['seq']:
+            assert len(seq) == 9
+
+    def test_shuffle_scan_with_positions(self):
+        """Test shuffle_scan with specific positions in sequential mode."""
+        with pp.Party():
+            result = shuffle_scan('AAACCCGGG', shuffle_length=3,
+                                 positions=[0, 6], mode='sequential').named('result')
+
+        # Sequential mode should now work without ConflictingStateAssignmentError
+        df = result.generate_seqs(num_complete_iterations=1)
+        assert len(df) == 2
+        for seq in df['seq']:
+            assert len(seq) == 9
+
+    def test_shuffle_scan_with_mark_changes(self):
+        """Test shuffle_scan with mark_changes."""
+        with pp.Party():
+            result = shuffle_scan('AAACCCAAA', shuffle_length=3,
+                                 positions=[3], mode='sequential',
+                                 mark_changes=True).named('result')
+
+        df = result.generate_seqs(num_seqs=1, seed=42)
+        seq = df['seq'].iloc[0]
+        # Middle region should be lowercase
+        assert seq[3:6].islower()
 
 
 class TestScanModes:

@@ -1,6 +1,6 @@
 """Tests for ProductOp and product_counters()."""
 import pytest
-from statecounter import Counter, Manager, ProductOp, product
+from statecounter import Counter, Manager, ProductOp, product, ordered_product, stack
 
 class TestProductOperation:
     """Test product (multiplication) operation."""
@@ -155,3 +155,134 @@ class TestMultiplyCounters:
             B = Counter(num_states=3, name='B')
             P = product([A, B], name='Product')
             assert P.name == 'Product'
+
+
+class TestOrderedProductFlattening:
+    """Test ordered_product recursive flattening and deduplication."""
+
+    def test_ordered_product_flattens_nested_products(self):
+        """ordered_product([A*B, C]) should flatten to ordered_product([A, B, C])."""
+        with Manager():
+            A = Counter(num_states=2, name='A')
+            B = Counter(num_states=3, name='B')
+            C = Counter(num_states=4, name='C')
+
+            # Create nested product
+            AB = ordered_product([A, B])
+            ABC_nested = ordered_product([AB, C])
+
+            # Create flat product
+            ABC_flat = ordered_product([A, B, C])
+
+            # Both should have same num_states
+            assert ABC_nested.num_states == ABC_flat.num_states == 24
+
+            # Both should iterate the same way
+            nested_results = []
+            for state in ABC_nested:
+                nested_results.append((state, A.state, B.state, C.state))
+
+            flat_results = []
+            for state in ABC_flat:
+                flat_results.append((state, A.state, B.state, C.state))
+
+            assert nested_results == flat_results
+
+    def test_ordered_product_deduplicates_through_nested_products(self):
+        """ordered_product([A*B, C, D*A]) should deduplicate A."""
+        with Manager():
+            A = Counter(num_states=2, name='A')
+            B = Counter(num_states=3, name='B')
+            C = Counter(num_states=4, name='C')
+            D = Counter(num_states=5, name='D')
+
+            AB = ordered_product([A, B])
+            DA = ordered_product([D, A])
+
+            # Without flattening, this would have A twice
+            # With flattening, A should be deduplicated
+            result = ordered_product([AB, C, DA])
+
+            # Should be A * B * C * D = 2 * 3 * 4 * 5 = 120
+            # NOT (A * B) * C * (D * A) = 6 * 4 * 10 = 240
+            assert result.num_states == 120
+
+    def test_ordered_product_diamond_pattern_no_conflict(self):
+        """Diamond pattern should not cause ConflictingStateAssignmentError."""
+        with Manager():
+            A = Counter(num_states=2, name='A')
+            B = Counter(num_states=3, name='B')
+
+            # Create diamond: M depends on A, T depends on M (and thus A)
+            M = ordered_product([A, B])  # M = A * B
+            T = ordered_product([M])     # T = M = A * B
+
+            # Result has M as direct parent and T (which contains M) as another parent
+            # This is the diamond pattern that was causing conflicts
+            result = ordered_product([M, T])
+
+            # Should deduplicate to just A * B = 6 states
+            assert result.num_states == 6
+
+            # Should be able to iterate without ConflictingStateAssignmentError
+            results = []
+            for state in result:
+                results.append((state, A.state, B.state))
+
+            expected = [
+                (0, 0, 0), (1, 1, 0), (2, 0, 1),
+                (3, 1, 1), (4, 0, 2), (5, 1, 2),
+            ]
+            assert results == expected
+
+    def test_ordered_product_does_not_flatten_non_product_ops(self):
+        """Non-product operations like stack should NOT be flattened."""
+        with Manager():
+            A = Counter(num_states=2, name='A')
+            B = Counter(num_states=3, name='B')
+            C = Counter(num_states=4, name='C')
+
+            # Create a stack (not a product)
+            AB_stack = stack([A, B])  # stack has 5 states (2 + 3)
+
+            # ordered_product should NOT flatten through the stack
+            result = ordered_product([AB_stack, C])
+
+            # Should be stack(A,B) * C = 5 * 4 = 20
+            # NOT A * B * C = 24 (which would happen if we flattened through stack)
+            assert result.num_states == 20
+
+    def test_ordered_product_complex_diamond(self):
+        """Complex diamond with multiple levels should work correctly."""
+        with Manager():
+            A = Counter(num_states=2, name='A')
+            B = Counter(num_states=3, name='B')
+            C = Counter(num_states=4, name='C')
+
+            # Create: ((A*B)*C) * (A*C)
+            AB = ordered_product([A, B])
+            ABC = ordered_product([AB, C])
+            AC = ordered_product([A, C])
+
+            result = ordered_product([ABC, AC])
+
+            # Should flatten to A * B * C = 24 (A and C deduplicated)
+            assert result.num_states == 24
+
+            # Should iterate without conflict
+            count = 0
+            for _ in result:
+                count += 1
+            assert count == 24
+
+    def test_ordered_product_immediate_duplicate(self):
+        """Immediate duplicates should still be deduplicated."""
+        with Manager():
+            A = Counter(num_states=2, name='A')
+            B = Counter(num_states=3, name='B')
+
+            # Direct duplicate
+            result = ordered_product([A, B, A])
+
+            # Should deduplicate to A * B = 6
+            assert result.num_states == 6

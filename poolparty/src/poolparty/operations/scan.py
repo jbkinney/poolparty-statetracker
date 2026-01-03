@@ -1,4 +1,4 @@
-"""Scan operations - insert, replace, or delete sequences at scanning positions."""
+"""Scan operations - insert, replace, delete, or shuffle sequences at scanning positions."""
 from numbers import Integral, Real
 from typing import Literal
 
@@ -9,7 +9,7 @@ from ..pool import Pool
 
 
 # Type alias for scan action
-ActionType = Literal['insert', 'replace', 'delete']
+ActionType = Literal['insert', 'replace', 'delete', 'shuffle']
 
 
 @beartype
@@ -19,6 +19,7 @@ def scan(
     ins_pool: Optional[Union[Pool, str]] = None,
     del_length: Optional[Integral] = None,
     del_char: str = '-',
+    shuffle_length: Optional[Integral] = None,
     positions: PositionsType = None,
     spacer_str: str = '',
     mark_changes: Optional[bool] = None,
@@ -30,15 +31,16 @@ def scan(
     op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
-    Unified scan operation for inserting, replacing, or deleting sequences at scanning positions.
+    Unified scan operation for inserting, replacing, deleting, or shuffling at scanning positions.
 
     Parameters
     ----------
-    action : Literal['insert', 'replace', 'delete']
+    action : Literal['insert', 'replace', 'delete', 'shuffle']
         The type of scan operation to perform:
         - 'insert': Insert a sequence at scanning positions (adds to background length)
         - 'replace': Replace a segment with insert sequence (preserves background length)
         - 'delete': Remove a segment from background (reduces length or fills with marker)
+        - 'shuffle': Shuffle characters within a segment at scanning positions
     bg_pool : Pool or str
         The background Pool or sequence string.
     ins_pool : Pool or str, optional
@@ -47,6 +49,8 @@ def scan(
         Number of characters to delete. Required for 'delete' action.
     del_char : str, default='-'
         Character used to fill deletion gap when mark_changes=True. Only used for 'delete' action.
+    shuffle_length : Integral, optional
+        Length of region to shuffle. Required for 'shuffle' action.
     positions : PositionsType, default=None
         Positions to consider for the operation (0-based). If None, all valid positions are used.
     spacer_str : str, default=''
@@ -54,7 +58,7 @@ def scan(
     mark_changes : Optional[bool], default=None
         Flag controlling how changes are marked:
         - 'delete': If True, fill gap with del_char * del_length; if False, simply remove segment
-        - 'replace'/'insert': If True, apply swap_case() to the insert
+        - 'replace'/'insert'/'shuffle': If True, apply swap_case() to the modified region
         If None, resolves from Party defaults.
     mode : ModeType, default='random'
         Selection mode: 'random', 'sequential', or 'hybrid'.
@@ -88,11 +92,15 @@ def scan(
     ...
     ...     # Delete 3-bp segments (remove entirely)
     ...     result = pp.scan('delete', 'AAAAAAAAAA', del_length=3, mark_changes=False)
+    ...
+    ...     # Shuffle 3-bp segments at scanning positions
+    ...     result = pp.scan('shuffle', 'AAACCCGGGTTT', shuffle_length=3)
     """
     from .from_seq import from_seq
     from .join import join
     from .swap_case import swap_case
-    from ..markers import marker_scan, replace_marker_content
+    from .seq_shuffle import seq_shuffle
+    from ..markers import marker_scan, replace_marker_content, apply_at_marker
 
     # Convert string inputs to pools if needed
     bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
@@ -156,8 +164,25 @@ def scan(
         marker_name = '_del'
         marker_length = int(del_length)
         max_position = bg_length - del_length
+
+    elif action == 'shuffle':
+        # Shuffle action: shuffle_length required
+        if shuffle_length is None:
+            raise ValueError("shuffle_length is required for 'shuffle' action")
+        if shuffle_length <= 0:
+            raise ValueError(f"shuffle_length must be > 0, got {shuffle_length}")
+        if shuffle_length >= bg_length:
+            raise ValueError(
+                f"shuffle_length ({shuffle_length}) must be < bg_pool.seq_length ({bg_length})"
+            )
+
+        marker_name = '_shuf'
+        marker_length = int(shuffle_length)
+        max_position = bg_length - shuffle_length
     else:
-        raise ValueError(f"Invalid action: {action}. Must be 'insert', 'replace', or 'delete'.")
+        raise ValueError(
+            f"Invalid action: {action}. Must be 'insert', 'replace', 'delete', or 'shuffle'."
+        )
 
     # Validate positions
     validated_positions = validate_positions(positions, max_position, min_position=0)
@@ -174,35 +199,56 @@ def scan(
         op_iter_order=op_iter_order,
     )
 
-    # 2. Build replacement content based on action
-    if action in ('insert', 'replace'):
-        # Use ins_pool (already processed with swap_case if needed)
-        content = ins_pool
-        # Wrap with spacers if needed
-        if spacer_str:
-            content = join([from_seq(spacer_str), content, from_seq(spacer_str)])
-    else:  # action == 'delete'
-        if mark_changes:
-            # Fill gap with del_char * del_length
-            marker_str = del_char * marker_length
-            content = from_seq(marker_str)
+    # 2. Build replacement content or apply transformation based on action
+    if action == 'shuffle':
+        # Shuffle action: use apply_at_marker with seq_shuffle
+        # Note: seq_shuffle only supports 'random' mode for the actual shuffling.
+        # The 'mode' parameter controls position selection via marker_scan above.
+        def shuffle_transform(content_pool):
+            shuffled = seq_shuffle(content_pool, mode='random')
+            if mark_changes:
+                shuffled = swap_case(shuffled)
+            # Wrap with spacers if needed
+            if spacer_str:
+                shuffled = join([from_seq(spacer_str), shuffled, from_seq(spacer_str)])
+            return shuffled
+
+        result = apply_at_marker(
+            marked,
+            marker_name,
+            shuffle_transform,
+            name=name,
+            iter_order=iter_order,
+        )
+    else:
+        # insert, replace, delete: use replace_marker_content
+        if action in ('insert', 'replace'):
+            # Use ins_pool (already processed with swap_case if needed)
+            content = ins_pool
             # Wrap with spacers if needed
             if spacer_str:
                 content = join([from_seq(spacer_str), content, from_seq(spacer_str)])
-        else:
-            # Simply remove the segment - just use spacer_str once (or empty)
-            content = from_seq(spacer_str)
+        else:  # action == 'delete'
+            if mark_changes:
+                # Fill gap with del_char * del_length
+                marker_str = del_char * marker_length
+                content = from_seq(marker_str)
+                # Wrap with spacers if needed
+                if spacer_str:
+                    content = join([from_seq(spacer_str), content, from_seq(spacer_str)])
+            else:
+                # Simply remove the segment - just use spacer_str once (or empty)
+                content = from_seq(spacer_str)
 
-    # 4. Replace marker content
-    result = replace_marker_content(
-        marked,
-        content,
-        marker_name,
-        name=name,
-        op_name=op_name,
-        iter_order=iter_order,
-        op_iter_order=op_iter_order,
-    )
+        result = replace_marker_content(
+            marked,
+            content,
+            marker_name,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
     return result
 
 
@@ -423,6 +469,71 @@ def deletion_scan(
         bg_pool=bg_pool,
         del_length=deletion_length,
         del_char=del_char,
+        positions=positions,
+        spacer_str=spacer_str,
+        mark_changes=mark_changes,
+        mode=mode,
+        num_hybrid_states=num_hybrid_states,
+        name=name,
+        op_name=op_name,
+        iter_order=iter_order,
+        op_iter_order=op_iter_order,
+    )
+
+
+@beartype
+def shuffle_scan(
+    bg_pool: Union[Pool, str],
+    shuffle_length: Integral,
+    positions: PositionsType = None,
+    spacer_str: str = '',
+    mark_changes: Optional[bool] = None,
+    mode: ModeType = 'random',
+    num_hybrid_states: Optional[Integral] = None,
+    name: Optional[str] = None,
+    op_name: Optional[str] = None,
+    iter_order: Optional[Real] = None,
+    op_iter_order: Optional[Real] = None,
+) -> Pool:
+    """
+    Shuffle characters within a window at specified scanning positions.
+
+    Parameters
+    ----------
+    bg_pool : Pool or str
+        Source pool or sequence string to shuffle regions of.
+    shuffle_length : Integral
+        Length of the region to shuffle at each position.
+    positions : PositionsType, default=None
+        Positions to consider for the start of the shuffle region (0-based).
+        If None, all valid positions are used.
+    spacer_str : str, default=''
+        String to insert as a spacer around the shuffled region.
+    mark_changes : Optional[bool], default=None
+        If True, apply swap_case() to the shuffled region. If None, uses party default.
+    mode : ModeType, default='random'
+        Selection mode: 'random', 'sequential', or 'hybrid'.
+    num_hybrid_states : Optional[Integral], default=None
+        Number of pool states when using 'hybrid' mode (ignored by other modes).
+    name : Optional[str], default=None
+        Name for the resulting Pool.
+    op_name : Optional[str], default=None
+        Name for the underlying Operation.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the resulting Pool.
+    op_iter_order : Optional[Real], default=None
+        Iteration order priority for the underlying Operation.
+
+    Returns
+    -------
+    Pool
+        A Pool yielding sequences where a region of the specified length is shuffled
+        at each allowed position.
+    """
+    return scan(
+        action='shuffle',
+        bg_pool=bg_pool,
+        shuffle_length=shuffle_length,
         positions=positions,
         spacer_str=spacer_str,
         mark_changes=mark_changes,

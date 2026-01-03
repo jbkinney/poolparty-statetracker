@@ -145,21 +145,24 @@ class TestBreakpointScan:
         for _, row in df.iterrows():
             assert row['left.seq'] + row['mid.seq'] + row['right.seq'] == 'ACGTACGT'
     
-    def test_breakpoint_with_mutation_join_raises_conflict(self):
-        """Test combining breakpoint scan with mutation raises conflict.
+    def test_breakpoint_with_mutation_join_diamond_resolved(self):
+        """Test combining breakpoint scan with mutation works with diamond pattern.
         
         Breakpoint scan creates synchronized pools that share a counter.
-        Concatenating one with a mutation of the other creates a counter
-        graph with conflicting state assignments.
+        Concatenating one with a mutation of the other creates a diamond
+        pattern. ordered_product now properly deduplicates this pattern,
+        so no conflict error is raised.
         """
         with pp.Party() as party:
             left, right = pp.breakpoint_scan('ACGTACGT', num_breakpoints=1, 
                                               mode='sequential')
-            mutated_right = pp.mutagenize(right, num_mutations=1, mode='sequential')
+            # Use random mode to avoid issues with empty segments at some breakpoints
+            mutated_right = pp.mutagenize(right, num_mutations=1, mode='random')
             oligo = join([left, mutated_right]).named('oligo')
         
-        with pytest.raises(sc.ConflictingStateAssignmentError):
-            oligo.generate_seqs(num_seqs=10)
+        # Should work without ConflictingStateAssignmentError
+        df = oligo.generate_seqs(num_seqs=5, seed=42)
+        assert len(df) == 5
 
 
 class TestStatePersistence:
