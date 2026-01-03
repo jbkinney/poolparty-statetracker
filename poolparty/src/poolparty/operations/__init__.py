@@ -9,9 +9,7 @@ from .join import join
 from .mutagenize import mutagenize, MutagenizeOp
 from .mutagenize_orf import mutagenize_orf, MutagenizeOrfOp
 from .breakpoint_scan import breakpoint_scan, BreakpointScanOp
-from .insertion_scan import insertion_scan
-from .replacement_scan import replacement_scan
-from .deletion_scan import deletion_scan
+from .scan import scan, insertion_scan, replacement_scan, deletion_scan
 from .seq_slice import seq_slice, SeqSliceOp
 from .state_slice import state_slice, StateSliceOp
 from .state_shuffle import state_shuffle, StateShuffleOp
@@ -35,6 +33,7 @@ __all__ = [
     'mutagenize', 'MutagenizeOp',
     'mutagenize_orf', 'MutagenizeOrfOp',
     'breakpoint_scan', 'BreakpointScanOp',
+    'scan',
     'insertion_scan',
     'replacement_scan',
     'deletion_scan',

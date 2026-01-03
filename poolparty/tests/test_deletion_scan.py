@@ -2,7 +2,7 @@
 
 import pytest
 import poolparty as pp
-from poolparty.operations.deletion_scan import deletion_scan
+from poolparty.operations.scan import deletion_scan
 
 
 class TestDeletionScanBasics:
@@ -265,10 +265,10 @@ class TestDeletionScanValidation:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             
-            with pytest.raises(ValueError, match="deletion_length must be > 0"):
+            with pytest.raises(ValueError, match="del_length must be > 0"):
                 deletion_scan(bg, deletion_length=0)
             
-            with pytest.raises(ValueError, match="deletion_length must be > 0"):
+            with pytest.raises(ValueError, match="del_length must be > 0"):
                 deletion_scan(bg, deletion_length=-1)
     
     def test_deletion_length_must_be_less_than_bg_length(self):
@@ -276,10 +276,10 @@ class TestDeletionScanValidation:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             
-            with pytest.raises(ValueError, match="deletion_length .* must be < bg_pool.seq_length"):
+            with pytest.raises(ValueError, match="del_length .* must be < bg_pool.seq_length"):
                 deletion_scan(bg, deletion_length=10)
             
-            with pytest.raises(ValueError, match="deletion_length .* must be < bg_pool.seq_length"):
+            with pytest.raises(ValueError, match="del_length .* must be < bg_pool.seq_length"):
                 deletion_scan(bg, deletion_length=15)
     
     def test_position_exceeds_maximum(self):

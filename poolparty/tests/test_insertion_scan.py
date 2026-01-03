@@ -2,7 +2,7 @@
 
 import pytest
 import poolparty as pp
-from poolparty.operations.insertion_scan import insertion_scan
+from poolparty.operations.scan import insertion_scan
 
 
 class TestInsertionScanBasics:
