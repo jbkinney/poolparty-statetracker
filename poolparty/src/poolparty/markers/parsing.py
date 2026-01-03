@@ -6,7 +6,7 @@ from poolparty.types import Optional, Literal
 
 
 @dataclass
-class RegionMarker:
+class ParsedMarker:
     """Represents a parsed XML-style region marker in a sequence."""
     name: str
     start: int          # Position of opening tag '<'
@@ -15,7 +15,7 @@ class RegionMarker:
     content_end: int    # Position after last content character
     strand: str         # '+' or '-'
     content: str        # The sequence content inside the marker
-    declared_seq_length: Optional[int]  # None if not declared, int value if declared (including 'None' -> None)
+    declared_seq_length_str: Optional[str]  # None if not declared, 'None' if variable, '4' if declared as 4
     
     @property
     def is_zero_length(self) -> bool:
@@ -29,25 +29,24 @@ class RegionMarker:
     
     @property
     def is_variable_length(self) -> bool:
-        """True if declared_seq_length is explicitly 'None' (variable length marker)."""
-        # We use a sentinel: declared_seq_length = -1 means variable length was explicitly declared
-        return self.declared_seq_length == -1
+        """True if seq_length was explicitly declared as 'None' (variable length marker)."""
+        return self.declared_seq_length_str == 'None'
 
 
-def _parse_attributes(attrs_str: str) -> tuple[str, Optional[int]]:
+def _parse_attributes(attrs_str: str) -> tuple[str, Optional[str]]:
     """Parse strand and seq_length from an attributes string.
     
     Returns:
-        (strand, declared_seq_length) where:
+        (strand, declared_seq_length_str) where:
         - strand is '+' or '-' (defaults to '+')
-        - declared_seq_length is None (not declared), -1 (declared as 'None'), 
-          or an int >= 0
+        - declared_seq_length_str is None (not declared), 'None' (variable length),
+          or the string representation of the declared int (e.g., '4')
     """
     strand = '+'
-    declared_seq_length: Optional[int] = None
+    declared_seq_length_str: Optional[str] = None
     
     if not attrs_str:
-        return strand, declared_seq_length
+        return strand, declared_seq_length_str
     
     # Parse strand attribute
     strand_match = re.search(r"strand=['\"]([+-])['\"]", attrs_str)
@@ -59,16 +58,17 @@ def _parse_attributes(attrs_str: str) -> tuple[str, Optional[int]]:
     if seq_len_match:
         value = seq_len_match.group(1)
         if value == 'None':
-            declared_seq_length = -1  # Sentinel for variable length
+            declared_seq_length_str = 'None'
         else:
             try:
-                declared_seq_length = int(value)
-                if declared_seq_length < 0:
-                    raise ValueError(f"seq_length must be non-negative, got {declared_seq_length}")
+                parsed_int = int(value)
+                if parsed_int < 0:
+                    raise ValueError(f"seq_length must be non-negative, got {parsed_int}")
+                declared_seq_length_str = value  # Store the string representation
             except ValueError:
                 raise ValueError(f"Invalid seq_length value: '{value}'. Must be an integer or 'None'.")
     
-    return strand, declared_seq_length
+    return strand, declared_seq_length_str
 
 
 # Unified regex pattern for all XML-style marker tags
@@ -80,10 +80,10 @@ TAG_PATTERN = re.compile(r'<(/?)(\w+)((?:\s+\w+=[\'"][^\'"]*[\'"])*)\s*(/?)>')
 MARKER_PATTERN = TAG_PATTERN
 
 
-def find_all_markers(seq: str) -> list[RegionMarker]:
+def find_all_markers(seq: str) -> list[ParsedMarker]:
     """Find all markers in a sequence.
     
-    Returns a list of RegionMarker objects for each marker found.
+    Returns a list of ParsedMarker objects for each marker found.
     Raises ValueError if markers are malformed (unmatched open/close tags).
     Supports nested markers.
     """
@@ -94,7 +94,7 @@ def find_all_markers(seq: str) -> list[RegionMarker]:
         raise ValueError(f"Invalid marker syntax: {e}")
     
     markers = []
-    open_stack = []  # [(name, strand, declared_seq_length, tag_start, content_start)]
+    open_stack = []  # [(name, strand, declared_seq_length_str, tag_start, content_start)]
     
     for match in TAG_PATTERN.finditer(seq):
         is_close = match.group(1) == '/'
@@ -104,14 +104,14 @@ def find_all_markers(seq: str) -> list[RegionMarker]:
         
         if is_self_close:
             # Self-closing tag: <name/>
-            strand, decl_len = _parse_attributes(attrs)
+            strand, decl_len_str = _parse_attributes(attrs)
             # Validate seq_length for self-closing
-            if decl_len is not None and decl_len not in (0, -1):
+            if decl_len_str is not None and decl_len_str not in ('0', 'None'):
                 raise ValueError(
-                    f"Self-closing marker '<{name}/>' has seq_length='{decl_len}' "
+                    f"Self-closing marker '<{name}/>' has seq_length='{decl_len_str}' "
                     f"but contains no content. Use seq_length='0' or omit the attribute."
                 )
-            markers.append(RegionMarker(
+            markers.append(ParsedMarker(
                 name=name,
                 start=match.start(),
                 end=match.end(),
@@ -119,22 +119,22 @@ def find_all_markers(seq: str) -> list[RegionMarker]:
                 content_end=match.end(),
                 strand=strand,
                 content='',
-                declared_seq_length=decl_len,
+                declared_seq_length_str=decl_len_str,
             ))
         elif is_close:
             # Closing tag: </name> - pop innermost matching open tag
             for i in range(len(open_stack) - 1, -1, -1):
                 if open_stack[i][0] == name:
-                    oname, strand, decl_len, ostart, cstart = open_stack.pop(i)
+                    oname, strand, decl_len_str, ostart, cstart = open_stack.pop(i)
                     content = seq[cstart:match.start()]
-                    # Validate seq_length if declared
-                    if decl_len is not None and decl_len >= 0:
-                        if len(content) != decl_len:
+                    # Validate seq_length if declared as an integer
+                    if decl_len_str is not None and decl_len_str != 'None':
+                        if len(content) != int(decl_len_str):
                             raise ValueError(
-                                f"Marker '<{oname}>' has seq_length='{decl_len}' "
+                                f"Marker '<{oname}>' has seq_length='{decl_len_str}' "
                                 f"but content has length {len(content)}: '{content}'"
                             )
-                    markers.append(RegionMarker(
+                    markers.append(ParsedMarker(
                         name=oname,
                         start=ostart,
                         end=match.end(),
@@ -142,13 +142,13 @@ def find_all_markers(seq: str) -> list[RegionMarker]:
                         content_end=match.start(),
                         strand=strand,
                         content=content,
-                        declared_seq_length=decl_len,
+                        declared_seq_length_str=decl_len_str,
                     ))
                     break
         else:
             # Opening tag: <name>
-            strand, decl_len = _parse_attributes(attrs)
-            open_stack.append((name, strand, decl_len, match.start(), match.end()))
+            strand, decl_len_str = _parse_attributes(attrs)
+            open_stack.append((name, strand, decl_len_str, match.start(), match.end()))
     
     return sorted(markers, key=lambda m: m.start)
 
@@ -159,10 +159,10 @@ def has_marker(seq: str, name: str) -> bool:
     return any(m.name == name for m in markers)
 
 
-def validate_single_marker(seq: str, name: str) -> RegionMarker:
+def validate_single_marker(seq: str, name: str) -> ParsedMarker:
     """Validate that exactly one marker with the given name exists.
     
-    Returns the RegionMarker if found.
+    Returns the ParsedMarker if found.
     Raises ValueError if marker not found or appears multiple times.
     """
     markers = find_all_markers(seq)
@@ -346,12 +346,12 @@ def _validate_markers(seq: str) -> set:
     
     for rm in region_markers:
         # Determine the seq_length to register
-        if rm.declared_seq_length == -1:
+        if rm.declared_seq_length_str == 'None':
             # Explicitly declared as variable length
             seq_length = None
-        elif rm.declared_seq_length is not None:
+        elif rm.declared_seq_length_str is not None:
             # Explicitly declared with a specific length (already validated in parsing)
-            seq_length = rm.declared_seq_length
+            seq_length = int(rm.declared_seq_length_str)
         else:
             # Not declared, infer from content
             seq_length = len(rm.content)

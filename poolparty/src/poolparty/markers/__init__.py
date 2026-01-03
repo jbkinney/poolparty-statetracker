@@ -3,7 +3,7 @@
 # Import parsing utilities (no dependencies on Operation)
 from .parsing import (
     MARKER_PATTERN,
-    RegionMarker,
+    ParsedMarker,
     parse_marker,
     find_all_markers,
     has_marker,
@@ -28,7 +28,7 @@ from .marker_multiscan import marker_multiscan as marker_multiscan, MarkerMultiS
 __all__ = [
     # Parsing utilities
     'MARKER_PATTERN',
-    'RegionMarker',
+    'ParsedMarker',
     'parse_marker',
     'find_all_markers',
     'has_marker',

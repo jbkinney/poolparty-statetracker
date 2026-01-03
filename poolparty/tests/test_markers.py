@@ -5,7 +5,7 @@ import numpy as np
 import poolparty as pp
 from poolparty.markers import (
     MARKER_PATTERN,
-    RegionMarker,
+    ParsedMarker,
     parse_marker,
     find_all_markers,
     has_marker,
@@ -631,14 +631,13 @@ class TestSeqLengthAttribute:
         """Test parsing seq_length as integer."""
         markers = find_all_markers("<orf seq_length='6'>ATGCCC</orf>")
         assert len(markers) == 1
-        assert markers[0].declared_seq_length == 6
+        assert markers[0].declared_seq_length_str == '6'
     
     def test_parse_seq_length_none(self):
         """Test parsing seq_length='None' for variable length."""
         markers = find_all_markers("<var seq_length='None'>ACGT</var>")
         assert len(markers) == 1
-        # -1 is sentinel for 'None' (variable length)
-        assert markers[0].declared_seq_length == -1
+        assert markers[0].declared_seq_length_str == 'None'
         assert markers[0].is_variable_length
     
     def test_seq_length_validation(self):
@@ -655,7 +654,7 @@ class TestSeqLengthAttribute:
         """Test self-closing markers with seq_length."""
         markers = find_all_markers("<ins seq_length='0'/>")
         assert len(markers) == 1
-        assert markers[0].declared_seq_length == 0
+        assert markers[0].declared_seq_length_str == '0'
     
     def test_build_marker_with_seq_length(self):
         """Test building marker tags with seq_length."""
