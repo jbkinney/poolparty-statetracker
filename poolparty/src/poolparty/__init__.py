@@ -64,6 +64,7 @@ from .marker_ops import (
 # Import from multiscan_ops module
 from .multiscan_ops import (
     deletion_multiscan,
+    insertion_multiscan,
     replacement_multiscan,
 )
 
@@ -109,6 +110,7 @@ __all__ = [
     'remove_marker',
     # Multiscan operations
     'deletion_multiscan',
+    'insertion_multiscan',
     'replacement_multiscan',
 ]
 
