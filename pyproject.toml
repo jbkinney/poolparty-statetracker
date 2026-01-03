@@ -3,6 +3,7 @@ name = "poolparty-workspace"
 version = "0.0.0"
 requires-python = ">=3.10"
 dependencies = [
+    "nbclient>=0.10.4",
     "poolparty",
     "statecounter",
 ]

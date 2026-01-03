@@ -54,10 +54,9 @@ def replacement_scan(
         at the specified scanning positions, using the defined selection mode.
     """
     from .from_seq import from_seq
-    from .seq_slice import seq_slice
     from .join import join
-    from .breakpoint_scan import breakpoint_scan
     from .swap_case import swap_case
+    from ..markers import marker_scan, replace_marker_content
     
     # Convert string inputs to pools if needed
     bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
@@ -84,23 +83,32 @@ def replacement_scan(
     max_position = bg_length - ins_length
     validated_positions = validate_positions(positions, max_position, min_position=0)
     
-    # Split background at breakpoint positions
-    left, right = breakpoint_scan(
-        pool=bg_pool,
-        num_breakpoints=1,
+    # 1. Insert region marker of length ins_length at scanning positions
+    marked = marker_scan(
+        bg_pool,
+        marker='_rep',
+        marker_length=ins_length,
         positions=validated_positions,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
-        op_iter_order=op_iter_order,
         op_name=op_name,
+        op_iter_order=op_iter_order,
     )
     
-    # Clip the right segment by removing the first ins_length characters
-    right_clipped = seq_slice(right, slice(ins_length, None, None))
+    # 2. Wrap insert with spacers if needed
+    if spacer_str:
+        content = join([from_seq(spacer_str), ins_pool, from_seq(spacer_str)])
+    else:
+        content = ins_pool
     
-    # Join left, insert, and right_clipped
-    result_pool = join([left, ins_pool, right_clipped], 
-                       spacer_str=spacer_str, name=name, op_name=op_name,
-                       iter_order=iter_order)
-    return result_pool
-
+    # 3. Replace marker content with insert
+    result = replace_marker_content(
+        marked,
+        content,
+        '_rep',
+        name=name,
+        op_name=op_name,
+        iter_order=iter_order,
+        op_iter_order=op_iter_order,
+    )
+    return result

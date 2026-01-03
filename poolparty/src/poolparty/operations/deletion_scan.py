@@ -61,14 +61,12 @@ def deletion_scan(
         A Pool yielding sequences where a segment of the specified length is removed
         from the source at each allowed position, optionally with a marker or spacer inserted.
     """
-    from .from_seqs import from_seqs
-    from .seq_slice import seq_slice
+    from .from_seq import from_seq
     from .join import join
-    from .breakpoint_scan import breakpoint_scan
+    from ..markers import marker_scan, replace_marker_content
 
     # Convert string input to pool if needed
-    if isinstance(bg_pool, str):
-        bg_pool = from_seqs([bg_pool], mode='fixed')
+    bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
 
     # Validate that bg_pool has defined seq_length
     bg_length = bg_pool.seq_length
@@ -87,33 +85,47 @@ def deletion_scan(
     max_position = bg_length - deletion_length
     validated_positions = validate_positions(positions, max_position, min_position=0)
 
-    # Split background at breakpoint positions
-    left, right = breakpoint_scan(
-        pool=bg_pool,
-        num_breakpoints=1,
+    # Note: min_spacing/max_spacing are not supported in marker-based approach
+    # They were rarely used for single deletions anyway
+    if min_spacing is not None or max_spacing is not None:
+        raise ValueError(
+            "min_spacing and max_spacing are not supported in the marker-based "
+            "implementation of deletion_scan. Use breakpoint_scan directly if needed."
+        )
+
+    # 1. Insert region marker of deletion_length at scanning positions
+    marked = marker_scan(
+        bg_pool,
+        marker='_del',
+        marker_length=deletion_length,
         positions=validated_positions,
-        min_spacing=min_spacing,
-        max_spacing=max_spacing,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
+        op_name=op_name,
         op_iter_order=op_iter_order,
     )
 
-    # Clip the right segment by removing the first deletion_length characters
-    right_clipped = seq_slice(right, slice(deletion_length, None, None))
-
+    # 2. Build replacement content based on deletion_marker and spacer_str
     if deletion_marker is not None:
-        marker_seq = deletion_marker * deletion_length
-        marker_pool = from_seqs([marker_seq], mode='fixed')
-        pools_list = [left, marker_pool, right_clipped]
+        marker_str = deletion_marker * deletion_length
+        replacement = from_seq(marker_str)
+        # Wrap with spacers if needed
+        if spacer_str:
+            content = join([from_seq(spacer_str), replacement, from_seq(spacer_str)])
+        else:
+            content = replacement
     else:
-        pools_list = [left, right_clipped]
-    result = join(
-        pools_list,
-        spacer_str=spacer_str,
+        # No marker - just use spacer_str once (or empty)
+        content = from_seq(spacer_str)
+
+    # 4. Replace marker content
+    result = replace_marker_content(
+        marked,
+        content,
+        '_del',
         name=name,
         op_name=op_name,
         iter_order=iter_order,
+        op_iter_order=op_iter_order,
     )
     return result
-

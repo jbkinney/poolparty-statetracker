@@ -56,7 +56,7 @@ def insertion_scan(
     """
     from .from_seq import from_seq
     from .join import join
-    from .breakpoint_scan import breakpoint_scan
+    from ..markers import marker_scan, replace_marker_content
 
     # Convert string inputs to pools if needed
     bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
@@ -73,22 +73,36 @@ def insertion_scan(
     # Validate positions (valid range: 0 to bg_length inclusive)
     validated_positions = validate_positions(positions, max_position=bg_length, min_position=0)
 
-    # Split background at breakpoint positions
-    left, right = breakpoint_scan(
-        pool=bg_pool,
-        num_breakpoints=1,
+    # Note: min_spacing/max_spacing are not supported in marker-based approach
+    # They were rarely used for single insertions anyway
+    if min_spacing is not None or max_spacing is not None:
+        raise ValueError(
+            "min_spacing and max_spacing are not supported in the marker-based "
+            "implementation of insertion_scan. Use breakpoint_scan directly if needed."
+        )
+
+    # 1. Insert zero-length marker at scanning positions
+    marked = marker_scan(
+        bg_pool,
+        marker='_ins',
+        marker_length=0,
         positions=validated_positions,
-        min_spacing=min_spacing,
-        max_spacing=max_spacing,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         op_iter_order=op_iter_order,
     )
 
-    # Join left, insert, and right (no clipping - insert is added)
-    result = join(
-        [left, ins_pool, right],
-        spacer_str=spacer_str,
+    # 2. Wrap insert with spacers if needed
+    if spacer_str:
+        content = join([from_seq(spacer_str), ins_pool, from_seq(spacer_str)])
+    else:
+        content = ins_pool
+
+    # 3. Replace marker with insert content
+    result = replace_marker_content(
+        marked,
+        content,
+        '_ins',
         name=name,
         op_name=op_name,
         iter_order=iter_order,
