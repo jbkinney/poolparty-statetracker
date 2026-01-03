@@ -23,7 +23,7 @@ class TestDeletionMultiscanBasics:
                 bg, deletion_length=3, num_deletions=2, deletion_marker='-'
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert len(seq) == 18
 
@@ -35,7 +35,7 @@ class TestDeletionMultiscanBasics:
                 bg, deletion_length=3, num_deletions=2, deletion_marker=None
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert len(seq) == 12  # 18 - (3 * 2)
 
@@ -47,7 +47,7 @@ class TestDeletionMultiscanBasics:
                 bg, deletion_length=3, num_deletions=2, deletion_marker='-'
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             # Should have two separate '---' regions
             assert seq.count('-') == 6  # 3 * 2 deletions
@@ -63,7 +63,7 @@ class TestDeletionMultiscanStringInputs:
                 'AAAAAAAAAAAAAAAAAA', deletion_length=3, num_deletions=2
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=3, seed=42)
+        df = result.generate_library(num_seqs=3, seed=42)
         for seq in df['seq']:
             assert seq.count('-') == 6
             assert len(seq) == 18
@@ -80,7 +80,7 @@ class TestDeletionMultiscanModes:
                 bg, deletion_length=3, num_deletions=2, mode='random'
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=50, seed=42)
+        df = result.generate_library(num_seqs=50, seed=42)
         assert len(df) == 50
 
         # All sequences should have exactly 6 deletion chars
@@ -96,7 +96,7 @@ class TestDeletionMultiscanModes:
                 mode='hybrid', num_hybrid_states=5
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=20, seed=42)
+        df = result.generate_library(num_seqs=20, seed=42)
         assert len(df) == 20
 
         for seq in df['seq']:
@@ -123,7 +123,7 @@ class TestDeletionMultiscanMarkerOptions:
             bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])
             result = deletion_multiscan(bg, deletion_length=3, num_deletions=2).named('result')
 
-        df = result.generate_seqs(num_seqs=1, seed=42)
+        df = result.generate_library(num_seqs=1, seed=42)
         assert '-' in df['seq'].iloc[0]
 
     def test_custom_marker(self):
@@ -134,7 +134,7 @@ class TestDeletionMultiscanMarkerOptions:
                 bg, deletion_length=3, num_deletions=2, deletion_marker='X'
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=1, seed=42)
+        df = result.generate_library(num_seqs=1, seed=42)
         assert 'XXX' in df['seq'].iloc[0]
         assert df['seq'].iloc[0].count('X') == 6
 
@@ -146,7 +146,7 @@ class TestDeletionMultiscanMarkerOptions:
                 bg, deletion_length=3, num_deletions=2, deletion_marker=None
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             # Should only have A's, no markers
             assert set(seq) == {'A'}
@@ -164,7 +164,7 @@ class TestDeletionMultiscanSpacerStr:
                 bg, deletion_length=3, num_deletions=2, spacer_str='.'
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=3, seed=42)
+        df = result.generate_library(num_seqs=3, seed=42)
         for seq in df['seq']:
             # Should have dots around each deletion marker
             assert '.---.' in seq
@@ -178,7 +178,7 @@ class TestDeletionMultiscanSpacerStr:
                 deletion_marker=None, spacer_str='.'
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=3, seed=42)
+        df = result.generate_library(num_seqs=3, seed=42)
         for seq in df['seq']:
             # Should have two dots where deletions occurred
             assert seq.count('.') == 2
@@ -261,7 +261,7 @@ class TestDeletionMultiscanNumDeletions:
                 bg, deletion_length=3, num_deletions=1
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert seq.count('-') == 3
             assert len(seq) == 18
@@ -274,7 +274,7 @@ class TestDeletionMultiscanNumDeletions:
                 bg, deletion_length=3, num_deletions=3
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert seq.count('-') == 9  # 3 * 3
             assert len(seq) == 18
@@ -288,7 +288,7 @@ class TestDeletionMultiscanNumDeletions:
                 bg, deletion_length=3, num_deletions=4
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert seq.count('-') == 12  # 3 * 4
             assert len(seq) == 24
@@ -305,7 +305,7 @@ class TestDeletionMultiscanNonOverlapping:
                 bg, deletion_length=3, num_deletions=3
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=50, seed=42)
+        df = result.generate_library(num_seqs=50, seed=42)
         for seq in df['seq']:
             # Find positions of all '-' characters
             dash_positions = [i for i, c in enumerate(seq) if c == '-']
@@ -331,7 +331,7 @@ class TestDeletionMultiscanPositions:
                 positions=[0, 6, 12]
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=20, seed=42)
+        df = result.generate_library(num_seqs=20, seed=42)
         for seq in df['seq']:
             assert seq.count('-') == 6
 
@@ -345,6 +345,6 @@ class TestDeletionMultiscanPositions:
                 positions=slice(0, 9)
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=20, seed=42)
+        df = result.generate_library(num_seqs=20, seed=42)
         for seq in df['seq']:
             assert seq.count('-') == 6

@@ -25,7 +25,7 @@ class TestReplacementMultiscanBasics:
                 bg, num_replacements=2, replacement_pools=ins
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             # Should have 6 G's (2 replacements * 3 chars)
             assert seq.count('G') == 6
@@ -39,7 +39,7 @@ class TestReplacementMultiscanBasics:
                 'AAAAAAAAAAAAAAAAAA', num_replacements=2, replacement_pools=ins
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=5, seed=42)
+        df = result.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
             assert seq.count('G') == 6
 
@@ -56,7 +56,7 @@ class TestReplacementMultiscanPoolHandling:
                 bg, num_replacements=3, replacement_pools=ins
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             # Should have 9 G's (3 replacements * 3 chars)
             assert seq.count('G') == 9
@@ -71,7 +71,7 @@ class TestReplacementMultiscanPoolHandling:
                 bg, num_replacements=2, replacement_pools=[pool1, pool2]
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             # Should have 3 G's and 3 T's
             assert seq.count('G') == 3
@@ -114,7 +114,7 @@ class TestReplacementMultiscanModes:
                 bg, num_replacements=2, replacement_pools=ins, mode='random'
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=50, seed=42)
+        df = result.generate_library(num_seqs=50, seed=42)
         assert len(df) == 50
 
         for seq in df['seq']:
@@ -130,7 +130,7 @@ class TestReplacementMultiscanModes:
                 mode='hybrid', num_hybrid_states=5
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=20, seed=42)
+        df = result.generate_library(num_seqs=20, seed=42)
         assert len(df) == 20
 
         for seq in df['seq']:
@@ -205,7 +205,7 @@ class TestReplacementMultiscanPositions:
                 positions=[0, 6, 12]
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=20, seed=42)
+        df = result.generate_library(num_seqs=20, seed=42)
         for seq in df['seq']:
             assert seq.count('G') == 6
 
@@ -220,7 +220,7 @@ class TestReplacementMultiscanPositions:
                 positions=slice(0, 9)
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=20, seed=42)
+        df = result.generate_library(num_seqs=20, seed=42)
         for seq in df['seq']:
             assert seq.count('G') == 6
 
@@ -237,7 +237,7 @@ class TestReplacementMultiscanNumReplacements:
                 bg, num_replacements=1, replacement_pools=ins
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert seq.count('G') == 3
             assert len(seq) == 18
@@ -251,7 +251,7 @@ class TestReplacementMultiscanNumReplacements:
                 bg, num_replacements=3, replacement_pools=ins
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert seq.count('G') == 9  # 3 * 3
             assert len(seq) == 18
@@ -269,7 +269,7 @@ class TestReplacementMultiscanSpacerStr:
                 bg, num_replacements=2, replacement_pools=ins, spacer_str='.'
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=3, seed=42)
+        df = result.generate_library(num_seqs=3, seed=42)
         for seq in df['seq']:
             # Should have dots around each replacement
             assert '.G.' in seq
@@ -287,7 +287,7 @@ class TestReplacementMultiscanMarkChanges:
                 bg, num_replacements=2, replacement_pools=ins, mark_changes=True
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=5, seed=42)
+        df = result.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
             # G should be swapcased to g
             assert seq.count('g') == 6
@@ -302,7 +302,7 @@ class TestReplacementMultiscanMarkChanges:
                 bg, num_replacements=2, replacement_pools=ins, mark_changes=False
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=5, seed=42)
+        df = result.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
             # G should remain uppercase
             assert seq.count('G') == 6
@@ -336,7 +336,7 @@ class TestReplacementMultiscanNonOverlapping:
                 bg, num_replacements=3, replacement_pools=ins
             ).named('result')
 
-        df = result.generate_seqs(num_seqs=50, seed=42)
+        df = result.generate_library(num_seqs=50, seed=42)
         for seq in df['seq']:
             # Find positions of all 'G' characters
             g_positions = [i for i, c in enumerate(seq) if c == 'G']

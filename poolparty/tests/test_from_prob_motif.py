@@ -31,7 +31,7 @@ class TestFromProbMotifFactory:
         with pp.Party() as party:
             pool = from_prob_motif(prob_df, op_name='motif', name='mypool')
         
-        df = pool.generate_seqs(num_seqs=1, seed=42)
+        df = pool.generate_library(num_seqs=1, seed=42)
         assert 'motif.key.prob_state' in df.columns
 
 
@@ -46,7 +46,7 @@ class TestFromProbMotifRandomMode:
         with pp.Party() as party:
             pool = from_prob_motif(prob_df, mode='random').named('motif')
         
-        df = pool.generate_seqs(num_seqs=100, seed=42)
+        df = pool.generate_library(num_seqs=100, seed=42)
         assert len(df) == 100
         # All chars should be from DNA alphabet
         for seq in df['seq']:
@@ -59,7 +59,7 @@ class TestFromProbMotifRandomMode:
         with pp.Party() as party:
             pool = from_prob_motif(prob_df, mode='random').named('motif')
         
-        df = pool.generate_seqs(num_seqs=100, seed=42)
+        df = pool.generate_library(num_seqs=100, seed=42)
         # All should be 'A'
         assert all(seq == 'A' for seq in df['seq'])
     
@@ -77,11 +77,11 @@ class TestFromProbMotifRandomMode:
         })
         with pp.Party() as party:
             pool1 = from_prob_motif(prob_df, mode='random').named('motif')
-        df1 = pool1.generate_seqs(num_seqs=10, seed=42)
+        df1 = pool1.generate_library(num_seqs=10, seed=42)
         
         with pp.Party() as party:
             pool2 = from_prob_motif(prob_df, mode='random').named('motif')
-        df2 = pool2.generate_seqs(num_seqs=10, seed=42)
+        df2 = pool2.generate_library(num_seqs=10, seed=42)
         
         assert list(df1['seq']) == list(df2['seq'])
 
@@ -230,7 +230,7 @@ class TestFromProbMotifDesignCards:
         with pp.Party() as party:
             pool = from_prob_motif(prob_df, op_name='motif').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=1, seed=42)
+        df = pool.generate_library(num_seqs=1, seed=42)
         assert 'mypool.op.key.prob_state' in df.columns
     
     def test_prob_state_is_indices(self):
@@ -240,7 +240,7 @@ class TestFromProbMotifDesignCards:
         with pp.Party() as party:
             pool = from_prob_motif(prob_df, op_name='motif').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=1, seed=42)
+        df = pool.generate_library(num_seqs=1, seed=42)
         prob_state = df['mypool.op.key.prob_state'].iloc[0]
         assert prob_state == [0, 0]
     
@@ -373,7 +373,7 @@ class TestFromProbMotifIntegration:
             right = pp.from_seq('TAA').named('right')
             construct = pp.join([left, var, right]).named('construct')
         
-        df = construct.generate_seqs(num_seqs=5, seed=42)
+        df = construct.generate_library(num_seqs=5, seed=42)
         # All sequences should be ATGATAA (ATG + A + TAA)
         assert all(seq == 'ATGATAA' for seq in df['seq'])
     
@@ -386,6 +386,6 @@ class TestFromProbMotifIntegration:
         with pp.Party() as party:
             pool = from_prob_motif(prob_df, mode='random').named('motif')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         # All should be 'AT'
         assert all(seq == 'AT' for seq in df['seq'])

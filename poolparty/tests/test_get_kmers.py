@@ -33,7 +33,7 @@ class TestGetKmersSequentialMode:
         with pp.Party(alphabet=custom_alph) as party:
             pool = get_kmers(length=2, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         assert len(df) == 4  # 2^2 = 4
         assert list(df['seq']) == ['AA', 'AB', 'BA', 'BB']
     
@@ -42,7 +42,7 @@ class TestGetKmersSequentialMode:
         with pp.Party(alphabet='dna') as party:
             pool = get_kmers(length=2, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         assert len(df) == 16  # 4^2 = 16
         # First should be 'AA', last should be 'TT'
         assert df['seq'].iloc[0] == 'AA'
@@ -55,7 +55,7 @@ class TestGetKmersSequentialMode:
         with pp.Party(alphabet=custom_alph) as party:
             pool = get_kmers(length=1, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_seqs=5)
+        df = pool.generate_library(num_seqs=5)
         assert list(df['seq']) == ['A', 'B', 'A', 'B', 'A']
     
     def test_sequential_num_states(self):
@@ -73,7 +73,7 @@ class TestGetKmersRandomMode:
         with pp.Party(alphabet='dna') as party:
             pool = get_kmers(length=5, mode='random').named('kmer')
         
-        df = pool.generate_seqs(num_seqs=100, seed=42)
+        df = pool.generate_library(num_seqs=100, seed=42)
         assert len(df) == 100
         # All should be valid 5-mers
         for kmer in df['seq']:
@@ -85,7 +85,7 @@ class TestGetKmersRandomMode:
         with pp.Party(alphabet='dna') as party:
             pool = get_kmers(length=4, mode='random').named('kmer')
         
-        df = pool.generate_seqs(num_seqs=100, seed=42)
+        df = pool.generate_library(num_seqs=100, seed=42)
         unique_kmers = df['seq'].nunique()
         assert unique_kmers > 50  # Should be quite varied
     
@@ -94,8 +94,8 @@ class TestGetKmersRandomMode:
         with pp.Party(alphabet='dna') as party:
             pool = get_kmers(length=4, mode='random').named('kmer')
         
-        df1 = pool.generate_seqs(num_seqs=10, seed=42, init_state=0)
-        df2 = pool.generate_seqs(num_seqs=10, seed=42, init_state=0)
+        df1 = pool.generate_library(num_seqs=10, seed=42, init_state=0)
+        df2 = pool.generate_library(num_seqs=10, seed=42, init_state=0)
         
         assert list(df1['seq']) == list(df2['seq'])
     
@@ -114,7 +114,7 @@ class TestGetKmersAlphabets:
         with pp.Party(alphabet='dna') as party:
             pool = get_kmers(length=3, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_seqs=10)
+        df = pool.generate_library(num_seqs=10)
         for kmer in df['seq']:
             assert all(c in 'ACGT' for c in kmer)
     
@@ -123,7 +123,7 @@ class TestGetKmersAlphabets:
         with pp.Party(alphabet='rna') as party:
             pool = get_kmers(length=3, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_seqs=10)
+        df = pool.generate_library(num_seqs=10)
         for kmer in df['seq']:
             assert all(c in 'ACGU' for c in kmer)
     
@@ -132,7 +132,7 @@ class TestGetKmersAlphabets:
         with pp.Party(alphabet='protein') as party:
             pool = get_kmers(length=2, mode='random').named('kmer')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         for kmer in df['seq']:
             assert len(kmer) == 2
             # Just check they're valid amino acids
@@ -143,7 +143,7 @@ class TestGetKmersAlphabets:
         with pp.Party(alphabet='binary') as party:
             pool = get_kmers(length=4, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         assert len(df) == 16  # 2^4
         assert all(all(c in '01' for c in kmer) for kmer in df['seq'])
     
@@ -154,7 +154,7 @@ class TestGetKmersAlphabets:
         with pp.Party(alphabet=custom_alph) as party:
             pool = get_kmers(length=2, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         assert list(df['seq']) == ['XX', 'XY', 'YX', 'YY']
     
     def test_custom_alphabet_three_chars(self):
@@ -164,7 +164,7 @@ class TestGetKmersAlphabets:
         with pp.Party(alphabet=custom_alph) as party:
             pool = get_kmers(length=2, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         assert len(df) == 9  # 3^2
 
 
@@ -206,7 +206,7 @@ class TestGetKmersDesignCards:
         with pp.Party(alphabet=custom_alph) as party:
             pool = get_kmers(length=2, mode='sequential', op_name='kmers').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=4)
+        df = pool.generate_library(num_seqs=4)
         assert 'mypool.op.key.kmer_index' in df.columns
         assert list(df['mypool.op.key.kmer_index']) == [0, 1, 2, 3]
     
@@ -248,7 +248,7 @@ class TestGetKmersLargeSpace:
             # 4^20 = huge number, but random mode should work
             pool = get_kmers(length=20, mode='random').named('kmer')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         assert len(df) == 10
         for kmer in df['seq']:
             assert len(kmer) == 20
@@ -316,6 +316,6 @@ class TestGetKmersCustomName:
         with pp.Party() as party:
             pool = get_kmers(length=4, op_name='my_barcode').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=1, seed=42)
+        df = pool.generate_library(num_seqs=1, seed=42)
         assert 'mypool.op.key.kmer_index' in df.columns
 

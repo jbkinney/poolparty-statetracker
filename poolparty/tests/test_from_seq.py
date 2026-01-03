@@ -37,7 +37,7 @@ class TestFromSeqGeneration:
         with pp.Party() as party:
             pool = from_seq('ATGC').named('seq')
         
-        df = pool.generate_seqs(num_seqs=5)
+        df = pool.generate_library(num_seqs=5)
         assert list(df['seq']) == ['ATGC', 'ATGC', 'ATGC', 'ATGC', 'ATGC']
     
     def test_num_states_is_one(self):

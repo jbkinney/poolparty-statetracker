@@ -95,7 +95,7 @@ class TestMutagenizeOrfFactory:
         with pp.Party() as party:
             pool = mutagenize_orf('ATGAAATTT', num_mutations=1).named('mutant')
         
-        df = pool.generate_seqs(num_seqs=1)
+        df = pool.generate_library(num_seqs=1)
         assert len(df['seq'].iloc[0]) == 9
     
     def test_accepts_pool_input(self):
@@ -104,7 +104,7 @@ class TestMutagenizeOrfFactory:
             seq = pp.from_seqs(['ATGAAATTT'])
             pool = mutagenize_orf(seq, num_mutations=1).named('mutant')
         
-        df = pool.generate_seqs(num_seqs=1)
+        df = pool.generate_library(num_seqs=1)
         assert len(df['seq'].iloc[0]) == 9
 
 
@@ -178,7 +178,7 @@ class TestMutagenizeOrfORFBoundaries:
         with pp.Party() as party:
             pool = mutagenize_orf(seq, num_mutations=1, orf_extent=(3, 9)).named('mutant')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         for mutant in df['seq']:
             # UTRs should be preserved
             assert mutant[:3] == 'GGG'
@@ -219,7 +219,7 @@ class TestMutagenizeOrfCodonPositions:
                 seq, num_mutations=1, codon_positions=[1, 2], mode='sequential'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         # Should only mutate at positions 1 and 2
         for mutant in df['seq']:
             # First codon (ATG) should be unchanged
@@ -270,7 +270,7 @@ class TestMutagenizeOrfMutationTypes:
         with pp.Party() as party:
             pool = mutagenize_orf('ATGAAA', num_mutations=1, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         ct = CodonTable('standard')
         
         for _, row in df.iterrows():
@@ -289,7 +289,7 @@ class TestMutagenizeOrfMutationTypes:
                 'ATGAAA', num_mutations=1, mutation_type='nonsense', mode='sequential'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         
         for _, row in df.iterrows():
             mut_aas = row['mutant.op.key.mut_aas']
@@ -305,7 +305,7 @@ class TestMutagenizeOrfMutationTypes:
                 'CTGCTG', num_mutations=1, mutation_type='synonymous', mode='random'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_seqs=20, seed=42)
+        df = pool.generate_library(num_seqs=20, seed=42)
         ct = CodonTable('standard')
         
         for _, row in df.iterrows():
@@ -330,7 +330,7 @@ class TestMutagenizeOrfSequentialMode:
         # 3 positions * 19 alternatives = 57
         assert pool.operation.num_states == 57
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         assert len(df) == 57
     
     def test_sequential_double_mutation_count(self):
@@ -350,7 +350,7 @@ class TestMutagenizeOrfSequentialMode:
                 'ATGAAATTT', num_mutations=1, mode='sequential', op_name='mutate'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         
         for _, row in df.iterrows():
             mutant = row['seq']
@@ -377,7 +377,7 @@ class TestMutagenizeOrfRandomMode:
                 'ATGAAATTTGGG', num_mutations=2, mode='random'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_seqs=50, seed=42)
+        df = pool.generate_library(num_seqs=50, seed=42)
         
         for _, row in df.iterrows():
             positions = row['mutant.op.key.codon_positions']
@@ -391,7 +391,7 @@ class TestMutagenizeOrfRandomMode:
                 'ATGAAATTTGGGCCCAAA', mutation_rate=0.5, mode='random'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_seqs=100, seed=42)
+        df = pool.generate_library(num_seqs=100, seed=42)
         
         # Should have variable number of mutations
         num_mutations_list = [len(row['mutant.op.key.codon_positions']) for _, row in df.iterrows()]
@@ -405,7 +405,7 @@ class TestMutagenizeOrfRandomMode:
                 'ATGAAATTTGGG', num_mutations=1, mode='random'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_seqs=50, seed=42)
+        df = pool.generate_library(num_seqs=50, seed=42)
         unique_mutants = df['seq'].nunique()
         assert unique_mutants > 5  # Should have variety
 
@@ -434,7 +434,7 @@ class TestMutagenizeOrfHybridMode:
                 'ATGAAATTT', num_mutations=1, mode='hybrid', num_hybrid_states=25
             ).named('mutant')
         
-        df = pool.generate_seqs(num_cycles=1, seed=42)
+        df = pool.generate_library(num_cycles=1, seed=42)
         assert len(df) == 25
 
 
@@ -448,7 +448,7 @@ class TestMutagenizeOrfDesignCards:
                 'ATGAAATTT', num_mutations=1, mode='sequential', op_name='mutate'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_seqs=4)
+        df = pool.generate_library(num_seqs=4)
         
         assert 'mutant.op.key.codon_positions' in df.columns
         assert 'mutant.op.key.wt_codons' in df.columns
@@ -463,7 +463,7 @@ class TestMutagenizeOrfDesignCards:
                 'ATGAAATTT', num_mutations=1, mode='sequential', op_name='mutate'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_seqs=20)
+        df = pool.generate_library(num_seqs=20)
         ct = CodonTable('standard')
         
         for _, row in df.iterrows():
@@ -495,7 +495,7 @@ class TestMutagenizeOrfPreservesLength:
         with pp.Party() as party:
             pool = mutagenize_orf('ATGAAATTTGGG', num_mutations=2).named('mutant')
         
-        df = pool.generate_seqs(num_seqs=20, seed=42)
+        df = pool.generate_library(num_seqs=20, seed=42)
         for mutant in df['seq']:
             assert len(mutant) == 12
     
@@ -507,7 +507,7 @@ class TestMutagenizeOrfPreservesLength:
                 seq, num_mutations=1, orf_extent=(3, 9)
             ).named('mutant')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         for mutant in df['seq']:
             assert len(mutant) == 12
 

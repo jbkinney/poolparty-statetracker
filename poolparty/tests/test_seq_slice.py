@@ -30,7 +30,7 @@ class TestSeqSliceFactory:
             pool = pp.from_seqs(['ACGT'])
             sliced = seq_slice(pool, 0).named('char')
         
-        df = sliced.generate_seqs(num_seqs=1)
+        df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'A'
 
 
@@ -43,7 +43,7 @@ class TestSeqSliceIntegerIndexing:
             pool = pp.from_seqs(['ABCDEF'])
             sliced = seq_slice(pool, 0).named('char')
         
-        df = sliced.generate_seqs(num_seqs=1)
+        df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'A'
     
     def test_positive_index_middle(self):
@@ -52,7 +52,7 @@ class TestSeqSliceIntegerIndexing:
             pool = pp.from_seqs(['ABCDEF'])
             sliced = seq_slice(pool, 2).named('char')
         
-        df = sliced.generate_seqs(num_seqs=1)
+        df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'C'
     
     def test_negative_index_last(self):
@@ -61,7 +61,7 @@ class TestSeqSliceIntegerIndexing:
             pool = pp.from_seqs(['ABCDEF'])
             sliced = seq_slice(pool, -1).named('char')
         
-        df = sliced.generate_seqs(num_seqs=1)
+        df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'F'
 
 
@@ -74,7 +74,7 @@ class TestSeqSliceRanges:
             pool = pp.from_seqs(['ABCDEFGH'])
             sliced = seq_slice(pool, slice(2, 6)).named('sl')
         
-        df = sliced.generate_seqs(num_seqs=1)
+        df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'CDEF'
     
     def test_from_start(self):
@@ -83,7 +83,7 @@ class TestSeqSliceRanges:
             pool = pp.from_seqs(['ABCDEFGH'])
             sliced = seq_slice(pool, slice(None, 4)).named('sl')
         
-        df = sliced.generate_seqs(num_seqs=1)
+        df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ABCD'
     
     def test_to_end(self):
@@ -92,7 +92,7 @@ class TestSeqSliceRanges:
             pool = pp.from_seqs(['ABCDEFGH'])
             sliced = seq_slice(pool, slice(4, None)).named('sl')
         
-        df = sliced.generate_seqs(num_seqs=1)
+        df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'EFGH'
     
     def test_full_slice(self):
@@ -101,7 +101,7 @@ class TestSeqSliceRanges:
             pool = pp.from_seqs(['ABCDEFGH'])
             sliced = seq_slice(pool, slice(None, None)).named('sl')
         
-        df = sliced.generate_seqs(num_seqs=1)
+        df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ABCDEFGH'
 
 
@@ -114,7 +114,7 @@ class TestSeqSliceWithStep:
             pool = pp.from_seqs(['ABCDEFGH'])
             sliced = seq_slice(pool, slice(None, None, 2)).named('sl')
         
-        df = sliced.generate_seqs(num_seqs=1)
+        df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ACEG'
     
     def test_reverse(self):
@@ -123,7 +123,7 @@ class TestSeqSliceWithStep:
             pool = pp.from_seqs(['ABCD'])
             sliced = seq_slice(pool, slice(None, None, -1)).named('sl')
         
-        df = sliced.generate_seqs(num_seqs=1)
+        df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'DCBA'
 
 

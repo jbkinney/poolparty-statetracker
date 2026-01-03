@@ -24,7 +24,7 @@ class TestInsertionScanBasics:
             result = insertion_scan(bg, ins, mode='sequential').named('result')
         
         # Default: start=0, end=10, step_size=1 => 11 positions
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 11
     
     def test_output_length_is_sum(self):
@@ -34,7 +34,7 @@ class TestInsertionScanBasics:
             ins = pp.from_seqs(['TTT'])  # 3 chars
             result = insertion_scan(bg, ins).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         for seq in df['seq']:
             assert len(seq) == 13  # 10 + 3
     
@@ -45,7 +45,7 @@ class TestInsertionScanBasics:
             ins = pp.from_seqs(['TTT'], mode='sequential')
             result = insertion_scan(bg, ins, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         for seq in df['seq']:
             assert 'TTT' in seq
     
@@ -56,7 +56,7 @@ class TestInsertionScanBasics:
             ins = pp.from_seqs(['TTT'], mode='sequential')
             result = insertion_scan(bg, ins, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         for seq in df['seq']:
             # Remove insert and check background is intact
             without_insert = seq.replace('TTT', '')
@@ -71,7 +71,7 @@ class TestInsertionScanStringInputs:
         with pp.Party() as party:
             result = insertion_scan('AAAAAAAAAA', pp.from_seqs(['TTT'])).named('result')
         
-        df = result.generate_seqs(num_seqs=3)
+        df = result.generate_library(num_seqs=3)
         for seq in df['seq']:
             assert 'TTT' in seq
             assert len(seq) == 13
@@ -81,7 +81,7 @@ class TestInsertionScanStringInputs:
         with pp.Party() as party:
             result = insertion_scan(pp.from_seqs(['AAAAAAAAAA']), 'TTT').named('result')
         
-        df = result.generate_seqs(num_seqs=3)
+        df = result.generate_library(num_seqs=3)
         for seq in df['seq']:
             assert 'TTT' in seq
             assert len(seq) == 13
@@ -91,7 +91,7 @@ class TestInsertionScanStringInputs:
         with pp.Party() as party:
             result = insertion_scan('AAAAAAAAAA', 'TTT').named('result')
         
-        df = result.generate_seqs(num_seqs=3)
+        df = result.generate_library(num_seqs=3)
         for seq in df['seq']:
             assert 'TTT' in seq
             assert len(seq) == 13
@@ -108,7 +108,7 @@ class TestInsertionScanSlicePositions:
             # slice(3, None) on valid range [0, 10] gives positions 3, 4, ..., 10
             result = insertion_scan(bg, ins, positions=slice(3, None), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 8
         
         # All inserts should start at position 3 or later
@@ -124,7 +124,7 @@ class TestInsertionScanSlicePositions:
             # slice(None, 5) on valid range [0, 10] gives positions 0, 1, 2, 3, 4
             result = insertion_scan(bg, ins, positions=slice(None, 5), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 5
         
         # All inserts should start at position 4 or earlier
@@ -140,7 +140,7 @@ class TestInsertionScanSlicePositions:
             # slice(None, None, 2) on valid range [0, 10] gives positions 0, 2, 4, 6, 8, 10
             result = insertion_scan(bg, ins, positions=slice(None, None, 2), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 6
     
     def test_slice_combined(self):
@@ -151,7 +151,7 @@ class TestInsertionScanSlicePositions:
             # slice(2, 9, 2) on valid range [0, 10] gives positions 2, 4, 6, 8
             result = insertion_scan(bg, ins, positions=slice(2, 9, 2), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 4
 
 
@@ -165,7 +165,7 @@ class TestInsertionScanModes:
             ins = pp.from_seqs(['TTT'])
             result = insertion_scan(bg, ins, mode='random').named('result')
         
-        df = result.generate_seqs(num_seqs=50, seed=42)
+        df = result.generate_library(num_seqs=50, seed=42)
         assert len(df) == 50
         
         # Should have variability in insert positions
@@ -180,7 +180,7 @@ class TestInsertionScanModes:
             result = insertion_scan(bg, ins, mode='hybrid', 
                                     num_hybrid_states=5).named('result')
         
-        df = result.generate_seqs(num_seqs=20, seed=42)
+        df = result.generate_library(num_seqs=20, seed=42)
         assert len(df) == 20
         
         for seq in df['seq']:
@@ -198,7 +198,7 @@ class TestInsertionScanSpacerStr:
             ins = pp.from_seqs(['TTT'])
             result = insertion_scan(bg, ins, spacer_str='.').named('result')
         
-        df = result.generate_seqs(num_seqs=3)
+        df = result.generate_library(num_seqs=3)
         for seq in df['seq']:
             # Should have dots around the insert
             assert '.TTT.' in seq
@@ -210,7 +210,7 @@ class TestInsertionScanSpacerStr:
             ins = pp.from_seqs(['TTT'])
             result = insertion_scan(bg, ins).named('result')
         
-        df = result.generate_seqs(num_seqs=3)
+        df = result.generate_library(num_seqs=3)
         for seq in df['seq']:
             # Should NOT have dots
             assert '.' not in seq
@@ -283,7 +283,7 @@ class TestInsertionScanWithMultipleSeqs:
             ins = pp.from_seqs(['TTT'], mode='sequential')
             result = insertion_scan(bg, ins, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         # 2 backgrounds * 11 positions = 22 sequences
         assert len(df) == 22
         
@@ -298,7 +298,7 @@ class TestInsertionScanWithMultipleSeqs:
             ins = pp.from_seqs(['TTT', 'GGG'], mode='sequential')
             result = insertion_scan(bg, ins, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         # 11 positions * 2 inserts = 22 sequences
         assert len(df) == 22
         
@@ -313,7 +313,7 @@ class TestInsertionScanWithMultipleSeqs:
             ins = pp.from_seqs(['TTT', 'GGG'], mode='sequential')
             result = insertion_scan(bg, ins, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         # 2 backgrounds * 11 positions * 2 inserts = 44 sequences
         assert len(df) == 44
 
@@ -328,7 +328,7 @@ class TestInsertionScanEdgeCases:
             ins = pp.from_seqs(['TTT'])
             result = insertion_scan(bg, ins, positions=[0], mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 1
         assert df['seq'].iloc[0] == 'TTTAAAAAAAAAA'  # Insert at start, nothing removed
     
@@ -340,7 +340,7 @@ class TestInsertionScanEdgeCases:
             # max_position = 10
             result = insertion_scan(bg, ins, positions=[10], mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 1
         assert df['seq'].iloc[0] == 'AAAAAAAAAATTT'  # Insert at end
     
@@ -351,7 +351,7 @@ class TestInsertionScanEdgeCases:
             ins = pp.from_seqs(['TTT'])  # 3 chars
             result = insertion_scan(bg, ins, positions=[5], mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 1
         assert df['seq'].iloc[0] == 'AAAAATTTAAAAA'  # 5 A's + TTT + 5 A's
 
@@ -368,8 +368,8 @@ class TestInsertionVsReplacement:
             insert_result = insertion_scan(bg, ins).named('insert')
             replace_result = pp.replacement_scan(bg, ins).named('replace')
         
-        insert_df = insert_result.generate_seqs(num_seqs=1)
-        replace_df = replace_result.generate_seqs(num_seqs=1)
+        insert_df = insert_result.generate_library(num_seqs=1)
+        replace_df = replace_result.generate_library(num_seqs=1)
         
         # Insertion adds length
         assert len(insert_df['seq'].iloc[0]) == 13  # 10 + 3
@@ -385,8 +385,8 @@ class TestInsertionVsReplacement:
             insert_result = insertion_scan(bg, ins, positions=[5]).named('insert')
             replace_result = pp.replacement_scan(bg, ins, positions=[5]).named('replace')
         
-        insert_df = insert_result.generate_seqs(num_seqs=1)
-        replace_df = replace_result.generate_seqs(num_seqs=1)
+        insert_df = insert_result.generate_library(num_seqs=1)
+        replace_df = replace_result.generate_library(num_seqs=1)
         
         # Insertion: full background preserved
         insert_without_ttt = insert_df['seq'].iloc[0].replace('TTT', '')

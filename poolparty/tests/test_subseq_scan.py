@@ -19,7 +19,7 @@ class TestSubseqScanBasics:
         with pp.Party() as party:
             result = subseq_scan('ACGTACGTACGT', seq_length=4, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_seqs=20, seed=42)
+        df = result.generate_library(num_seqs=20, seed=42)
         for seq in df['seq']:
             assert len(seq) == 4
     
@@ -29,7 +29,7 @@ class TestSubseqScanBasics:
             # 12-char sequence, 4-char extraction = 9 positions (0-8)
             result = subseq_scan('ACGTACGTACGT', seq_length=4, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 9
         
         expected_seqs = [
@@ -44,7 +44,7 @@ class TestSubseqScanBasics:
             bg = pp.from_seqs(['ACGTACGTACGT'])
             result = subseq_scan(bg, seq_length=4, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 9
 
 
@@ -61,7 +61,7 @@ class TestSubseqScanPositions:
                 mode='sequential'
             ).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 3
         assert list(df['seq']) == ['ACGT', 'ACGT', 'ACGT']
     
@@ -75,7 +75,7 @@ class TestSubseqScanPositions:
                 mode='sequential'
             ).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 1
         assert df['seq'].iloc[0] == 'ACGT'
     
@@ -91,7 +91,7 @@ class TestSubseqScanPositions:
                 mode='sequential'
             ).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 3
 
 
@@ -108,7 +108,7 @@ class TestSubseqScanStrand:
                 mode='sequential'
             ).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert df['seq'].iloc[0] == 'AAAA'
     
     def test_minus_strand_reverse_complements(self):
@@ -123,7 +123,7 @@ class TestSubseqScanStrand:
                 mode='sequential'
             ).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert df['seq'].iloc[0] == 'TTTT'
     
     def test_both_strands_doubles_states(self):
@@ -137,7 +137,7 @@ class TestSubseqScanStrand:
                 mode='sequential'
             ).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 2
         # One is AAAA (+ strand), one is TTTT (- strand reverse complement)
         assert set(df['seq']) == {'AAAA', 'TTTT'}
@@ -153,7 +153,7 @@ class TestSubseqScanStrand:
                 mode='sequential'
             ).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         # 2 positions * 2 strands = 4 states
         assert len(df) == 4
 
@@ -170,7 +170,7 @@ class TestSubseqScanModes:
                 mode='random'
             ).named('result')
         
-        df = result.generate_seqs(num_seqs=50, seed=42)
+        df = result.generate_library(num_seqs=50, seed=42)
         assert len(df) == 50
         
         # Should have variability in extracted sequences
@@ -187,7 +187,7 @@ class TestSubseqScanModes:
                 num_hybrid_states=3
             ).named('result')
         
-        df = result.generate_seqs(num_seqs=20, seed=42)
+        df = result.generate_library(num_seqs=20, seed=42)
         assert len(df) == 20
         
         for seq in df['seq']:
@@ -261,7 +261,7 @@ class TestSubseqScanEdgeCases:
                 mode='sequential'
             ).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert df['seq'].iloc[0] == 'ACGT'
     
     def test_extract_at_end(self):
@@ -275,7 +275,7 @@ class TestSubseqScanEdgeCases:
                 mode='sequential'
             ).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert df['seq'].iloc[0] == 'ACGT'
     
     def test_extract_single_char(self):
@@ -287,7 +287,7 @@ class TestSubseqScanEdgeCases:
                 mode='sequential'
             ).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         # 4 positions
         assert len(df) == 4
         assert list(df['seq']) == ['A', 'C', 'G', 'T']
@@ -301,7 +301,7 @@ class TestSubseqScanEdgeCases:
                 mode='sequential'
             ).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         # Only 1 position (position 0)
         assert len(df) == 1
         assert df['seq'].iloc[0] == 'ACGT'
@@ -316,7 +316,7 @@ class TestSubseqScanWithMultipleSeqs:
             bg = pp.from_seqs(['AAAAAAAA', 'CCCCCCCC'], mode='sequential')
             result = subseq_scan(bg, seq_length=4, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         # 2 backgrounds * 5 positions = 10 sequences
         assert len(df) == 10
         

@@ -235,14 +235,14 @@ class Pool:
     # Generation
     #########################################################################
     
-    def generate_seqs(self, **kwargs) -> pd.DataFrame:
+    def generate_library(self, **kwargs) -> pd.DataFrame:
         """Generate sequences from this pool.
         
-        This is a thin wrapper around poolparty.generate_seqs().
+        This is a thin wrapper around poolparty.generate_library().
         See that function for full documentation of parameters.
         """
-        from .generate_seqs import generate_seqs
-        return generate_seqs(self, **kwargs)
+        from .generate_library import generate_library
+        return generate_library(self, **kwargs)
     
     #########################################################################
     # Tree visualization

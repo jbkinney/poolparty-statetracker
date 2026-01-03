@@ -23,7 +23,7 @@ class TestSwapCaseBasics:
             pool = pp.from_seq('ACGT')
             result = swap_case(pool).named('result')
         
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'acgt'
     
     def test_swaps_lowercase_to_uppercase(self):
@@ -32,7 +32,7 @@ class TestSwapCaseBasics:
             pool = pp.from_seq('acgt')
             result = swap_case(pool).named('result')
         
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ACGT'
     
     def test_swaps_mixed_case(self):
@@ -41,7 +41,7 @@ class TestSwapCaseBasics:
             pool = pp.from_seq('AcGt')
             result = swap_case(pool).named('result')
         
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'aCgT'
 
 
@@ -53,7 +53,7 @@ class TestSwapCaseWithString:
         with pp.Party() as party:
             result = swap_case('ACGT').named('result')
         
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'acgt'
 
 
@@ -66,7 +66,7 @@ class TestSwapCaseWithMultipleSeqs:
             pool = pp.from_seqs(['AAAA', 'CCCC', 'GGGG'], mode='sequential')
             result = swap_case(pool).named('result')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 3
         assert set(df['seq']) == {'aaaa', 'cccc', 'gggg'}
 

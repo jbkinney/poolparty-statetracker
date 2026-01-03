@@ -1,4 +1,4 @@
-"""Sequence generation functions for poolparty."""
+"""Library generation functions for poolparty."""
 import statecounter as sc
 from .types import Pool_type, Union, Sequence, Literal, Optional, beartype
 from .utils import clean_df_int_columns
@@ -8,7 +8,7 @@ import pandas as pd
 
 
 @beartype
-def generate_seqs(
+def generate_library(
     pool: Pool_type,
     num_seqs: Optional[int] = None,
     num_cycles: Optional[int] = None,

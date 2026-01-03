@@ -59,7 +59,7 @@ class TestFromIupacMotifSequentialMode:
         with pp.Party() as party:
             pool = from_iupac_motif('RY', mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         # R = A|G, Y = C|T -> 2*2 = 4 sequences
         assert len(df) == 4
         seqs = set(df['seq'])
@@ -87,7 +87,7 @@ class TestFromIupacMotifRandomMode:
         with pp.Party() as party:
             pool = from_iupac_motif('NNNN', mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=100, seed=42)
+        df = pool.generate_library(num_seqs=100, seed=42)
         assert len(df) == 100
         for seq in df['seq']:
             assert len(seq) == 4
@@ -97,11 +97,11 @@ class TestFromIupacMotifRandomMode:
         """Same seed produces same results."""
         with pp.Party() as party:
             pool1 = from_iupac_motif('NNNN', mode='random').named('iupac')
-        df1 = pool1.generate_seqs(num_seqs=10, seed=42)
+        df1 = pool1.generate_library(num_seqs=10, seed=42)
         
         with pp.Party() as party:
             pool2 = from_iupac_motif('NNNN', mode='random').named('iupac')
-        df2 = pool2.generate_seqs(num_seqs=10, seed=42)
+        df2 = pool2.generate_library(num_seqs=10, seed=42)
         
         assert list(df1['seq']) == list(df2['seq'])
 
@@ -121,7 +121,7 @@ class TestFromIupacMotifMarkChanges:
             # A and T are fixed, N is degenerate (4 options)
             pool = from_iupac_motif('ANT', mark_changes=True, mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             # Position 0 (A) and 2 (T) should be uppercase
             # Position 1 (N -> any base) should be lowercase
@@ -134,7 +134,7 @@ class TestFromIupacMotifMarkChanges:
         with pp.Party() as party:
             pool = from_iupac_motif('ANT', mark_changes=False, mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert seq == seq.upper()
     
@@ -143,7 +143,7 @@ class TestFromIupacMotifMarkChanges:
         with pp.Party() as party:
             pool = from_iupac_motif('ant', mark_changes=False, mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert seq == seq.lower()
     
@@ -152,7 +152,7 @@ class TestFromIupacMotifMarkChanges:
         with pp.Party() as party:
             pool = from_iupac_motif('AnT', mark_changes=False, mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert seq[0] == 'A'
             assert seq[1].islower()
@@ -164,7 +164,7 @@ class TestFromIupacMotifMarkChanges:
             # R = A|G (degenerate), Y = C|T (degenerate)
             pool = from_iupac_motif('ARYT', mark_changes=True, mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         for seq in df['seq']:
             # Position 0 (A) and 3 (T) are fixed -> uppercase
             # Positions 1 (R) and 2 (Y) are degenerate -> lowercase
@@ -178,7 +178,7 @@ class TestFromIupacMotifMarkChanges:
         with pp.Party() as party:
             pool = from_iupac_motif('NN', mark_changes=True, mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             # All positions are degenerate -> all lowercase
             assert seq == seq.lower()
@@ -188,7 +188,7 @@ class TestFromIupacMotifMarkChanges:
         with pp.Party() as party:
             pool = from_iupac_motif('ACGT', mark_changes=True, mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             # No degenerate positions -> all uppercase
             assert seq == seq.upper()
@@ -232,7 +232,7 @@ class TestFromIupacMotifDesignCards:
         with pp.Party() as party:
             pool = from_iupac_motif('ACGT', op_name='motif').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=1, seed=42)
+        df = pool.generate_library(num_seqs=1, seed=42)
         assert 'mypool.op.key.iupac_state' in df.columns
     
     def test_design_card_keys_defined(self):
@@ -266,7 +266,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('ACG.TNN', mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=5, seed=42)
+        df = pool.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
             # Dot should be at position 3
             assert seq[3] == '.'
@@ -277,7 +277,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('A.C.G.T', mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=5, seed=42)
+        df = pool.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
             assert seq == 'A.C.G.T'
     
@@ -286,7 +286,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('ACG-TNN', mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=5, seed=42)
+        df = pool.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
             assert seq[3] == '-'
     
@@ -295,7 +295,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('A.N', mark_changes=True, mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=5, seed=42)
+        df = pool.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
             # A (fixed) -> uppercase, . (ignore) -> unchanged, N (degenerate) -> lowercase
             assert seq[0] == 'A'
@@ -319,7 +319,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('AC.GT', mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         assert len(df) == 1  # Only one state since all positions are fixed
         assert df['seq'].iloc[0] == 'AC.GT'
     
@@ -328,7 +328,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('AC-GT', mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         assert df['seq'].iloc[0] == 'AC-GT'
     
     def test_space_separator_allowed(self):
@@ -336,7 +336,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('AC GT', mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         assert df['seq'].iloc[0] == 'AC GT'
     
     def test_ignore_chars_with_degenerate(self):
@@ -344,7 +344,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('A.N.T', mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         # N has 4 options, so 4 states total
         assert len(df) == 4
         # Check that dots are preserved
@@ -357,7 +357,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('A.N.T', mark_changes=True, mode='random').named('iupac')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             # Separators should remain unchanged
             assert seq[1] == '.'

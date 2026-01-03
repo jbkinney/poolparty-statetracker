@@ -24,7 +24,7 @@ class TestBasicUsage:
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT', 'GGG'], mode='sequential').named('seq')
         
-        df = pool.generate_seqs(num_seqs=3)
+        df = pool.generate_library(num_seqs=3)
         assert len(df) == 3
         assert 'seq' in df.columns
         assert list(df['seq']) == ['AAA', 'TTT', 'GGG']
@@ -36,7 +36,7 @@ class TestBasicUsage:
         with pp.Party(alphabet=custom_alph) as party:
             pool = pp.get_kmers(length=2, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         assert len(df) == 4  # 2^2 = 4 k-mers
         assert list(df['seq']) == ['AA', 'AB', 'BA', 'BB']
     
@@ -45,7 +45,7 @@ class TestBasicUsage:
         with pp.Party(alphabet='dna') as party:
             pool = pp.get_kmers(length=5, mode='random').named('kmer')
         
-        df = pool.generate_seqs(num_seqs=10, seed=42)
+        df = pool.generate_library(num_seqs=10, seed=42)
         assert len(df) == 10
         # All should be valid 5-mers of DNA
         for kmer in df['seq']:
@@ -59,7 +59,7 @@ class TestBasicUsage:
             right = pp.from_seqs(['TTT'])
             oligo = join([left, '...', right]).named('oligo')
         
-        df = oligo.generate_seqs(num_seqs=1)
+        df = oligo.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AAA...TTT'
     
     def test_join_with_kmer(self):
@@ -69,7 +69,7 @@ class TestBasicUsage:
             barcode = pp.get_kmers(length=4, mode='random')
             oligo = join([seq_pool, '...', barcode]).named('oligo')
         
-        df = oligo.generate_seqs(num_seqs=5, seed=42)
+        df = oligo.generate_library(num_seqs=5, seed=42)
         assert len(df) == 5
         for s in df['seq']:
             assert s.startswith('ACGT...')
@@ -84,7 +84,7 @@ class TestMutationScan:
         with pp.Party() as party:
             mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
         
-        df = mutants.generate_seqs(num_cycles=1)
+        df = mutants.generate_library(num_cycles=1)
         # 4 positions * 3 mutations each = 12 mutants
         assert len(df) == 12
         
@@ -99,7 +99,7 @@ class TestMutationScan:
         with pp.Party() as party:
             mutants = pp.mutagenize('ACGT', num_mutations=2, mode='sequential').named('mutant')
         
-        df = mutants.generate_seqs(num_cycles=1)
+        df = mutants.generate_library(num_cycles=1)
         # C(4,2) * 3^2 = 6 * 9 = 54 mutants
         assert len(df) == 54
     
@@ -108,7 +108,7 @@ class TestMutationScan:
         with pp.Party() as party:
             mutants = pp.mutagenize('ACGTACGT', num_mutations=1, mode='random').named('mutant')
         
-        df = mutants.generate_seqs(num_seqs=10, seed=42)
+        df = mutants.generate_library(num_seqs=10, seed=42)
         assert len(df) == 10
 
 
@@ -122,7 +122,7 @@ class TestBreakpointScan:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_seqs(num_cycles=1, aux_pools=[right])
+        df = left.generate_library(num_cycles=1, aux_pools=[right])
         # 5 possible breakpoint positions (0, 1, 2, 3, 4)
         assert len(df) == 5
         
@@ -139,7 +139,7 @@ class TestBreakpointScan:
             mid = mid.named('mid')
             right = right.named('right')
         
-        df = left.generate_seqs(num_cycles=1, aux_pools=[mid, right])
+        df = left.generate_library(num_cycles=1, aux_pools=[mid, right])
         
         # Check all splits are valid
         for _, row in df.iterrows():
@@ -161,20 +161,20 @@ class TestBreakpointScan:
             oligo = join([left, mutated_right]).named('oligo')
         
         # Should work without ConflictingStateAssignmentError
-        df = oligo.generate_seqs(num_seqs=5, seed=42)
+        df = oligo.generate_library(num_seqs=5, seed=42)
         assert len(df) == 5
 
 
 class TestStatePersistence:
-    """Test that Pool maintains state between generate_seqs() calls."""
+    """Test that Pool maintains state between generate_library() calls."""
     
     def test_state_continues(self):
-        """Test that sequential iteration continues across generate_seqs() calls."""
+        """Test that sequential iteration continues across generate_library() calls."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C', 'D'], mode='sequential').named('seq')
         
-        df1 = pool.generate_seqs(num_seqs=2)
-        df2 = pool.generate_seqs(num_seqs=2)
+        df1 = pool.generate_library(num_seqs=2)
+        df2 = pool.generate_library(num_seqs=2)
         
         assert list(df1['seq']) == ['A', 'B']
         assert list(df2['seq']) == ['C', 'D']
@@ -184,8 +184,8 @@ class TestStatePersistence:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential').named('seq')
         
-        df1 = pool.generate_seqs(num_seqs=2)
-        df2 = pool.generate_seqs(num_seqs=2, init_state=0)
+        df1 = pool.generate_library(num_seqs=2)
+        df2 = pool.generate_library(num_seqs=2, init_state=0)
         
         assert list(df1['seq']) == ['A', 'B']
         assert list(df2['seq']) == ['A', 'B']  # Reset to start
@@ -195,7 +195,7 @@ class TestStatePersistence:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C', 'D'], mode='sequential').named('seq')
         
-        df = pool.generate_seqs(num_seqs=2, init_state=2)
+        df = pool.generate_library(num_seqs=2, init_state=2)
         assert list(df['seq']) == ['C', 'D']
 
 
@@ -209,7 +209,7 @@ class TestMixedModes:
             barcode = pp.get_kmers(length=4, mode='random')
             oligo = join([mutants, '.', barcode]).named('oligo')
         
-        df = oligo.generate_seqs(num_cycles=1, seed=42)
+        df = oligo.generate_library(num_cycles=1, seed=42)
         assert len(df) == 12  # 12 single mutants
         
         # Check that barcodes are varied (random)
@@ -225,7 +225,7 @@ class TestDesignCards:
         with pp.Party() as party:
             mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
-        df = mutants.generate_seqs(num_seqs=3)
+        df = mutants.generate_library(num_seqs=3)
         
         assert 'mutant.op.key.positions' in df.columns
         assert 'mutant.op.key.wt_chars' in df.columns
@@ -236,7 +236,7 @@ class TestDesignCards:
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], seq_names=['seq_a', 'seq_b'], op_name='seqs', mode='sequential').named('myseq')
         
-        df = pool.generate_seqs(num_seqs=2)
+        df = pool.generate_library(num_seqs=2)
         
         assert 'myseq.op.key.seq_name' in df.columns
         assert 'myseq.op.key.seq_index' in df.columns
@@ -252,7 +252,7 @@ class TestSeqSliceOp:
             pool = pp.from_seqs(['ACGTACGT'])
             sliced = seq_slice(pool, slice(0, 4)).named('sliced')
         
-        df = sliced.generate_seqs(num_seqs=1)
+        df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ACGT'
     
     def test_seq_slice_negative_index(self):
@@ -261,7 +261,7 @@ class TestSeqSliceOp:
             pool = pp.from_seqs(['ACGTACGT'])
             last = seq_slice(pool, -1).named('last')
         
-        df = last.generate_seqs(num_seqs=1)
+        df = last.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'T'
     
     def test_seq_slice_with_step(self):
@@ -270,7 +270,7 @@ class TestSeqSliceOp:
             pool = pp.from_seqs(['ABCDEFGH'])
             every_other = seq_slice(pool, slice(None, None, 2)).named('every_other')
         
-        df = every_other.generate_seqs(num_seqs=1)
+        df = every_other.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ACEG'
     
     def test_seq_slice_reverse(self):
@@ -279,7 +279,7 @@ class TestSeqSliceOp:
             pool = pp.from_seqs(['ACGT'])
             reversed_seq = seq_slice(pool, slice(None, None, -1)).named('reversed')
         
-        df = reversed_seq.generate_seqs(num_seqs=1)
+        df = reversed_seq.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'TGCA'
     
     def test_seq_slice_with_mutation(self):
@@ -289,7 +289,7 @@ class TestSeqSliceOp:
             first_half = seq_slice(pool, slice(0, 4))
             mutated = pp.mutagenize(first_half, num_mutations=1, mode='sequential').named('mutated')
         
-        df = mutated.generate_seqs(num_seqs=3)
+        df = mutated.generate_library(num_seqs=3)
         # All should be 4 characters
         for s in df['seq']:
             assert len(s) == 4
@@ -304,7 +304,7 @@ class TestStateSliceOp:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sliced = pool[1:4].named('seq')  # States 1, 2, 3 -> B, C, D
         
-        df = sliced.generate_seqs(num_cycles=1)
+        df = sliced.generate_library(num_cycles=1)
         assert list(df['seq']) == ['B', 'C', 'D']
     
     def test_state_slice_single(self):
@@ -313,7 +313,7 @@ class TestStateSliceOp:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
             single = pool[1].named('seq')  # State 1 -> B
         
-        df = single.generate_seqs(num_seqs=1)
+        df = single.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'B'
     
     def test_state_slice_negative(self):
@@ -322,7 +322,7 @@ class TestStateSliceOp:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
             last = pool[-1].named('seq')  # Last state -> C
         
-        df = last.generate_seqs(num_seqs=1)
+        df = last.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'C'
 
 
@@ -336,7 +336,7 @@ class TestStackOp:
             b = pp.from_seqs(['X', 'Y'], mode='sequential')
             stacked = (a + b).named('seq')
         
-        df = stacked.generate_seqs(num_cycles=1)
+        df = stacked.generate_library(num_cycles=1)
         assert list(df['seq']) == ['A', 'B', 'X', 'Y']
     
     def test_stack_num_states(self):
@@ -357,7 +357,7 @@ class TestRepeatOp:
             pool = pp.from_seqs(['A', 'B'], mode='sequential')
             repeated = (pool * 2).named('seq')
         
-        df = repeated.generate_seqs(num_cycles=1)
+        df = repeated.generate_library(num_cycles=1)
         assert list(df['seq']) == ['A', 'B', 'A', 'B']
     
     def test_repeat_num_states(self):
@@ -388,7 +388,7 @@ class TestErrors:
             pool = pp.from_seqs(['AAA']).named('seq')
         
         with pytest.raises(ValueError, match="Must specify"):
-            pool.generate_seqs()
+            pool.generate_library()
     
     def test_pool_plus_string_raises(self):
         """Test that pool + string raises error (use join instead)."""
@@ -420,7 +420,7 @@ class TestDefaultParameters:
             party.set_default('mark_changes', True)
             mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential')
         
-        df = mutants.generate_seqs(num_seqs=1)
+        df = mutants.generate_library(num_seqs=1)
         # With mark_changes=True, mutated positions should be lowercase
         seq = df['seq'].iloc[0]
         # Count lowercase letters
@@ -434,7 +434,7 @@ class TestDefaultParameters:
             # Explicitly set mark_changes=False to override default
             mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential', mark_changes=False)
         
-        df = mutants.generate_seqs(num_seqs=1)
+        df = mutants.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
         # With explicit mark_changes=False, no lowercase
         lowercase_count = sum(1 for c in seq if c.islower())
@@ -446,7 +446,7 @@ class TestDefaultParameters:
             party.set_default('mark_changes', True)
             pool = pp.from_iupac_motif('ACGN', mode='sequential')
         
-        df = pool.generate_seqs(num_seqs=1)
+        df = pool.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
         # With mark_changes=True, degenerate positions (N) should be lowercase
         # N can be A, C, G, or T - the last char should be lowercase
@@ -459,7 +459,7 @@ class TestDefaultParameters:
             # Explicitly set mark_changes=False
             pool = pp.from_iupac_motif('ACGN', mode='sequential', mark_changes=False)
         
-        df = pool.generate_seqs(num_seqs=1)
+        df = pool.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
         # All uppercase with explicit False
         assert seq.isupper()
@@ -470,7 +470,7 @@ class TestDefaultParameters:
         pp.set_default('mark_changes', True)
         
         pool = pp.from_iupac_motif('ACGN', mode='sequential')
-        df = pool.generate_seqs(num_seqs=1)
+        df = pool.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
         # Last char should be lowercase (degenerate position)
         assert seq[-1].islower()
@@ -508,7 +508,7 @@ class TestDefaultParameters:
         pp.load_defaults(str(toml_file))
         
         pool = pp.from_iupac_motif('ACGN', mode='sequential')
-        df = pool.generate_seqs(num_seqs=1)
+        df = pool.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
         assert seq[-1].islower()
         

@@ -27,7 +27,7 @@ class TestFromSeqsFactory:
         with pp.Party() as party:
             pool = from_seqs(['AAA', 'TTT'], seq_names=['seq_a', 'seq_b'], op_name='seqs', mode='sequential').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=2)
+        df = pool.generate_library(num_seqs=2)
         assert list(df['mypool.op.key.seq_name']) == ['seq_a', 'seq_b']
 
 
@@ -39,7 +39,7 @@ class TestFromSeqsSequentialMode:
         with pp.Party() as party:
             pool = from_seqs(['A', 'B', 'C', 'D'], mode='sequential').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=4)
+        df = pool.generate_library(num_seqs=4)
         assert list(df['seq']) == ['A', 'B', 'C', 'D']
     
     def test_sequential_cycling(self):
@@ -47,7 +47,7 @@ class TestFromSeqsSequentialMode:
         with pp.Party() as party:
             pool = from_seqs(['A', 'B'], mode='sequential').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=5)
+        df = pool.generate_library(num_seqs=5)
         assert list(df['seq']) == ['A', 'B', 'A', 'B', 'A']
     
     def test_sequential_num_states(self):
@@ -65,7 +65,7 @@ class TestFromSeqsRandomMode:
         with pp.Party() as party:
             pool = from_seqs(['A', 'B', 'C', 'D'], mode='random').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=100, seed=42)
+        df = pool.generate_library(num_seqs=100, seed=42)
         assert len(df) == 100
         # All should be from the input sequences
         assert all(s in 'ABCD' for s in df['seq'])
@@ -75,7 +75,7 @@ class TestFromSeqsRandomMode:
         with pp.Party() as party:
             pool = from_seqs(['A', 'B'], mode='random').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=1000, seed=42)
+        df = pool.generate_library(num_seqs=1000, seed=42)
         counts = df['seq'].value_counts()
         # Should be roughly 50/50 (within 10%)
         assert 400 < counts['A'] < 600
@@ -96,7 +96,7 @@ class TestFromSeqsFixedMode:
         with pp.Party() as party:
             pool = from_seqs(['AAA'], mode='fixed').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=3)
+        df = pool.generate_library(num_seqs=3)
         assert list(df['seq']) == ['AAA', 'AAA', 'AAA']
     
     def test_fixed_multiple_seqs_raises(self):
@@ -120,7 +120,7 @@ class TestFromSeqsNames:
         with pp.Party() as party:
             pool = from_seqs(['AAA', 'TTT', 'GGG'], op_name='seqs', mode='sequential').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=3)
+        df = pool.generate_library(num_seqs=3)
         assert list(df['mypool.op.key.seq_name']) == ['seq_0', 'seq_1', 'seq_2']
     
     def test_custom_names(self):
@@ -128,7 +128,7 @@ class TestFromSeqsNames:
         with pp.Party() as party:
             pool = from_seqs(['AAA', 'TTT'], seq_names=['first', 'second'], op_name='seqs', mode='sequential').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=2)
+        df = pool.generate_library(num_seqs=2)
         assert list(df['mypool.op.key.seq_name']) == ['first', 'second']
 
 
@@ -140,7 +140,7 @@ class TestFromSeqsDesignCards:
         with pp.Party() as party:
             pool = from_seqs(['AAA'], seq_names=['test'], op_name='seqs').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=1)
+        df = pool.generate_library(num_seqs=1)
         assert 'mypool.op.key.seq_name' in df.columns
         assert df['mypool.op.key.seq_name'].iloc[0] == 'test'
     
@@ -149,7 +149,7 @@ class TestFromSeqsDesignCards:
         with pp.Party() as party:
             pool = from_seqs(['A', 'B', 'C'], op_name='seqs', mode='sequential').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=3)
+        df = pool.generate_library(num_seqs=3)
         assert 'mypool.op.key.seq_index' in df.columns
         assert list(df['mypool.op.key.seq_index']) == [0, 1, 2]
     
@@ -238,6 +238,6 @@ class TestFromSeqsCustomName:
         with pp.Party() as party:
             pool = from_seqs(['AAA'], op_name='my_seqs').named('mypool')
         
-        df = pool.generate_seqs(num_seqs=1)
+        df = pool.generate_library(num_seqs=1)
         assert 'mypool.op.key.seq_name' in df.columns
         assert 'mypool.op.key.seq_index' in df.columns

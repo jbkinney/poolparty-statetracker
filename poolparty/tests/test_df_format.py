@@ -200,7 +200,7 @@ class TestFinalizeGenerateDf:
 
 
 class TestIntegrationWithGenerate:
-    """Test that df_format functions work correctly with Pool.generate_seqs()."""
+    """Test that df_format functions work correctly with Pool.generate_library()."""
     
     def test_generate_uses_df_format_functions(self):
         """Test that generate() produces correctly formatted output."""
@@ -208,7 +208,7 @@ class TestIntegrationWithGenerate:
             pool = pp.from_seqs(['AAA', 'TTT', 'GGG'], mode='sequential')
             pool.name = "test_pool"
             
-            df = pool.generate_seqs(num_cycles=1)
+            df = pool.generate_library(num_cycles=1)
             
             # Should have 'seq' as first column
             assert list(df.columns)[0] == 'seq'
@@ -221,7 +221,7 @@ class TestIntegrationWithGenerate:
             parent = pp.from_seqs(['AAA', 'TTT']).named('parent')
             child = pp.mutagenize(parent, num_mutations=1).named('child')
             
-            df = child.generate_seqs(
+            df = child.generate_library(
                 num_seqs=5,
                 organize_columns_by='pool',
             )

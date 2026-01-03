@@ -240,12 +240,12 @@ class TestOperationRng:
             assert pool.operation.rng is None
     
     def test_rng_set_by_generate(self):
-        """Test that generate_seqs sets RNG for random operations."""
+        """Test that generate_library sets RNG for random operations."""
         with pp.Party() as party:
             pool = pp.get_kmers(length=4, mode='random').named('kmer')
         
         # After generate, rng should be set
-        pool.generate_seqs(num_seqs=1, seed=42)
+        pool.generate_library(num_seqs=1, seed=42)
         assert pool.operation.rng is not None
         assert isinstance(pool.operation.rng, np.random.Generator)
     
@@ -254,7 +254,7 @@ class TestOperationRng:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential').named('seq')
         
-        pool.generate_seqs(num_seqs=3, seed=42)
+        pool.generate_library(num_seqs=3, seed=42)
         assert pool.operation.rng is None
 
 

@@ -29,7 +29,7 @@ class TestHybridModeBasic:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=50).named('mutant')
         
-        df = pool.generate_seqs(num_cycles=1)
+        df = pool.generate_library(num_cycles=1)
         assert len(df) == 50
 
 
@@ -41,13 +41,13 @@ class TestHybridModeReproducibility:
         results1 = []
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
-            df = pool.generate_seqs(num_cycles=1, seed=42)
+            df = pool.generate_library(num_cycles=1, seed=42)
             results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
-            df = pool.generate_seqs(num_cycles=1, seed=42)
+            df = pool.generate_library(num_cycles=1, seed=42)
             results2 = list(df['seq'])
         
         assert results1 == results2
@@ -57,13 +57,13 @@ class TestHybridModeReproducibility:
         results1 = []
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
-            df = pool.generate_seqs(num_cycles=1, seed=42)
+            df = pool.generate_library(num_cycles=1, seed=42)
             results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
-            df = pool.generate_seqs(num_cycles=1, seed=123)
+            df = pool.generate_library(num_cycles=1, seed=123)
             results2 = list(df['seq'])
         
         assert results1 != results2
@@ -72,7 +72,7 @@ class TestHybridModeReproducibility:
         """Test that same state always produces same output with same seed."""
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=20).named('mutant')
-            df = pool.generate_seqs(num_seqs=40, seed=42)  # 2 complete iterations
+            df = pool.generate_library(num_seqs=40, seed=42)  # 2 complete iterations
         
         # First and second iteration should be identical
         first_iter = list(df['seq'][:20])
@@ -89,7 +89,7 @@ class TestHybridModeOperationIsolation:
             # Two mutagenize operations with same config but different op.id
             pool1 = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant1')
             pool2 = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant2')
-            df = pool1.generate_seqs(num_cycles=1, seed=42, aux_pools=[pool2])
+            df = pool1.generate_library(num_cycles=1, seed=42, aux_pools=[pool2])
         
         # They should produce different results because op.id is part of the seed
         results1 = list(df['mutant1.seq'])
@@ -107,7 +107,7 @@ class TestHybridModeMutationScan:
         """Test that hybrid mutagenize produces valid mutations."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=20).named('mutant')
-            df = pool.generate_seqs(num_cycles=1, seed=42)
+            df = pool.generate_library(num_cycles=1, seed=42)
         
         # All outputs should be valid single mutants
         for mutant in df['seq']:
@@ -119,7 +119,7 @@ class TestHybridModeMutationScan:
         """Test hybrid mode with num_mutations=2."""
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', num_mutations=2, mode='hybrid', num_hybrid_states=30).named('mutant')
-            df = pool.generate_seqs(num_cycles=1, seed=42)
+            df = pool.generate_library(num_cycles=1, seed=42)
         
         assert len(df) == 30
         for mutant in df['seq']:
@@ -147,7 +147,7 @@ class TestHybridModeGetKmers:
         with pp.Party(alphabet='dna') as party:
             pool = get_kmers(length=4, mode='hybrid', num_hybrid_states=50).named('kmer')
         
-        df = pool.generate_seqs(num_cycles=1, seed=42)
+        df = pool.generate_library(num_cycles=1, seed=42)
         
         assert len(df) == 50
         for kmer in df['seq']:
@@ -159,13 +159,13 @@ class TestHybridModeGetKmers:
         results1 = []
         with pp.Party() as party:
             pool = get_kmers(length=4, mode='hybrid', num_hybrid_states=20).named('kmer')
-        df = pool.generate_seqs(num_cycles=1, seed=42)
+        df = pool.generate_library(num_cycles=1, seed=42)
         results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
             pool = get_kmers(length=4, mode='hybrid', num_hybrid_states=20).named('kmer')
-        df = pool.generate_seqs(num_cycles=1, seed=42)
+        df = pool.generate_library(num_cycles=1, seed=42)
         results2 = list(df['seq'])
         
         assert results1 == results2
@@ -191,7 +191,7 @@ class TestHybridModeFromSeqs:
         with pp.Party() as party:
             pool = from_seqs(['AAA', 'TTT', 'GGG', 'CCC'], mode='hybrid', num_hybrid_states=50).named('seq')
         
-        df = pool.generate_seqs(num_cycles=1, seed=42)
+        df = pool.generate_library(num_cycles=1, seed=42)
         
         assert len(df) == 50
         for seq in df['seq']:
@@ -206,13 +206,13 @@ class TestHybridModeFromSeqs:
         results1 = []
         with pp.Party() as party:
             pool = from_seqs(['A', 'T', 'G', 'C'], mode='hybrid', num_hybrid_states=30).named('seq')
-        df = pool.generate_seqs(num_cycles=1, seed=42)
+        df = pool.generate_library(num_cycles=1, seed=42)
         results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
             pool = from_seqs(['A', 'T', 'G', 'C'], mode='hybrid', num_hybrid_states=30).named('seq')
-        df = pool.generate_seqs(num_cycles=1, seed=42)
+        df = pool.generate_library(num_cycles=1, seed=42)
         results2 = list(df['seq'])
         
         assert results1 == results2
@@ -242,7 +242,7 @@ class TestHybridModeBreakpointScan:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_seqs(num_cycles=1, seed=42, aux_pools=[right])
+        df = left.generate_library(num_cycles=1, seed=42, aux_pools=[right])
         
         assert len(df) == 30
         for i, row in df.iterrows():
@@ -257,7 +257,7 @@ class TestHybridModeBreakpointScan:
             left, right = breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, 
                                           mode='hybrid', num_hybrid_states=20)
             left = left.named('left')
-        df = left.generate_seqs(num_cycles=1, seed=42)
+        df = left.generate_library(num_cycles=1, seed=42)
         results1 = list(df['seq'])
         
         results2 = []
@@ -265,7 +265,7 @@ class TestHybridModeBreakpointScan:
             left, right = breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, 
                                           mode='hybrid', num_hybrid_states=20)
             left = left.named('left')
-        df = left.generate_seqs(num_cycles=1, seed=42)
+        df = left.generate_library(num_cycles=1, seed=42)
         results2 = list(df['seq'])
         
         assert results1 == results2
@@ -289,12 +289,12 @@ class TestHybridModeVsRandomMode:
             pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
         
         # Run twice with same seed
-        df1 = pool.generate_seqs(num_seqs=30, seed=42, init_state=0)
+        df1 = pool.generate_library(num_seqs=30, seed=42, init_state=0)
         
         # Create a new pool to test reproducibility
         with pp.Party() as party:
             pool2 = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
-        df2 = pool2.generate_seqs(num_seqs=30, seed=42, init_state=0)
+        df2 = pool2.generate_library(num_seqs=30, seed=42, init_state=0)
         
         # Should be identical
         assert list(df1['seq']) == list(df2['seq'])
@@ -303,7 +303,7 @@ class TestHybridModeVsRandomMode:
         """Test that random mode doesn't cycle like hybrid does."""
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', num_mutations=1, mode='random').named('mutant')
-        df = pool.generate_seqs(num_seqs=50, seed=42)
+        df = pool.generate_library(num_seqs=50, seed=42)
         
         # Random mode should have varied results, not cycling patterns
         # (though it's possible by chance to have repeats)
@@ -332,7 +332,7 @@ class TestHybridModeComposability:
             seqs = from_seqs(['AAAA', 'TTTT'], mode='sequential')
             mutants = mutagenize(seqs, num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
         
-        df = mutants.generate_seqs(num_seqs=20, seed=42)
+        df = mutants.generate_library(num_seqs=20, seed=42)
         
         assert len(df) == 20
         # All should be valid single mutants
@@ -345,7 +345,7 @@ class TestHybridModeComposability:
             seqs = from_seqs(['AAAA', 'TTTT', 'GGGG'], mode='hybrid', num_hybrid_states=5)
             mutants = mutagenize(seqs, num_mutations=1, mode='hybrid', num_hybrid_states=3).named('mutant')
         
-        df = mutants.generate_seqs(num_cycles=1, seed=42)
+        df = mutants.generate_library(num_cycles=1, seed=42)
         
         # Total states = 5 * 3 = 15
         assert len(df) == 15

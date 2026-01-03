@@ -8,7 +8,7 @@ from .party import Party, get_active_party, reset_default_party, _init_default_p
 from .pool import Pool
 from .operation import Operation
 from .marker import Marker
-from .generate_seqs import generate_seqs
+from .generate_library import generate_library
 from .alphabet import get_alphabet, NAMED_ALPHABETS
 # Import fixed operations from fixed_ops module
 from .fixed_ops import (
@@ -72,7 +72,7 @@ __all__ = [
     '__version__',
     'Party', 'get_active_party', 'reset_default_party',
     'set_default', 'load_defaults',
-    'Pool', 'Operation', 'Marker', 'Counter', 'CounterManager', 'generate_seqs',
+    'Pool', 'Operation', 'Marker', 'Counter', 'CounterManager', 'generate_library',
     'get_alphabet', 'NAMED_ALPHABETS',
     'fixed_operation', 'FixedOp',
     'from_seq',

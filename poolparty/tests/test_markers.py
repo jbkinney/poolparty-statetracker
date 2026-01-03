@@ -180,21 +180,21 @@ class TestInsertMarker:
         """Test inserting zero-length marker."""
         with pp.Party():
             result = pp.insert_marker('ACGTACGT', 'ins', start=4)
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ACGT<ins/>ACGT'
     
     def test_insert_region_marker(self):
         """Test inserting region marker."""
         with pp.Party():
             result = pp.insert_marker('ACGTACGT', 'region', start=2, stop=5)
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AC<region>GTA</region>CGT'
     
     def test_insert_marker_with_strand(self):
         """Test inserting marker with strand attribute."""
         with pp.Party():
             result = pp.insert_marker('ACGT', 'region', start=1, stop=3, strand='-')
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == "A<region strand='-'>CG</region>T"
     
     def test_insert_marker_into_sequence_with_existing_marker(self):
@@ -208,7 +208,7 @@ class TestInsertMarker:
             bg = pp.from_seq('AC<a/>GT')
             # Insert marker 'b' at positions 2-4 (should be 'GT', not inside <a/>)
             marked = pp.insert_marker(bg, 'b', start=2, stop=4)
-        df = marked.generate_seqs(num_cycles=1)
+        df = marked.generate_library(num_cycles=1)
         # Should get 'AC<a/><b>GT</b>', not 'AC<b><a</b>/>GT'
         assert df['seq'].iloc[0] == 'AC<a/><b>GT</b>'
     
@@ -218,7 +218,7 @@ class TestInsertMarker:
             bg = pp.from_seq('AC<a/>GT')
             # Insert zero-length marker at position 2 (after <a/>)
             marked = pp.insert_marker(bg, 'b', start=2)
-        df = marked.generate_seqs(num_cycles=1)
+        df = marked.generate_library(num_cycles=1)
         # Should get 'AC<a/><b/>GT'
         assert df['seq'].iloc[0] == 'AC<a/><b/>GT'
 
@@ -230,7 +230,7 @@ class TestMarkerScan:
         """Test sequential enumeration of zero-length markers."""
         with pp.Party():
             result = pp.marker_scan('ACGT', marker='m', mode='sequential')
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         # 5 positions: before A, after A, after C, after G, after T
         assert len(df) == 5
         seqs = set(df['seq'])
@@ -244,7 +244,7 @@ class TestMarkerScan:
         """Test sequential enumeration of region markers."""
         with pp.Party():
             result = pp.marker_scan('ACGT', marker='m', mode='sequential', marker_length=2)
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         # 3 positions for length-2 regions: positions 0, 1, 2
         assert len(df) == 3
         seqs = set(df['seq'])
@@ -256,7 +256,7 @@ class TestMarkerScan:
         """Test random mode."""
         with pp.Party():
             result = pp.marker_scan('ACGTACGT', marker='m', mode='random')
-        df = result.generate_seqs(num_seqs=10, seed=42)
+        df = result.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             assert '<m/>' in seq
     
@@ -264,7 +264,7 @@ class TestMarkerScan:
         """Test strand='both' doubles the states and shows explicit strand."""
         with pp.Party():
             result = pp.marker_scan('ACGT', marker='m', mode='sequential', strand='both')
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         # 5 positions x 2 strands = 10 states
         assert len(df) == 10
         # Both strands should be explicit when strand='both'
@@ -281,7 +281,7 @@ class TestExtractMarkerContent:
         with pp.Party():
             bg = pp.from_seq('ACGT<region>TTAA</region>GCGC')
             content = pp.extract_marker_content(bg, 'region')
-        df = content.generate_seqs(num_seqs=1)
+        df = content.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'TTAA'
     
     def test_extract_with_minus_strand(self):
@@ -289,14 +289,14 @@ class TestExtractMarkerContent:
         with pp.Party():
             bg = pp.from_seq("ACGT<region strand='-'>TTAA</region>GCGC")
             content = pp.extract_marker_content(bg, 'region')
-        df = content.generate_seqs(num_seqs=1)
+        df = content.generate_library(num_seqs=1)
         # TTAA reverse complement = TTAA (palindrome)
         # Let's use a non-palindrome
         
         with pp.Party():
             bg = pp.from_seq("ACGT<region strand='-'>AACG</region>GCGC")
             content = pp.extract_marker_content(bg, 'region')
-        df = content.generate_seqs(num_seqs=1)
+        df = content.generate_library(num_seqs=1)
         # AACG reverse complement = CGTT
         assert df['seq'].iloc[0] == 'CGTT'
 
@@ -310,7 +310,7 @@ class TestReplaceMarkerContent:
             bg = pp.from_seq('ACGT<insert/>TTTT')
             inserts = pp.from_seqs(['AAA', 'GGG'], mode='sequential')
             result = pp.replace_marker_content(bg, inserts, 'insert')
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         seqs = set(df['seq'])
         assert 'ACGTAAATTTT' in seqs
         assert 'ACGTGGGTTTT' in seqs
@@ -321,7 +321,7 @@ class TestReplaceMarkerContent:
             bg = pp.from_seq('PREFIX<var>OLDCONTENT</var>SUFFIX')
             variants = pp.from_seqs(['NEW1', 'NEW2'], mode='sequential')
             result = pp.replace_marker_content(bg, variants, 'var')
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         seqs = set(df['seq'])
         assert 'PREFIXNEW1SUFFIX' in seqs
         assert 'PREFIXNEW2SUFFIX' in seqs
@@ -332,7 +332,7 @@ class TestReplaceMarkerContent:
             bg = pp.from_seq("ACGT<region strand='-'>XX</region>TTTT")
             content = pp.from_seq('AAA')
             result = pp.replace_marker_content(bg, content, 'region')
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         # AAA reverse complement = TTT
         assert df['seq'].iloc[0] == 'ACGTTTTTTTT'
 
@@ -345,7 +345,7 @@ class TestApplyAtMarker:
         with pp.Party():
             bg = pp.from_seq('ACGT<orf>ATGCCC</orf>TTTT')
             result = pp.apply_at_marker(bg, 'orf', pp.reverse_complement)
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         # ATGCCC reverse complement = GGGCAT
         assert df['seq'].iloc[0] == 'ACGTGGGCATTTTT'
     
@@ -357,7 +357,7 @@ class TestApplyAtMarker:
                 bg, 'region',
                 lambda p: pp.seq_shuffle(p, mode='random')
             )
-        df = result.generate_seqs(num_seqs=5, seed=42)
+        df = result.generate_library(num_seqs=5, seed=42)
         # All should have 8 characters between AAA and TTT
         for seq in df['seq']:
             assert seq.startswith('AAA')
@@ -374,7 +374,7 @@ class TestRemoveMarker:
         with pp.Party():
             bg = pp.from_seq('ACGT<region>TTAA</region>GCGC')
             result = pp.remove_marker(bg, 'region', keep_content=True)
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ACGTTTAAGCGC'
     
     def test_remove_discard_content(self):
@@ -382,7 +382,7 @@ class TestRemoveMarker:
         with pp.Party():
             bg = pp.from_seq('ACGT<region>TTAA</region>GCGC')
             result = pp.remove_marker(bg, 'region', keep_content=False)
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ACGTGCGC'
 
 
@@ -435,7 +435,7 @@ class TestMutagenizeOrfWithXMLMarkers:
             pool = pp.from_seq(orf_with_marker)
             mutated = pp.mutagenize_orf(pool, num_mutations=1, codon_positions=[1], mode='random')
         
-        df = mutated.generate_seqs(num_seqs=5, seed=42)
+        df = mutated.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
             # Marker should be intact
             assert '<site/>' in seq
@@ -620,7 +620,7 @@ class TestMarkerClass:
             
             # Should generate all single-mutation variants
             # 4 positions * 3 alternatives = 12 variants
-            df = result.generate_seqs(num_cycles=1)
+            df = result.generate_library(num_cycles=1)
             assert len(df) == 12
             
             # All variants should be 12 chars (4+4+4)
@@ -682,7 +682,7 @@ class TestIntegration:
             inserts = pp.from_seq('NNN')
             result = pp.replace_marker_content(marked, inserts, 'ins')
         
-        df = result.generate_seqs(num_cycles=1)
+        df = result.generate_library(num_cycles=1)
         for seq in df['seq']:
             assert 'NNN' in seq
             assert '<' not in seq  # No markers left
@@ -696,7 +696,7 @@ class TestIntegration:
             # Apply transformation at marker
             result = pp.apply_at_marker(marked, 'target', pp.reverse_complement)
         
-        df = result.generate_seqs(num_seqs=1)
+        df = result.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
         # Check basic properties: no marker tags, correct length
         assert '<' not in seq

@@ -27,27 +27,27 @@ class TestSeqShuffleBehavior:
     def test_preserves_length(self):
         with pp.Party():
             pool = seq_shuffle('ACGTAC', start=1, end=5).named('shuf')
-        df = pool.generate_seqs(num_seqs=10, seed=123)
+        df = pool.generate_library(num_seqs=10, seed=123)
         for seq in df['seq']:
             assert len(seq) == 6
     
     def test_random_variability(self):
         with pp.Party():
             pool = seq_shuffle('ACGTACGT', start=0, end=8).named('shuf')
-        df = pool.generate_seqs(num_seqs=50, seed=42)
+        df = pool.generate_library(num_seqs=50, seed=42)
         assert df['seq'].nunique() > 5
     
     def test_hybrid_num_states(self):
         with pp.Party():
             pool = seq_shuffle('ACGT', mode='hybrid', num_hybrid_states=10).named('shuf')
         assert pool.operation.num_states == 10
-        df = pool.generate_seqs(num_cycles=1, seed=99)
+        df = pool.generate_library(num_cycles=1, seed=99)
         assert len(df) == 10
     
     def test_region_only_shuffled(self):
         with pp.Party():
             pool = seq_shuffle('ABCD', start=1, end=3).named('shuf')
-        df = pool.generate_seqs(num_seqs=5, seed=7)
+        df = pool.generate_library(num_seqs=5, seed=7)
         for seq in df['seq']:
             assert seq[0] == 'A'
             assert seq[3] == 'D'
@@ -57,7 +57,7 @@ class TestSeqShuffleBehavior:
     def test_zero_length_region_noop(self):
         with pp.Party():
             pool = seq_shuffle('ABCDE', start=2, end=2).named('shuf')
-        df = pool.generate_seqs(num_seqs=3, seed=1)
+        df = pool.generate_library(num_seqs=3, seed=1)
         assert set(df['seq']) == {'ABCDE'}
 
 

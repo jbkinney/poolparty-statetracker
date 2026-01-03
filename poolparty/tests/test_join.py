@@ -41,7 +41,7 @@ class TestJoinPools:
             right = pp.from_seqs(['TTT'])
             combined = join([left, right]).named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AAATTT'
     
     def test_three_pools(self):
@@ -52,7 +52,7 @@ class TestJoinPools:
             c = pp.from_seqs(['GGG'])
             combined = join([a, b, c]).named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AAATTTGGG'
     
     def test_many_pools(self):
@@ -61,7 +61,7 @@ class TestJoinPools:
             pools = [pp.from_seqs([c]) for c in 'ABCDE']
             combined = join(pools).named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ABCDE'
 
 
@@ -74,7 +74,7 @@ class TestJoinWithStrings:
             pool = pp.from_seqs(['AAA'])
             combined = join([pool, '...']).named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AAA...'
     
     def test_string_and_pool(self):
@@ -83,7 +83,7 @@ class TestJoinWithStrings:
             pool = pp.from_seqs(['TTT'])
             combined = join(['...', pool]).named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == '...TTT'
     
     def test_pool_string_pool(self):
@@ -93,7 +93,7 @@ class TestJoinWithStrings:
             right = pp.from_seqs(['TTT'])
             combined = join([left, '...', right]).named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AAA...TTT'
     
     def test_multiple_strings(self):
@@ -102,7 +102,7 @@ class TestJoinWithStrings:
             pool = pp.from_seqs(['X'])
             combined = join(['[', pool, ']']).named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == '[X]'
     
     def test_only_strings(self):
@@ -110,7 +110,7 @@ class TestJoinWithStrings:
         with pp.Party() as party:
             combined = join(['A', 'B', 'C']).named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ABC'
 
 
@@ -125,7 +125,7 @@ class TestJoinVsStack:
             
             combined = join([left, right]).named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AAATTT'  # Joined
     
     def test_stack_unions_states(self):
@@ -136,7 +136,7 @@ class TestJoinVsStack:
             
             stacked = (left + right).named('seq')
         
-        df = stacked.generate_seqs(num_cycles=1)
+        df = stacked.generate_library(num_cycles=1)
         assert list(df['seq']) == ['AAA', 'TTT']  # Union, not joined
 
 
@@ -167,7 +167,7 @@ class TestJoinFixedMode:
             right = pp.from_seqs(['X', 'Y'], mode='sequential')
             combined = join([left, right]).named('seq')
         
-        df = combined.generate_seqs(num_seqs=4)
+        df = combined.generate_library(num_seqs=4)
         # Should get all 4 combinations
         expected = {'AX', 'AY', 'BX', 'BY'}
         assert set(df['seq']) == expected or len(set(df['seq'])) == 4
@@ -191,7 +191,7 @@ class TestJoinDesignCards:
             b = pp.from_seqs(['TTT'], seq_names=['seq_b'])
             combined = join([a, b]).named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         # Parent design cards should be present
         assert 'from_seqs.seq_name' in df.columns or len([c for c in df.columns if 'seq_name' in c]) > 0
 
@@ -245,7 +245,7 @@ class TestJoinChaining:
             ab = join([a, b])
             abc = join([ab, c]).named('seq')
         
-        df = abc.generate_seqs(num_seqs=1)
+        df = abc.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ABC'
 
 
@@ -260,7 +260,7 @@ class TestJoinWithOtherOperations:
             barcode = pp.from_seqs(['NNNN'], mode='sequential')
             combined = join([mutants, '.', barcode]).named('seq')
         
-        df = combined.generate_seqs(num_seqs=3)
+        df = combined.generate_library(num_seqs=3)
         for s in df['seq']:
             assert s.endswith('.NNNN')
             assert len(s) == 9  # 4 + 1 + 4
@@ -272,7 +272,7 @@ class TestJoinWithOtherOperations:
             barcode = pp.get_kmers(length=4, mode='random')
             combined = join([seq, '...', barcode]).named('seq')
         
-        df = combined.generate_seqs(num_seqs=10, seed=42)
+        df = combined.generate_library(num_seqs=10, seed=42)
         for s in df['seq']:
             assert s.startswith('ACGT...')
             assert len(s) == 11  # 4 + 3 + 4
@@ -288,7 +288,7 @@ class TestJoinWithOtherOperations:
             left, right = pp.breakpoint_scan('ACGT', num_breakpoints=1)
             combined = join([left, '---', right]).named('seq')
         
-        df = combined.generate_seqs(num_seqs=3)
+        df = combined.generate_library(num_seqs=3)
         # Verify segments are joined with separator
         for s in df['seq']:
             assert '---' in s
@@ -325,7 +325,7 @@ class TestJoinSpacerStr:
             b = pp.from_seqs(['TTT'])
             combined = join([a, b], spacer_str='-').named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AAA-TTT'
     
     def test_spacer_str_multiple_chars(self):
@@ -335,7 +335,7 @@ class TestJoinSpacerStr:
             b = pp.from_seqs(['TTT'])
             combined = join([a, b], spacer_str='---').named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AAA---TTT'
     
     def test_spacer_str_with_three_pools(self):
@@ -346,7 +346,7 @@ class TestJoinSpacerStr:
             c = pp.from_seqs(['C'])
             combined = join([a, b, c], spacer_str='.').named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'A.B.C'
     
     def test_spacer_str_seq_length_calculation(self):
@@ -373,7 +373,7 @@ class TestJoinSpacerStr:
         with pp.Party() as party:
             combined = join(['A', 'B', 'C'], spacer_str='-').named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'A-B-C'
     
     def test_spacer_str_compute_method(self):
@@ -393,5 +393,5 @@ class TestJoinSpacerStr:
             a = pp.from_seqs(['AAA'])
             combined = join([a], spacer_str='-').named('seq')
         
-        df = combined.generate_seqs(num_seqs=1)
+        df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AAA'  # No spacer for single item
