@@ -59,7 +59,7 @@ class TestFromIupacMotifSequentialMode:
         with pp.Party() as party:
             pool = from_iupac_motif('RY', mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         # R = A|G, Y = C|T -> 2*2 = 4 sequences
         assert len(df) == 4
         seqs = set(df['seq'])
@@ -164,7 +164,7 @@ class TestFromIupacMotifMarkChanges:
             # R = A|G (degenerate), Y = C|T (degenerate)
             pool = from_iupac_motif('ARYT', mark_changes=True, mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         for seq in df['seq']:
             # Position 0 (A) and 3 (T) are fixed -> uppercase
             # Positions 1 (R) and 2 (Y) are degenerate -> lowercase
@@ -319,7 +319,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('AC.GT', mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         assert len(df) == 1  # Only one state since all positions are fixed
         assert df['seq'].iloc[0] == 'AC.GT'
     
@@ -328,7 +328,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('AC-GT', mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         assert df['seq'].iloc[0] == 'AC-GT'
     
     def test_space_separator_allowed(self):
@@ -336,7 +336,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('AC GT', mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         assert df['seq'].iloc[0] == 'AC GT'
     
     def test_ignore_chars_with_degenerate(self):
@@ -344,7 +344,7 @@ class TestFromIupacMotifIgnoreChars:
         with pp.Party() as party:
             pool = from_iupac_motif('A.N.T', mode='sequential').named('iupac')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         # N has 4 options, so 4 states total
         assert len(df) == 4
         # Check that dots are preserved

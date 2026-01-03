@@ -219,7 +219,7 @@ class TestMutagenizeOrfCodonPositions:
                 seq, num_mutations=1, codon_positions=[1, 2], mode='sequential'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         # Should only mutate at positions 1 and 2
         for mutant in df['seq']:
             # First codon (ATG) should be unchanged
@@ -270,7 +270,7 @@ class TestMutagenizeOrfMutationTypes:
         with pp.Party() as party:
             pool = mutagenize_orf('ATGAAA', num_mutations=1, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         ct = CodonTable('standard')
         
         for _, row in df.iterrows():
@@ -289,7 +289,7 @@ class TestMutagenizeOrfMutationTypes:
                 'ATGAAA', num_mutations=1, mutation_type='nonsense', mode='sequential'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         
         for _, row in df.iterrows():
             mut_aas = row['mutant.op.key.mut_aas']
@@ -330,7 +330,7 @@ class TestMutagenizeOrfSequentialMode:
         # 3 positions * 19 alternatives = 57
         assert pool.operation.num_states == 57
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         assert len(df) == 57
     
     def test_sequential_double_mutation_count(self):
@@ -350,7 +350,7 @@ class TestMutagenizeOrfSequentialMode:
                 'ATGAAATTT', num_mutations=1, mode='sequential', op_name='mutate'
             ).named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         
         for _, row in df.iterrows():
             mutant = row['seq']
@@ -434,7 +434,7 @@ class TestMutagenizeOrfHybridMode:
                 'ATGAAATTT', num_mutations=1, mode='hybrid', num_hybrid_states=25
             ).named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1, seed=42)
+        df = pool.generate_seqs(num_cycles=1, seed=42)
         assert len(df) == 25
 
 

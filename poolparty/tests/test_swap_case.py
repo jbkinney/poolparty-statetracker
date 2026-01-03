@@ -66,7 +66,7 @@ class TestSwapCaseWithMultipleSeqs:
             pool = pp.from_seqs(['AAAA', 'CCCC', 'GGGG'], mode='sequential')
             result = swap_case(pool).named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 3
         assert set(df['seq']) == {'aaaa', 'cccc', 'gggg'}
 

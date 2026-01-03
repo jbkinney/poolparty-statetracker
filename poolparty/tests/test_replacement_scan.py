@@ -24,7 +24,7 @@ class TestReplacementScanBasics:
             result = replacement_scan(bg, ins, mode='sequential').named('result')
         
         # Default: start=0, end=7, step_size=1 => 8 positions
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 8
     
     def test_preserves_total_length(self):
@@ -34,7 +34,7 @@ class TestReplacementScanBasics:
             ins = pp.from_seqs(['TTT'])  # 3 chars
             result = replacement_scan(bg, ins).named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         for seq in df['seq']:
             assert len(seq) == 10
     
@@ -45,7 +45,7 @@ class TestReplacementScanBasics:
             ins = pp.from_seqs(['TTT'], mode='sequential')
             result = replacement_scan(bg, ins, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         for seq in df['seq']:
             assert 'TTT' in seq
 
@@ -95,7 +95,7 @@ class TestReplacementScanSlicePositions:
             # slice(3, None) on valid range [0, 7] gives positions 3, 4, 5, 6, 7
             result = replacement_scan(bg, ins, positions=slice(3, None), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 5
         
         # All inserts should start at position 3 or later
@@ -111,7 +111,7 @@ class TestReplacementScanSlicePositions:
             # slice(None, 5) on valid range [0, 7] gives positions 0, 1, 2, 3, 4
             result = replacement_scan(bg, ins, positions=slice(None, 5), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 5
         
         # All inserts should start at position 4 or earlier
@@ -127,7 +127,7 @@ class TestReplacementScanSlicePositions:
             # slice(None, None, 2) on valid range [0, 7] gives positions 0, 2, 4, 6
             result = replacement_scan(bg, ins, positions=slice(None, None, 2), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 4
     
     def test_slice_combined(self):
@@ -138,7 +138,7 @@ class TestReplacementScanSlicePositions:
             # slice(2, 7, 2) on valid range [0, 7] gives positions 2, 4, 6
             result = replacement_scan(bg, ins, positions=slice(2, 7, 2), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 3
 
 
@@ -270,7 +270,7 @@ class TestReplacementScanWithMultipleSeqs:
             ins = pp.from_seqs(['TTT'], mode='sequential')
             result = replacement_scan(bg, ins, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         # 2 backgrounds * 8 positions = 16 sequences
         assert len(df) == 16
         
@@ -285,7 +285,7 @@ class TestReplacementScanWithMultipleSeqs:
             ins = pp.from_seqs(['TTT', 'GGG'], mode='sequential')
             result = replacement_scan(bg, ins, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         # 8 positions * 2 inserts = 16 sequences
         assert len(df) == 16
         
@@ -300,7 +300,7 @@ class TestReplacementScanWithMultipleSeqs:
             ins = pp.from_seqs(['TTT', 'GGG'], mode='sequential')
             result = replacement_scan(bg, ins, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         # 2 backgrounds * 8 positions * 2 inserts = 32 sequences
         assert len(df) == 32
 
@@ -315,7 +315,7 @@ class TestReplacementScanEdgeCases:
             ins = pp.from_seqs(['TTT'])
             result = replacement_scan(bg, ins, positions=[0], mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 1
         assert df['seq'].iloc[0] == 'TTTAAAAAAA'
     
@@ -327,7 +327,7 @@ class TestReplacementScanEdgeCases:
             # max_position = 7
             result = replacement_scan(bg, ins, positions=[7], mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 1
         assert df['seq'].iloc[0] == 'AAAAAAATTT'
     
@@ -339,7 +339,7 @@ class TestReplacementScanEdgeCases:
             # max_end = 10 - 10 = 0
             result = replacement_scan(bg, ins).named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 1
         # Only position 0, so insert replaces everything
         assert df['seq'].iloc[0] == 'TTTTTTTTTT'
@@ -356,7 +356,7 @@ class TestReplacementScanMarkChanges:
             result = replacement_scan(bg, ins, positions=[0], 
                                       mark_changes=True, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         # Insert should be lowercase
         assert df['seq'].iloc[0] == 'tttAAAAAAA'
     
@@ -368,7 +368,7 @@ class TestReplacementScanMarkChanges:
             result = replacement_scan(bg, ins, positions=[0], 
                                       mark_changes=False, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         # Insert should remain uppercase
         assert df['seq'].iloc[0] == 'TTTAAAAAAA'
     
@@ -379,7 +379,7 @@ class TestReplacementScanMarkChanges:
             ins = pp.from_seqs(['TTT'])
             result = replacement_scan(bg, ins, positions=[0], mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         # Default is False, so insert should remain uppercase
         assert df['seq'].iloc[0] == 'TTTAAAAAAA'
     
@@ -391,7 +391,7 @@ class TestReplacementScanMarkChanges:
             ins = pp.from_seqs(['TTT'])
             result = replacement_scan(bg, ins, positions=[0], mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         # Party default is True, so insert should be lowercase
         assert df['seq'].iloc[0] == 'tttAAAAAAA'
     
@@ -403,7 +403,7 @@ class TestReplacementScanMarkChanges:
             result = replacement_scan(bg, ins, positions=[0], 
                                       mark_changes=True, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         # Lowercase insert should become uppercase
         assert df['seq'].iloc[0] == 'TTTAAAAAAA'
     
@@ -415,6 +415,6 @@ class TestReplacementScanMarkChanges:
             result = replacement_scan(bg, ins, positions=[7], 
                                       mark_changes=True, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert df['seq'].iloc[0] == 'AAAAAAAttt'
 

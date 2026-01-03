@@ -55,7 +55,7 @@ library = promoter + barcode
 # Generate all single mutants, each with a random barcode
 seqs = library.generate_library(
     combinatorially_complete_pools=[promoter],
-    num_complete_iterations=5
+    num_cycles=5
 )
 ```
 

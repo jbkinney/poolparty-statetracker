@@ -52,7 +52,7 @@ class TestStateShuffleOutput:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             shuffled = state_shuffle(pool, seed=42).named('sh')
         
-        df = shuffled.generate_seqs(num_complete_iterations=1)
+        df = shuffled.generate_seqs(num_cycles=1)
         output_seqs = sorted(df['seq'].tolist())
         assert output_seqs == ['A', 'B', 'C', 'D', 'E']
     
@@ -63,7 +63,7 @@ class TestStateShuffleOutput:
             pool = pp.from_seqs(seqs, mode='sequential')
             shuffled = state_shuffle(pool, seed=42).named('sh')
         
-        df = shuffled.generate_seqs(num_complete_iterations=1)
+        df = shuffled.generate_seqs(num_cycles=1)
         output_seqs = df['seq'].tolist()
         # With 8 elements and seed=42, order should be different
         assert output_seqs != seqs
@@ -77,12 +77,12 @@ class TestStateShuffleDeterminism:
         with pp.Party() as party:
             pool1 = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             shuffled1 = state_shuffle(pool1, seed=42).named('sh1')
-        df1 = shuffled1.generate_seqs(num_complete_iterations=1)
+        df1 = shuffled1.generate_seqs(num_cycles=1)
         
         with pp.Party() as party:
             pool2 = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             shuffled2 = state_shuffle(pool2, seed=42).named('sh2')
-        df2 = shuffled2.generate_seqs(num_complete_iterations=1)
+        df2 = shuffled2.generate_seqs(num_cycles=1)
         
         assert df1['seq'].tolist() == df2['seq'].tolist()
     
@@ -91,12 +91,12 @@ class TestStateShuffleDeterminism:
         with pp.Party() as party:
             pool1 = pp.from_seqs(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], mode='sequential')
             shuffled1 = state_shuffle(pool1, seed=42).named('sh1')
-        df1 = shuffled1.generate_seqs(num_complete_iterations=1)
+        df1 = shuffled1.generate_seqs(num_cycles=1)
         
         with pp.Party() as party:
             pool2 = pp.from_seqs(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], mode='sequential')
             shuffled2 = state_shuffle(pool2, seed=123).named('sh2')
-        df2 = shuffled2.generate_seqs(num_complete_iterations=1)
+        df2 = shuffled2.generate_seqs(num_cycles=1)
         
         assert df1['seq'].tolist() != df2['seq'].tolist()
 
@@ -110,7 +110,7 @@ class TestStateShuffleNoSeed:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             shuffled = state_shuffle(pool).named('sh')  # No seed
         
-        df = shuffled.generate_seqs(num_complete_iterations=1)
+        df = shuffled.generate_seqs(num_cycles=1)
         # Should still be a valid permutation
         assert sorted(df['seq'].tolist()) == ['A', 'B', 'C', 'D', 'E']
 
@@ -168,7 +168,7 @@ class TestStateShuffleWithPermutation:
             perm = [4, 3, 2, 1, 0]  # Reverse order
             shuffled = state_shuffle(pool, permutation=perm).named('sh')
         
-        df = shuffled.generate_seqs(num_complete_iterations=1)
+        df = shuffled.generate_seqs(num_cycles=1)
         output_seqs = df['seq'].tolist()
         # With reverse permutation, order should be E, D, C, B, A
         assert output_seqs == ['E', 'D', 'C', 'B', 'A']
@@ -181,7 +181,7 @@ class TestStateShuffleWithPermutation:
             perm = [0, 1, 2, 3, 4]
             shuffled = state_shuffle(pool, permutation=perm).named('sh')
         
-        df = shuffled.generate_seqs(num_complete_iterations=1)
+        df = shuffled.generate_seqs(num_cycles=1)
         output_seqs = df['seq'].tolist()
         assert output_seqs == seqs
     

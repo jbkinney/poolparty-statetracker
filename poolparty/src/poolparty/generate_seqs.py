@@ -11,7 +11,7 @@ import pandas as pd
 def generate_seqs(
     pool: Pool_type,
     num_seqs: Optional[int] = None,
-    num_complete_iterations: Optional[int] = None,
+    num_cycles: Optional[int] = None,
     seed: Optional[int] = None,
     init_state: Optional[int] = None,
     aux_pools: Sequence[Pool_type] = (),
@@ -28,7 +28,7 @@ def generate_seqs(
     Args:
         pool: The pool to generate sequences from.
         num_seqs: Number of sequences to generate.
-        num_complete_iterations: Number of complete iterations through all states.
+        num_cycles: Number of complete iterations through all states.
         seed: Random seed for reproducibility.
         init_state: Initial state to start generation from.
         aux_pools: Additional pools to include in output.
@@ -50,13 +50,13 @@ def generate_seqs(
         pool._master_seed = None
     
     # Validate arguments
-    if num_seqs is not None and num_complete_iterations is not None:
-        raise ValueError("Specify num_seqs OR num_complete_iterations, not both")
-    if num_seqs is None and num_complete_iterations is None:
-        raise ValueError("Must specify num_seqs or num_complete_iterations")
+    if num_seqs is not None and num_cycles is not None:
+        raise ValueError("Specify num_seqs OR num_cycles, not both")
+    if num_seqs is None and num_cycles is None:
+        raise ValueError("Must specify num_seqs or num_cycles")
     
-    if num_complete_iterations is not None:
-        num_seqs = num_complete_iterations * pool.counter.num_states
+    if num_cycles is not None:
+        num_seqs = num_cycles * pool.counter.num_states
     if init_state is not None:
         pool._current_state = init_state
     if seed is not None:

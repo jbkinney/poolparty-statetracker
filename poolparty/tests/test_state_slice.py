@@ -51,7 +51,7 @@ class TestStateSliceOutput:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sliced = state_slice(pool, slice(1, 4)).named('sl')  # B, C, D
         
-        df = sliced.generate_seqs(num_complete_iterations=1)
+        df = sliced.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['B', 'C', 'D']
     
     def test_from_start(self):
@@ -60,7 +60,7 @@ class TestStateSliceOutput:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sliced = state_slice(pool, slice(None, 3)).named('sl')  # A, B, C
         
-        df = sliced.generate_seqs(num_complete_iterations=1)
+        df = sliced.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['A', 'B', 'C']
     
     def test_to_end(self):
@@ -69,7 +69,7 @@ class TestStateSliceOutput:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sliced = state_slice(pool, slice(2, None)).named('sl')  # C, D, E
         
-        df = sliced.generate_seqs(num_complete_iterations=1)
+        df = sliced.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['C', 'D', 'E']
 
 
@@ -112,7 +112,7 @@ class TestPoolGetitemOperator:
             pool = pp.from_seqs(['AA', 'BB', 'CC', 'DD', 'EE'], mode='sequential')
             sliced = pool[1:4].named('sl')  # States 1, 2, 3 -> BB, CC, DD
         
-        df = sliced.generate_seqs(num_complete_iterations=1)
+        df = sliced.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['BB', 'CC', 'DD']
     
     def test_getitem_with_int(self):

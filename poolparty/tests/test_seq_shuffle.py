@@ -41,7 +41,7 @@ class TestSeqShuffleBehavior:
         with pp.Party():
             pool = seq_shuffle('ACGT', mode='hybrid', num_hybrid_states=10).named('shuf')
         assert pool.operation.num_states == 10
-        df = pool.generate_seqs(num_complete_iterations=1, seed=99)
+        df = pool.generate_seqs(num_cycles=1, seed=99)
         assert len(df) == 10
     
     def test_region_only_shuffled(self):

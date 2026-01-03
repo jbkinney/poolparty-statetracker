@@ -127,8 +127,8 @@ class TestPoolCopy:
             pool = pp.from_seqs(['A', 'B', 'C'], name='original', mode='sequential')
             copied = pool.copy(name='copied')
         
-        df_original = pool.generate_seqs(num_complete_iterations=1, seed=0, init_state=0)
-        df_copied = copied.generate_seqs(num_complete_iterations=1, seed=0, init_state=0)
+        df_original = pool.generate_seqs(num_cycles=1, seed=0, init_state=0)
+        df_copied = copied.generate_seqs(num_cycles=1, seed=0, init_state=0)
         
         assert list(df_original['original.seq']) == list(df_copied['copied.seq'])
     
@@ -166,8 +166,8 @@ class TestPoolCopy:
             stacked = (a + b).named('stacked')
             copied = stacked.copy(name='copied')
         
-        df_stacked = stacked.generate_seqs(num_complete_iterations=1, init_state=0)
-        df_copied = copied.generate_seqs(num_complete_iterations=1, init_state=0)
+        df_stacked = stacked.generate_seqs(num_cycles=1, init_state=0)
+        df_copied = copied.generate_seqs(num_cycles=1, init_state=0)
         
         assert list(df_stacked['stacked.seq']) == list(df_copied['copied.seq'])
     
@@ -178,8 +178,8 @@ class TestPoolCopy:
             repeated = (pool * 2).named('repeated')
             copied = repeated.copy(name='copied')
         
-        df_repeated = repeated.generate_seqs(num_complete_iterations=1, init_state=0)
-        df_copied = copied.generate_seqs(num_complete_iterations=1, init_state=0)
+        df_repeated = repeated.generate_seqs(num_cycles=1, init_state=0)
+        df_copied = copied.generate_seqs(num_cycles=1, init_state=0)
         
         assert list(df_repeated['repeated.seq']) == list(df_copied['copied.seq'])
     
@@ -191,8 +191,8 @@ class TestPoolCopy:
             sliced.name = 'sliced'
             copied = sliced.copy(name='copied')
         
-        df_sliced = sliced.generate_seqs(num_complete_iterations=1, init_state=0)
-        df_copied = copied.generate_seqs(num_complete_iterations=1, init_state=0)
+        df_sliced = sliced.generate_seqs(num_cycles=1, init_state=0)
+        df_copied = copied.generate_seqs(num_cycles=1, init_state=0)
         
         assert list(df_sliced['sliced.seq']) == list(df_copied['copied.seq'])
     
@@ -275,8 +275,8 @@ class TestPoolDeepCopy:
             pool = pp.from_seqs(['A', 'B', 'C'], name='original', mode='sequential')
             copied = pool.deepcopy(name='copied')
         
-        df_original = pool.generate_seqs(num_complete_iterations=1, seed=0, init_state=0)
-        df_copied = copied.generate_seqs(num_complete_iterations=1, seed=0, init_state=0)
+        df_original = pool.generate_seqs(num_cycles=1, seed=0, init_state=0)
+        df_copied = copied.generate_seqs(num_cycles=1, seed=0, init_state=0)
         
         assert list(df_original['original.seq']) == list(df_copied['copied.seq'])
     
@@ -319,8 +319,8 @@ class TestPoolDeepCopy:
         assert copied.parents[1] is not b
         
         # But should produce same sequences
-        df_stacked = stacked.generate_seqs(num_complete_iterations=1, init_state=0)
-        df_copied = copied.generate_seqs(num_complete_iterations=1, init_state=0)
+        df_stacked = stacked.generate_seqs(num_cycles=1, init_state=0)
+        df_copied = copied.generate_seqs(num_cycles=1, init_state=0)
         assert list(df_stacked['stacked.seq']) == list(df_copied['copied.seq'])
     
     def test_deepcopy_mutagenize_produces_same(self):
@@ -397,7 +397,7 @@ class TestPoolAddOperator:
             b = pp.from_seqs(['X', 'Y'], mode='sequential')
             stacked = (a + b).named('stacked')
         
-        df = stacked.generate_seqs(num_complete_iterations=1)
+        df = stacked.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['A', 'B', 'X', 'Y']
     
     def test_chained_add(self):
@@ -408,7 +408,7 @@ class TestPoolAddOperator:
             c = pp.from_seqs(['C'], mode='sequential')
             stacked = (a + b + c).named('stacked')
         
-        df = stacked.generate_seqs(num_complete_iterations=1)
+        df = stacked.generate_seqs(num_cycles=1)
         # With statecounter ordering preserved, sequences follow input order A, B, C
         assert list(df['seq']) == ['A', 'B', 'C']
     
@@ -447,7 +447,7 @@ class TestPoolMulOperator:
             pool = pp.from_seqs(['A', 'B'], mode='sequential')
             repeated = (pool * 2).named('rep')
         
-        df = repeated.generate_seqs(num_complete_iterations=1)
+        df = repeated.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['A', 'B', 'A', 'B']
     
     def test_int_times_pool(self):
@@ -456,7 +456,7 @@ class TestPoolMulOperator:
             pool = pp.from_seqs(['X', 'Y'], mode='sequential')
             repeated = (2 * pool).named('rep')
         
-        df = repeated.generate_seqs(num_complete_iterations=1)
+        df = repeated.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['X', 'Y', 'X', 'Y']
     
     def test_pool_times_one(self):
@@ -494,7 +494,7 @@ class TestPoolGetitemOperator:
             pool = pp.from_seqs(['A', 'B', 'C', 'D'], mode='sequential')
             sliced = pool[1:3].named('sl')  # States 1 and 2 -> B, C
         
-        df = sliced.generate_seqs(num_complete_iterations=1)
+        df = sliced.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['B', 'C']
     
     def test_getitem_int(self):
@@ -521,7 +521,7 @@ class TestPoolGetitemOperator:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E', 'F'], mode='sequential')  # 6 states
             sliced = pool[::2].named('sl')  # States 0, 2, 4 -> A, C, E
         
-        df = sliced.generate_seqs(num_complete_iterations=1)
+        df = sliced.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['A', 'C', 'E']
 
 
@@ -578,7 +578,7 @@ class TestPoolOperatorChaining:
             stacked = a + b  # 4 states: A, B, X, Y
             sliced = stacked[1:3].named('sl')  # States 1, 2 -> B, X
         
-        df = sliced.generate_seqs(num_complete_iterations=1)
+        df = sliced.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['B', 'X']
     
     def test_multiply_then_slice(self):
@@ -588,7 +588,7 @@ class TestPoolOperatorChaining:
             repeated = pool * 3  # 6 states: A, B, A, B, A, B
             sliced = repeated[2:5].named('sl')  # States 2, 3, 4 -> A, B, A
         
-        df = sliced.generate_seqs(num_complete_iterations=1)
+        df = sliced.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['A', 'B', 'A']
     
     def test_slice_then_add(self):
@@ -599,7 +599,7 @@ class TestPoolOperatorChaining:
             last = pool[-2:]  # C, D
             combined = (first + last).named('comb')  # A, B, C, D
         
-        df = combined.generate_seqs(num_complete_iterations=1)
+        df = combined.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['A', 'B', 'C', 'D']
 
 
@@ -648,12 +648,12 @@ class TestPoolGenerate:
         assert 'X.seq' in df.columns
         assert list(df['X.seq']) == ['A', 'B', 'C']
     
-    def test_generate_num_complete_iterations(self):
-        """Test generate() with num_complete_iterations."""
+    def test_generate_num_cycles(self):
+        """Test generate() with num_cycles."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B'], name='X', mode='sequential')
         
-        df = pool.generate_seqs(num_complete_iterations=2)
+        df = pool.generate_seqs(num_cycles=2)
         assert len(df) == 4
         assert list(df['X.seq']) == ['A', 'B', 'A', 'B']
     
@@ -663,7 +663,7 @@ class TestPoolGenerate:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', mode='sequential')
             b = pp.mutagenize(a, num_mutations=1, name='B', mode='sequential')
         
-        df = b.generate_seqs(num_complete_iterations=1, aux_pools=[a])
+        df = b.generate_seqs(num_cycles=1, aux_pools=[a])
         assert 'B.seq' in df.columns
         assert 'A.seq' in df.columns
         # A.seq should contain the parent sequences
@@ -676,7 +676,7 @@ class TestPoolGenerate:
             b = pp.from_seqs(['X', 'Y'], name='B', mode='sequential')
             stacked = a + b
         
-        df = stacked.generate_seqs(num_complete_iterations=1, aux_pools=[a, b])
+        df = stacked.generate_seqs(num_cycles=1, aux_pools=[a, b])
         # stacked pool uses StackOp class name since no name given
         seq_cols = [c for c in df.columns if c.endswith('.seq')]
         assert len(seq_cols) == 3  # main pool + 2 aux pools
@@ -754,15 +754,15 @@ class TestPoolGenerate:
         assert 'C.seq' in seq_cols
     
     def test_generate_error_both_num_args(self):
-        """Test generate() raises error if both num_seqs and num_complete_iterations given."""
+        """Test generate() raises error if both num_seqs and num_cycles given."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B'])
         
-        with pytest.raises(ValueError, match="Specify num_seqs OR num_complete_iterations"):
-            pool.generate_seqs(num_seqs=2, num_complete_iterations=1)
+        with pytest.raises(ValueError, match="Specify num_seqs OR num_cycles"):
+            pool.generate_seqs(num_seqs=2, num_cycles=1)
     
     def test_generate_error_no_num_args(self):
-        """Test generate() raises error if neither num_seqs nor num_complete_iterations given."""
+        """Test generate() raises error if neither num_seqs nor num_cycles given."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B'])
         
@@ -814,7 +814,7 @@ class TestPoolGenerateRecordStates:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='X', mode='sequential')
         
-        df = pool.generate_seqs(num_complete_iterations=1, report_pool_states=True)
+        df = pool.generate_seqs(num_cycles=1, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
         
         # The root counter should iterate 0, 1, 2
@@ -855,7 +855,7 @@ class TestPoolGenerateRecordStates:
             a = pp.from_seqs(['A', 'B'], name='A', mode='sequential')
             b = a + a  # Stack creates a sum counter
         
-        df = b.generate_seqs(num_complete_iterations=1, aux_pools=[a], report_pool_states=True)
+        df = b.generate_seqs(num_cycles=1, aux_pools=[a], report_pool_states=True)
         
         # Check for seq columns (main pool uses StackOp name, aux uses 'A')
         seq_cols = [c for c in df.columns if c.endswith('.seq')]
@@ -1051,7 +1051,7 @@ class TestPoolStateMinusOneReturnsNone:
             b = pp.from_seqs(['CCCCC'], name='B', mode='sequential')
             c = (a + b).named('C')
         
-        df = c.generate_seqs(num_complete_iterations=1, aux_pools=[a, b])
+        df = c.generate_seqs(num_cycles=1, aux_pools=[a, b])
         
         # C has 3 states: 0, 1 from A and 2 from B
         # When A is active (states 0, 1), B should be inactive (state=None -> NaN)
@@ -1080,7 +1080,7 @@ class TestPoolStateMinusOneReturnsNone:
             c = (a + b).named('C')
             d = pp.mutagenize(c, num_mutations=1, name='D', mode='sequential')
         
-        df = d.generate_seqs(num_complete_iterations=1, aux_pools=[a, b, c])
+        df = d.generate_seqs(num_cycles=1, aux_pools=[a, b, c])
         
         # Verify B.seq is None when B.state is None/NaN
         b_inactive_rows = df[pd.isna(df['B.state'])]
@@ -1100,7 +1100,7 @@ class TestPoolStateMinusOneReturnsNone:
             b = pp.from_seqs(['CCC'], name='B', mode='sequential')
             c = (a + b).named('C')
         
-        df = c.generate_seqs(num_complete_iterations=1, aux_pools=[a, b])
+        df = c.generate_seqs(num_cycles=1, aux_pools=[a, b])
         
         # Check that C.seq is never None (C is always active as the output pool)
         assert df['C.seq'].notna().all(), "C.seq should never be None"
@@ -1121,7 +1121,7 @@ class TestPoolStateMinusOneReturnsNone:
             c = pp.from_seqs(['C'], name='C', mode='sequential')
             stacked = (a + b + c).named('stacked')
         
-        df = stacked.generate_seqs(num_complete_iterations=1, aux_pools=[a, b, c])
+        df = stacked.generate_seqs(num_cycles=1, aux_pools=[a, b, c])
         
         # 3 states total, order preserves input A, B, C
         assert len(df) == 3
@@ -1149,7 +1149,7 @@ class TestPoolStateMinusOneReturnsNone:
             b = pp.from_seqs(['CCCCC'], name='B', op_name='op_B', mode='sequential')
             c = (a + b).named('C')
         
-        df = c.generate_seqs(num_complete_iterations=1, aux_pools=[a, b])
+        df = c.generate_seqs(num_cycles=1, aux_pools=[a, b])
         
         # from_seqs has design_card_keys: ['seq_name', 'seq_index']
         # When op_A.state is None, op_A.key.seq_name and op_A.key.seq_index should be None
@@ -1189,7 +1189,7 @@ class TestPoolStateMinusOneReturnsNone:
             c = (a + b).named('C')
             d = pp.mutagenize(c, num_mutations=1, name='D', op_name='op_D', mode='sequential')
         
-        df = d.generate_seqs(num_complete_iterations=1, aux_pools=[a, b, c])
+        df = d.generate_seqs(num_cycles=1, aux_pools=[a, b, c])
         
         # op_A and op_B are from_seqs with design_card_keys: ['seq_name', 'seq_index']
         # When op_A is inactive (state=None), its keys should be None
@@ -1216,7 +1216,7 @@ class TestPoolStateMinusOneReturnsNone:
             b = pp.from_seqs(['CCC'], name='B', op_name='op_B', mode='sequential')
             c = (a + b).named('C')
         
-        df = c.generate_seqs(num_complete_iterations=1, aux_pools=[a, b])
+        df = c.generate_seqs(num_cycles=1, aux_pools=[a, b])
         
         op_a_key_cols = [c for c in df.columns if c.startswith('op_A.key.')]
         op_b_key_cols = [c for c in df.columns if c.startswith('op_B.key.')]

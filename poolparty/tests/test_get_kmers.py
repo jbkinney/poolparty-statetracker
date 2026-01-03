@@ -33,7 +33,7 @@ class TestGetKmersSequentialMode:
         with pp.Party(alphabet=custom_alph) as party:
             pool = get_kmers(length=2, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         assert len(df) == 4  # 2^2 = 4
         assert list(df['seq']) == ['AA', 'AB', 'BA', 'BB']
     
@@ -42,7 +42,7 @@ class TestGetKmersSequentialMode:
         with pp.Party(alphabet='dna') as party:
             pool = get_kmers(length=2, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         assert len(df) == 16  # 4^2 = 16
         # First should be 'AA', last should be 'TT'
         assert df['seq'].iloc[0] == 'AA'
@@ -143,7 +143,7 @@ class TestGetKmersAlphabets:
         with pp.Party(alphabet='binary') as party:
             pool = get_kmers(length=4, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         assert len(df) == 16  # 2^4
         assert all(all(c in '01' for c in kmer) for kmer in df['seq'])
     
@@ -154,7 +154,7 @@ class TestGetKmersAlphabets:
         with pp.Party(alphabet=custom_alph) as party:
             pool = get_kmers(length=2, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['XX', 'XY', 'YX', 'YY']
     
     def test_custom_alphabet_three_chars(self):
@@ -164,7 +164,7 @@ class TestGetKmersAlphabets:
         with pp.Party(alphabet=custom_alph) as party:
             pool = get_kmers(length=2, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         assert len(df) == 9  # 3^2
 
 

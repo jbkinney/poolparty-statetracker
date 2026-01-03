@@ -208,7 +208,7 @@ class TestIntegrationWithGenerate:
             pool = pp.from_seqs(['AAA', 'TTT', 'GGG'], mode='sequential')
             pool.name = "test_pool"
             
-            df = pool.generate_seqs(num_complete_iterations=1)
+            df = pool.generate_seqs(num_cycles=1)
             
             # Should have 'seq' as first column
             assert list(df.columns)[0] == 'seq'

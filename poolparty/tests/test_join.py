@@ -136,7 +136,7 @@ class TestJoinVsStack:
             
             stacked = (left + right).named('seq')
         
-        df = stacked.generate_seqs(num_complete_iterations=1)
+        df = stacked.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['AAA', 'TTT']  # Union, not joined
 
 

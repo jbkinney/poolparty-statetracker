@@ -58,7 +58,7 @@ class TestStateSampleOutput:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sampled = state_sample(pool, sampled_states=[0, 2, 4]).named('samp')
         
-        df = sampled.generate_seqs(num_complete_iterations=1)
+        df = sampled.generate_seqs(num_cycles=1)
         output_seqs = df['seq'].tolist()
         assert output_seqs == ['A', 'C', 'E']
     
@@ -68,7 +68,7 @@ class TestStateSampleOutput:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
             sampled = state_sample(pool, sampled_states=[0, 0, 1, 2, 2]).named('samp')
         
-        df = sampled.generate_seqs(num_complete_iterations=1)
+        df = sampled.generate_seqs(num_cycles=1)
         output_seqs = df['seq'].tolist()
         assert output_seqs == ['A', 'A', 'B', 'C', 'C']
     
@@ -79,7 +79,7 @@ class TestStateSampleOutput:
             pool = pp.from_seqs(seqs, mode='sequential')
             sampled = state_sample(pool, num_states=3, seed=42).named('samp')
         
-        df = sampled.generate_seqs(num_complete_iterations=1)
+        df = sampled.generate_seqs(num_cycles=1)
         for seq in df['seq'].tolist():
             assert seq in seqs
 
@@ -92,12 +92,12 @@ class TestStateSampleDeterminism:
         with pp.Party() as party:
             pool1 = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sampled1 = state_sample(pool1, num_states=3, seed=42).named('samp1')
-        df1 = sampled1.generate_seqs(num_complete_iterations=1)
+        df1 = sampled1.generate_seqs(num_cycles=1)
         
         with pp.Party() as party:
             pool2 = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sampled2 = state_sample(pool2, num_states=3, seed=42).named('samp2')
-        df2 = sampled2.generate_seqs(num_complete_iterations=1)
+        df2 = sampled2.generate_seqs(num_cycles=1)
         
         assert df1['seq'].tolist() == df2['seq'].tolist()
     
@@ -106,12 +106,12 @@ class TestStateSampleDeterminism:
         with pp.Party() as party:
             pool1 = pp.from_seqs(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], mode='sequential')
             sampled1 = state_sample(pool1, num_states=4, seed=42).named('samp1')
-        df1 = sampled1.generate_seqs(num_complete_iterations=1)
+        df1 = sampled1.generate_seqs(num_cycles=1)
         
         with pp.Party() as party:
             pool2 = pp.from_seqs(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], mode='sequential')
             sampled2 = state_sample(pool2, num_states=4, seed=123).named('samp2')
-        df2 = sampled2.generate_seqs(num_complete_iterations=1)
+        df2 = sampled2.generate_seqs(num_cycles=1)
         
         # Very likely to be different with different seeds
         assert df1['seq'].tolist() != df2['seq'].tolist()
@@ -126,7 +126,7 @@ class TestStateSampleNoSeed:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sampled = state_sample(pool, num_states=3).named('samp')  # No seed
         
-        df = sampled.generate_seqs(num_complete_iterations=1)
+        df = sampled.generate_seqs(num_cycles=1)
         # Should still output 3 valid sequences
         assert len(df) == 3
         for seq in df['seq'].tolist():
@@ -185,7 +185,7 @@ class TestStateSampleWithReplacement:
             sampled = state_sample(pool, num_states=10, seed=42, with_replacement=True).named('samp')
         
         assert sampled.num_states == 10
-        df = sampled.generate_seqs(num_complete_iterations=1)
+        df = sampled.generate_seqs(num_cycles=1)
         assert len(df) == 10
     
     def test_without_replacement_valid(self):
@@ -195,7 +195,7 @@ class TestStateSampleWithReplacement:
             sampled = state_sample(pool, num_states=3, seed=42, with_replacement=False).named('samp')
         
         assert sampled.num_states == 3
-        df = sampled.generate_seqs(num_complete_iterations=1)
+        df = sampled.generate_seqs(num_cycles=1)
         # All sequences should be unique
         assert len(df['seq'].unique()) == 3
     

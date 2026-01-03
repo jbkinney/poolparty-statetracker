@@ -113,7 +113,7 @@ class TestMutagenizeSingleMutation:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         # 4 positions * 3 mutations each = 12
         assert len(df) == 12
     
@@ -122,7 +122,7 @@ class TestMutagenizeSingleMutation:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         for mutant in df['seq']:
             diffs = sum(1 for a, b in zip('ACGT', mutant) if a != b)
             assert diffs == 1
@@ -145,7 +145,7 @@ class TestMutagenizeMultipleMutations:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=2, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         # C(4,2) * 3^2 = 6 * 9 = 54
         assert len(df) == 54
     
@@ -154,7 +154,7 @@ class TestMutagenizeMultipleMutations:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=2, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         for mutant in df['seq']:
             diffs = sum(1 for a, b in zip('ACGT', mutant) if a != b)
             assert diffs == 2
@@ -164,7 +164,7 @@ class TestMutagenizeMultipleMutations:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=3, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         # C(4,3) * 3^3 = 4 * 27 = 108
         assert len(df) == 108
         
@@ -181,7 +181,7 @@ class TestMutagenizeSequentialMode:
         with pp.Party() as party:
             pool = mutagenize('AC', num_mutations=1, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         # 2 positions * 3 mutations = 6 mutants
         assert len(df) == 6
     
@@ -336,7 +336,7 @@ class TestMutagenizeHybridModeWithRate:
         with pp.Party() as party:
             pool = mutagenize('ACGT', mutation_rate=0.2, mode='hybrid', num_hybrid_states=50).named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1, seed=42)
+        df = pool.generate_seqs(num_cycles=1, seed=42)
         assert len(df) == 50
     
     def test_hybrid_reproducible_with_seed(self):
@@ -344,13 +344,13 @@ class TestMutagenizeHybridModeWithRate:
         results1 = []
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='hybrid', num_hybrid_states=10).named('mutant')
-            df = pool.generate_seqs(num_complete_iterations=1, seed=42)
+            df = pool.generate_seqs(num_cycles=1, seed=42)
             results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='hybrid', num_hybrid_states=10).named('mutant')
-            df = pool.generate_seqs(num_complete_iterations=1, seed=42)
+            df = pool.generate_seqs(num_cycles=1, seed=42)
             results2 = list(df['seq'])
         
         assert results1 == results2
@@ -360,13 +360,13 @@ class TestMutagenizeHybridModeWithRate:
         results1 = []
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='hybrid', num_hybrid_states=10).named('mutant')
-            df = pool.generate_seqs(num_complete_iterations=1, seed=42)
+            df = pool.generate_seqs(num_cycles=1, seed=42)
             results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='hybrid', num_hybrid_states=10).named('mutant')
-            df = pool.generate_seqs(num_complete_iterations=1, seed=123)
+            df = pool.generate_seqs(num_cycles=1, seed=123)
             results2 = list(df['seq'])
         
         assert results1 != results2
@@ -448,7 +448,7 @@ class TestMutagenizeAlphabets:
         with pp.Party(alphabet='dna') as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         for mutant in df['seq']:
             assert all(c in 'ACGT' for c in mutant)
     
@@ -466,7 +466,7 @@ class TestMutagenizeAlphabets:
         with pp.Party(alphabet='rna') as party:
             pool = mutagenize('ACGU', num_mutations=1, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         for mutant in df['seq']:
             assert all(c in 'ACGU' for c in mutant)
     
@@ -486,7 +486,7 @@ class TestMutagenizeAlphabets:
         with pp.Party(alphabet=custom_alph) as party:
             pool = mutagenize('AB', num_mutations=1, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         # 2 positions * 1 mutation each = 2 mutants
         assert len(df) == 2
         assert set(df['seq']) == {'BB', 'AA'}
@@ -575,7 +575,7 @@ class TestMutagenizeMutationMap:
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         
         for _, row in df.iterrows():
             positions = row['mutant.op.key.positions']
@@ -590,7 +590,7 @@ class TestMutagenizeMutationMap:
         with pp.Party(alphabet='dna') as party:
             pool = mutagenize('A', num_mutations=1, mode='sequential').named('mutant')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         # A can mutate to C, G, T
         mutants = set(df['seq'])
         assert mutants == {'C', 'G', 'T'}

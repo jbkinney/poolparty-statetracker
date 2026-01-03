@@ -22,7 +22,7 @@ class TestDeletionScanBasics:
             result = deletion_scan(bg, deletion_length=3, mode='sequential').named('result')
         
         # Default: start=0, end=7, step_size=1 => 8 positions
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 8
     
     def test_preserves_total_length_with_marker(self):
@@ -31,7 +31,7 @@ class TestDeletionScanBasics:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
             result = deletion_scan(bg, deletion_length=3, deletion_marker='-', mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         for seq in df['seq']:
             assert len(seq) == 10
     
@@ -41,7 +41,7 @@ class TestDeletionScanBasics:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
             result = deletion_scan(bg, deletion_length=3, deletion_marker=None, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         for seq in df['seq']:
             assert len(seq) == 7  # 10 - 3
     
@@ -51,7 +51,7 @@ class TestDeletionScanBasics:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
             result = deletion_scan(bg, deletion_length=3, deletion_marker='-', mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         for seq in df['seq']:
             assert '---' in seq
 
@@ -80,7 +80,7 @@ class TestDeletionScanSlicePositions:
             # slice(3, None) on valid range [0, 7] gives positions 3, 4, 5, 6, 7
             result = deletion_scan(bg, deletion_length=3, positions=slice(3, None), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 5
         
         # All deletions should start at position 3 or later
@@ -95,7 +95,7 @@ class TestDeletionScanSlicePositions:
             # slice(None, 5) on valid range [0, 7] gives positions 0, 1, 2, 3, 4
             result = deletion_scan(bg, deletion_length=3, positions=slice(None, 5), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 5
         
         # All deletions should start at position 4 or earlier
@@ -110,7 +110,7 @@ class TestDeletionScanSlicePositions:
             # slice(None, None, 2) on valid range [0, 7] gives positions 0, 2, 4, 6
             result = deletion_scan(bg, deletion_length=3, positions=slice(None, None, 2), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 4
     
     def test_slice_combined(self):
@@ -120,7 +120,7 @@ class TestDeletionScanSlicePositions:
             # slice(2, 7, 2) on valid range [0, 7] gives positions 2, 4, 6
             result = deletion_scan(bg, deletion_length=3, positions=slice(2, 7, 2), mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 3
 
 
@@ -192,7 +192,7 @@ class TestDeletionScanMarkerOptions:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
             result = deletion_scan(bg, deletion_length=3, deletion_marker=None, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         for seq in df['seq']:
             # Should only have A's, no markers
             assert set(seq) == {'A'}
@@ -301,7 +301,7 @@ class TestDeletionScanWithMultipleSeqs:
             bg = pp.from_seqs(['AAAAAAAAAA', 'CCCCCCCCCC'], mode='sequential')
             result = deletion_scan(bg, deletion_length=3, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         # 2 backgrounds * 8 positions = 16 sequences
         assert len(df) == 16
         
@@ -319,7 +319,7 @@ class TestDeletionScanEdgeCases:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
             result = deletion_scan(bg, deletion_length=3, positions=[0], mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 1
         assert df['seq'].iloc[0] == '---AAAAAAA'
     
@@ -330,7 +330,7 @@ class TestDeletionScanEdgeCases:
             # max_position = 7
             result = deletion_scan(bg, deletion_length=3, positions=[7], mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         assert len(df) == 1
         assert df['seq'].iloc[0] == 'AAAAAAA---'
     
@@ -340,7 +340,7 @@ class TestDeletionScanEdgeCases:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
             result = deletion_scan(bg, deletion_length=1, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         # 10 - 1 = 9 positions
         assert len(df) == 10
         
@@ -354,7 +354,7 @@ class TestDeletionScanEdgeCases:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')  # 10 chars
             result = deletion_scan(bg, deletion_length=9, mode='sequential').named('result')
         
-        df = result.generate_seqs(num_complete_iterations=1)
+        df = result.generate_seqs(num_cycles=1)
         # 10 - 9 = 1 position
         assert len(df) == 2  # positions 0 and 1
         
@@ -377,8 +377,8 @@ class TestDeletionVsReplacement:
             # equivalent replacement_scan
             rep_result = pp.replacement_scan(bg, '---', mode='sequential').named('rep')
         
-        del_df = del_result.generate_seqs(num_complete_iterations=1)
-        rep_df = rep_result.generate_seqs(num_complete_iterations=1)
+        del_df = del_result.generate_seqs(num_cycles=1)
+        rep_df = rep_result.generate_seqs(num_cycles=1)
         
         # Should produce identical sequences
         assert set(del_df['seq']) == set(rep_df['seq'])

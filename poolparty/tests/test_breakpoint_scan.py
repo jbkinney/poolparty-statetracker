@@ -57,7 +57,7 @@ class TestBreakpointScanSingleBreakpoint:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_seqs(num_complete_iterations=1, aux_pools=[right])
+        df = left.generate_seqs(num_cycles=1, aux_pools=[right])
         # 5 possible breakpoint positions (0, 1, 2, 3, 4)
         assert len(df) == 5
     
@@ -68,7 +68,7 @@ class TestBreakpointScanSingleBreakpoint:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_seqs(num_complete_iterations=1, aux_pools=[right])
+        df = left.generate_seqs(num_cycles=1, aux_pools=[right])
         
         # All splits should reconstruct original
         for _, row in df.iterrows():
@@ -81,7 +81,7 @@ class TestBreakpointScanSingleBreakpoint:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_seqs(num_complete_iterations=1, aux_pools=[right])
+        df = left.generate_seqs(num_cycles=1, aux_pools=[right])
         
         splits = set(zip(df['seq'], df['right.seq']))
         expected = {('', 'ABCD'), ('A', 'BCD'), ('AB', 'CD'), ('ABC', 'D'), ('ABCD', '')}
@@ -138,7 +138,7 @@ class TestBreakpointScanSequentialMode:
             left, right = breakpoint_scan('ABCDE', num_breakpoints=1, mode='sequential')
             left = left.named('left')
         
-        df = left.generate_seqs(num_complete_iterations=1)
+        df = left.generate_seqs(num_cycles=1)
         # 6 possible positions (0, 1, 2, 3, 4, 5)
         assert len(df) == 6
     
@@ -201,7 +201,7 @@ class TestBreakpointScanPositions:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_seqs(num_complete_iterations=1, aux_pools=[right])
+        df = left.generate_seqs(num_cycles=1, aux_pools=[right])
         assert len(df) == 2  # Only 2 positions
         
         splits = set(zip(df['seq'], df['right.seq']))
@@ -232,7 +232,7 @@ class TestBreakpointScanSlicePositions:
                                            positions=slice(2, None), mode='sequential')
             left = left.named('left')
         
-        df = left.generate_seqs(num_complete_iterations=1)
+        df = left.generate_seqs(num_cycles=1)
         # Positions 2, 3, 4, 5, 6 (5 positions)
         assert len(df) == 5
         
@@ -248,7 +248,7 @@ class TestBreakpointScanSlicePositions:
                                            positions=slice(None, 2), mode='sequential')
             left = left.named('left')
         
-        df = left.generate_seqs(num_complete_iterations=1)
+        df = left.generate_seqs(num_cycles=1)
         # Positions 1, 2 (2 positions)
         assert len(df) == 2
         
@@ -264,7 +264,7 @@ class TestBreakpointScanSlicePositions:
                                            positions=slice(None, None, 2), mode='sequential')
             left = left.named('left')
         
-        df = left.generate_seqs(num_complete_iterations=1)
+        df = left.generate_seqs(num_cycles=1)
         # Positions 0, 2, 4, 6, 8 (5 positions with step 2)
         assert len(df) == 5
     
@@ -276,7 +276,7 @@ class TestBreakpointScanSlicePositions:
                                            positions=slice(1, 8, 2), mode='sequential')
             left = left.named('left')
         
-        df = left.generate_seqs(num_complete_iterations=1)
+        df = left.generate_seqs(num_cycles=1)
         # Positions 2, 4, 6, 8 (4 positions)
         assert len(df) == 4
 
@@ -300,7 +300,7 @@ class TestBreakpointScanDesignCards:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_seqs(num_complete_iterations=1, aux_pools=[right])
+        df = left.generate_seqs(num_cycles=1, aux_pools=[right])
         
         for _, row in df.iterrows():
             breakpoints = row['right.op.key.breakpoints']
@@ -465,7 +465,7 @@ class TestBreakpointScanSpacing:
             seg1 = seg1.named('seg1')
             seg2 = seg2.named('seg2')
         
-        df = seg0.generate_seqs(num_complete_iterations=1, aux_pools=[seg1, seg2])
+        df = seg0.generate_seqs(num_cycles=1, aux_pools=[seg1, seg2])
         
         # Verify all generated combinations have spacing >= 3
         for _, row in df.iterrows():
@@ -487,7 +487,7 @@ class TestBreakpointScanSpacing:
             seg1 = seg1.named('seg1')
             seg2 = seg2.named('seg2')
         
-        df = seg0.generate_seqs(num_complete_iterations=1, aux_pools=[seg1, seg2])
+        df = seg0.generate_seqs(num_cycles=1, aux_pools=[seg1, seg2])
         
         # Verify all generated combinations have spacing <= 2
         for _, row in df.iterrows():
@@ -508,7 +508,7 @@ class TestBreakpointScanSpacing:
             seg1 = seg1.named('seg1')
             seg2 = seg2.named('seg2')
         
-        df = seg0.generate_seqs(num_complete_iterations=1, aux_pools=[seg1, seg2])
+        df = seg0.generate_seqs(num_cycles=1, aux_pools=[seg1, seg2])
         
         # Verify all generated combinations have 2 <= spacing <= 4
         for _, row in df.iterrows():
@@ -547,7 +547,7 @@ class TestBreakpointScanSpacing:
             )
             left = left.named('left')
         
-        df = left.generate_seqs(num_complete_iterations=1)
+        df = left.generate_seqs(num_cycles=1)
         # Should still have all 7 possible positions (0-6)
         assert len(df) == 7
     
@@ -583,7 +583,7 @@ class TestBreakpointScanSpacing:
             seg2 = pools[2].named('seg2')
             seg3 = pools[3].named('seg3')
         
-        df = seg0.generate_seqs(num_complete_iterations=1, aux_pools=[seg1, seg2, seg3])
+        df = seg0.generate_seqs(num_cycles=1, aux_pools=[seg1, seg2, seg3])
         
         # Verify all spacings are within constraints
         for _, row in df.iterrows():

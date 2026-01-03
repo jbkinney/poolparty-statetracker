@@ -36,7 +36,7 @@ class TestBasicUsage:
         with pp.Party(alphabet=custom_alph) as party:
             pool = pp.get_kmers(length=2, mode='sequential').named('kmer')
         
-        df = pool.generate_seqs(num_complete_iterations=1)
+        df = pool.generate_seqs(num_cycles=1)
         assert len(df) == 4  # 2^2 = 4 k-mers
         assert list(df['seq']) == ['AA', 'AB', 'BA', 'BB']
     
@@ -84,7 +84,7 @@ class TestMutationScan:
         with pp.Party() as party:
             mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
         
-        df = mutants.generate_seqs(num_complete_iterations=1)
+        df = mutants.generate_seqs(num_cycles=1)
         # 4 positions * 3 mutations each = 12 mutants
         assert len(df) == 12
         
@@ -99,7 +99,7 @@ class TestMutationScan:
         with pp.Party() as party:
             mutants = pp.mutagenize('ACGT', num_mutations=2, mode='sequential').named('mutant')
         
-        df = mutants.generate_seqs(num_complete_iterations=1)
+        df = mutants.generate_seqs(num_cycles=1)
         # C(4,2) * 3^2 = 6 * 9 = 54 mutants
         assert len(df) == 54
     
@@ -122,7 +122,7 @@ class TestBreakpointScan:
             left = left.named('left')
             right = right.named('right')
         
-        df = left.generate_seqs(num_complete_iterations=1, aux_pools=[right])
+        df = left.generate_seqs(num_cycles=1, aux_pools=[right])
         # 5 possible breakpoint positions (0, 1, 2, 3, 4)
         assert len(df) == 5
         
@@ -139,7 +139,7 @@ class TestBreakpointScan:
             mid = mid.named('mid')
             right = right.named('right')
         
-        df = left.generate_seqs(num_complete_iterations=1, aux_pools=[mid, right])
+        df = left.generate_seqs(num_cycles=1, aux_pools=[mid, right])
         
         # Check all splits are valid
         for _, row in df.iterrows():
@@ -209,7 +209,7 @@ class TestMixedModes:
             barcode = pp.get_kmers(length=4, mode='random')
             oligo = join([mutants, '.', barcode]).named('oligo')
         
-        df = oligo.generate_seqs(num_complete_iterations=1, seed=42)
+        df = oligo.generate_seqs(num_cycles=1, seed=42)
         assert len(df) == 12  # 12 single mutants
         
         # Check that barcodes are varied (random)
@@ -304,7 +304,7 @@ class TestStateSliceOp:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sliced = pool[1:4].named('seq')  # States 1, 2, 3 -> B, C, D
         
-        df = sliced.generate_seqs(num_complete_iterations=1)
+        df = sliced.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['B', 'C', 'D']
     
     def test_state_slice_single(self):
@@ -336,7 +336,7 @@ class TestStackOp:
             b = pp.from_seqs(['X', 'Y'], mode='sequential')
             stacked = (a + b).named('seq')
         
-        df = stacked.generate_seqs(num_complete_iterations=1)
+        df = stacked.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['A', 'B', 'X', 'Y']
     
     def test_stack_num_states(self):
@@ -357,7 +357,7 @@ class TestRepeatOp:
             pool = pp.from_seqs(['A', 'B'], mode='sequential')
             repeated = (pool * 2).named('seq')
         
-        df = repeated.generate_seqs(num_complete_iterations=1)
+        df = repeated.generate_seqs(num_cycles=1)
         assert list(df['seq']) == ['A', 'B', 'A', 'B']
     
     def test_repeat_num_states(self):
@@ -383,7 +383,7 @@ class TestErrors:
             assert pp.get_active_party() is outer
     
     def test_num_seqs_required(self):
-        """Test error when neither num_seqs nor num_complete_iterations given."""
+        """Test error when neither num_seqs nor num_cycles given."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA']).named('seq')
         
