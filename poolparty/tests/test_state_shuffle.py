@@ -2,7 +2,7 @@
 
 import pytest
 import poolparty as pp
-from poolparty.operations.state_shuffle import StateShuffleOp, state_shuffle
+from poolparty.state_ops.state_shuffle import StateShuffleOp, state_shuffle
 
 
 class TestStateShuffleFactory:

@@ -143,12 +143,12 @@ class Pool:
     
     def __add__(self, other: Pool_type) -> Pool_type:
         """Stack two pools (union of states via sum_counters)."""
-        from .operations.stack import stack
+        from .state_ops.stack import stack
         return stack([self, other])
     
     def __mul__(self, n: int) -> Pool_type:
         """Repeat this pool n times (repeat states)."""
-        from .operations.repeat import repeat
+        from .state_ops.repeat import repeat
         return repeat(self, n)
     
     def __rmul__(self, n: int) -> Pool_type:
@@ -157,7 +157,7 @@ class Pool:
     
     def __getitem__(self, key: Union[int, slice]) -> Pool_type:
         """Slice this pool's states (not sequences)."""
-        from .operations.state_slice import state_slice
+        from .state_ops.state_slice import state_slice
         return state_slice(self, key)
     
     def __repr__(self) -> str:

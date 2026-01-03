@@ -2,7 +2,7 @@
 
 import pytest
 import poolparty as pp
-from poolparty.operations.state_slice import StateSliceOp, state_slice
+from poolparty.state_ops.state_slice import StateSliceOp, state_slice
 
 
 class TestStateSliceFactory:

@@ -2,7 +2,7 @@
 
 import pytest
 import poolparty as pp
-from poolparty.operations.state_sample import StateSampleOp, state_sample
+from poolparty.state_ops.state_sample import StateSampleOp, state_sample
 
 
 class TestStateSampleFactory:

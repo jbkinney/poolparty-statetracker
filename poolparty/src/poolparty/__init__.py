@@ -29,12 +29,15 @@ from .operations import (
     mutagenize_orf, MutagenizeOrfOp,
     breakpoint_scan, BreakpointScanOp,
     seq_shuffle, SeqShuffleOp,
+)
+# Import state operations from state_ops module
+from .state_ops import (
     stack, StackOp,
-    repeat, RepeatOp,
-    state_slice, StateSliceOp,
-    state_shuffle, StateShuffleOp,
-    state_sample, StateSampleOp,
     sync,
+    state_slice, StateSliceOp,
+    state_sample, StateSampleOp,
+    state_shuffle, StateShuffleOp,
+    repeat, RepeatOp,
 )
 # Import scan functions from scan module
 from .scan import (

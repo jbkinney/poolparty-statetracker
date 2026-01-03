@@ -12,7 +12,7 @@ import pytest
 import poolparty as pp
 from poolparty import join
 from poolparty.fixed_ops.seq_slice import seq_slice
-from poolparty.operations.stack import stack, StackOp
+from poolparty.state_ops.stack import stack, StackOp
 import statecounter as sc
 
 

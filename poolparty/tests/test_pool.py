@@ -12,9 +12,9 @@ import pytest
 import poolparty as pp
 from poolparty import join
 from poolparty.pool import Pool
-from poolparty.operations.stack import StackOp
-from poolparty.operations.repeat import RepeatOp
-from poolparty.operations.state_slice import StateSliceOp
+from poolparty.state_ops.stack import StackOp
+from poolparty.state_ops.repeat import RepeatOp
+from poolparty.state_ops.state_slice import StateSliceOp
 
 
 class TestPoolCreation:
