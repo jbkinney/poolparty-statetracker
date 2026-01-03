@@ -8,7 +8,7 @@ from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
 from ..orf_utils import validate_orf_extent
-from ..markers.parsing import MARKER_PATTERN, strip_all_markers, find_all_markers
+from ..markers.parsing import TAG_PATTERN, strip_all_markers, find_all_markers
 import numpy as np
 from ..codon_table import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
 

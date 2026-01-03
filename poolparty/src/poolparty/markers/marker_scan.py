@@ -3,7 +3,7 @@ from poolparty.types import Union, Optional, Literal
 from numbers import Integral, Real
 import numpy as np
 
-from .parsing import build_marker_tag, MARKER_PATTERN, get_nonmarker_positions
+from .parsing import build_marker_tag, TAG_PATTERN, get_nonmarker_positions
 from ..operation import Operation
 
 # Type aliases

@@ -3,7 +3,7 @@ from .types import beartype, Optional, Sequence, Union
 
 # Import XML-style marker pattern from markers module
 from .markers.parsing import (
-    MARKER_PATTERN,
+    TAG_PATTERN,
     get_length_without_markers as _get_length_without_markers,
     get_nonmarker_positions as _get_nonmarker_positions,
 )

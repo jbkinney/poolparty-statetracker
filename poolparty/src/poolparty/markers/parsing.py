@@ -4,6 +4,22 @@ from dataclasses import dataclass
 from xml.etree import ElementTree as ET
 from poolparty.types import Optional, Literal
 
+# Regex pattern for XML-style marker tags
+# 
+# Example: <item id="5" type='main'/>
+#          │ │   │                  │
+#          │ │   │                  └─ Group 4: "/" (self-closing slash, or empty)
+#          │ │   └─ Group 3: " id=\"5\" type='main'" (all attributes, or empty)
+#          │ └─ Group 2: "item" (tag name)
+#          └─ Group 1: "" (closing slash, or empty if opening tag)
+#
+# Other examples:
+#   <div>       -> ("", "div", "", "")
+#   </div>      -> ("/", "div", "", "")
+#   <br/>       -> ("", "br", "", "/")
+#   <a href="x"> -> ("", "a", " href=\"x\"", "")
+TAG_PATTERN = re.compile(r'<(/?)(\w+)((?:\s+\w+=[\'"][^\'"]*[\'"])*)\s*(/?)>')
+
 
 @dataclass
 class ParsedMarker:
@@ -66,18 +82,9 @@ def _parse_attributes(attrs_str: str) -> tuple[str, Optional[str]]:
                     raise ValueError(f"seq_length must be non-negative, got {parsed_int}")
                 declared_seq_length_str = value  # Store the string representation
             except ValueError:
-                raise ValueError(f"Invalid seq_length value: '{value}'. Must be an integer or 'None'.")
+                raise ValueError(f"Invalid seq_length value: '{value}'. Must be an integer in quotes or 'None'.")
     
     return strand, declared_seq_length_str
-
-
-# Unified regex pattern for all XML-style marker tags
-# Captures: (1) closing slash, (2) name, (3) attributes, (4) self-closing slash
-# Matches: <name>, <name/>, </name>, <name attr='val'>, <name attr='val'/>, etc.
-TAG_PATTERN = re.compile(r'<(/?)(\w+)((?:\s+\w+=[\'"][^\'"]*[\'"])*)\s*(/?)>')
-
-# Alias for backward compatibility (used by strip_all_markers, get_nonmarker_positions)
-MARKER_PATTERN = TAG_PATTERN
 
 
 def find_all_markers(seq: str) -> list[ParsedMarker]:
@@ -104,11 +111,11 @@ def find_all_markers(seq: str) -> list[ParsedMarker]:
         
         if is_self_close:
             # Self-closing tag: <name/>
-            strand, decl_len_str = _parse_attributes(attrs)
+            strand, declared_seq_length_str = _parse_attributes(attrs)
             # Validate seq_length for self-closing
-            if decl_len_str is not None and decl_len_str not in ('0', 'None'):
+            if declared_seq_length_str is not None and declared_seq_length_str not in ('0', 'None'):
                 raise ValueError(
-                    f"Self-closing marker '<{name}/>' has seq_length='{decl_len_str}' "
+                    f"Self-closing marker '<{name}/>' has seq_length='{declared_seq_length_str}' "
                     f"but contains no content. Use seq_length='0' or omit the attribute."
                 )
             markers.append(ParsedMarker(
@@ -119,19 +126,19 @@ def find_all_markers(seq: str) -> list[ParsedMarker]:
                 content_end=match.end(),
                 strand=strand,
                 content='',
-                declared_seq_length_str=decl_len_str,
+                declared_seq_length_str=declared_seq_length_str,
             ))
         elif is_close:
             # Closing tag: </name> - pop innermost matching open tag
-            for i in range(len(open_stack) - 1, -1, -1):
+            for i in reversed(range(len(open_stack))):
                 if open_stack[i][0] == name:
-                    oname, strand, decl_len_str, ostart, cstart = open_stack.pop(i)
+                    oname, strand, declared_seq_length_str, ostart, cstart = open_stack.pop(i)
                     content = seq[cstart:match.start()]
                     # Validate seq_length if declared as an integer
-                    if decl_len_str is not None and decl_len_str != 'None':
-                        if len(content) != int(decl_len_str):
+                    if declared_seq_length_str is not None and declared_seq_length_str != 'None':
+                        if len(content) != int(declared_seq_length_str):
                             raise ValueError(
-                                f"Marker '<{oname}>' has seq_length='{decl_len_str}' "
+                                f"Marker '<{oname}>' has seq_length='{declared_seq_length_str}' "
                                 f"but content has length {len(content)}: '{content}'"
                             )
                     markers.append(ParsedMarker(
@@ -142,13 +149,13 @@ def find_all_markers(seq: str) -> list[ParsedMarker]:
                         content_end=match.start(),
                         strand=strand,
                         content=content,
-                        declared_seq_length_str=decl_len_str,
+                        declared_seq_length_str=declared_seq_length_str,
                     ))
                     break
         else:
             # Opening tag: <name>
-            strand, decl_len_str = _parse_attributes(attrs)
-            open_stack.append((name, strand, decl_len_str, match.start(), match.end()))
+            strand, declared_seq_length_str = _parse_attributes(attrs)
+            open_stack.append((name, strand, declared_seq_length_str, match.start(), match.end()))
     
     return sorted(markers, key=lambda m: m.start)
 

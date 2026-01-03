@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import poolparty as pp
 from poolparty.markers import (
-    MARKER_PATTERN,
+    TAG_PATTERN,
     ParsedMarker,
     parse_marker,
     find_all_markers,
@@ -155,22 +155,22 @@ class TestMarkerParsing:
 
 
 class TestMarkerPattern:
-    """Test the MARKER_PATTERN regex."""
+    """Test the TAG_PATTERN regex."""
     
     def test_matches_self_closing(self):
         """Test pattern matches self-closing markers."""
-        assert MARKER_PATTERN.search('<m/>') is not None
-        assert MARKER_PATTERN.search('<marker_name/>') is not None
-        assert MARKER_PATTERN.search("<m strand='-'/>") is not None
+        assert TAG_PATTERN.search('<m/>') is not None
+        assert TAG_PATTERN.search('<marker_name/>') is not None
+        assert TAG_PATTERN.search("<m strand='-'/>") is not None
     
     def test_matches_opening_tag(self):
         """Test pattern matches opening tags."""
-        assert MARKER_PATTERN.search('<region>') is not None
-        assert MARKER_PATTERN.search("<region strand='-'>") is not None
+        assert TAG_PATTERN.search('<region>') is not None
+        assert TAG_PATTERN.search("<region strand='-'>") is not None
     
     def test_matches_closing_tag(self):
         """Test pattern matches closing tags."""
-        assert MARKER_PATTERN.search('</region>') is not None
+        assert TAG_PATTERN.search('</region>') is not None
 
 
 class TestInsertMarker:
