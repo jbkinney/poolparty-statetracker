@@ -137,7 +137,7 @@ class Pool:
         """Add a marker to this pool's marker set."""
         self._markers.add(marker)
     
-    def remove_marker(self, name: str) -> None:
+    def _untrack_marker(self, name: str) -> None:
         """Remove a marker from this pool's marker set by name."""
         self._markers = {m for m in self._markers if m.name != name}
     
@@ -287,3 +287,15 @@ class Pool:
         """
         from .text_viz import print_pool_tree
         print_pool_tree(self, style=style)
+    
+    #########################################################################
+    # Delegation to OpsContainer
+    #########################################################################
+    
+    def __getattr__(self, name: str):
+        """Delegate attribute access to ops container for convenience methods."""
+        try:
+            ops = object.__getattribute__(self, 'ops')
+            return getattr(ops, name)
+        except AttributeError:
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")

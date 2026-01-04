@@ -99,6 +99,6 @@ def extract_marker_content(
     
     # The extracted content does not contain any markers
     # (we only inherit parent markers minus the extracted one)
-    result_pool.remove_marker(marker_name)
+    result_pool._untrack_marker(marker_name)
     
     return result_pool

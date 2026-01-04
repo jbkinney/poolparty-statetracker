@@ -78,7 +78,7 @@ def replace_marker_content(
     result_pool = Pool(operation=op, name=name, iter_order=iter_order)
     
     # The marker is replaced, so remove it from the pool's marker set
-    result_pool.remove_marker(marker_name)
+    result_pool._untrack_marker(marker_name)
     
     return result_pool
 
