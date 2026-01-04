@@ -1,6 +1,6 @@
 """Pool class for poolparty."""
 import statecounter as sc
-from .types import Pool_type, Operation_type, Union, Optional, Real, beartype
+from .types import Pool_type, Operation_type, Union, Optional, Real, Callable, beartype
 from .marker import Marker
 import pandas as pd
 
@@ -136,6 +136,59 @@ class Pool:
     def remove_marker(self, name: str) -> None:
         """Remove a marker from this pool's marker set by name."""
         self._markers = {m for m in self._markers if m.name != name}
+    
+    def apply_at_marker(
+        self,
+        marker_name: str,
+        transform_fn: Callable,
+        remove_marker: bool = True,
+        name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Apply a transformation to the content of a marked region.
+        
+        This is a thin wrapper around poolparty.apply_at_marker().
+        See that function for full documentation of parameters.
+        """
+        from .marker_ops.apply_at_marker import apply_at_marker
+        return apply_at_marker(
+            self, marker_name, transform_fn,
+            remove_marker=remove_marker, name=name, iter_order=iter_order,
+        )
+    
+    def mutagenize_region(
+        self,
+        marker_name: str,
+        remove_marker: bool = True,
+        **kwargs,
+    ) -> Pool_type:
+        """Apply mutagenize() to a marked region.
+        
+        This is a convenience method that applies mutagenize() to the content
+        of a named marker and reinserts the result back into the sequence context.
+        
+        Parameters
+        ----------
+        marker_name : str
+            Name of the marker whose content to mutagenize.
+        remove_marker : bool, default=True
+            If True, marker tags are removed from the result.
+            If False, marker tags are preserved around the mutagenized content.
+        **kwargs
+            Additional arguments passed to mutagenize() (e.g., num_mutations,
+            mutation_rate, mark_changes, mode, num_hybrid_states).
+        
+        Returns
+        -------
+        Pool
+            A Pool with the marker region mutagenized.
+        """
+        from .base_ops.mutagenize import mutagenize
+        return self.apply_at_marker(
+            marker_name,
+            lambda p: mutagenize(p, **kwargs),
+            remove_marker=remove_marker,
+        )
     
     #########################################################################
     # Counter-based operators

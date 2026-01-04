@@ -75,7 +75,7 @@
 %% ============================================================================
 
 \title{PoolParty: Declartive design of complex oligonucleotide libraries\\
-(Supplemental Information)}
+(Supplemental Information--)}
 \author{Zhihan Liu and Justin B. Kinney}
 \date{\today}
 
@@ -105,12 +105,12 @@ Poolparty has two core types of objects: Pools and Operations. A Pool object rep
 
 The following two examples illustrate PoolParty's core capabilities.
 
-\subsection{Example 1: Random Mode Operations}
+\subsection{Example 1: Random Mode}
 \label{subsec:example-random}
 
 Each component Operation of the computation graph can be in one of four modes: \inpy{'fixed'}, \inpy{'random'}, \inpy{'sequential'}, or \inpy{'hybrid'}.  Fixed mode operations are deterministic: for a given input they always produce the same output. Random mode operation, on the other hand, will generally produce a different output each time they are called due to them having an internal state that changes unpredictably. 
 
-Here is an example of PoolParty code that uses \inpy{'random'} and \inpy{'fixed'} operations to generate the type of construct commonly used in massively parallel reporter assays (MPRAs). First the core sequence elemenets are defined as simple python strings: \inpy{wt_seq} is a regulatory sequence of iterest, \inpy{adapter_5_seq} is a constant-sequence adapter, and \inpy{adapter_3_iupac} is an adapter containing degerate nucleotides that will be used as a barcode. Next, the \inpy{pp.mutagenize()} operation is called on \inpy{wt_seq}, generating a pool \inpy{mut_pool} comprising randomly mutated versions of \inpy{wt_seq}. Next, the \inpy{pp.from_iupac_motif()} operation is called on \inpy{adapter_3_iupac}, generating a pool \inpy{adapter_3_pool} in which the \inpy{N} characters have been replaced by randomly selected DNA nucleotides. Next, the \inpy{pp.join} operation deterministically joins the 3\' adaptor sequence, mutagenized pool, and barcode-containing 5\' adaptor sequence into a final \inpy{oligo_pool_1}. Finally, the \inpy{pp.generate_seqs()} method is called with the desired number of sequence. This produces a pandas dataframe \inpy{df} that lists each sequence along with a ``design card'', i.e.\ a series of fields that describes the decisions each operation made in order to arrive at each resulting sequence. 
+Here is an example of PoolParty code that uses \inpy{'random'} and \inpy{'fixed'} operations to generate the type of construct commonly used in massively parallel reporter assays (MPRAs). First the core sequence elemenets are defined as simple python strings: \inpy{wt_seq} is a regulatory sequence of iterest, \inpy{adapter_5_seq} is a constant-sequence adapter, and \inpy{adapter_3_iupac} is an adapter containing degerate nucleotides that will be used as a barcode. Next, the \inpy{pp.mutagenize()} operation is called on \inpy{wt_seq}, generating a pool \inpy{mut_pool} comprising randomly mutated versions of \inpy{wt_seq}. Next, the \inpy{pp.from_iupac_motif()} operation is called on \inpy{adapter_3_iupac}, generating a pool \inpy{adapter_3_pool} in which the \inpy{N} characters have been replaced by randomly selected DNA nucleotides. Next, the \inpy{pp.join} operation deterministically joins the 3\' adaptor sequence, mutagenized pool, and barcode-containing 5\' adaptor sequence into a final \inpy{oligo_pool_1}. Finally, the \inpy{pp.generate_library()} method is called with the desired number of sequence. This produces a pandas dataframe \inpy{df} that lists each sequence along with a ``design card'', i.e.\ a series of fields that describes the decisions each operation made in order to arrive at each resulting sequence. 
 
 \begin{minted}{python}
 import poolparty as pp
@@ -133,7 +133,7 @@ ad3_pool = pp.from_iupac_motif(ad3_seq, mode='random')
 oligo_pool = pp.join([ad5_seq, mut_pool, ad3_pool], spacer_str=' ')
 
 # Sample 5 sequences
-df = oligo_pool.generate_seqs(num_seqs=5, seed=42)
+df = oligo_pool.generate_library(num_seqs=5, seed=42)
 print(df['seq'])
 \end{minted}
 
@@ -143,7 +143,7 @@ Key points:
     \item \inpy{pp.mutagenize()} generates a pool of sequences containing different combinations of mutations at within a specified wild-type sequence. Here we instruct poolparty to introduce 3 mutations into each sequence. This operation runs in random mode by default, which means that the specific mutations that each sequence recieves is random. 
     \item \inpy{pp.from_iupac_motif()} generates a pool of sequences derived from an IUPAC sequence, i.e., a DNA sequence in which special characters (such as \'N\') signify degenerate bases. This too runs in random mode by default. 
     \item \inpy{pp.join()} joins together multiple sequences/Pools. It has no variable internal state so always runs in fixed mode. It also takes an argment, \inpy{spacer_str}, which we use here to add a space between the mutagenized region and adaptor sequences. 
-    \item \inpy{generate_seqs(num_seqs=N, seed)} instructs \inpy{oligo_pool} to construct $N$ sequences using the specified random seed. It retuns a Pandas dataframe, here called \inpy{df}. The first column is named \inpy{'seq'} and contains the resulting sequences:
+    \item \inpy{generate_library(num_seqs=N, seed)} instructs \inpy{oligo_pool} to construct $N$ sequences using the specified random seed. It retuns a Pandas dataframe, here called \inpy{df}. The first column is named \inpy{'seq'} and contains the resulting sequences:
     \begin{center}
         \includegraphics[width=\textwidth]{example1_seqs.png}
     \end{center}
@@ -151,13 +151,13 @@ Key points:
     \begin{center}
         \includegraphics[width=\textwidth]{example1_df.png}
     \end{center}
-    \item During the execution of \inpy{oligo_pool.generate_seqs()}, each sequence is computed one-at-a-time using a computation tree that can be visualized by running \inpy{oligo_pool.print_tree()}:
+    \item During the execution of \inpy{oligo_pool.generate_library()}, each sequence is computed one-at-a-time using a computation tree that can be visualized by running \inpy{oligo_pool.print_tree()}:
     \begin{center}
         \includegraphics[width=\textwidth]{example1_tree.png}
     \end{center}
 \end{itemize}
 
-\subsection{Example 2: Sequential Mode Operations}
+\subsection{Example 2: Sequential Mode}
 \label{subsec:example-sequential}
 
 In many experimental contexts, such as systematic mutagenesis studies or deletion scanning, users need to enumerate \emph{all} possible sequence variants rather than randomly sample from them. This requires \inpy{'sequential'} mode operations, which cycle through a finite set of internal states in a deterministic order.
@@ -200,7 +200,7 @@ combo_pool = pp.stack([rep_pool, del_pool])
 oligo_pool_2 = pp.join([ad5_seq, combo_pool, ad3_pool], spacer_str=' ')
 
 # Enumerate all 12 states exactly once
-df = oligo_pool_2.generate_seqs(num_complete_iterations=1, seed=42)
+df = oligo_pool_2.generate_library(num_cycles=1, seed=42)
 print(df['seq'])
 \end{minted}
 
@@ -219,7 +219,7 @@ Key points:
     
     \item \inpy{pp.stack()} combines pools as a union: only one pool is ``active'' at any given state. The first 8 states come from \inpy{rep_pool}, the next 4 from \inpy{del_pool}, for a total of 12 states.
 
-    \item \inpy{generate_seqs(num_complete_iterations=1)} iterates through all 12 states exactly once. More generally, \inpy{num_complete_iterations=N} guarantees that every state is visited exactly $N$ times, with the internal states of the contributing operations cyling in a specific order each time.
+    \item \inpy{generate_library(num_cycles=1)} iterates through all 12 states exactly once. More generally, \inpy{num_cycles=N} guarantees that every state is visited exactly $N$ times, with the internal states of the contributing operations cyling in a specific order each time.
     
     \item Because \inpy{pp.from_iupac()} remains in random mode, the barcodes present in each sequence \inpy{ad3} remain random and do not cycle in any coordinated way with the internal states of \inpy{pp.from_seqs}, \inpy{pp.replacement_scan}, and \inpy{pp.deletion_scan}.
 \end{itemize}
@@ -519,7 +519,7 @@ library = pool + barcode
 # Generate sequences
 seqs_df = library.generate_library(
     combinatorially_complete_pools=[pool],
-    num_complete_iterations=5
+    num_cycles=5
 )
 \end{minted}
 
