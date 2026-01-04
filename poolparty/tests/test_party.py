@@ -466,7 +466,7 @@ class TestDefaultParameters:
     
     def test_module_level_set_default(self):
         """Test module-level set_default function."""
-        pp.reset_default_party()
+        pp.reset()
         pp.set_default('mark_changes', True)
         
         pool = pp.from_iupac_motif('ACGN', mode='sequential')
@@ -476,7 +476,7 @@ class TestDefaultParameters:
         assert seq[-1].islower()
         
         # Clean up
-        pp.reset_default_party()
+        pp.reset()
     
     def test_defaults_reset_with_new_party(self):
         """Test that defaults are reset when creating a new Party."""
@@ -504,7 +504,7 @@ class TestDefaultParameters:
         toml_file = tmp_path / "defaults.toml"
         toml_file.write_text("mark_changes = true\n")
         
-        pp.reset_default_party()
+        pp.reset()
         pp.load_defaults(str(toml_file))
         
         pool = pp.from_iupac_motif('ACGN', mode='sequential')
@@ -513,7 +513,7 @@ class TestDefaultParameters:
         assert seq[-1].islower()
         
         # Clean up
-        pp.reset_default_party()
+        pp.reset()
 
 
 class TestCounterManagerIntegration:

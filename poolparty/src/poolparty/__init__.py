@@ -4,7 +4,7 @@ __version__ = "0.3.0"
 
 import statecounter as sc
 
-from .party import Party, get_active_party, reset_default_party, _init_default_party
+from .party import Party, get_active_party, reset, _init_default_party
 from .pool import Pool
 from .operation import Operation
 from .marker import Marker
@@ -74,7 +74,7 @@ from .multiscan_ops import (
 
 __all__ = [
     '__version__',
-    'Party', 'get_active_party', 'reset_default_party',
+    'Party', 'get_active_party', 'reset',
     'set_default', 'load_defaults',
     'Pool', 'Operation', 'Marker', 'Counter', 'CounterManager', 'generate_library',
     'get_alphabet', 'NAMED_ALPHABETS',

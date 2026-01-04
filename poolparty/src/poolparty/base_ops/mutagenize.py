@@ -14,6 +14,7 @@ def mutagenize(
     num_mutations: Optional[Integral] = None,
     mutation_rate: Optional[Real] = None,
     mark_changes: Optional[bool] = None,
+    swapcase: bool = False,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -34,6 +35,9 @@ def mutagenize(
         Probability of mutation at each position (mutually exclusive with num_mutations).
     mark_changes : Optional[bool], default=None
         If True, apply swapcase() to mutated positions. If None, uses party default.
+    swapcase : bool, default=False
+        If True, swap case of entire sequence after mutations are applied.
+        Preserves XML marker tags unchanged.
     mode : ModeType, default='random'
         Selection mode: 'random', 'sequential', or 'hybrid'. Sequential only available with num_mutations.
     num_hybrid_states : Optional[int], default=None
@@ -60,6 +64,7 @@ def mutagenize(
         num_mutations=num_mutations,
         mutation_rate=mutation_rate,
         mark_changes=mark_changes,
+        swapcase=swapcase,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         name=op_name,
@@ -89,6 +94,7 @@ class MutagenizeOp(Operation):
         num_mutations: Optional[Integral] = None,
         mutation_rate: Optional[Real] = None,
         mark_changes: Optional[bool] = None,
+        swapcase: bool = False,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -128,6 +134,7 @@ class MutagenizeOp(Operation):
         if mark_changes is None:
             mark_changes = party.get_default('mark_changes', False)
         self.mark_changes = mark_changes
+        self.swapcase = swapcase
         self.alphabet = party.alphabet
         self.alpha_size = self.alphabet.size
         self._mode = mode
@@ -292,6 +299,8 @@ class MutagenizeOp(Operation):
         card: dict,
     ) -> dict:
         """Apply mutations to the parent sequence based on design card."""
+        from ..marker_ops.parsing import transform_nonmarker_chars
+        
         seq = parent_seqs[0]
         positions = card['positions']  # Logical positions
         mut_chars = card['mut_chars']
@@ -301,7 +310,10 @@ class MutagenizeOp(Operation):
         for logical_pos, mut in zip(positions, mut_chars):
             raw_pos = valid_char_positions[logical_pos]
             seq_list[raw_pos] = mut
-        return {'seq_0': ''.join(seq_list)}
+        result_seq = ''.join(seq_list)
+        if self.swapcase:
+            result_seq = transform_nonmarker_chars(result_seq, str.swapcase)
+        return {'seq_0': result_seq}
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
@@ -310,6 +322,7 @@ class MutagenizeOp(Operation):
             'num_mutations': self.num_mutations,
             'mutation_rate': self.mutation_rate,
             'mark_changes': self.mark_changes,
+            'swapcase': self.swapcase,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,

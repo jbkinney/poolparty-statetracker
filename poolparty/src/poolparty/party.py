@@ -21,7 +21,7 @@ def get_active_party() -> Optional["Party"]:
 
 
 @beartype
-def reset_default_party(
+def reset(
     alphabet: Union[str, Alphabet] = 'dna',
     genetic_code: Union[str, dict] = 'standard',
 ) -> "Party":
@@ -43,7 +43,7 @@ def _init_default_party() -> None:
     """Initialize the default party on module import (called from __init__.py)."""
     global _default_party
     if _default_party is None:
-        reset_default_party()
+        reset()
 
 @beartype
 class Party:
