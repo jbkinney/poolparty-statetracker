@@ -1,6 +1,6 @@
 """Pool class for poolparty."""
 import statecounter as sc
-from .types import Pool_type, Operation_type, Union, Optional, Real, Callable, beartype
+from .types import Pool_type, Operation_type, Union, Optional, Real, Callable, Integral, beartype
 from .marker import Marker
 import pandas as pd
 
@@ -156,16 +156,13 @@ class Pool:
             remove_marker=remove_marker, name=name, iter_order=iter_order,
         )
     
-    def mutagenize_region(
+    def mutagenize(
         self,
         marker_name: str,
         remove_marker: bool = True,
         **kwargs,
     ) -> Pool_type:
         """Apply mutagenize() to a marked region.
-        
-        This is a convenience method that applies mutagenize() to the content
-        of a named marker and reinserts the result back into the sequence context.
         
         Parameters
         ----------
@@ -175,7 +172,7 @@ class Pool:
             If True, marker tags are removed from the result.
             If False, marker tags are preserved around the mutagenized content.
         **kwargs
-            Additional arguments passed to mutagenize() (e.g., num_mutations,
+            Arguments passed to mutagenize() (e.g., num_mutations,
             mutation_rate, mark_changes, mode, num_hybrid_states).
         
         Returns
@@ -187,6 +184,108 @@ class Pool:
         return self.apply_at_marker(
             marker_name,
             lambda p: mutagenize(p, **kwargs),
+            remove_marker=remove_marker,
+        )
+    
+    def deletion_scan(
+        self,
+        marker_name: str,
+        deletion_length: Integral,
+        remove_marker: bool = True,
+        **kwargs,
+    ) -> Pool_type:
+        """Apply deletion_scan() to a marked region.
+        
+        Parameters
+        ----------
+        marker_name : str
+            Name of the marker whose content to scan.
+        deletion_length : Integral
+            Number of characters to delete at each position.
+        remove_marker : bool, default=True
+            If True, marker tags are removed from the result.
+            If False, marker tags are preserved around the scanned content.
+        **kwargs
+            Arguments passed to deletion_scan() (e.g., deletion_marker,
+            spacer_str, positions, mode, num_hybrid_states).
+        
+        Returns
+        -------
+        Pool
+            A Pool with deletion scan applied to the marker region.
+        """
+        from .scan_ops.deletion_scan import deletion_scan
+        return self.apply_at_marker(
+            marker_name,
+            lambda p: deletion_scan(p, deletion_length, **kwargs),
+            remove_marker=remove_marker,
+        )
+    
+    def insertion_scan(
+        self,
+        marker_name: str,
+        ins_pool: Union[Pool_type, str],
+        remove_marker: bool = True,
+        **kwargs,
+    ) -> Pool_type:
+        """Apply insertion_scan() to a marked region.
+        
+        Parameters
+        ----------
+        marker_name : str
+            Name of the marker whose content to scan.
+        ins_pool : Pool or str
+            The insert Pool or sequence string to be inserted.
+        remove_marker : bool, default=True
+            If True, marker tags are removed from the result.
+            If False, marker tags are preserved around the scanned content.
+        **kwargs
+            Arguments passed to insertion_scan() (e.g., positions,
+            spacer_str, mode, num_hybrid_states).
+        
+        Returns
+        -------
+        Pool
+            A Pool with insertion scan applied to the marker region.
+        """
+        from .scan_ops.insertion_scan import insertion_scan
+        return self.apply_at_marker(
+            marker_name,
+            lambda p: insertion_scan(p, ins_pool, **kwargs),
+            remove_marker=remove_marker,
+        )
+    
+    def replacement_scan(
+        self,
+        marker_name: str,
+        ins_pool: Union[Pool_type, str],
+        remove_marker: bool = True,
+        **kwargs,
+    ) -> Pool_type:
+        """Apply replacement_scan() to a marked region.
+        
+        Parameters
+        ----------
+        marker_name : str
+            Name of the marker whose content to scan.
+        ins_pool : Pool or str
+            The insert Pool or sequence string to replace segments.
+        remove_marker : bool, default=True
+            If True, marker tags are removed from the result.
+            If False, marker tags are preserved around the scanned content.
+        **kwargs
+            Arguments passed to replacement_scan() (e.g., positions,
+            spacer_str, mark_changes, mode, num_hybrid_states).
+        
+        Returns
+        -------
+        Pool
+            A Pool with replacement scan applied to the marker region.
+        """
+        from .scan_ops.replacement_scan import replacement_scan
+        return self.apply_at_marker(
+            marker_name,
+            lambda p: replacement_scan(p, ins_pool, **kwargs),
             remove_marker=remove_marker,
         )
     
