@@ -1,6 +1,6 @@
 """Pool class for poolparty."""
 import statecounter as sc
-from .types import Pool_type, Operation_type, Union, Optional, Real, beartype
+from .types import Pool_type, Operation_type, Union, Optional, Real, Integral, beartype
 from .marker import Marker
 from .ops_container import OpsContainer
 import pandas as pd
@@ -247,6 +247,22 @@ class Pool:
         """
         from .generate_library import generate_library
         return generate_library(self, **kwargs)
+    
+    def preview_library(
+        self,
+        num_seqs: Optional[Integral] = None,
+        num_cycles: Optional[Integral] = None,
+    ) -> None:
+        """Print preview sequences from this pool."""
+        if num_seqs is None and num_cycles is None:
+            num_seqs = 5
+        seqs = self.generate_library(
+            num_seqs=num_seqs,
+            num_cycles=num_cycles,
+            seqs_only=True,
+        )
+        for seq in seqs:
+            print(seq)
     
     #########################################################################
     # Tree visualization
