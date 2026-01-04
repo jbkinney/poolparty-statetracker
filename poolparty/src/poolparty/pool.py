@@ -248,21 +248,32 @@ class Pool:
         from .generate_library import generate_library
         return generate_library(self, **kwargs)
     
-    def preview_library(
+    def print_library(
         self,
         num_seqs: Optional[Integral] = None,
         num_cycles: Optional[Integral] = None,
+        show_header: bool = True,
+        show_states: bool = True,
     ) -> None:
         """Print preview sequences from this pool."""
         if num_seqs is None and num_cycles is None:
-            num_seqs = 5
-        seqs = self.generate_library(
+            num_cycles = 1
+        df = self.generate_library(
             num_seqs=num_seqs,
             num_cycles=num_cycles,
-            seqs_only=True,
+            seqs_only=False,
+            init_state=0,
         )
-        for seq in seqs:
-            print(seq)
+        if show_header:
+            print(f"{self.name}: seq_length={self.seq_length}, num_states={self.num_states}")
+            print("state  seq" if show_states else "seq")
+        state_col = f"{self.name}.state"
+        for _, row in df.iterrows():
+            if show_states:
+                print(f"{row[state_col]:5d}  {row['seq']}")
+            else:
+                print(row['seq'])
+        print('')
     
     #########################################################################
     # Tree visualization

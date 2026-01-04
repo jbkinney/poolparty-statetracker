@@ -21,11 +21,11 @@ def get_active_party() -> Optional["Party"]:
 
 
 @beartype
-def reset(
+def init(
     alphabet: Union[str, Alphabet] = 'dna',
     genetic_code: Union[str, dict] = 'standard',
 ) -> "Party":
-    """Reset and return the default Party, clearing all registered pools/operations/markers."""
+    """Initialize (or reset) the default Party, clearing all registered pools/operations/markers."""
     global _active_party, _default_party
     # Exit current default party if active
     if _default_party is not None and _default_party._is_active:
@@ -36,6 +36,9 @@ def reset(
     _default_party._counter_manager.__enter__()
     _default_party._is_active = True
     _active_party = _default_party
+    # Set default parameter values
+    _default_party.set_default('remove_marker', False)
+    _default_party.set_default('mark_changes', True)
     return _default_party
 
 
@@ -43,7 +46,7 @@ def _init_default_party() -> None:
     """Initialize the default party on module import (called from __init__.py)."""
     global _default_party
     if _default_party is None:
-        reset()
+        init()
 
 @beartype
 class Party:

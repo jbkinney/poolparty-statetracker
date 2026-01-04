@@ -14,7 +14,7 @@ class OpsContainer:
         self,
         marker_name: str,
         transform_fn: Callable,
-        remove_marker: bool = True,
+        remove_marker: Optional[bool] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
@@ -24,6 +24,9 @@ class OpsContainer:
         See that function for full documentation of parameters.
         """
         from .marker_ops.apply_at_marker import apply_at_marker
+        # Resolve None to party default
+        if remove_marker is None:
+            remove_marker = self.pool._party.get_default('remove_marker', True)
         return apply_at_marker(
             self.pool, marker_name, transform_fn,
             remove_marker=remove_marker, name=name, iter_order=iter_order,
@@ -32,7 +35,7 @@ class OpsContainer:
     def mutagenize(
         self,
         marker_name: str,
-        remove_marker: bool = True,
+        remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
         """Apply mutagenize() to a marked region.
@@ -64,7 +67,7 @@ class OpsContainer:
         self,
         marker_name: str,
         deletion_length: Integral,
-        remove_marker: bool = True,
+        remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
         """Apply deletion_scan() to a marked region.
@@ -75,7 +78,8 @@ class OpsContainer:
             Name of the marker whose content to scan.
         deletion_length : Integral
             Number of characters to delete at each position.
-        remove_marker : bool, default=True
+        remove_marker : Optional[bool], default=None
+            If None, uses party default.
             If True, marker tags are removed from the result.
             If False, marker tags are preserved around the scanned content.
         **kwargs
@@ -98,7 +102,7 @@ class OpsContainer:
         self,
         marker_name: str,
         ins_pool: Union[Pool_type, str],
-        remove_marker: bool = True,
+        remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
         """Apply insertion_scan() to a marked region.
@@ -132,7 +136,7 @@ class OpsContainer:
         self,
         marker_name: str,
         ins_pool: Union[Pool_type, str],
-        remove_marker: bool = True,
+        remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
         """Apply replacement_scan() to a marked region.
@@ -166,7 +170,7 @@ class OpsContainer:
         self,
         marker_name: str,
         mutagenize_length: Integral,
-        remove_marker: bool = True,
+        remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
         """Apply mutagenize_scan() to a marked region.
@@ -200,7 +204,7 @@ class OpsContainer:
         self,
         marker_name: str,
         shuffle_length: Integral,
-        remove_marker: bool = True,
+        remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
         """Apply shuffle_scan() to a marked region.
@@ -211,7 +215,8 @@ class OpsContainer:
             Name of the marker whose content to scan.
         shuffle_length : Integral
             Length of the region to shuffle at each position.
-        remove_marker : bool, default=True
+        remove_marker : Optional[bool], default=None
+            If None, uses party default.
             If True, marker tags are removed from the result.
             If False, marker tags are preserved around the scanned content.
         **kwargs
@@ -233,7 +238,7 @@ class OpsContainer:
     def seq_shuffle(
         self,
         marker_name: str,
-        remove_marker: bool = True,
+        remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
         """Apply seq_shuffle() to a marked region.
@@ -242,7 +247,8 @@ class OpsContainer:
         ----------
         marker_name : str
             Name of the marker whose content to shuffle.
-        remove_marker : bool, default=True
+        remove_marker : Optional[bool], default=None
+            If None, uses party default.
             If True, marker tags are removed from the result.
             If False, marker tags are preserved around the shuffled content.
         **kwargs
@@ -265,7 +271,7 @@ class OpsContainer:
         self,
         marker_name: str,
         iupac_seq: str,
-        remove_marker: bool = True,
+        remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
         """Replace marker content with IUPAC-generated sequences.
@@ -276,7 +282,8 @@ class OpsContainer:
             Name of the marker to replace.
         iupac_seq : str
             IUPAC sequence string (e.g., 'RN' for purine + any base).
-        remove_marker : bool, default=True
+        remove_marker : Optional[bool], default=None
+            If None, uses party default.
             If True, marker tags are removed from the result.
             If False, marker tags are preserved around the inserted content.
         **kwargs
@@ -292,6 +299,9 @@ class OpsContainer:
         from .marker_ops.replace_marker_content import replace_marker_content
         from .marker_ops.apply_at_marker import _replace_keeping_marker
         content = from_iupac_motif(iupac_seq, **kwargs)
+        # Resolve None to party default
+        if remove_marker is None:
+            remove_marker = self.pool._party.get_default('remove_marker', True)
         if remove_marker:
             return replace_marker_content(self.pool, content, marker_name)
         else:
@@ -301,7 +311,7 @@ class OpsContainer:
         self,
         marker_name: str,
         prob_df,
-        remove_marker: bool = True,
+        remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
         """Replace marker content with probability-sampled sequences.
@@ -312,7 +322,8 @@ class OpsContainer:
             Name of the marker to replace.
         prob_df : pd.DataFrame
             DataFrame with probability values for each position.
-        remove_marker : bool, default=True
+        remove_marker : Optional[bool], default=None
+            If None, uses party default.
             If True, marker tags are removed from the result.
             If False, marker tags are preserved around the inserted content.
         **kwargs
@@ -328,6 +339,9 @@ class OpsContainer:
         from .marker_ops.replace_marker_content import replace_marker_content
         from .marker_ops.apply_at_marker import _replace_keeping_marker
         content = from_prob_motif(prob_df, **kwargs)
+        # Resolve None to party default
+        if remove_marker is None:
+            remove_marker = self.pool._party.get_default('remove_marker', True)
         if remove_marker:
             return replace_marker_content(self.pool, content, marker_name)
         else:
@@ -337,7 +351,7 @@ class OpsContainer:
         self,
         marker_name: str,
         length: int,
-        remove_marker: bool = True,
+        remove_marker: Optional[bool] = None,
         **kwargs,
     ) -> Pool_type:
         """Replace marker content with k-mer sequences.
@@ -348,7 +362,8 @@ class OpsContainer:
             Name of the marker to replace.
         length : int
             Length of k-mers to generate.
-        remove_marker : bool, default=True
+        remove_marker : Optional[bool], default=None
+            If None, uses party default.
             If True, marker tags are removed from the result.
             If False, marker tags are preserved around the inserted content.
         **kwargs
@@ -364,6 +379,9 @@ class OpsContainer:
         from .marker_ops.replace_marker_content import replace_marker_content
         from .marker_ops.apply_at_marker import _replace_keeping_marker
         content = get_kmers(length, **kwargs)
+        # Resolve None to party default
+        if remove_marker is None:
+            remove_marker = self.pool._party.get_default('remove_marker', True)
         if remove_marker:
             return replace_marker_content(self.pool, content, marker_name)
         else:
@@ -531,6 +549,51 @@ class OpsContainer:
         from .fixed_ops.clear_ignore_chars import clear_ignore_chars
         return clear_ignore_chars(
             self.pool,
+            name=name,
+            op_name=op_name,
+            iter_order=iter_order,
+            op_iter_order=op_iter_order,
+        )
+    
+    #########################################################################
+    # State operation convenience methods
+    #########################################################################
+    
+    def repeat_states(
+        self,
+        times: int,
+        name: Optional[str] = None,
+        op_name: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        op_iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Repeat the Pool's states a specified number of times.
+        
+        This is a thin wrapper around poolparty.repeat().
+        See that function for full documentation of parameters.
+        
+        Parameters
+        ----------
+        times : int
+            The number of times to repeat the pool's states.
+        name : Optional[str], default=None
+            Name to assign to the resulting Pool.
+        op_name : Optional[str], default=None
+            Name to assign to the internal operation.
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the resulting Pool.
+        op_iter_order : Optional[Real], default=None
+            Iteration order priority for the internal operation.
+        
+        Returns
+        -------
+        Pool
+            A new Pool with `times` as many states as the input pool.
+        """
+        from .state_ops.repeat import repeat
+        return repeat(
+            self.pool,
+            times,
             name=name,
             op_name=op_name,
             iter_order=iter_order,
