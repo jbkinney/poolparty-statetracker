@@ -1,7 +1,7 @@
 """Operation base class for poolparty."""
 from numbers import Real
 import statecounter as sc
-from .types import Pool_type, Sequence, ModeType, Optional, beartype
+from .types import Pool_type, Sequence, ModeType, Optional, RegionType, beartype
 import numpy as np
 
 
@@ -95,6 +95,69 @@ class Operation:
     def _get_molecular_positions(self, seq: str) -> list[int]:
         """Get raw string positions of valid alphabet characters, excluding marker interiors."""
         return self._party._alphabet.get_molecular_positions(seq)
+    
+    def _resolve_region(self, seq: str, region: RegionType) -> tuple[int, int] | None:
+        """Resolve region to (start, stop) interval, or None if no region specified.
+        
+        Parameters
+        ----------
+        seq : str
+            The sequence containing potential markers.
+        region : RegionType
+            Region specification: marker name (str), [start, stop] interval, or None.
+        
+        Returns
+        -------
+        tuple[int, int] | None
+            (start, stop) interval in raw string positions, or None if region is None.
+        """
+        if region is None:
+            return None
+        
+        if isinstance(region, str):
+            # Marker name - look up in sequence
+            from .marker_ops.parsing import validate_single_marker
+            marker = validate_single_marker(seq, region)
+            return (marker.content_start, marker.content_end)
+        else:
+            # Explicit [start, stop] interval
+            return (int(region[0]), int(region[1]))
+    
+    def _extract_region_parts(self, seq: str, region: RegionType) -> tuple[str, str, str]:
+        """Extract (prefix, region_content, suffix) from sequence based on region.
+        
+        Parameters
+        ----------
+        seq : str
+            The sequence to split.
+        region : RegionType
+            Region specification: marker name (str), [start, stop] interval, or None.
+        
+        Returns
+        -------
+        tuple[str, str, str]
+            (prefix, region_content, suffix) where prefix + region_content + suffix == seq.
+            If region is None, returns ('', seq, '').
+        """
+        bounds = self._resolve_region(seq, region)
+        if bounds is None:
+            return ('', seq, '')
+        start, stop = bounds
+        return (seq[:start], seq[start:stop], seq[stop:])
+    
+    @staticmethod
+    def _validate_region(region: RegionType) -> None:
+        """Validate region parameter format.
+        
+        Raises ValueError if region is invalid.
+        """
+        if region is not None and not isinstance(region, str):
+            if len(region) != 2:
+                raise ValueError(f"region interval must be [start, stop], got {region}")
+            if region[0] < 0:
+                raise ValueError(f"region start must be >= 0, got {region[0]}")
+            if region[1] < region[0]:
+                raise ValueError(f"region stop must be >= start, got [{region[0]}, {region[1]}]")
     
     @property
     def id(self) -> int:

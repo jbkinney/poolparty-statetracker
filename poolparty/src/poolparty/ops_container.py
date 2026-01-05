@@ -264,8 +264,7 @@ class OpsContainer:
             If True, marker tags are removed from the result.
             If False, marker tags are preserved around the shuffled content.
         **kwargs
-            Arguments passed to seq_shuffle() (e.g., start, end,
-            mode, num_hybrid_states).
+            Arguments passed to seq_shuffle() (e.g., mode, num_hybrid_states).
         
         Returns
         -------
@@ -273,11 +272,20 @@ class OpsContainer:
             A Pool with the marker content shuffled.
         """
         from .base_ops.seq_shuffle import seq_shuffle
-        return self.apply_at_marker(
-            marker_name,
-            lambda p: seq_shuffle(p, **kwargs),
-            remove_marker=remove_marker,
-        )
+        from .marker_ops.remove_marker import remove_marker as remove_marker_op
+        
+        # Resolve None to party default
+        if remove_marker is None:
+            remove_marker = self.pool._party.get_default('remove_marker', True)
+        
+        # Use region parameter to shuffle only the marker content
+        result = seq_shuffle(self.pool, region=marker_name, **kwargs)
+        
+        # Remove marker tags if requested
+        if remove_marker:
+            result = remove_marker_op(result, marker_name, keep_content=True)
+        
+        return result
     
     def insert_from_iupac(
         self,

@@ -1,6 +1,6 @@
 """SeqShuffle operation - shuffle characters within a sequence region."""
 from numbers import Real
-from ..types import Pool_type, ModeType, Optional, Union, beartype
+from ..types import Pool_type, ModeType, Optional, Union, RegionType, beartype
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -9,8 +9,7 @@ import numpy as np
 @beartype
 def seq_shuffle(
     pool: Union[Pool_type, str],
-    start: int = 0,
-    end: Optional[int] = None,
+    region: RegionType = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
@@ -26,10 +25,9 @@ def seq_shuffle(
     ----------
     pool : Pool_type
         Parent pool or sequence to shuffle.
-    start : int, default=0
-        Start index (inclusive) of the region to shuffle.
-    end : Optional[int], default=None
-        End index (exclusive) of the region to shuffle. Defaults to sequence length.
+    region : RegionType, default=None
+        Region to shuffle. Can be a marker name (str), explicit interval [start, stop],
+        or None to shuffle entire sequence.
     mode : ModeType, default='random'
         Shuffle mode: 'random' or 'hybrid'. Sequential is not supported.
     num_hybrid_states : Optional[int], default=None
@@ -52,8 +50,7 @@ def seq_shuffle(
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
     op = SeqShuffleOp(
         parent_pool=pool_obj,
-        start=start,
-        end=end,
+        region=region,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
@@ -73,8 +70,7 @@ class SeqShuffleOp(Operation):
     def __init__(
         self,
         parent_pool: Pool,
-        start: int = 0,
-        end: Optional[int] = None,
+        region: RegionType = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
@@ -82,17 +78,16 @@ class SeqShuffleOp(Operation):
         iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize SeqShuffleOp."""
-        if start < 0:
-            raise ValueError(f"start must be >= 0, got {start}")
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
         if mode == 'sequential':
             raise ValueError("mode='sequential' is not supported for SeqShuffleOp")
-        self.start = start
-        self.end = end
+        
+        # Store and validate region parameter using centralized validation
+        self._region = region
+        Operation._validate_region(region)
+        
         self._seq_length = parent_pool.seq_length
-        if self._seq_length is not None and self.end is None:
-            self.end = self._seq_length
         # Determine num_states
         if mode == 'hybrid':
             num_states = num_hybrid_states
@@ -108,24 +103,6 @@ class SeqShuffleOp(Operation):
             seq_name_prefix=seq_name_prefix,
         )
     
-    def _validate_region(self, seq: str) -> tuple[int, int, int]:
-        """Validate and return (start, end, region_len) for this sequence.
-        
-        start and end are positions in the marker-free sequence.
-        """
-        seq_len = self._get_length_without_markers(seq)
-        end = self.end if self.end is not None else seq_len
-        if end > seq_len:
-            raise ValueError(
-                f"end ({end}) cannot exceed sequence length ({seq_len})"
-            )
-        if self.start > end:
-            raise ValueError(
-                f"start ({self.start}) must be <= end ({end})"
-            )
-        region_len = end - self.start
-        return self.start, end, region_len
-    
     def compute_design_card(
         self,
         parent_seqs: list[str],
@@ -139,7 +116,10 @@ class SeqShuffleOp(Operation):
             raise RuntimeError(f"Unsupported mode {self.mode!r}")
         
         seq = parent_seqs[0]
-        start, end, region_len = self._validate_region(seq)
+        # Extract region content using centralized helper
+        _, region_seq, _ = self._extract_region_parts(seq, self._region)
+        region_len = len(region_seq)
+        
         if region_len == 0:
             permutation = tuple()
         else:
@@ -156,15 +136,14 @@ class SeqShuffleOp(Operation):
         parent_seqs: list[str],
         card: dict,
     ) -> dict:
-        """Apply the permutation to the target region.
-        
-        The shuffle region is defined in the marker-free sequence. Within that
-        region, all characters are shuffled (markers don't appear in normal sequences
-        at this stage).
-        """
+        """Apply the permutation to the target region."""
         seq = parent_seqs[0]
-        start, end, region_len = self._validate_region(seq)
         permutation = card['permutation']
+        
+        # Extract region parts using centralized helper
+        prefix, region_seq, suffix = self._extract_region_parts(seq, self._region)
+        region_len = len(region_seq)
+        
         if len(permutation) != region_len:
             raise ValueError(
                 f"Permutation length ({len(permutation)}) does not match region length ({region_len})"
@@ -173,32 +152,21 @@ class SeqShuffleOp(Operation):
         if region_len == 0:
             return {'seq_0': seq}
         
-        # Get raw positions corresponding to the logical region
-        nonmarker_positions = self._get_nonmarker_positions(seq)
-        region_raw_positions = nonmarker_positions[start:end]
-        
-        # Extract chars at those positions
-        region_chars = [seq[pos] for pos in region_raw_positions]
-        
         # Apply permutation: permutation[i] tells us where char i should go
         shuffled_chars = [''] * region_len
-        for i, ch in enumerate(region_chars):
+        for i, ch in enumerate(region_seq):
             dest = permutation[i]
             shuffled_chars[dest] = ch
         
-        # Build result by replacing chars at raw positions
-        seq_list = list(seq)
-        for i, pos in enumerate(region_raw_positions):
-            seq_list[pos] = shuffled_chars[i]
-        
-        return {'seq_0': ''.join(seq_list)}
+        # Reassemble: prefix + shuffled_region + suffix
+        result_seq = prefix + ''.join(shuffled_chars) + suffix
+        return {'seq_0': result_seq}
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
             'parent_pool': self.parent_pools[0],
-            'start': self.start,
-            'end': self.end,
+            'region': self._region,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,

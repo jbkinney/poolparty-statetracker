@@ -137,16 +137,9 @@ class MutagenizeOp(Operation):
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
         
-        # Store and validate region parameter
+        # Store and validate region parameter using centralized validation
         self._region = region
-        if region is not None and not isinstance(region, str):
-            # Explicit interval - validate format
-            if len(region) != 2:
-                raise ValueError(f"region interval must be [start, stop], got {region}")
-            if region[0] < 0:
-                raise ValueError(f"region start must be >= 0, got {region[0]}")
-            if region[1] <= region[0]:
-                raise ValueError(f"region stop must be > start, got [{region[0]}, {region[1]}]")
+        Operation._validate_region(region)
         
         self.num_mutations = num_mutations
         self.mutation_rate = mutation_rate
@@ -199,29 +192,6 @@ class MutagenizeOp(Operation):
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
         )
-    
-    def _resolve_region(self, seq: str) -> tuple[int, int] | None:
-        """Resolve region to (start, stop) interval, or None if no region specified."""
-        if self._region is None:
-            return None
-        
-        if isinstance(self._region, str):
-            # Marker name - look up in sequence
-            from ..marker_ops.parsing import validate_single_marker
-            marker = validate_single_marker(seq, self._region)
-            # Use content positions (molecular positions within marker)
-            return (marker.content_start, marker.content_end)
-        else:
-            # Explicit [start, stop] interval
-            return (int(self._region[0]), int(self._region[1]))
-    
-    def _extract_region_parts(self, seq: str) -> tuple[str, str, str]:
-        """Extract (prefix, region_content, suffix) from sequence based on region."""
-        bounds = self._resolve_region(seq)
-        if bounds is None:
-            return ('', seq, '')
-        start, stop = bounds
-        return (seq[:start], seq[start:stop], seq[stop:])
     
     def _build_caches(self, num_positions: int) -> int:
         """Build caches for sequential enumeration.
@@ -291,7 +261,7 @@ class MutagenizeOp(Operation):
         seq = parent_seqs[0]
         
         # Extract region if specified - mutations apply only to region content
-        _, region_seq, _ = self._extract_region_parts(seq)
+        _, region_seq, _ = self._extract_region_parts(seq, self._region)
         
         seq_len = self._get_effective_seq_length(region_seq)
         valid_char_positions = self._get_molecular_positions(region_seq)
@@ -354,7 +324,7 @@ class MutagenizeOp(Operation):
         mut_chars = card['mut_chars']
         
         # Extract region parts
-        prefix, region_seq, suffix = self._extract_region_parts(seq)
+        prefix, region_seq, suffix = self._extract_region_parts(seq, self._region)
         valid_char_positions = self._get_molecular_positions(region_seq)
         
         # Apply mutations to region

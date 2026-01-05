@@ -26,14 +26,14 @@ class TestSeqShuffleBehavior:
     
     def test_preserves_length(self):
         with pp.Party():
-            pool = seq_shuffle('ACGTAC', start=1, end=5).named('shuf')
+            pool = seq_shuffle('ACGTAC', region=[1, 5]).named('shuf')
         df = pool.generate_library(num_seqs=10, seed=123)
         for seq in df['seq']:
             assert len(seq) == 6
     
     def test_random_variability(self):
         with pp.Party():
-            pool = seq_shuffle('ACGTACGT', start=0, end=8).named('shuf')
+            pool = seq_shuffle('ACGTACGT', region=[0, 8]).named('shuf')
         df = pool.generate_library(num_seqs=50, seed=42)
         assert df['seq'].nunique() > 5
     
@@ -46,7 +46,7 @@ class TestSeqShuffleBehavior:
     
     def test_region_only_shuffled(self):
         with pp.Party():
-            pool = seq_shuffle('ABCD', start=1, end=3).named('shuf')
+            pool = seq_shuffle('ABCD', region=[1, 3]).named('shuf')
         df = pool.generate_library(num_seqs=5, seed=7)
         for seq in df['seq']:
             assert seq[0] == 'A'
@@ -56,7 +56,7 @@ class TestSeqShuffleBehavior:
     
     def test_zero_length_region_noop(self):
         with pp.Party():
-            pool = seq_shuffle('ABCDE', start=2, end=2).named('shuf')
+            pool = seq_shuffle('ABCDE', region=[2, 2]).named('shuf')
         df = pool.generate_library(num_seqs=3, seed=1)
         assert set(df['seq']) == {'ABCDE'}
 
@@ -66,7 +66,7 @@ class TestSeqShuffleDesignCard:
     
     def test_compute_and_apply_permutation(self):
         with pp.Party():
-            pool = seq_shuffle('WXYZ', start=0, end=4)
+            pool = seq_shuffle('WXYZ', region=[0, 4])
             rng = np.random.default_rng(42)
             card = pool.operation.compute_design_card(['WXYZ'], rng)
             result = pool.operation.compute_seq_from_card(['WXYZ'], card)
@@ -76,3 +76,29 @@ class TestSeqShuffleDesignCard:
         # applying again with same card should reproduce
         result2 = pool.operation.compute_seq_from_card(['WXYZ'], card)
         assert result2['seq_0'] == shuffled
+
+
+class TestSeqShuffleWithMarker:
+    """Tests for marker-based region specification."""
+    
+    def test_shuffle_marker_region(self):
+        with pp.Party():
+            pool = seq_shuffle('AA<r>BCDE</r>FF', region='r').named('shuf')
+        df = pool.generate_library(num_seqs=5, seed=42)
+        for seq in df['seq']:
+            # AA and FF should be preserved
+            assert seq.startswith('AA')
+            assert seq.endswith('FF')
+            # Middle should be a permutation of BCDE
+            # Extract content between markers (markers are still present)
+            middle = seq[2:-2]  # Skip AA and FF
+            # After shuffle, the marker content is shuffled
+            assert sorted(middle.replace('<r>', '').replace('</r>', '')) == sorted('BCDE')
+    
+    def test_shuffle_whole_sequence_with_none_region(self):
+        with pp.Party():
+            pool = seq_shuffle('ABCD').named('shuf')
+        df = pool.generate_library(num_seqs=10, seed=123)
+        # All results should be permutations of ABCD
+        for seq in df['seq']:
+            assert sorted(seq) == sorted('ABCD')
