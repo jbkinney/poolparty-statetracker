@@ -21,6 +21,10 @@ FilterFunc: TypeAlias = Callable[[str, list[str] | None], bool]
 # Positions type for scan operations
 PositionsType: TypeAlias = Union[Sequence[Integral], slice, None]
 
+# Region type for operations that can target a subsequence
+# str = marker name, Sequence[Integral] = [start, stop] interval, None = full sequence
+RegionType: TypeAlias = Union[str, Sequence[Integral], None]
+
 __all__ = [
     'beartype',
     'Union',
@@ -38,4 +42,5 @@ __all__ = [
     'AlphabetType',
     'FilterFunc',
     'PositionsType',
+    'RegionType',
 ]

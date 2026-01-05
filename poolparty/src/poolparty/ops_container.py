@@ -57,11 +57,20 @@ class OpsContainer:
             A Pool with the marker region mutagenized.
         """
         from .base_ops.mutagenize import mutagenize
-        return self.apply_at_marker(
-            marker_name,
-            lambda p: mutagenize(p, **kwargs),
-            remove_marker=remove_marker,
-        )
+        from .marker_ops.remove_marker import remove_marker as remove_marker_op
+        
+        # Resolve None to party default
+        if remove_marker is None:
+            remove_marker = self.pool._party.get_default('remove_marker', True)
+        
+        # Use region parameter to mutagenize only the marker content
+        result = mutagenize(self.pool, region=marker_name, **kwargs)
+        
+        # Remove marker tags if requested
+        if remove_marker:
+            result = remove_marker_op(result, marker_name, keep_content=True)
+        
+        return result
     
     def deletion_scan(
         self,
