@@ -114,7 +114,7 @@ def generate_library(
         return list(df['seq'])
     return df
 
-
+## THIS IS THE TOPOLOGICAL SORTING FUNCTION THAT IS USED TO DETERMINE THE ORDER OF OPERATIONS.
 def _topo_sort_operations(outputs: dict) -> list:
     """Topologically sort operations reachable from outputs."""
     from .operation import Operation
@@ -191,7 +191,8 @@ def _collect_counters(
                 result.append(op_counter)
     return result
 
-
+## THIS IS THE FUNCTION THAT COMPUTES ONE ROW OF OUTPUT FOR THE GIVEN GLOBAL STATE.
+## CALLS EACH OPERATION IN THE TOPOLOGICAL SORT ORDER AND CACHES THE RESULTS.
 def _compute_one(
     pool: Pool_type,
     sorted_ops: list,
@@ -203,22 +204,33 @@ def _compute_one(
     pools_filter: set = None,
 ) -> dict:
     """Compute one row of output for the given global state."""
-    cache: dict[int, dict] = {}
+    seqs_cache: dict[int, dict] = {}
+    names_cache: dict[int, dict] = {}
     card_cache: dict[int, dict] = {}
     row: dict = {}
     
+    # Sets the state of the pool counter and, in doing so, the state
+    # of all pool and operation counters that affect this state. 
     pool.counter.state = global_state % pool.counter.num_states
     
     for i, counter in enumerate(counters):
         col_name = counter_col_name(counter, i)
         row[col_name] = counter.state
     
+    # Iterates over the operations in topological order.
+    # This is the code that effectively implements the DAG.
     for op in sorted_ops:
         parent_seqs = []
-        for parent in op.parent_pools:
-            parent_result = cache[parent.operation.id]
-            seq_key = f"seq_{parent.output_index}"
-            parent_seqs.append(parent_result[seq_key])
+        parent_names = []
+        for parent_pool in op.parent_pools:
+            # Get parent sequences (already cached because of topological sort)
+            parent_pool_result = seqs_cache[parent_pool.operation.id]
+            seq_key = f"seq_{parent_pool.output_index}"
+            parent_seqs.append(parent_pool_result[seq_key])
+            # Get parent names
+            parent_name_result = names_cache[parent_pool.operation.id]
+            name_key = f"name_{parent_pool.output_index}"
+            parent_names.append(parent_name_result[name_key])
         
         # Determine RNG for this operation
         if op.mode == 'hybrid':
@@ -229,13 +241,14 @@ def _compute_one(
         else:
             op_rng = op.rng
         
-        # Compute design card first, then sequences from card
+        # Compute design card, sequences, and names
         card = op.compute_design_card(parent_seqs, op_rng)
         seqs = op.compute_seq_from_card(parent_seqs, card)
+        names = op.compute_seq_names(parent_names, card)
         
-        # Store sequences in cache for downstream operations
-        cache[op.id] = seqs
-        # Store design card separately for reporting
+        # Store in caches for downstream operations
+        seqs_cache[op.id] = seqs
+        names_cache[op.id] = names
         card_cache[op.id] = card
         
         if report_op_keys and (ops_to_report is None or op.id in ops_to_report):
@@ -250,25 +263,25 @@ def _compute_one(
         if output_pool.counter.state is None:
             row[output_name] = None
         else:
-            result = cache[output_pool.operation.id]
+            result = seqs_cache[output_pool.operation.id]
             seq_key = f"seq_{output_pool.output_index}"
             row[output_name] = result[seq_key]
     
-    # Add per-pool name columns for pools with naming configured
+    # Get final name from names_cache (computed through DAG)
+    final_name_result = names_cache[pool.operation.id]
+    name_key = f"name_{pool.output_index}"
+    row['name'] = final_name_result.get(name_key)
+    
+    # Handle custom name function if set (for advanced use)
     if pools_filter:
         for p in pools_filter:
-            state = p.counter.state
             if p._seq_name_fn is not None:
+                state = p.counter.state
                 if state is not None:
                     seq = row.get(f'{p.name}.seq')
-                    row[f'{p.name}.name'] = p._seq_name_fn(seq, row)
+                    row['name'] = p._seq_name_fn(seq, row)
                 else:
-                    row[f'{p.name}.name'] = None
-            elif p._seq_name_prefix is not None:
-                if state is not None:
-                    row[f'{p.name}.name'] = f'{p._seq_name_prefix}{state}'
-                else:
-                    row[f'{p.name}.name'] = None
+                    row['name'] = None
     
     return row
 

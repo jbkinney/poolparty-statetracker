@@ -57,8 +57,7 @@ class Pool:
         # Register pool with party after name is set
         party._register_pool(self)
         
-        # Sequence naming config (None by default until name_seqs() is called)
-        self._seq_name_prefix: Optional[str] = None
+        # Sequence naming callback (for advanced use via name_seqs(fn=...))
         self._seq_name_fn: Optional[Callable[[str, dict], str]] = None
         
         # Create ops container for convenience methods
@@ -182,14 +181,50 @@ class Pool:
     def name_seqs(
         self,
         prefix: Optional[str] = None,
+        clear_parent_names: bool = False,
         fn: Optional[Callable[[str, dict], str]] = None,
     ) -> Pool_type:
-        """Configure how sequences from this pool are named in generate_library output."""
+        """Configure how sequences from this pool are named in generate_library output.
+        
+        Args:
+            prefix: Name prefix for sequences (e.g., 'mut_' produces 'mut_0', 'mut_1', ...).
+            clear_parent_names: If True, ignore parent names and start fresh naming.
+            fn: Custom naming function (advanced use).
+        """
         if prefix is not None and fn is not None:
             raise ValueError("Specify prefix OR fn, not both")
-        self._seq_name_prefix = prefix
+        # Find the operation that has meaningful states (num_states > 1)
+        # This handles cases like mutagenize() which wraps MutagenizeOp with ReplaceMarkerContentOp
+        target_op = self._find_naming_target_op()
+        target_op.name_prefix = prefix
+        target_op.clear_parent_names = clear_parent_names
         self._seq_name_fn = fn
         return self
+    
+    def _find_naming_target_op(self):
+        """Find the operation that should receive name_prefix.
+        
+        Walks up the operation chain to find the first operation with num_states > 1.
+        This handles wrapper operations that don't have their own states.
+        """
+        op = self.operation
+        # If this operation has multiple states, use it
+        if op.num_states > 1:
+            return op
+        # Otherwise, look for a parent operation with multiple states
+        visited = set()
+        to_check = list(op.parent_pools)
+        while to_check:
+            parent_pool = to_check.pop(0)
+            parent_op = parent_pool.operation
+            if id(parent_op) in visited:
+                continue
+            visited.add(id(parent_op))
+            if parent_op.num_states > 1:
+                return parent_op
+            to_check.extend(parent_op.parent_pools)
+        # Fallback to original operation if no multi-state op found
+        return self.operation
     
     @property
     def iter_order(self) -> Real:

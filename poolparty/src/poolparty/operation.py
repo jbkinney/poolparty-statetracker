@@ -57,6 +57,9 @@ class Operation:
         self.counter = sc.Counter(num_states=num_states, name=f"{self._name}.state", iter_order=iter_order)
         self.rng: np.random.Generator | None = None
         self.num_states = num_states
+        # Sequence naming attributes (set via Pool.name_seqs())
+        self.name_prefix: Optional[str] = None
+        self.clear_parent_names: bool = False
         # Register operation with party after name is set
         party._register_operation(self)
     
@@ -166,6 +169,47 @@ class Operation:
         Returns a dictionary with seq_0, seq_1, ... keys.
         """
         raise NotImplementedError("Subclasses must implement compute_seq_from_card()")
+    
+    def compute_seq_names(
+        self,
+        parent_names: list[Optional[str]],
+        card: dict,
+    ) -> dict:
+        """Compute output sequence names from parent names and design card.
+        
+        Returns a dictionary with name_0, name_1, ... keys matching num_outputs.
+        """
+        # Apply clear_parent_names if set
+        if self.clear_parent_names:
+            parent_names = [None] * len(parent_names)
+        
+        # Get parent name (first non-None parent, or None if all are None)
+        parent_name = next((n for n in parent_names if n is not None), None)
+        
+        # If no name_prefix, pass through parent name
+        if self.name_prefix is None:
+            if self.num_outputs == 1:
+                return {'name_0': parent_name}
+            return {f'name_{i}': parent_name for i in range(self.num_outputs)}
+        
+        # Build name(s) with prefix
+        state = self.counter.state
+        if state is None:
+            # Inactive state - return None for all outputs
+            return {f'name_{i}': None for i in range(self.num_outputs)}
+        
+        if self.num_outputs == 1:
+            op_name = f'{self.name_prefix}{state}'
+            full_name = f'{parent_name}.{op_name}' if parent_name else op_name
+            return {'name_0': full_name}
+        else:
+            # Multi-output: use f'{prefix}{state}({i})' format
+            result = {}
+            for i in range(self.num_outputs):
+                op_name = f'{self.name_prefix}{state}({i})'
+                full_name = f'{parent_name}.{op_name}' if parent_name else op_name
+                result[f'name_{i}'] = full_name
+            return result
     
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self._id}, name={self.name!r}, mode={self.mode!r}, num_states={self.num_states})"

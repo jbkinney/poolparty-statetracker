@@ -118,22 +118,11 @@ def finalize_generate_df(
     pools_filter: set = None,
 ) -> pd.DataFrame:
     """Apply final column transforms to generated DataFrame."""
-    # Compose 'name' column from *.name columns (if any exist)
-    name_cols = [c for c in df.columns if c.endswith('.name')]
-    if name_cols and pools_filter:
-        pools_topo = list(reversed(get_pools_reverse_topo(pools_filter)))
-        pool_names_ordered = [p.name for p in pools_topo]
-        # Sort name columns by topo order (upstream/parent first)
-        name_cols_ordered = sorted(
-            name_cols,
-            key=lambda c: pool_names_ordered.index(c.rsplit('.', 1)[0])
-            if c.rsplit('.', 1)[0] in pool_names_ordered else len(pool_names_ordered)
-        )
-        # Compose name column per row
-        def compose_name(row):
-            parts = [row[c] for c in name_cols_ordered if pd.notna(row[c])]
-            return '.'.join(str(p) for p in parts) if parts else None
-        df.insert(0, 'name', df.apply(compose_name, axis=1))
+    # Move 'name' column to position 0 if it exists and has values
+    if 'name' in df.columns:
+        name_col = df.pop('name')
+        if name_col.notna().any():
+            df.insert(0, 'name', name_col)
     
     if report_seq:
         # Insert 'seq' after 'name' if name exists, else at position 0

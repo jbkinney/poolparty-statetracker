@@ -131,6 +131,21 @@ class FromSeqsOp(Operation):
         idx = card['seq_index']
         return {'seq_0': self.seqs[idx]}
     
+    def compute_seq_names(
+        self,
+        parent_names: list[Optional[str]],
+        card: dict,
+    ) -> dict:
+        """Return name based on name_prefix (None if not set)."""
+        # Only return names if name_prefix is explicitly set
+        if self.name_prefix is None:
+            return {'name_0': None}
+        
+        state = self.counter.state
+        if state is None:
+            return {'name_0': None}
+        return {'name_0': f'{self.name_prefix}{state}'}
+    
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {

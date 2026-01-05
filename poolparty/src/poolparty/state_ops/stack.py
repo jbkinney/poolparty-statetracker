@@ -101,6 +101,32 @@ class StackOp(Operation):
             seq = parent_seqs[active]
         return {'seq_0': seq}
     
+    def compute_seq_names(
+        self,
+        parent_names: list[Optional[str]],
+        card: dict,
+    ) -> dict:
+        """Return the name from the active parent."""
+        # Apply clear_parent_names if set
+        if self.clear_parent_names:
+            parent_names = [None] * len(parent_names)
+        
+        # Get name from active parent (matching compute_seq_from_card logic)
+        active = card['active_parent']
+        if active is None:
+            name = parent_names[0] if parent_names else None
+        else:
+            name = parent_names[active]
+        
+        # Append prefix if set
+        if self.name_prefix is not None:
+            state = self.counter.state
+            if state is not None:
+                op_name = f'{self.name_prefix}{state}'
+                name = f'{name}.{op_name}' if name else op_name
+        
+        return {'name_0': name}
+    
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
