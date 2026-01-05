@@ -262,6 +262,7 @@ class Pool:
         show_name: bool = True,
         show_seq: bool = True,
         pad_names: bool = True,
+        seed: Optional[Integral] = None,
     ) -> Pool_type:
         """Print preview sequences from this pool; returns self for chaining.
         
@@ -273,6 +274,7 @@ class Pool:
             show_name: Whether to show the name column.
             show_seq: Whether to show the seq column.
             pad_names: Whether to pad names to align sequences.
+            seed: Random seed for reproducibility.
         """
         if num_seqs is None and num_cycles is None:
             num_cycles = 1
@@ -281,6 +283,7 @@ class Pool:
             num_cycles=num_cycles,
             seqs_only=False,
             init_state=0,
+            seed=seed,
         )
         has_name = show_name and 'name' in df.columns and df['name'].notna().any()
         max_name_len = df['name'].str.len().max() if has_name and pad_names else 0
@@ -319,7 +322,7 @@ class Pool:
     # Tree visualization
     #########################################################################
     
-    def print_tree(self, style: str = 'clean') -> None:
+    def print_tree(self, style: str = 'clean') -> Pool_type:
         """Print the ASCII tree visualization rooted at this pool.
         
         Args:
@@ -327,6 +330,7 @@ class Pool:
         """
         from .text_viz import print_pool_tree
         print_pool_tree(self, style=style)
+        return self # For chaining
     
     #########################################################################
     # Delegation to OpsContainer

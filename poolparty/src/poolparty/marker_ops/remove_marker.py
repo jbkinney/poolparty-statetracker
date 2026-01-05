@@ -83,6 +83,7 @@ def remove_marker(
         op_name=op_name,
         iter_order=iter_order,
         op_iter_order=op_iter_order,
+        _factory_name='remove_marker',
     )
     
     # The marker is removed, so remove it from the pool's marker set

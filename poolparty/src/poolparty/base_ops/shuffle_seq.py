@@ -10,6 +10,7 @@ import numpy as np
 def shuffle_seq(
     pool: Union[Pool_type, str],
     region: RegionType = None,
+    mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
@@ -28,6 +29,8 @@ def shuffle_seq(
     region : RegionType, default=None
         Region to shuffle. Can be a marker name (str), explicit interval [start, stop],
         or None to shuffle entire sequence.
+    mark_changes : Optional[bool], default=None
+        If True, swapcase() is applied to the shuffled region. If None, uses party default.
     mode : ModeType, default='random'
         Shuffle mode: 'random' or 'hybrid'. Sequential is not supported.
     num_hybrid_states : Optional[int], default=None
@@ -51,6 +54,7 @@ def shuffle_seq(
     op = SeqShuffleOp(
         parent_pool=pool_obj,
         region=region,
+        mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
@@ -71,6 +75,7 @@ class SeqShuffleOp(Operation):
         self,
         parent_pool: Pool,
         region: RegionType = None,
+        mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
@@ -78,6 +83,8 @@ class SeqShuffleOp(Operation):
         iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize SeqShuffleOp."""
+        from ..party import get_active_party
+        
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
         if mode == 'sequential':
@@ -86,6 +93,12 @@ class SeqShuffleOp(Operation):
         # Store and validate region parameter using centralized validation
         self._region = region
         Operation._validate_region(region)
+        
+        # Resolve mark_changes from party defaults if not explicitly set
+        party = get_active_party()
+        if mark_changes is None:
+            mark_changes = party.get_default('mark_changes', False) if party else False
+        self.mark_changes = mark_changes
         
         self._seq_length = parent_pool.seq_length
         # Determine num_states
@@ -118,14 +131,17 @@ class SeqShuffleOp(Operation):
         seq = parent_seqs[0]
         # Extract region content using centralized helper
         _, region_seq, _ = self._extract_region_parts(seq, self._region)
-        region_len = len(region_seq)
         
-        if region_len == 0:
+        # Get molecular positions only (excludes markers and ignore_chars)
+        molecular_positions = self._get_molecular_positions(region_seq)
+        num_molecular = len(molecular_positions)
+        
+        if num_molecular == 0:
             permutation = tuple()
         else:
-            order = rng.permutation(region_len)
+            order = rng.permutation(num_molecular)
             # Convert order (new positions holding original indices) to mapping original->new
-            permutation = [0] * region_len
+            permutation = [0] * num_molecular
             for new_pos, orig_idx in enumerate(order):
                 permutation[orig_idx] = int(new_pos)
             permutation = tuple(permutation)
@@ -136,30 +152,47 @@ class SeqShuffleOp(Operation):
         parent_seqs: list[str],
         card: dict,
     ) -> dict:
-        """Apply the permutation to the target region."""
+        """Apply the permutation to the target region (molecular chars only)."""
         seq = parent_seqs[0]
         permutation = card['permutation']
         
         # Extract region parts using centralized helper
         prefix, region_seq, suffix = self._extract_region_parts(seq, self._region)
-        region_len = len(region_seq)
         
-        if len(permutation) != region_len:
+        # Get molecular positions (excludes markers and ignore_chars)
+        molecular_positions = self._get_molecular_positions(region_seq)
+        num_molecular = len(molecular_positions)
+        
+        if len(permutation) != num_molecular:
             raise ValueError(
-                f"Permutation length ({len(permutation)}) does not match region length ({region_len})"
+                f"Permutation length ({len(permutation)}) does not match "
+                f"molecular character count ({num_molecular})"
             )
         
-        if region_len == 0:
+        if num_molecular == 0:
             return {'seq_0': seq}
         
+        # Extract molecular characters
+        molecular_chars = [region_seq[pos] for pos in molecular_positions]
+        
         # Apply permutation: permutation[i] tells us where char i should go
-        shuffled_chars = [''] * region_len
-        for i, ch in enumerate(region_seq):
+        shuffled_molecular = [''] * num_molecular
+        for i, ch in enumerate(molecular_chars):
             dest = permutation[i]
-            shuffled_chars[dest] = ch
+            shuffled_molecular[dest] = ch
+        
+        # Apply swapcase to shuffled molecular chars if mark_changes is True
+        if self.mark_changes:
+            shuffled_molecular = [ch.swapcase() for ch in shuffled_molecular]
+        
+        # Place shuffled molecular chars back at their original positions
+        region_list = list(region_seq)
+        for i, pos in enumerate(molecular_positions):
+            region_list[pos] = shuffled_molecular[i]
+        shuffled_region = ''.join(region_list)
         
         # Reassemble: prefix + shuffled_region + suffix
-        result_seq = prefix + ''.join(shuffled_chars) + suffix
+        result_seq = prefix + shuffled_region + suffix
         return {'seq_0': result_seq}
     
     def _get_copy_params(self) -> dict:
@@ -167,6 +200,7 @@ class SeqShuffleOp(Operation):
         return {
             'parent_pool': self.parent_pools[0],
             'region': self._region,
+            'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
