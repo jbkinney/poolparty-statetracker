@@ -258,9 +258,22 @@ class Pool:
         num_seqs: Optional[Integral] = None,
         num_cycles: Optional[Integral] = None,
         show_header: bool = True,
-        show_states: bool = True,
+        show_state: bool = True,
+        show_name: bool = True,
+        show_seq: bool = True,
+        pad_names: bool = True,
     ) -> Pool_type:
-        """Print preview sequences from this pool; returns self for chaining."""
+        """Print preview sequences from this pool; returns self for chaining.
+        
+        Args:
+            num_seqs: Number of sequences to generate.
+            num_cycles: Number of complete iterations through all states.
+            show_header: Whether to show the pool header line.
+            show_state: Whether to show the state column.
+            show_name: Whether to show the name column.
+            show_seq: Whether to show the seq column.
+            pad_names: Whether to pad names to align sequences.
+        """
         if num_seqs is None and num_cycles is None:
             num_cycles = 1
         df = self.generate_library(
@@ -269,20 +282,36 @@ class Pool:
             seqs_only=False,
             init_state=0,
         )
-        has_name = 'name' in df.columns and df['name'].notna().any()
+        has_name = show_name and 'name' in df.columns and df['name'].notna().any()
+        max_name_len = df['name'].str.len().max() if has_name and pad_names else 0
+        
         if show_header:
             print(f"{self.name}: seq_length={self.seq_length}, num_states={self.num_states}")
-            if show_states:
-                print("state  name  seq" if has_name else "state  seq")
-            else:
-                print("name  seq" if has_name else "seq")
+            # Build header columns
+            header_parts = []
+            if show_state:
+                header_parts.append("state")
+            if has_name:
+                header_parts.append(f"{'name':<{max_name_len}}" if pad_names else "name")
+            if show_seq:
+                header_parts.append("seq")
+            if header_parts:
+                print("  ".join(header_parts))
+        
         state_col = f"{self.name}.state"
         for _, row in df.iterrows():
-            name_str = f"{row['name']}  " if has_name else ""
-            if show_states:
-                print(f"{row[state_col]:5d}  {name_str}{row['seq']}")
-            else:
-                print(f"{name_str}{row['seq']}")
+            # Build row columns
+            row_parts = []
+            if show_state:
+                row_parts.append(f"{row[state_col]:5d}")
+            if has_name:
+                if pad_names:
+                    row_parts.append(f"{row['name']:<{max_name_len}}")
+                else:
+                    row_parts.append(f"{row['name']}")
+            if show_seq:
+                row_parts.append(f"{row['seq']}")
+            print("  ".join(row_parts))
         print('')
         return self # For chaining
     

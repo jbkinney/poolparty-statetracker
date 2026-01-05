@@ -189,8 +189,9 @@ class Operation:
         if self.clear_parent_names:
             parent_names = [None] * len(parent_names)
         
-        # Get parent name (first non-None parent, or None if all are None)
-        parent_name = next((n for n in parent_names if n is not None), None)
+        # Combine all non-None parent names
+        non_none_names = [n for n in parent_names if n is not None]
+        parent_name = '.'.join(non_none_names) if non_none_names else None
         
         # If no name_prefix, pass through parent name
         if self.name_prefix is None:
