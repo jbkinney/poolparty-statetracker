@@ -14,6 +14,7 @@ def fixed_operation(
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
+    _factory_name: Optional[str] = None,
 ) -> Pool:
     """
     Create a Pool from a fixed transformation of parent sequences.
@@ -35,6 +36,8 @@ def fixed_operation(
         Iteration order priority for the resulting Pool.
     op_iter_order : Optional[Real], default=None
         Iteration order priority for the underlying Operation.
+    _factory_name: Optional[str], default=None
+        Overrides FactoryOp.factory_name in setting the default operation name.
 
     Returns
     -------
@@ -49,6 +52,7 @@ def fixed_operation(
         seq_length_from_pools_fn=seq_length_from_pools_fn,
         name=op_name,
         iter_order=op_iter_order,
+        _factory_name=_factory_name,
     )
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool
@@ -67,11 +71,14 @@ class FixedOp(Operation):
         seq_length_from_pools_fn: Callable[[Sequence[Pool_type]], Optional[int]],
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        _factory_name: Optional[str] = None,
     ) -> None:
         """Initialize FixedOp."""
         self.seq_from_seqs_fn = seq_from_seqs_fn
         self.seq_length_from_pools_fn = seq_length_from_pools_fn
         seq_length = seq_length_from_pools_fn(parent_pools)
+        if _factory_name is not None:
+            self.factory_name = _factory_name
         super().__init__(
             parent_pools=list(parent_pools),
             num_states=1,

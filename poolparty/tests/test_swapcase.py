@@ -86,7 +86,7 @@ class TestSwapCaseNaming:
         with pp.Party() as party:
             result = swapcase('ACGT')
         
-        assert result.operation.name == 'swapcase'
+        assert result.operation.name.endswith(':swapcase')
 
 
 class TestSwapCasePreservesSeqLength:

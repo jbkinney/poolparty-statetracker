@@ -53,9 +53,10 @@ def from_seq(
         seq_from_seqs_fn=lambda _: seq,
         seq_length_from_pools_fn=lambda _: seq_length,
         name=name,
-        op_name='from_seq',
+        op_name=op_name,
         iter_order=iter_order,
         op_iter_order=op_iter_order,
+        _factory_name='from_seq',
     )
     
     # Add validated markers to the pool

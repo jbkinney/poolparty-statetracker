@@ -159,4 +159,4 @@ class TestSeqSliceCustomName:
         with pp.Party() as party:
             pool = pp.from_seqs(['ACGT'])
             sliced = seq_slice(pool, slice(0, 2))
-            assert sliced.operation.name == 'seq_slice'
+            assert sliced.operation.name.endswith(':seq_slice')

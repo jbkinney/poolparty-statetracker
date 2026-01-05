@@ -52,7 +52,8 @@ def clear_ignore_chars(
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pools_fn=lambda pools: None,  # Length may vary
         name=name,
-        op_name='clear_ignore_chars',
+        op_name=op_name,
         iter_order=iter_order,
         op_iter_order=op_iter_order,
+        _factory_name='clear_ignore_chars',
     )

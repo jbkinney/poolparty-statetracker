@@ -65,7 +65,7 @@ class TestFromSeqCustomName:
         """Test default operation name is 'from_seq'."""
         with pp.Party() as party:
             pool = from_seq('AAA')
-            assert pool.operation.name == 'from_seq'
+            assert pool.operation.name.endswith(':from_seq')
     
     def test_custom_pool_name(self):
         """Test custom pool name."""

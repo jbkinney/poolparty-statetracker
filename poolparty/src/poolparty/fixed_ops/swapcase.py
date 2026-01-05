@@ -44,7 +44,8 @@ def swapcase(
         seq_from_seqs_fn=lambda seqs: transform_nonmarker_chars(seqs[0], str.swapcase),
         seq_length_from_pools_fn=lambda pools: pools[0].seq_length,
         name=name,
-        op_name='swapcase',
+        op_name=op_name,
         iter_order=iter_order,
         op_iter_order=op_iter_order,
+        _factory_name='swapcase',
     )

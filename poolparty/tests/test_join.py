@@ -303,7 +303,7 @@ class TestJoinCustomName:
             a = pp.from_seqs(['AAA'])
             b = pp.from_seqs(['TTT'])
             combined = join([a, b])
-            assert combined.operation.name == 'join'
+            assert combined.operation.name.endswith(':join')
 
 
 class TestJoinSpacerStr:
