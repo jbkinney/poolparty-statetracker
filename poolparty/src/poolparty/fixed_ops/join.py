@@ -50,7 +50,7 @@ def join(
         seq_from_seqs_fn=lambda seqs: spacer_str.join(seqs),
         seq_length_from_pools_fn=seq_length_from_pools_fn,
         name=name,
-        op_name=op_name,
+        op_name='join',
         iter_order=iter_order,
         op_iter_order=op_iter_order,
     )

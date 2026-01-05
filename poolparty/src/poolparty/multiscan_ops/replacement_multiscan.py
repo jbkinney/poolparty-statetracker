@@ -71,7 +71,7 @@ def replacement_multiscan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.join import join
-    from ..fixed_ops.swap_case import swap_case
+    from ..fixed_ops.swapcase import swapcase
     from ..marker_ops import marker_multiscan, replace_marker_content
     from ..party import get_active_party
 
@@ -163,8 +163,8 @@ def replacement_multiscan(
     # 2. Build replacement content for each pool
     result = marked
     for marker_name, rep_pool in zip(markers, pools_list):
-        # Apply swap_case if mark_changes
-        content = swap_case(rep_pool) if mark_changes else rep_pool
+        # Apply swapcase if mark_changes
+        content = swapcase(rep_pool) if mark_changes else rep_pool
 
         # Wrap with spacers if needed
         if spacer_str:

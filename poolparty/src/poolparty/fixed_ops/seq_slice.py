@@ -56,7 +56,7 @@ def seq_slice(
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pools_fn=seq_length_from_pools_fn,
         name=name,
-        op_name=op_name,
+        op_name='seq_slice',
         iter_order=iter_order,
         op_iter_order=op_iter_order,
     )

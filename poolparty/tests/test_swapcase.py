@@ -1,19 +1,19 @@
-"""Tests for the swap_case operation."""
+"""Tests for the swapcase operation."""
 
 import pytest
 import poolparty as pp
-from poolparty.fixed_ops.swap_case import swap_case
+from poolparty.fixed_ops.swapcase import swapcase
 from poolparty.fixed_ops.fixed import FixedOp
 
 
 class TestSwapCaseBasics:
-    """Test basic swap_case functionality."""
+    """Test basic swapcase functionality."""
     
     def test_returns_pool(self):
-        """Test that swap_case returns a Pool."""
+        """Test that swapcase returns a Pool."""
         with pp.Party() as party:
             pool = pp.from_seq('ACGT')
-            result = swap_case(pool)
+            result = swapcase(pool)
             assert hasattr(result, 'operation')
             assert isinstance(result.operation, FixedOp)
     
@@ -21,7 +21,7 @@ class TestSwapCaseBasics:
         """Test that uppercase letters become lowercase."""
         with pp.Party() as party:
             pool = pp.from_seq('ACGT')
-            result = swap_case(pool).named('result')
+            result = swapcase(pool).named('result')
         
         df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'acgt'
@@ -30,7 +30,7 @@ class TestSwapCaseBasics:
         """Test that lowercase letters become uppercase."""
         with pp.Party() as party:
             pool = pp.from_seq('acgt')
-            result = swap_case(pool).named('result')
+            result = swapcase(pool).named('result')
         
         df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ACGT'
@@ -39,32 +39,32 @@ class TestSwapCaseBasics:
         """Test that mixed case sequences are properly swapped."""
         with pp.Party() as party:
             pool = pp.from_seq('AcGt')
-            result = swap_case(pool).named('result')
+            result = swapcase(pool).named('result')
         
         df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'aCgT'
 
 
 class TestSwapCaseWithString:
-    """Test swap_case with string input."""
+    """Test swapcase with string input."""
     
     def test_string_input(self):
         """Test that string input is converted and swapped."""
         with pp.Party() as party:
-            result = swap_case('ACGT').named('result')
+            result = swapcase('ACGT').named('result')
         
         df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'acgt'
 
 
 class TestSwapCaseWithMultipleSeqs:
-    """Test swap_case with pools containing multiple sequences."""
+    """Test swapcase with pools containing multiple sequences."""
     
     def test_multiple_sequences(self):
-        """Test swap_case with multiple sequences."""
+        """Test swapcase with multiple sequences."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAAA', 'CCCC', 'GGGG'], mode='sequential')
-            result = swap_case(pool).named('result')
+            result = swapcase(pool).named('result')
         
         df = result.generate_library(num_cycles=1)
         assert len(df) == 3
@@ -77,39 +77,39 @@ class TestSwapCaseNaming:
     def test_pool_name(self):
         """Test name parameter."""
         with pp.Party() as party:
-            result = swap_case('ACGT', name='my_pool')
+            result = swapcase('ACGT', name='my_pool')
         
         assert result.name == 'my_pool'
     
-    def test_op_name(self):
-        """Test op_name parameter."""
+    def test_default_op_name(self):
+        """Test default operation name is 'swapcase'."""
         with pp.Party() as party:
-            result = swap_case('ACGT', op_name='my_op')
+            result = swapcase('ACGT')
         
-        assert result.operation.name == 'my_op'
+        assert result.operation.name == 'swapcase'
 
 
 class TestSwapCasePreservesSeqLength:
-    """Test that swap_case preserves sequence length."""
+    """Test that swapcase preserves sequence length."""
     
     def test_preserves_seq_length(self):
         """Test that seq_length is preserved."""
         with pp.Party() as party:
             pool = pp.from_seq('ACGTACGT')
-            result = swap_case(pool)
+            result = swapcase(pool)
         
         assert result.seq_length == 8
         assert result.seq_length == pool.seq_length
 
 
 class TestSwapCasePreservesMarkers:
-    """Test that swap_case preserves XML marker tags."""
+    """Test that swapcase preserves XML marker tags."""
     
     def test_preserves_region_marker(self):
         """Test that region markers are preserved."""
         with pp.Party() as party:
             pool = pp.from_seq('AA<region>TT</region>CC')
-            result = swap_case(pool).named('result')
+            result = swapcase(pool).named('result')
         
         df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'aa<region>tt</region>cc'
@@ -118,7 +118,7 @@ class TestSwapCasePreservesMarkers:
         """Test that marker attributes are preserved."""
         with pp.Party() as party:
             pool = pp.from_seq('AA<m strand="-">BB</m>CC')
-            result = swap_case(pool).named('result')
+            result = swapcase(pool).named('result')
         
         df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'aa<m strand="-">bb</m>cc'
@@ -127,7 +127,7 @@ class TestSwapCasePreservesMarkers:
         """Test that self-closing markers are preserved."""
         with pp.Party() as party:
             pool = pp.from_seq('AA<ins/>BB')
-            result = swap_case(pool).named('result')
+            result = swapcase(pool).named('result')
         
         df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'aa<ins/>bb'
@@ -136,7 +136,7 @@ class TestSwapCasePreservesMarkers:
         """Test that nested markers are preserved."""
         with pp.Party() as party:
             pool = pp.from_seq('AA<outer>BB<inner>CC</inner>DD</outer>EE')
-            result = swap_case(pool).named('result')
+            result = swapcase(pool).named('result')
         
         df = result.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'aa<outer>bb<inner>cc</inner>dd</outer>ee'

@@ -44,7 +44,7 @@ def upper(
         seq_from_seqs_fn=lambda seqs: transform_nonmarker_chars(seqs[0], str.upper),
         seq_length_from_pools_fn=lambda pools: pools[0].seq_length,
         name=name,
-        op_name=op_name,
+        op_name='upper',
         iter_order=iter_order,
         op_iter_order=op_iter_order,
     )

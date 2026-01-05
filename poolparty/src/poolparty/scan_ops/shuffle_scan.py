@@ -40,7 +40,7 @@ def shuffle_scan(
     spacer_str : str, default=''
         String to insert as a spacer around the shuffled region.
     mark_changes : Optional[bool], default=None
-        If True, apply swap_case() to the shuffled region. If None, uses party default.
+        If True, apply swapcase() to the shuffled region. If None, uses party default.
     mode : ModeType, default='random'
         Selection mode: 'random', 'sequential', or 'hybrid'.
     num_hybrid_states : Optional[Integral], default=None
@@ -62,7 +62,7 @@ def shuffle_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.join import join
-    from ..fixed_ops.swap_case import swap_case
+    from ..fixed_ops.swapcase import swapcase
     from ..base_ops.seq_shuffle import seq_shuffle
     from ..marker_ops import marker_scan, apply_at_marker
 
@@ -117,7 +117,7 @@ def shuffle_scan(
                                num_hybrid_states=shuffles_per_position,
                                op_iter_order=-1)
         if mark_changes:
-            shuffled = swap_case(shuffled)
+            shuffled = swapcase(shuffled)
         # Wrap with spacers if needed
         if spacer_str:
             shuffled = join([from_seq(spacer_str), shuffled, from_seq(spacer_str)])

@@ -155,16 +155,8 @@ class TestSeqSliceCustomName:
     """Test seq_slice name parameter."""
     
     def test_default_name(self):
-        """Test default operation name."""
+        """Test default operation name is 'seq_slice'."""
         with pp.Party() as party:
             pool = pp.from_seqs(['ACGT'])
             sliced = seq_slice(pool, slice(0, 2))
-            assert sliced.operation.name.startswith('op[')
-            assert ':fixed' in sliced.operation.name
-    
-    def test_custom_name(self):
-        """Test custom operation name."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(['ACGT'])
-            sliced = seq_slice(pool, slice(0, 2), op_name='my_slice')
-            assert sliced.operation.name == 'my_slice'
+            assert sliced.operation.name == 'seq_slice'

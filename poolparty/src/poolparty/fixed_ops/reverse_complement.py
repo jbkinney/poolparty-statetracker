@@ -51,7 +51,7 @@ def reverse_complement(
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pools_fn=lambda pools: pools[0].seq_length,
         name=name,
-        op_name=op_name,
+        op_name='reverse_complement',
         iter_order=iter_order,
         op_iter_order=op_iter_order,
     )

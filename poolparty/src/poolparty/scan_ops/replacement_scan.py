@@ -59,7 +59,7 @@ def replacement_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.join import join
-    from ..fixed_ops.swap_case import swap_case
+    from ..fixed_ops.swapcase import swapcase
     from ..marker_ops import marker_scan, replace_marker_content
 
     # Convert string inputs to pools if needed
@@ -86,9 +86,9 @@ def replacement_scan(
     marker_length = ins_length
     max_position = bg_length - ins_length
 
-    # Apply swap_case if mark_changes
+    # Apply swapcase if mark_changes
     if mark_changes:
-        ins_pool = swap_case(ins_pool)
+        ins_pool = swapcase(ins_pool)
 
     # Validate positions
     validated_positions = validate_positions(positions, max_position, min_position=0)

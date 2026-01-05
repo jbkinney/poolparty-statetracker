@@ -6,7 +6,7 @@ from ..marker_ops.parsing import transform_nonmarker_chars
 
 
 @beartype
-def swap_case(
+def swapcase(
     pool: Union[Pool_type, str],
     name: Optional[str] = None,
     op_name: Optional[str] = None,
@@ -44,7 +44,7 @@ def swap_case(
         seq_from_seqs_fn=lambda seqs: transform_nonmarker_chars(seqs[0], str.swapcase),
         seq_length_from_pools_fn=lambda pools: pools[0].seq_length,
         name=name,
-        op_name=op_name,
+        op_name='swapcase',
         iter_order=iter_order,
         op_iter_order=op_iter_order,
     )

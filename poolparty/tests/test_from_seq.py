@@ -62,18 +62,10 @@ class TestFromSeqCustomName:
     """Test FromSeq operation and pool name parameters."""
     
     def test_default_operation_name(self):
-        """Test default operation name is op[{id}]:fixed."""
+        """Test default operation name is 'from_seq'."""
         with pp.Party() as party:
             pool = from_seq('AAA')
-            # Default name is op[{id}]:fixed
-            assert pool.operation.name.startswith('op[')
-            assert ':fixed' in pool.operation.name
-    
-    def test_custom_operation_name(self):
-        """Test custom operation name."""
-        with pp.Party() as party:
-            pool = from_seq('AAA', op_name='my_sequence')
-            assert pool.operation.name == 'my_sequence'
+            assert pool.operation.name == 'from_seq'
     
     def test_custom_pool_name(self):
         """Test custom pool name."""

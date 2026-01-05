@@ -429,7 +429,7 @@ class OpsContainer:
             op_iter_order=op_iter_order,
         )
     
-    def swap_case(
+    def swapcase(
         self,
         name: Optional[str] = None,
         op_name: Optional[str] = None,
@@ -438,7 +438,7 @@ class OpsContainer:
     ) -> Pool_type:
         """Create a Pool containing case-swapped sequences.
         
-        This is a thin wrapper around poolparty.swap_case().
+        This is a thin wrapper around poolparty.swapcase().
         See that function for full documentation of parameters.
         
         Returns
@@ -446,8 +446,8 @@ class OpsContainer:
         Pool
             A Pool containing case-swapped sequences.
         """
-        from .fixed_ops.swap_case import swap_case
-        return swap_case(
+        from .fixed_ops.swapcase import swapcase
+        return swapcase(
             self.pool,
             name=name,
             op_name=op_name,

@@ -43,7 +43,7 @@ def mutagenize_scan(
     spacer_str : str, default=''
         String to insert as a spacer around the mutagenized region.
     mark_changes : Optional[bool], default=None
-        If True, apply swap_case() to the mutagenized region. If None, uses party default.
+        If True, apply swapcase() to the mutagenized region. If None, uses party default.
     mode : ModeType, default='random'
         Selection mode for scanning positions: 'random', 'sequential', or 'hybrid'.
         Note: The underlying MutagenizeOp always uses 'random' mode.
@@ -66,7 +66,7 @@ def mutagenize_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.join import join
-    from ..fixed_ops.swap_case import swap_case
+    from ..fixed_ops.swapcase import swapcase
     from ..base_ops.mutagenize import mutagenize
     from ..marker_ops import marker_scan, apply_at_marker
 

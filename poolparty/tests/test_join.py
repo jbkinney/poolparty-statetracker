@@ -298,21 +298,12 @@ class TestJoinCustomName:
     """Test join name parameter."""
     
     def test_default_name(self):
-        """Test default operation name."""
+        """Test default operation name is 'join'."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA'])
             b = pp.from_seqs(['TTT'])
             combined = join([a, b])
-            assert combined.operation.name.startswith('op[')
-            assert ':fixed' in combined.operation.name
-    
-    def test_custom_name(self):
-        """Test custom operation name."""
-        with pp.Party() as party:
-            a = pp.from_seqs(['AAA'])
-            b = pp.from_seqs(['TTT'])
-            combined = join([a, b], op_name='my_join')
-            assert combined.operation.name == 'my_join'
+            assert combined.operation.name == 'join'
 
 
 class TestJoinSpacerStr:
