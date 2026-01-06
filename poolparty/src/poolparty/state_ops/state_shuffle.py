@@ -12,7 +12,7 @@ def state_shuffle(
     pool: Pool,
     seed: Optional[Integral] = None,
     permutation: Optional[Sequence[Integral]] = None,
-    name_prefix: Optional[str] = None,
+    seq_name_prefix: Optional[str] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -43,7 +43,7 @@ def state_shuffle(
     Pool
         A Pool containing the same states as the input but in a randomly permuted order.
     """
-    op = StateShuffleOp(pool, seed=seed, permutation=permutation, name_prefix=name_prefix, name=op_name, iter_order=op_iter_order)
+    op = StateShuffleOp(pool, seed=seed, permutation=permutation, seq_name_prefix=seq_name_prefix, name=op_name, iter_order=op_iter_order)
     result_pool = Pool(operation=op, name=name, iter_order=iter_order)
     return result_pool
 
@@ -59,7 +59,7 @@ class StateShuffleOp(Operation):
         parent_pool: Pool,
         seed: Optional[Integral] = None,
         permutation: Optional[Sequence[Integral]] = None,
-        name_prefix: Optional[str] = None,
+        seq_name_prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -71,7 +71,7 @@ class StateShuffleOp(Operation):
             num_states=1,
             name=name,
             iter_order=iter_order,
-            name_prefix=name_prefix,
+            seq_name_prefix=seq_name_prefix,
         )
     
     def build_pool_counter(
@@ -107,7 +107,7 @@ class StateShuffleOp(Operation):
             'parent_pool': self.parent_pools[0],
             'seed': self.seed,
             'permutation': self.permutation,
-            'name_prefix': self.name_prefix,
+            'seq_name_prefix': self.name_prefix,
             'name': None,
             'iter_order': self.iter_order,
         }

@@ -14,7 +14,7 @@ def breakpoint_scan(
     positions: PositionsType = None,
     min_spacing: Optional[Integral] = None,
     max_spacing: Optional[Integral] = None,
-    name_prefix: Optional[str] = None,
+    seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[Integral] = None,
     op_name: Optional[str] = None,
@@ -68,7 +68,7 @@ def breakpoint_scan(
         positions=positions,
         min_spacing=min_spacing,
         max_spacing=max_spacing,
-        name_prefix=name_prefix,
+        seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         name=op_name,
@@ -101,7 +101,7 @@ class BreakpointScanOp(Operation):
         positions: PositionsType = None,
         min_spacing: Optional[Integral] = None,
         max_spacing: Optional[Integral] = None,
-        name_prefix: Optional[str] = None,
+        seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[Integral] = None,
         name: Optional[str] = None,
@@ -137,7 +137,7 @@ class BreakpointScanOp(Operation):
             seq_length=None,  # Variable output lengths
             name=name,
             iter_order=iter_order,
-            name_prefix=name_prefix,
+            seq_name_prefix=seq_name_prefix,
         )
     
     def _is_valid_spacing(self, breakpoints: Sequence[Integral]) -> bool:
@@ -258,7 +258,7 @@ class BreakpointScanOp(Operation):
             'positions': self._positions,
             'min_spacing': self.min_spacing,
             'max_spacing': self.max_spacing,
-            'name_prefix': self.name_prefix,
+            'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,

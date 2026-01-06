@@ -14,7 +14,7 @@ def state_sample(
     sampled_states: Optional[Sequence[Integral]] = None,
     seed: Optional[Integral] = None,
     with_replacement: bool = True,
-    name_prefix: Optional[str] = None,
+    seq_name_prefix: Optional[str] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -55,7 +55,7 @@ def state_sample(
         sampled_states=sampled_states,
         seed=seed,
         with_replacement=with_replacement,
-        name_prefix=name_prefix,
+        seq_name_prefix=seq_name_prefix,
         name=op_name,
         iter_order=op_iter_order,
     )
@@ -76,7 +76,7 @@ class StateSampleOp(Operation):
         sampled_states: Optional[Sequence[Integral]] = None,
         seed: Optional[Integral] = None,
         with_replacement: bool = True,
-        name_prefix: Optional[str] = None,
+        seq_name_prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -90,7 +90,7 @@ class StateSampleOp(Operation):
             num_states=1,
             name=name,
             iter_order=iter_order,
-            name_prefix=name_prefix,
+            seq_name_prefix=seq_name_prefix,
         )
     
     def build_pool_counter(
@@ -130,7 +130,7 @@ class StateSampleOp(Operation):
             'sampled_states': self.sampled_states,
             'seed': self.seed,
             'with_replacement': self.with_replacement,
-            'name_prefix': self.name_prefix,
+            'seq_name_prefix': self.name_prefix,
             'name': None,
             'iter_order': self.iter_order,
         }

@@ -14,7 +14,7 @@ def from_seqs(
     remove_marker: Optional[bool] = None,
     mark_changes: Optional[bool] = None,
     seq_names: Optional[Sequence[str]] = None,
-    name_prefix: Optional[str] = None,
+    seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -39,7 +39,7 @@ def from_seqs(
         If True and region is a marker name, remove marker tags from output.
     seq_names : Optional[Sequence[str]], default=None
         Explicit names for each sequence. If provided, these are used directly.
-    name_prefix : Optional[str], default=None
+    seq_name_prefix : Optional[str], default=None
         Prefix for auto-generated names (e.g., 'seq_' produces 'seq_0', 'seq_1', ...).
         Cannot be used together with seq_names.
     mode : ModeType, default='random'
@@ -69,7 +69,7 @@ def from_seqs(
     bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     op = FromSeqsOp(seqs, bg_pool=bg_pool_obj, region=region,
                     remove_marker=remove_marker, mark_changes=mark_changes,
-                    seq_names=seq_names, name_prefix=name_prefix,
+                    seq_names=seq_names, seq_name_prefix=seq_name_prefix,
                     mode=mode, num_hybrid_states=num_hybrid_states,
                     name=op_name, iter_order=op_iter_order)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
@@ -90,7 +90,7 @@ class FromSeqsOp(Operation):
         remove_marker: Optional[bool] = None,
         mark_changes: Optional[bool] = None,
         seq_names: Optional[Sequence[str]] = None,
-        name_prefix: Optional[str] = None,
+        seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -123,8 +123,8 @@ class FromSeqsOp(Operation):
             raise ValueError("mode='fixed' requires exactly 1 sequence")
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
-        if seq_names is not None and name_prefix is not None:
-            raise ValueError("Cannot specify both seq_names and name_prefix")
+        if seq_names is not None and seq_name_prefix is not None:
+            raise ValueError("Cannot specify both seq_names and seq_name_prefix")
         self.seqs = list(seqs)
         # Track whether explicit seq_names were provided (for compute_seq_names)
         self._seq_names_explicit = seq_names is not None
@@ -150,7 +150,7 @@ class FromSeqsOp(Operation):
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
-            name_prefix=name_prefix,
+            seq_name_prefix=seq_name_prefix,
             region=region,
             remove_marker=remove_marker,
         )
@@ -217,7 +217,7 @@ class FromSeqsOp(Operation):
             'remove_marker': self._remove_marker,
             'mark_changes': self.mark_changes,
             'seq_names': self.seq_names if self._seq_names_explicit else None,
-            'name_prefix': self.name_prefix,
+            'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,

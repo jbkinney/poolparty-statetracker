@@ -10,7 +10,7 @@ import numpy as np
 def repeat(
     pool: Pool_type,
     times: int,
-    name_prefix: Optional[str] = None,
+    seq_name_prefix: Optional[str] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -40,7 +40,7 @@ def repeat(
     Pool_type
         A new Pool with `times` as many states as the input pool has.
     """
-    op = RepeatOp(pool, times=times, name_prefix=name_prefix, name=op_name, iter_order=op_iter_order)
+    op = RepeatOp(pool, times=times, seq_name_prefix=seq_name_prefix, name=op_name, iter_order=op_iter_order)
     result_pool = Pool(operation=op, name=name, iter_order=iter_order)
     return result_pool
 
@@ -55,7 +55,7 @@ class RepeatOp(Operation):
         self,
         parent_pool: Pool_type,
         times: int,
-        name_prefix: Optional[str] = None,
+        seq_name_prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -70,7 +70,7 @@ class RepeatOp(Operation):
             seq_length=parent_pool.seq_length,
             name=name,
             iter_order=iter_order,
-            name_prefix=name_prefix,
+            seq_name_prefix=seq_name_prefix,
         )
     
     def compute_design_card(
@@ -96,7 +96,7 @@ class RepeatOp(Operation):
         return {
             'parent_pool': self.parent_pools[0],
             'times': self.times,
-            'name_prefix': self.name_prefix,
+            'seq_name_prefix': self.name_prefix,
             'name': None,
             'iter_order': self.iter_order,
         }

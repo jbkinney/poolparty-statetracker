@@ -36,7 +36,7 @@ class Operation:
         seq_length: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
-        name_prefix: Optional[str] = None,
+        seq_name_prefix: Optional[str] = None,
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
     ) -> None:
@@ -61,7 +61,7 @@ class Operation:
         self.rng: np.random.Generator | None = None
         self.num_states = num_states
         # Sequence naming attributes
-        self.name_prefix: Optional[str] = name_prefix
+        self.name_prefix: Optional[str] = seq_name_prefix
         self.clear_parent_names: bool = False
         self._block_seq_names: bool = False
         

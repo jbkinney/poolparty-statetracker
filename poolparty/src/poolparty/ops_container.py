@@ -209,7 +209,7 @@ class OpsContainer:
     def repeat_states(
         self,
         times: int,
-        name_prefix: Optional[str] = None,
+        seq_name_prefix: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         """Repeat the Pool's states a specified number of times."""
@@ -217,7 +217,7 @@ class OpsContainer:
         return repeat(
             self.pool,
             times,
-            name_prefix=name_prefix,
+            seq_name_prefix=seq_name_prefix,
             op_iter_order=iter_order,
         )
     
@@ -227,7 +227,7 @@ class OpsContainer:
         sampled_states: Optional[Sequence[Integral]] = None,
         seed: Optional[Integral] = None,
         with_replacement: bool = True,
-        name_prefix: Optional[str] = None,
+        seq_name_prefix: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         """Sample states from the Pool. Wrapper for state_sample()."""
@@ -238,7 +238,7 @@ class OpsContainer:
             sampled_states=sampled_states,
             seed=seed,
             with_replacement=with_replacement,
-            name_prefix=name_prefix,
+            seq_name_prefix=seq_name_prefix,
             op_iter_order=iter_order,
         )
     
@@ -246,7 +246,7 @@ class OpsContainer:
         self,
         seed: Optional[Integral] = None,
         permutation: Optional[Sequence[Integral]] = None,
-        name_prefix: Optional[str] = None,
+        seq_name_prefix: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         """Shuffle (permute) the Pool's states. Wrapper for state_shuffle()."""
@@ -255,14 +255,14 @@ class OpsContainer:
             self.pool,
             seed=seed,
             permutation=permutation,
-            name_prefix=name_prefix,
+            seq_name_prefix=seq_name_prefix,
             op_iter_order=iter_order,
         )
     
     def slice_states(
         self,
         key: Union[Integral, slice],
-        name_prefix: Optional[str] = None,
+        seq_name_prefix: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         """Slice the Pool's states. Wrapper for state_slice()."""
@@ -270,7 +270,7 @@ class OpsContainer:
         return state_slice(
             self.pool,
             key,
-            name_prefix=name_prefix,
+            seq_name_prefix=seq_name_prefix,
             op_iter_order=iter_order,
         )
     

@@ -18,7 +18,7 @@ def marker_scan(
     positions: PositionsType = None,
     strand: str = '+',
     marker_length: int = 0,
-    name_prefix: Optional[str] = None,
+    seq_name_prefix: Optional[str] = None,
     mode: str = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -99,7 +99,7 @@ def marker_scan(
         positions=positions,
         strand=strand,
         marker_length=int(marker_length),
-        name_prefix=name_prefix,
+        seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
         name=op_name,
@@ -145,7 +145,7 @@ class MarkerScanOp(Operation):
         positions: PositionsType = None,
         strand: str = '+',
         marker_length: int = 0,
-        name_prefix: Optional[str] = None,
+        seq_name_prefix: Optional[str] = None,
         mode: str = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -187,7 +187,7 @@ class MarkerScanOp(Operation):
             seq_length=None,  # Variable due to marker tags
             name=name,
             iter_order=iter_order,
-            name_prefix=name_prefix,
+            seq_name_prefix=seq_name_prefix,
         )
     
     def _build_caches(self) -> int:
@@ -355,7 +355,7 @@ class MarkerScanOp(Operation):
             'positions': self._positions,
             'strand': self._strand,
             'marker_length': self._marker_length,
-            'name_prefix': self.name_prefix,
+            'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
