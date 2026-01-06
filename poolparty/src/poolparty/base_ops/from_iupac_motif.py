@@ -1,6 +1,6 @@
 """FromIupacMotif operation - generate DNA sequences from IUPAC notation."""
 from numbers import Real
-from ..types import Pool_type, Sequence, ModeType, Optional, beartype
+from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
 from ..operation import Operation
 from ..pool import Pool
 from ..alphabet import IUPAC_TO_DNA
@@ -10,6 +10,9 @@ import numpy as np
 @beartype
 def from_iupac_motif(
     iupac_seq: str,
+    bg_pool: Optional[Union[Pool, str]] = None,
+    region: RegionType = None,
+    remove_marker: Optional[bool] = None,
     mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
@@ -27,6 +30,14 @@ def from_iupac_motif(
     iupac_seq : str
         IUPAC sequence string (e.g., 'RN' for purine + any base).
         Valid characters: A, C, G, T, U, R, Y, S, W, K, M, B, D, H, V, N.
+    bg_pool : Optional[Union[Pool, str]], default=None
+        Background pool or sequence. If provided with region, generated sequence
+        replaces the region content.
+    region : RegionType, default=None
+        Region to replace in bg_pool. Can be a marker name or [start, stop] interval.
+        Required if bg_pool is provided.
+    remove_marker : Optional[bool], default=None
+        If True and region is a marker name, remove marker tags from output.
     mark_changes : Optional[bool], default=None
         If True, apply swapcase() to degenerate positions. If None, uses party default.
     mode : ModeType, default='random'
@@ -46,9 +57,19 @@ def from_iupac_motif(
     -------
     Pool_type
         A Pool yielding DNA sequences from the IUPAC pattern.
+    
+    Raises
+    ------
+    ValueError
+        If bg_pool is provided without region.
     """
+    from ..fixed_ops.from_seq import from_seq
+    bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     op = FromIupacMotifOp(
         iupac_seq=iupac_seq,
+        bg_pool=bg_pool_obj,
+        region=region,
+        remove_marker=remove_marker,
         mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
@@ -69,6 +90,9 @@ class FromIupacMotifOp(Operation):
     def __init__(
         self,
         iupac_seq: str,
+        bg_pool: Optional[Pool] = None,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
         mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
@@ -84,6 +108,14 @@ class FromIupacMotifOp(Operation):
                 "from_iupac_motif requires an active Party context. "
                 "Use 'with pp.Party() as party:' to create one."
             )
+        
+        # Validate bg_pool/region combination
+        if bg_pool is not None and region is None:
+            raise ValueError(
+                "region is required when bg_pool is provided. "
+                "Specify which region of bg_pool to replace with the generated sequence."
+            )
+        
         if not iupac_seq:
             raise ValueError("iupac_seq must be a non-empty string")
         if mode == 'hybrid' and num_hybrid_states is None:
@@ -95,19 +127,13 @@ class FromIupacMotifOp(Operation):
         iupac_seq_upper = iupac_seq.upper()
         invalid_chars = set()
         position_options = []
-        degenerate_positions = []
-        pos_idx = 0  # Track position in position_options
         for char, char_upper in zip(iupac_seq, iupac_seq_upper):
             if char in ignore_chars:
                 # Pass through ignore chars unchanged
                 position_options.append([char])
-                pos_idx += 1
             elif char_upper in IUPAC_TO_DNA:
                 opts = IUPAC_TO_DNA[char]
                 position_options.append(opts)
-                if len(opts) > 1:
-                    degenerate_positions.append(pos_idx)
-                pos_idx += 1
             else:
                 invalid_chars.add(char)
 
@@ -124,7 +150,6 @@ class FromIupacMotifOp(Operation):
         if mark_changes is None:
             mark_changes = party.get_default('mark_changes', False)
         self.mark_changes = mark_changes
-        self.degenerate_positions = set(degenerate_positions)
 
         # Compute total states as product of possibilities at each position
         total_states = 1
@@ -142,14 +167,18 @@ class FromIupacMotifOp(Operation):
         self._total_states = total_states
         # Use length without markers for consistency
         seq_length = party._alphabet.get_length_without_markers(iupac_seq)
+        
+        parent_pools = [bg_pool] if bg_pool is not None else []
         super().__init__(
-            parent_pools=[],
+            parent_pools=parent_pools,
             num_states=num_states,
             mode=mode,
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
+            region=region,
+            remove_marker=remove_marker,
         )
 
     def compute_design_card(
@@ -181,19 +210,21 @@ class FromIupacMotifOp(Operation):
             result.append(position_opts[remaining % len(position_opts)])
             remaining //= len(position_opts)
         result = list(reversed(result))
-        
-        # Apply swapcase to degenerate positions if mark_changes is True
-        if self.mark_changes:
-            for i in self.degenerate_positions:
-                result[i] = result[i].swapcase()
-        
         seq = ''.join(result)
+        
+        # Apply mark_changes swapcase only when inserting into a region
+        if self.mark_changes and self._region is not None:
+            seq = seq.swapcase()
+        
         return {'seq_0': seq}
 
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
             'iupac_seq': self.iupac_seq,
+            'bg_pool': self.parent_pools[0] if self.parent_pools else None,
+            'region': self._region,
+            'remove_marker': self._remove_marker,
             'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,

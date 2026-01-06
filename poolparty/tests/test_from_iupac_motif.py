@@ -115,19 +115,16 @@ class TestFromIupacMotifMarkChanges:
             pool = from_iupac_motif('ACGT')
             assert pool.operation.mark_changes is False
     
-    def test_mark_changes_true_swaps_degenerate_positions(self):
-        """mark_changes=True swaps case at degenerate positions."""
+    def test_mark_changes_true_no_effect_without_region(self):
+        """mark_changes=True has no effect without region."""
         with pp.Party() as party:
             # A and T are fixed, N is degenerate (4 options)
             pool = from_iupac_motif('ANT', mark_changes=True, mode='random').named('iupac')
         
         df = pool.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
-            # Position 0 (A) and 2 (T) should be uppercase
-            # Position 1 (N -> any base) should be lowercase
-            assert seq[0] == 'A'
-            assert seq[2] == 'T'
-            assert seq[1].islower()
+            # Without region, mark_changes has no effect - all uppercase
+            assert seq == seq.upper()
     
     def test_mark_changes_false_preserves_uppercase(self):
         """mark_changes=False preserves uppercase input."""
@@ -158,40 +155,32 @@ class TestFromIupacMotifMarkChanges:
             assert seq[1].islower()
             assert seq[2] == 'T'
     
-    def test_mark_changes_multiple_degenerate(self):
-        """mark_changes works with multiple degenerate positions."""
+    def test_mark_changes_no_effect_without_region(self):
+        """mark_changes has no effect when region is not specified."""
         with pp.Party() as party:
             # R = A|G (degenerate), Y = C|T (degenerate)
             pool = from_iupac_motif('ARYT', mark_changes=True, mode='sequential').named('iupac')
         
         df = pool.generate_library(num_cycles=1)
         for seq in df['seq']:
-            # Position 0 (A) and 3 (T) are fixed -> uppercase
-            # Positions 1 (R) and 2 (Y) are degenerate -> lowercase
-            assert seq[0] == 'A'
-            assert seq[3] == 'T'
-            assert seq[1].islower()
-            assert seq[2].islower()
-    
-    def test_mark_changes_all_degenerate(self):
-        """mark_changes with all degenerate positions."""
-        with pp.Party() as party:
-            pool = from_iupac_motif('NN', mark_changes=True, mode='random').named('iupac')
-        
-        df = pool.generate_library(num_seqs=10, seed=42)
-        for seq in df['seq']:
-            # All positions are degenerate -> all lowercase
-            assert seq == seq.lower()
-    
-    def test_mark_changes_no_degenerate(self):
-        """mark_changes with no degenerate positions does nothing."""
-        with pp.Party() as party:
-            pool = from_iupac_motif('ACGT', mark_changes=True, mode='random').named('iupac')
-        
-        df = pool.generate_library(num_seqs=10, seed=42)
-        for seq in df['seq']:
-            # No degenerate positions -> all uppercase
+            # Without region, mark_changes has no effect - sequence stays uppercase
             assert seq == seq.upper()
+    
+    def test_mark_changes_with_region(self):
+        """mark_changes swaps entire sequence when region is specified."""
+        with pp.Party() as party:
+            bg = 'AAA<region>XXX</region>TTT'
+            pool = from_iupac_motif('NN', bg_pool=bg, region='region',
+                                     mark_changes=True, mode='random').named('iupac')
+        
+        df = pool.generate_library(num_seqs=5, seed=42)
+        for seq in df['seq']:
+            # With region and mark_changes, the generated insert should be lowercase
+            # The result format is: AAA + lowercase_insert + TTT
+            assert seq.startswith('AAA')
+            assert seq.endswith('TTT')
+            insert = seq[3:5]  # The 2-char insert
+            assert insert == insert.lower()
     
     def test_mark_changes_in_copy_params(self):
         """mark_changes is included in _get_copy_params."""
@@ -352,8 +341,8 @@ class TestFromIupacMotifIgnoreChars:
             assert seq[1] == '.'
             assert seq[3] == '.'
     
-    def test_mark_changes_ignores_separators(self):
-        """mark_changes does not affect separator positions."""
+    def test_mark_changes_no_effect_on_separators_without_region(self):
+        """mark_changes has no effect without region, separators preserved."""
         with pp.Party() as party:
             pool = from_iupac_motif('A.N.T', mark_changes=True, mode='random').named('iupac')
         
@@ -362,8 +351,6 @@ class TestFromIupacMotifIgnoreChars:
             # Separators should remain unchanged
             assert seq[1] == '.'
             assert seq[3] == '.'
-            # Fixed positions stay uppercase
+            # Without region, mark_changes has no effect - stays uppercase
             assert seq[0] == 'A'
             assert seq[4] == 'T'
-            # Degenerate position should be lowercase
-            assert seq[2].islower()

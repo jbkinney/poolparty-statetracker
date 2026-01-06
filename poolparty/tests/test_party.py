@@ -441,17 +441,20 @@ class TestDefaultParameters:
         lowercase_count = sum(1 for c in seq if c.islower())
         assert lowercase_count == 0
     
-    def test_from_iupac_motif_uses_party_default(self):
-        """Test that from_iupac_motif uses party default for mark_changes."""
+    def test_from_iupac_motif_uses_party_default_with_region(self):
+        """Test that from_iupac_motif uses party default for mark_changes when region is specified."""
         with pp.Party() as party:
             party.set_default('mark_changes', True)
-            pool = pp.from_iupac_motif('ACGN', mode='sequential')
+            bg = 'AAA<region>XX</region>TTT'
+            pool = pp.from_iupac_motif('NN', bg_pool=bg, region='region', mode='sequential')
         
         df = pool.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
-        # With mark_changes=True, degenerate positions (N) should be lowercase
-        # N can be A, C, G, or T - the last char should be lowercase
-        assert seq[-1].islower()
+        # With mark_changes=True and region, the insert should be lowercase
+        assert seq.startswith('AAA')
+        assert seq.endswith('TTT')
+        insert = seq[3:5]
+        assert insert == insert.lower()
     
     def test_from_iupac_motif_explicit_overrides_default(self):
         """Test that explicit mark_changes overrides party default for from_iupac_motif."""
@@ -466,15 +469,17 @@ class TestDefaultParameters:
         assert seq.isupper()
     
     def test_module_level_set_default(self):
-        """Test module-level set_default function."""
+        """Test module-level set_default function with region."""
         pp.init()
         pp.set_default('mark_changes', True)
         
-        pool = pp.from_iupac_motif('ACGN', mode='sequential')
+        bg = 'AAA<region>XX</region>TTT'
+        pool = pp.from_iupac_motif('NN', bg_pool=bg, region='region', mode='sequential')
         df = pool.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
-        # Last char should be lowercase (degenerate position)
-        assert seq[-1].islower()
+        # With region and mark_changes=True, insert should be lowercase
+        insert = seq[3:5]
+        assert insert == insert.lower()
         
         # Clean up
         pp.init()
@@ -500,7 +505,7 @@ class TestDefaultParameters:
             assert party.get_default('mark_changes') == True
     
     def test_module_level_load_defaults(self, tmp_path):
-        """Test module-level load_defaults function."""
+        """Test module-level load_defaults function with region."""
         # Create a temp TOML file
         toml_file = tmp_path / "defaults.toml"
         toml_file.write_text("mark_changes = true\n")
@@ -508,10 +513,13 @@ class TestDefaultParameters:
         pp.init()
         pp.load_defaults(str(toml_file))
         
-        pool = pp.from_iupac_motif('ACGN', mode='sequential')
+        bg = 'AAA<region>XX</region>TTT'
+        pool = pp.from_iupac_motif('NN', bg_pool=bg, region='region', mode='sequential')
         df = pool.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
-        assert seq[-1].islower()
+        # With region and mark_changes=True, insert should be lowercase
+        insert = seq[3:5]
+        assert insert == insert.lower()
         
         # Clean up
         pp.init()

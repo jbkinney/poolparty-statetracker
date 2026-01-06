@@ -1,6 +1,6 @@
 """FromProbMotif operation - generate sequences by sampling from a position probability matrix."""
 from numbers import Real
-from ..types import Pool_type, Sequence, ModeType, Optional, beartype
+from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
 from ..operation import Operation
 from ..pool import Pool
 from ..alphabet import Alphabet
@@ -12,6 +12,10 @@ import pandas as pd
 @beartype
 def from_prob_motif(
     prob_df: pd.DataFrame,
+    bg_pool: Optional[Union[Pool, str]] = None,
+    region: RegionType = None,
+    remove_marker: Optional[bool] = None,
+    mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
@@ -29,6 +33,14 @@ def from_prob_motif(
         DataFrame with probability values for each position.
         Columns should be alphabet characters (e.g., 'A', 'C', 'G', 'T').
         Rows represent positions. Values are probabilities (auto-normalized).
+    bg_pool : Optional[Union[Pool, str]], default=None
+        Background pool or sequence. If provided with region, generated sequence
+        replaces the region content.
+    region : RegionType, default=None
+        Region to replace in bg_pool. Can be a marker name or [start, stop] interval.
+        Required if bg_pool is provided.
+    remove_marker : Optional[bool], default=None
+        If True and region is a marker name, remove marker tags from output.
     mode : ModeType, default='random'
         Sequence selection mode: 'random' or 'hybrid'.
     num_hybrid_states : Optional[int], default=None
@@ -46,14 +58,25 @@ def from_prob_motif(
     -------
     Pool_type
         A Pool yielding sequences sampled from the probability matrix.
+    
+    Raises
+    ------
+    ValueError
+        If bg_pool is provided without region.
     """
     if mode not in ('random', 'hybrid'):
         raise ValueError(
             f"from_prob_motif only supports mode='random' or mode='hybrid', got mode='{mode}'. "
             "Sequential iteration is not available for probability-based sampling."
         )
+    from ..fixed_ops.from_seq import from_seq
+    bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     op = FromProbMotifOp(
         prob_df=prob_df,
+        bg_pool=bg_pool_obj,
+        region=region,
+        remove_marker=remove_marker,
+        mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_hybrid_states=num_hybrid_states,
@@ -73,6 +96,10 @@ class FromProbMotifOp(Operation):
     def __init__(
         self,
         prob_df: pd.DataFrame,
+        bg_pool: Optional[Pool] = None,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
+        mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
@@ -90,6 +117,19 @@ class FromProbMotifOp(Operation):
                 "from_prob_motif requires an active Party context. "
                 "Use 'with pp.Party() as party:' to create one."
             )
+        
+        # Validate bg_pool/region combination
+        if bg_pool is not None and region is None:
+            raise ValueError(
+                "region is required when bg_pool is provided. "
+                "Specify which region of bg_pool to replace with the generated sequence."
+            )
+        
+        # Resolve mark_changes from party defaults if not explicitly set
+        if mark_changes is None:
+            mark_changes = party.get_default('mark_changes', False)
+        self.mark_changes = mark_changes
+        
         self.alphabet = party.alphabet
 
         # Validate and store probability matrix
@@ -102,14 +142,17 @@ class FromProbMotifOp(Operation):
             case _:
                 num_states = 1
 
+        parent_pools = [bg_pool] if bg_pool is not None else []
         super().__init__(
-            parent_pools=[],
+            parent_pools=parent_pools,
             num_states=num_states,
             mode=mode,
             seq_length=len(self.prob_df),
             name=name,
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
+            region=region,
+            remove_marker=remove_marker,
         )
 
     def compute_design_card(
@@ -134,12 +177,19 @@ class FromProbMotifOp(Operation):
         indices = card['prob_state']
         alphabet_chars = self.alphabet.chars
         seq = ''.join(alphabet_chars[i] for i in indices)
+        # Apply mark_changes swapcase only when inserting into a region
+        if self.mark_changes and self._region is not None:
+            seq = seq.swapcase()
         return {'seq_0': seq}
 
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
             'prob_df': self.prob_df.copy(),
+            'bg_pool': self.parent_pools[0] if self.parent_pools else None,
+            'region': self._region,
+            'remove_marker': self._remove_marker,
+            'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,

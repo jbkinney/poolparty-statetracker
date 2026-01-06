@@ -1,6 +1,6 @@
 """FromSeqs operation - create a pool from a list of sequences."""
 from numbers import Real
-from ..types import Pool_type, Sequence, ModeType, Optional, beartype
+from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -9,6 +9,10 @@ import numpy as np
 @beartype
 def from_seqs(
     seqs: Sequence[str],
+    bg_pool: Optional[Union[Pool, str]] = None,
+    region: RegionType = None,
+    remove_marker: Optional[bool] = None,
+    mark_changes: Optional[bool] = None,
     seq_names: Optional[Sequence[str]] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
@@ -25,6 +29,14 @@ def from_seqs(
     ----------
     seqs : Sequence[str]
         Sequence of string sequences to include in the pool.
+    bg_pool : Optional[Union[Pool, str]], default=None
+        Background pool or sequence. If provided with region, selected sequence
+        replaces the region content.
+    region : RegionType, default=None
+        Region to replace in bg_pool. Can be a marker name or [start, stop] interval.
+        Required if bg_pool is provided.
+    remove_marker : Optional[bool], default=None
+        If True and region is a marker name, remove marker tags from output.
     seq_names : Optional[Sequence[str]], default=None
         Explicit names for each sequence. If provided, these are used directly.
     seq_name_prefix : Optional[str], default=None
@@ -47,10 +59,19 @@ def from_seqs(
     -------
     Pool_type
         A Pool object yielding the provided sequences using the specified selection mode.
+    
+    Raises
+    ------
+    ValueError
+        If bg_pool is provided without region.
     """
-    op = FromSeqsOp(seqs, seq_names=seq_names, seq_name_prefix=seq_name_prefix,
-                    mode=mode, num_hybrid_states=num_hybrid_states, name=op_name,
-                    iter_order=op_iter_order)
+    from ..fixed_ops.from_seq import from_seq
+    bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+    op = FromSeqsOp(seqs, bg_pool=bg_pool_obj, region=region,
+                    remove_marker=remove_marker, mark_changes=mark_changes,
+                    seq_names=seq_names, seq_name_prefix=seq_name_prefix,
+                    mode=mode, num_hybrid_states=num_hybrid_states,
+                    name=op_name, iter_order=op_iter_order)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool
 
@@ -64,6 +85,10 @@ class FromSeqsOp(Operation):
     def __init__(
         self,
         seqs: Sequence[str],
+        bg_pool: Optional[Pool] = None,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
+        mark_changes: Optional[bool] = None,
         seq_names: Optional[Sequence[str]] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
@@ -79,6 +104,19 @@ class FromSeqsOp(Operation):
                 "from_seqs requires an active Party context. "
                 "Use 'with pp.Party() as party:' to create one."
             )
+        
+        # Validate bg_pool/region combination
+        if bg_pool is not None and region is None:
+            raise ValueError(
+                "region is required when bg_pool is provided. "
+                "Specify which region of bg_pool to replace with the selected sequence."
+            )
+        
+        # Resolve mark_changes from party defaults if not explicitly set
+        if mark_changes is None:
+            mark_changes = party.get_default('mark_changes', False)
+        self.mark_changes = mark_changes
+        
         if len(seqs) == 0:
             raise ValueError("seqs must not be empty")
         if mode == 'fixed' and len(seqs) != 1:
@@ -103,14 +141,18 @@ class FromSeqsOp(Operation):
         # Use lengths without markers (includes all chars except marker tags)
         lengths = [party._alphabet.get_length_without_markers(s) for s in self.seqs]
         seq_length = lengths[0] if all(L == lengths[0] for L in lengths) else None
+        
+        parent_pools = [bg_pool] if bg_pool is not None else []
         super().__init__(
-            parent_pools=[],
+            parent_pools=parent_pools,
             num_states=num_states,
             mode=mode,
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
+            region=region,
+            remove_marker=remove_marker,
         )
     
     def compute_design_card(
@@ -139,7 +181,11 @@ class FromSeqsOp(Operation):
     ) -> dict:
         """Return the sequence based on design card."""
         idx = card['seq_index']
-        return {'seq_0': self.seqs[idx]}
+        seq = self.seqs[idx]
+        # Apply mark_changes swapcase only when inserting into a region
+        if self.mark_changes and self._region is not None:
+            seq = seq.swapcase()
+        return {'seq_0': seq}
     
     def compute_seq_names(
         self,
@@ -166,6 +212,10 @@ class FromSeqsOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'seqs': self.seqs,
+            'bg_pool': self.parent_pools[0] if self.parent_pools else None,
+            'region': self._region,
+            'remove_marker': self._remove_marker,
+            'mark_changes': self.mark_changes,
             'seq_names': self.seq_names if self._seq_names_explicit else None,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,

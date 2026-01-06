@@ -1,6 +1,6 @@
 """GetKmers operation - generate k-mers from an alphabet."""
 from numbers import Real
-from ..types import Pool_type, ModeType, Optional, Literal, beartype
+from ..types import Pool_type, ModeType, Optional, Literal, Union, RegionType, beartype
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
@@ -10,6 +10,10 @@ import numpy as np
 @beartype
 def get_kmers(
     length: int,
+    bg_pool: Optional[Union[Pool, str]] = None,
+    region: RegionType = None,
+    remove_marker: Optional[bool] = None,
+    mark_changes: Optional[bool] = None,
     case: Literal['lower', 'upper'] = 'upper',
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
@@ -28,6 +32,14 @@ def get_kmers(
     ----------
     length : int
         Length of k-mers to generate.
+    bg_pool : Optional[Union[Pool, str]], default=None
+        Background pool or sequence. If provided with region, generated k-mer
+        replaces the region content.
+    region : RegionType, default=None
+        Region to replace in bg_pool. Can be a marker name or [start, stop] interval.
+        Required if bg_pool is provided.
+    remove_marker : Optional[bool], default=None
+        If True and region is a marker name, remove marker tags from output.
     case : Literal['lower', 'upper'], default='upper'
         Case of output k-mers: 'upper' for uppercase, 'lower' for lowercase.
     mode : ModeType, default='random'
@@ -52,9 +64,15 @@ def get_kmers(
     ------
     RuntimeError
         If called outside of a Party context.
+    ValueError
+        If bg_pool is provided without region.
     """
-    op = GetKmersOp(length, case=case, seq_name_prefix=seq_name_prefix,
-                    mode=mode, num_hybrid_states=num_hybrid_states,
+    from ..fixed_ops.from_seq import from_seq
+    bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+    op = GetKmersOp(length, bg_pool=bg_pool_obj, region=region,
+                    remove_marker=remove_marker, mark_changes=mark_changes,
+                    case=case, seq_name_prefix=seq_name_prefix, mode=mode,
+                    num_hybrid_states=num_hybrid_states,
                     name=op_name, iter_order=op_iter_order)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool
@@ -69,6 +87,10 @@ class GetKmersOp(Operation):
     def __init__(
         self,
         length: int,
+        bg_pool: Optional[Pool] = None,
+        region: RegionType = None,
+        remove_marker: Optional[bool] = None,
+        mark_changes: Optional[bool] = None,
         case: Literal['lower', 'upper'] = 'upper',
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
@@ -76,11 +98,7 @@ class GetKmersOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
-        """Initialize GetKmersOp.
-        
-        Raises:
-            RuntimeError: If called outside of a Party context.
-        """
+        """Initialize GetKmersOp."""
         # Get alphabet from active Party context
         party = get_active_party()
         if party is None:
@@ -89,10 +107,23 @@ class GetKmersOp(Operation):
                 "Use 'with pp.Party() as party:' to create one."
             )
         
+        # Validate bg_pool/region combination
+        if bg_pool is not None and region is None:
+            raise ValueError(
+                "region is required when bg_pool is provided. "
+                "Specify which region of bg_pool to replace with the generated k-mer."
+            )
+        
         if length < 1:
             raise ValueError(f"length must be >= 1, got {length}")
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
+        
+        # Resolve mark_changes from party defaults if not explicitly set
+        if mark_changes is None:
+            mark_changes = party.get_default('mark_changes', False)
+        self.mark_changes = mark_changes
+        
         self.length = length
         self.case = case
         self.alphabet = party.alphabet
@@ -104,14 +135,18 @@ class GetKmersOp(Operation):
             num_states = num_hybrid_states
         else:
             num_states = 1
+        
+        parent_pools = [bg_pool] if bg_pool is not None else []
         super().__init__(
-            parent_pools=[],
+            parent_pools=parent_pools,
             num_states=num_states,
             mode=mode,
             seq_length=length,
             name=name,
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
+            region=region,
+            remove_marker=remove_marker,
         )
     
     def _state_to_kmer(self, state: int) -> str:
@@ -160,12 +195,19 @@ class GetKmersOp(Operation):
         # Apply case transformation
         if self.case == 'lower':
             kmer = kmer.lower()
+        # Apply mark_changes swapcase only when inserting into a region
+        if self.mark_changes and self._region is not None:
+            kmer = kmer.swapcase()
         return {'seq_0': kmer}
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
             'length': self.length,
+            'bg_pool': self.parent_pools[0] if self.parent_pools else None,
+            'region': self._region,
+            'remove_marker': self._remove_marker,
+            'mark_changes': self.mark_changes,
             'case': self.case,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
