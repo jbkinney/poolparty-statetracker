@@ -11,7 +11,7 @@ import numpy as np
 def state_slice(
     pool: Pool,
     key: Union[Integral, slice],
-    seq_name_prefix: Optional[str] = None,
+    name_prefix: Optional[str] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -52,7 +52,7 @@ def state_slice(
         start = key.start
         stop = key.stop
         step = key.step
-    op = StateSliceOp(pool, start=start, stop=stop, step=step, seq_name_prefix=seq_name_prefix,
+    op = StateSliceOp(pool, start=start, stop=stop, step=step, name_prefix=name_prefix,
                       name=op_name, iter_order=op_iter_order)
     result_pool = Pool(operation=op, name=name, iter_order=iter_order)
     return result_pool
@@ -70,7 +70,7 @@ class StateSliceOp(Operation):
         start: Optional[Integral],
         stop: Optional[Integral],
         step: Optional[Integral],
-        seq_name_prefix: Optional[str] = None,
+        name_prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -83,7 +83,7 @@ class StateSliceOp(Operation):
             num_states=1,
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=seq_name_prefix,
+            name_prefix=name_prefix,
         )
     
     def build_pool_counter(
@@ -121,7 +121,7 @@ class StateSliceOp(Operation):
             'start': self.start,
             'stop': self.stop,
             'step': self.step,
-            'seq_name_prefix': self.name_prefix,
+            'name_prefix': self.name_prefix,
             'name': None,
             'iter_order': self.iter_order,
         }

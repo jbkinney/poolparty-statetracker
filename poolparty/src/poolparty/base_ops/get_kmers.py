@@ -15,7 +15,7 @@ def get_kmers(
     remove_marker: Optional[bool] = None,
     mark_changes: Optional[bool] = None,
     case: Literal['lower', 'upper'] = 'upper',
-    seq_name_prefix: Optional[str] = None,
+    name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_hybrid_states: Optional[int] = None,
     name: Optional[str] = None,
@@ -71,7 +71,7 @@ def get_kmers(
     bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     op = GetKmersOp(length, bg_pool=bg_pool_obj, region=region,
                     remove_marker=remove_marker, mark_changes=mark_changes,
-                    case=case, seq_name_prefix=seq_name_prefix, mode=mode,
+                    case=case, name_prefix=name_prefix, mode=mode,
                     num_hybrid_states=num_hybrid_states,
                     name=op_name, iter_order=op_iter_order)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
@@ -92,7 +92,7 @@ class GetKmersOp(Operation):
         remove_marker: Optional[bool] = None,
         mark_changes: Optional[bool] = None,
         case: Literal['lower', 'upper'] = 'upper',
-        seq_name_prefix: Optional[str] = None,
+        name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -144,7 +144,7 @@ class GetKmersOp(Operation):
             seq_length=length,
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=seq_name_prefix,
+            name_prefix=name_prefix,
             region=region,
             remove_marker=remove_marker,
         )
@@ -209,7 +209,7 @@ class GetKmersOp(Operation):
             'remove_marker': self._remove_marker,
             'mark_changes': self.mark_changes,
             'case': self.case,
-            'seq_name_prefix': self.name_prefix,
+            'name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
             'name': None,
