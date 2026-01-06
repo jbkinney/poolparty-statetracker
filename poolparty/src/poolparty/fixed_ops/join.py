@@ -38,17 +38,16 @@ def join(
     """
     from .fixed import fixed_operation
 
-    def seq_length_from_pools_fn(pools: Sequence[Pool_type]) -> Optional[int]:
-        lengths = [p.seq_length for p in pools]
+    def seq_length_from_pool_lengths_fn(lengths: Sequence[Optional[int]]) -> Optional[int]:
         if all(L is not None for L in lengths):
-            n_spacers = max(0, len(pools) - 1)
+            n_spacers = max(0, len(lengths) - 1)
             return sum(lengths) + len(spacer_str) * n_spacers
         return None
 
     return fixed_operation(
-        parents=segment_pools,
+        parent_pools=segment_pools,
         seq_from_seqs_fn=lambda seqs: spacer_str.join(seqs),
-        seq_length_from_pools_fn=seq_length_from_pools_fn,
+        seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         name=name,
         op_name=op_name,
         iter_order=iter_order,

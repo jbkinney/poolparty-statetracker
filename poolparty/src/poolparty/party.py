@@ -288,6 +288,10 @@ class Party:
                 raise ValueError(f"Marker '{name}' not found. No markers registered.")
         return marker
     
+    def get_marker(self, name: str) -> Marker:
+        """Get a registered marker by name. Alias for get_marker_by_name."""
+        return self.get_marker_by_name(name)
+    
     def has_marker(self, name: str) -> bool:
         """Check if a marker with the given name is registered."""
         return name in self._markers_by_name

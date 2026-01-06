@@ -49,9 +49,9 @@ def from_seq(
     seq_length = party._alphabet.get_length_without_markers(seq)
     
     pool = fixed_operation(
-        parents=[],
+        parent_pools=[],
         seq_from_seqs_fn=lambda _: seq,
-        seq_length_from_pools_fn=lambda _: seq_length,
+        seq_length_from_pool_lengths_fn=lambda _: seq_length,
         name=name,
         op_name=op_name,
         iter_order=iter_order,

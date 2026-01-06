@@ -20,8 +20,7 @@ from .fixed_ops import (
     swapcase,
     upper,
     lower,
-    clear_nonmolecular_chars,
-    clear_ignore_chars,
+    clear_gap_chars,
 )
 # Import other operations from base_ops module
 from .base_ops import (
@@ -100,8 +99,7 @@ __all__ = [
     'swapcase',
     'upper',
     'lower',
-    'clear_nonmolecular_chars',
-    'clear_ignore_chars',
+    'clear_gap_chars',
     'stack', 'StackOp',
     'repeat', 'RepeatOp',
     'state_slice', 'StateSliceOp',

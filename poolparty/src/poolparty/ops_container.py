@@ -413,6 +413,8 @@ class OpsContainer:
     
     def reverse_complement(
         self,
+        marker_name: Optional[str] = None,
+        remove_marker: Optional[bool] = None,
         name: Optional[str] = None,
         op_name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -420,8 +422,12 @@ class OpsContainer:
     ) -> Pool_type:
         """Create a Pool containing the reverse complement of sequences.
         
-        This is a thin wrapper around poolparty.reverse_complement().
-        See that function for full documentation of parameters.
+        Parameters
+        ----------
+        marker_name : Optional[str], default=None
+            If provided, apply only to the marker region.
+        remove_marker : Optional[bool], default=None
+            If True and marker_name is provided, remove marker tags from output.
         
         Returns
         -------
@@ -431,6 +437,8 @@ class OpsContainer:
         from .fixed_ops.reverse_complement import reverse_complement
         return reverse_complement(
             self.pool,
+            region=marker_name,
+            remove_marker=remove_marker,
             name=name,
             op_name=op_name,
             iter_order=iter_order,
@@ -439,6 +447,8 @@ class OpsContainer:
     
     def swapcase(
         self,
+        marker_name: Optional[str] = None,
+        remove_marker: Optional[bool] = None,
         name: Optional[str] = None,
         op_name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -446,8 +456,12 @@ class OpsContainer:
     ) -> Pool_type:
         """Create a Pool containing case-swapped sequences.
         
-        This is a thin wrapper around poolparty.swapcase().
-        See that function for full documentation of parameters.
+        Parameters
+        ----------
+        marker_name : Optional[str], default=None
+            If provided, apply only to the marker region.
+        remove_marker : Optional[bool], default=None
+            If True and marker_name is provided, remove marker tags from output.
         
         Returns
         -------
@@ -457,6 +471,8 @@ class OpsContainer:
         from .fixed_ops.swapcase import swapcase
         return swapcase(
             self.pool,
+            region=marker_name,
+            remove_marker=remove_marker,
             name=name,
             op_name=op_name,
             iter_order=iter_order,
@@ -465,6 +481,8 @@ class OpsContainer:
     
     def upper(
         self,
+        marker_name: Optional[str] = None,
+        remove_marker: Optional[bool] = None,
         name: Optional[str] = None,
         op_name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -472,8 +490,12 @@ class OpsContainer:
     ) -> Pool_type:
         """Create a Pool containing uppercase sequences.
         
-        This is a thin wrapper around poolparty.upper().
-        See that function for full documentation of parameters.
+        Parameters
+        ----------
+        marker_name : Optional[str], default=None
+            If provided, apply only to the marker region.
+        remove_marker : Optional[bool], default=None
+            If True and marker_name is provided, remove marker tags from output.
         
         Returns
         -------
@@ -483,6 +505,8 @@ class OpsContainer:
         from .fixed_ops.upper import upper
         return upper(
             self.pool,
+            region=marker_name,
+            remove_marker=remove_marker,
             name=name,
             op_name=op_name,
             iter_order=iter_order,
@@ -491,6 +515,8 @@ class OpsContainer:
     
     def lower(
         self,
+        marker_name: Optional[str] = None,
+        remove_marker: Optional[bool] = None,
         name: Optional[str] = None,
         op_name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -498,8 +524,12 @@ class OpsContainer:
     ) -> Pool_type:
         """Create a Pool containing lowercase sequences.
         
-        This is a thin wrapper around poolparty.lower().
-        See that function for full documentation of parameters.
+        Parameters
+        ----------
+        marker_name : Optional[str], default=None
+            If provided, apply only to the marker region.
+        remove_marker : Optional[bool], default=None
+            If True and marker_name is provided, remove marker tags from output.
         
         Returns
         -------
@@ -509,66 +539,45 @@ class OpsContainer:
         from .fixed_ops.lower import lower
         return lower(
             self.pool,
+            region=marker_name,
+            remove_marker=remove_marker,
             name=name,
             op_name=op_name,
             iter_order=iter_order,
             op_iter_order=op_iter_order,
         )
     
-    def clear_nonmolecular_chars(
+    def clear_gap_chars(
         self,
+        marker_name: Optional[str] = None,
+        remove_marker: Optional[bool] = None,
         name: Optional[str] = None,
         op_name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         op_iter_order: Optional[Real] = None,
     ) -> Pool_type:
-        """Create a Pool with all non-molecular characters removed.
+        """Create a Pool with all gap/non-molecular characters removed.
         
-        This removes everything that is NOT in the alphabet's all_chars, including:
-        - Ignore characters (gaps '-', dots '.', spaces ' ', etc.)
-        - All marker tags (XML-style markers like <marker>...</marker>)
-        - Any other characters not in the molecular alphabet
+        Removes everything not in the alphabet's all_chars (gaps, spaces, etc.)
+        while preserving marker tags.
         
-        This is a thin wrapper around poolparty.clear_nonmolecular_chars().
-        See that function for full documentation of parameters.
-        
-        Returns
-        -------
-        Pool
-            A Pool containing only molecular alphabet characters.
-        """
-        from .fixed_ops.clear_nonmolecular_chars import clear_nonmolecular_chars
-        return clear_nonmolecular_chars(
-            self.pool,
-            name=name,
-            op_name=op_name,
-            iter_order=iter_order,
-            op_iter_order=op_iter_order,
-        )
-    
-    def clear_ignore_chars(
-        self,
-        name: Optional[str] = None,
-        op_name: Optional[str] = None,
-        iter_order: Optional[Real] = None,
-        op_iter_order: Optional[Real] = None,
-    ) -> Pool_type:
-        """Create a Pool with ignore characters removed.
-        
-        This removes only the alphabet's ignore_chars (gaps '-', dots '.', 
-        spaces ' ', etc.) while preserving marker tags intact.
-        
-        This is a thin wrapper around poolparty.clear_ignore_chars().
-        See that function for full documentation of parameters.
+        Parameters
+        ----------
+        marker_name : Optional[str], default=None
+            If provided, apply only to the marker region.
+        remove_marker : Optional[bool], default=None
+            If True and marker_name is provided, remove marker tags from output.
         
         Returns
         -------
         Pool
-            A Pool with ignore characters removed but markers preserved.
+            A Pool containing only molecular alphabet characters (markers preserved).
         """
-        from .fixed_ops.clear_ignore_chars import clear_ignore_chars
-        return clear_ignore_chars(
+        from .fixed_ops.clear_gap_chars import clear_gap_chars
+        return clear_gap_chars(
             self.pool,
+            region=marker_name,
+            remove_marker=remove_marker,
             name=name,
             op_name=op_name,
             iter_order=iter_order,
@@ -815,13 +824,10 @@ class OpsContainer:
         def seq_from_seqs_fn(seqs: list[str]) -> str:
             return strip_all_markers(seqs[0])
         
-        def seq_length_fn(pools) -> Optional[int]:
-            return None
-        
         result = fixed_operation(
-            parents=[self.pool],
+            parent_pools=[self.pool],
             seq_from_seqs_fn=seq_from_seqs_fn,
-            seq_length_from_pools_fn=seq_length_fn,
+            seq_length_from_pool_lengths_fn=lambda lengths: None,
             name=name,
             op_name=op_name,
             iter_order=iter_order,

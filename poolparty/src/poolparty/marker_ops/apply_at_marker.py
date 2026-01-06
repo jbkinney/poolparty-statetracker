@@ -137,13 +137,10 @@ def _replace_keeping_marker(
         suffix = bg_seq[marker.end:]
         return prefix + wrapped + suffix
     
-    def seq_length_fn(pools) -> Optional[int]:
-        return None  # Variable length
-    
     result_pool = fixed_operation(
-        parents=[bg_pool, content_pool],
+        parent_pools=[bg_pool, content_pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
-        seq_length_from_pools_fn=seq_length_fn,
+        seq_length_from_pool_lengths_fn=lambda lengths: None,  # Variable length
         name=name,
         iter_order=iter_order,
     )

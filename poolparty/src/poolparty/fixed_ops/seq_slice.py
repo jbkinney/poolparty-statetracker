@@ -41,8 +41,8 @@ def seq_slice(
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         return seqs[0][key]
 
-    def seq_length_from_pools_fn(pools: Sequence[Pool]) -> Optional[int]:
-        parent_len = pools[0].seq_length
+    def seq_length_from_pool_lengths_fn(lengths: Sequence[Optional[int]]) -> Optional[int]:
+        parent_len = lengths[0]
         if parent_len is None:
             return None
         if isinstance(key, Integral):
@@ -52,9 +52,9 @@ def seq_slice(
         return max(0, (stop - start + (step - 1 if step > 0 else step + 1)) // step)
 
     return fixed_operation(
-        parents=[pool],
+        parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
-        seq_length_from_pools_fn=seq_length_from_pools_fn,
+        seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         name=name,
         op_name=op_name,
         iter_order=iter_order,

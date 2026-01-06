@@ -83,14 +83,10 @@ def extract_marker_content(
         # but we handle it gracefully by inferring from content
         marker_seq_length = None
     
-    def seq_length_fn(pools) -> Optional[int]:
-        # Use the registered marker's seq_length if available
-        return marker_seq_length
-    
     result_pool = fixed_operation(
-        parents=[pool],
+        parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
-        seq_length_from_pools_fn=seq_length_fn,
+        seq_length_from_pool_lengths_fn=lambda lengths: marker_seq_length,  # Use registered marker's seq_length
         name=name,
         op_name=op_name,
         iter_order=iter_order,

@@ -11,10 +11,10 @@ I want to import all types form poolparty/types.py or from statecounter/imports.
 Make the comments and docstrings concise, with listing all indivudal parameters limited to essential user-facing functions. 
 
 Finally, write a jupyter notebook that concisely demonstrates this functionality. 
-- Keep the notebook concise
+- Keep the notebook concise -- one code cell only!
 - No markdown cells
-- Maximum 2 cells
 - At the top of each cell do: `import poolparty as pp; pp.init()`; this will make it so that a context manger isn't needed. 
+To demonstrate each function in, I suggest using pool.[chained function].print_library()
 
 When editing Jupyter notebooks (.ipynb files), use the `edit_notebook` tool - do NOT write raw JSON. Key parameters:
 - `target_notebook`: path to the notebook

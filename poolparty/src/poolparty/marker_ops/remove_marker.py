@@ -71,14 +71,10 @@ def remove_marker(
         else:
             return prefix + suffix
     
-    # Sequence length changes when removing markers
-    def seq_length_fn(pools) -> Optional[int]:
-        return None
-    
     result_pool = fixed_operation(
-        parents=[pool],
+        parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
-        seq_length_from_pools_fn=seq_length_fn,
+        seq_length_from_pool_lengths_fn=lambda lengths: None,  # Length changes when removing markers
         name=name,
         op_name=op_name,
         iter_order=iter_order,

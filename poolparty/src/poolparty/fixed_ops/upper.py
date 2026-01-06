@@ -1,6 +1,6 @@
 """Upper operation - convert sequence characters to uppercase."""
 from numbers import Real
-from ..types import Pool_type, Union, Optional, beartype
+from ..types import Pool_type, Union, Optional, RegionType, beartype
 from ..pool import Pool
 from ..marker_ops.parsing import transform_nonmarker_chars
 
@@ -8,6 +8,8 @@ from ..marker_ops.parsing import transform_nonmarker_chars
 @beartype
 def upper(
     pool: Union[Pool_type, str],
+    region: RegionType = None,
+    remove_marker: Optional[bool] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -23,6 +25,10 @@ def upper(
     ----------
     pool : Union[Pool_type, str]
         Parent pool or sequence to convert to uppercase.
+    region : RegionType, default=None
+        Region to apply transformation to. Can be marker name (str), [start, stop], or None.
+    remove_marker : Optional[bool], default=None
+        If True and region is a marker name, remove marker tags from output.
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -40,11 +46,13 @@ def upper(
     from .fixed import fixed_operation
 
     return fixed_operation(
-        parents=[pool],
+        parent_pools=[pool],
         seq_from_seqs_fn=lambda seqs: transform_nonmarker_chars(seqs[0], str.upper),
-        seq_length_from_pools_fn=lambda pools: pools[0].seq_length,
+        seq_length_from_pool_lengths_fn=lambda lengths: lengths[0],
+        region=region,
+        remove_marker=remove_marker,
         name=name,
-        op_name=op_name,    
+        op_name=op_name,
         iter_order=iter_order,
         op_iter_order=op_iter_order,
         _factory_name='upper',
