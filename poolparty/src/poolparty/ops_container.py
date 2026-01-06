@@ -42,11 +42,7 @@ class OpsContainer:
     ) -> Pool_type:
         """Apply deletion_scan() to a marked region."""
         from .scan_ops.deletion_scan import deletion_scan
-        return self.apply_at_marker(
-            region,
-            lambda p: deletion_scan(p, deletion_length, **kwargs),
-            remove_marker=remove_marker,
-        )
+        return deletion_scan(self.pool, deletion_length, region=region, remove_marker=remove_marker, **kwargs)
     
     def insertion_scan(
         self,
@@ -57,11 +53,7 @@ class OpsContainer:
     ) -> Pool_type:
         """Apply insertion_scan() to a marked region."""
         from .scan_ops.insertion_scan import insertion_scan
-        return self.apply_at_marker(
-            region,
-            lambda p: insertion_scan(p, ins_pool, **kwargs),
-            remove_marker=remove_marker,
-        )
+        return insertion_scan(self.pool, ins_pool, region=region, remove_marker=remove_marker, **kwargs)
     
     def replacement_scan(
         self,
@@ -72,11 +64,7 @@ class OpsContainer:
     ) -> Pool_type:
         """Apply replacement_scan() to a marked region."""
         from .scan_ops.replacement_scan import replacement_scan
-        return self.apply_at_marker(
-            region,
-            lambda p: replacement_scan(p, ins_pool, **kwargs),
-            remove_marker=remove_marker,
-        )
+        return replacement_scan(self.pool, ins_pool, region=region, remove_marker=remove_marker, **kwargs)
     
     def mutagenize_scan(
         self,
@@ -87,11 +75,7 @@ class OpsContainer:
     ) -> Pool_type:
         """Apply mutagenize_scan() to a marked region."""
         from .scan_ops.mutagenize_scan import mutagenize_scan
-        return self.apply_at_marker(
-            region,
-            lambda p: mutagenize_scan(p, mutagenize_length, **kwargs),
-            remove_marker=remove_marker,
-        )
+        return mutagenize_scan(self.pool, mutagenize_length, region=region, remove_marker=remove_marker, **kwargs)
     
     def shuffle_scan(
         self,
@@ -103,11 +87,7 @@ class OpsContainer:
     ) -> Pool_type:
         """Apply shuffle_scan() to a marked region."""
         from .scan_ops.shuffle_scan import shuffle_scan
-        return self.apply_at_marker(
-            region,
-            lambda p: shuffle_scan(p, shuffle_length=shuffle_length, shuffles_per_position=shuffles_per_position, **kwargs),
-            remove_marker=remove_marker,
-        )
+        return shuffle_scan(self.pool, shuffle_length, shuffles_per_position=shuffles_per_position, region=region, remove_marker=remove_marker, **kwargs)
     
     def shuffle_seq(
         self,
@@ -128,15 +108,7 @@ class OpsContainer:
     ) -> Pool_type:
         """Replace marker content with IUPAC-generated sequences."""
         from .base_ops.from_iupac_motif import from_iupac_motif
-        from .marker_ops.replace_marker_content import replace_marker_content
-        from .marker_ops.apply_at_marker import _replace_keeping_marker
-        content = from_iupac_motif(iupac_seq, **kwargs)
-        if remove_marker is None:
-            remove_marker = self.pool._party.get_default('remove_marker', True)
-        if remove_marker:
-            return replace_marker_content(self.pool, content, region)
-        else:
-            return _replace_keeping_marker(self.pool, content, region)
+        return from_iupac_motif(iupac_seq, bg_pool=self.pool, region=region, remove_marker=remove_marker, **kwargs)
     
     def insert_from_motif(
         self,
@@ -147,15 +119,7 @@ class OpsContainer:
     ) -> Pool_type:
         """Replace marker content with probability-sampled sequences."""
         from .base_ops.from_prob_motif import from_prob_motif
-        from .marker_ops.replace_marker_content import replace_marker_content
-        from .marker_ops.apply_at_marker import _replace_keeping_marker
-        content = from_prob_motif(prob_df, **kwargs)
-        if remove_marker is None:
-            remove_marker = self.pool._party.get_default('remove_marker', True)
-        if remove_marker:
-            return replace_marker_content(self.pool, content, region)
-        else:
-            return _replace_keeping_marker(self.pool, content, region)
+        return from_prob_motif(prob_df, bg_pool=self.pool, region=region, remove_marker=remove_marker, **kwargs)
     
     def insert_kmers(
         self,
@@ -166,15 +130,7 @@ class OpsContainer:
     ) -> Pool_type:
         """Replace marker content with k-mer sequences."""
         from .base_ops.get_kmers import get_kmers
-        from .marker_ops.replace_marker_content import replace_marker_content
-        from .marker_ops.apply_at_marker import _replace_keeping_marker
-        content = get_kmers(length, **kwargs)
-        if remove_marker is None:
-            remove_marker = self.pool._party.get_default('remove_marker', True)
-        if remove_marker:
-            return replace_marker_content(self.pool, content, region)
-        else:
-            return _replace_keeping_marker(self.pool, content, region)
+        return get_kmers(length, bg_pool=self.pool, region=region, remove_marker=remove_marker, **kwargs)
     
     #########################################################################
     # Fixed operation convenience methods
