@@ -615,8 +615,6 @@ class TestPrintGraph:
         
         # Should contain pool name followed by (pool, ...)
         assert 'mypool (pool,' in captured.out
-        # Should contain operation with brackets
-        assert '[op=' in captured.out
         # Should show n= for num_states in clean mode
         assert 'n=' in captured.out
     
@@ -705,19 +703,6 @@ class TestPrintGraph:
         # Should show sequential mode
         assert 'mode=sequential' in captured.out
     
-    def test_print_graph_shows_factory_name(self, capsys):
-        """Test print_graph() shows operation factory_name."""
-        with pp.Party() as party:
-            seq_pool = pp.from_seqs(['ACGT'], name='seq', mode='sequential')
-            mutants = pp.mutagenize(seq_pool, num_mutations=1, mode='sequential', name='mutants')
-        
-        party.print_graph()
-        captured = capsys.readouterr()
-        
-        # Should show factory names in clean mode
-        assert 'op=from_seqs' in captured.out
-        assert 'op=mutagenize' in captured.out
-    
     def test_print_graph_no_pools(self, capsys):
         """Test print_graph() with no pools registered."""
         with pp.Party() as party:
@@ -761,8 +746,6 @@ class TestPrintGraph:
         
         captured = capsys.readouterr()
         
-        # Should contain [op= for operation info
-        assert '[op=' in captured.out
     
     def test_operation_print_tree_repr(self, capsys):
         """Test Operation.print_tree() with repr style."""

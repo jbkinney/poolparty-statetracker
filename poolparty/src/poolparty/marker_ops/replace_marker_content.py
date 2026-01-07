@@ -15,6 +15,7 @@ def replace_marker_content(
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
+    _factory_name: Optional[str] = None,
 ):
     """
     Replace a marker region with content from another Pool.
@@ -39,6 +40,8 @@ def replace_marker_content(
         Iteration order priority for the resulting Pool.
     op_iter_order : Optional[Real], default=None
         Iteration order priority for the underlying Operation.
+    _factory_name: Optional[str], default=None
+        Sets default name of the resulting operation
 
     Returns
     -------
@@ -74,6 +77,7 @@ def replace_marker_content(
         marker_name=marker_name,
         name=op_name,
         iter_order=op_iter_order,
+        _factory_name=_factory_name,
     )
     result_pool = Pool(operation=op, name=name, iter_order=iter_order)
     
@@ -96,8 +100,13 @@ class ReplaceMarkerContentOp(Operation):
         marker_name: str,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        _factory_name: Optional[str] = None,
     ) -> None:
         self.marker_name = marker_name
+        
+        # Set factory name if provided
+        if _factory_name is not None:
+            self.factory_name = _factory_name
         
         # The operation itself has num_states=1 because it doesn't add its own states.
         # The total number of output states comes from the product of parent pool counters.
@@ -111,6 +120,7 @@ class ReplaceMarkerContentOp(Operation):
             name=name,
             iter_order=iter_order,
         )
+
     
     def compute_design_card(
         self,

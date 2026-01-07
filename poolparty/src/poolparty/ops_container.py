@@ -67,7 +67,7 @@ class OpsContainer:
         **kwargs,
     ) -> Pool_type:
         """Apply replacement_scan() to a marked region."""
-        from .scan_ops.replacement_scan import replacement_scan
+        from .scan_ops.insertion_scan import replacement_scan
         iter_order = kwargs.pop('iter_order', None)
         return replacement_scan(self.pool, ins_pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
     

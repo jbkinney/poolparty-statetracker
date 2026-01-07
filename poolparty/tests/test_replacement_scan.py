@@ -255,9 +255,9 @@ class TestReplacementScanValidation:
             bg = pp.from_seqs(['AAAAAAAAAA'])  # 10 chars
             ins = pp.from_seqs(['TTT'])  # 3 chars
             # max_position = 10 - 3 = 7
-            
+            # Position validation happens at construction in sequential mode
             with pytest.raises(ValueError, match="out of range"):
-                replacement_scan(bg, ins, positions=[8])
+                replacement_scan(bg, ins, positions=[8], mode='sequential')
 
 
 class TestReplacementScanWithMultipleSeqs:
