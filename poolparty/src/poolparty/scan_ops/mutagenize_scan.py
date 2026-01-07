@@ -2,10 +2,8 @@
 from numbers import Integral, Real
 
 from ..types import Union, ModeType, Optional, PositionsType, RegionType, Tuple, Sequence, beartype
-from ..seq_utils import validate_positions
 from ..party import get_active_party
 from ..pool import Pool
-import statecounter as sc
 
 
 @beartype
