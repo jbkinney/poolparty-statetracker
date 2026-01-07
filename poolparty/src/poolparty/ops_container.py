@@ -71,17 +71,9 @@ class OpsContainer:
         iter_order = kwargs.pop('iter_order', None)
         return replacement_scan(self.pool, ins_pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
     
-    def mutagenize_scan(
-        self,
-        region: str,
-        mutagenize_length: Integral,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply mutagenize_scan() to a marked region."""
+    def mutagenize_scan(self, **kwargs) -> Pool_type:
         from .scan_ops.mutagenize_scan import mutagenize_scan
-        iter_order = kwargs.pop('iter_order', None)
-        return mutagenize_scan(self.pool, mutagenize_length, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return mutagenize_scan(bg_pool=self.pool, **kwargs)
     
     def shuffle_scan(
         self,

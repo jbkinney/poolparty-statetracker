@@ -60,8 +60,8 @@ def insertion_scan(
     from ..marker_ops import marker_scan, replace_marker_content
 
     # Convert string inputs to pools
-    bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
-    ins_pool = from_seq(ins_pool) if isinstance(ins_pool, str) else ins_pool
+    bg_pool = from_seq(bg_pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(bg_pool, str) else bg_pool
+    ins_pool = from_seq(ins_pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(ins_pool, str) else ins_pool
 
     # Validate ins_pool has defined seq_length
     ins_length = ins_pool.seq_length

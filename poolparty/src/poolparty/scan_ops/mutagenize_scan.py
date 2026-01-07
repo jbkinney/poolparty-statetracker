@@ -18,13 +18,19 @@ def mutagenize_scan(
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
     mark_changes: Optional[bool] = None,
-    seq_name_prefix: Optional[str] = None,
-    mode: ModeType = 'random',
-    num_hybrid_states: Optional[Integral] = None,
+    seq_name_prefix_scan: Optional[str] = None,
+    seq_name_prefix_mut: Optional[str] = None,
+    mode_scan: ModeType = 'random',
+    mode_mut: ModeType = 'random',
+    num_hybrid_states_scan: Optional[Integral] = None,
+    num_hybrid_states_mut: Optional[Integral] = None,
     name: Optional[str] = None,
-    op_name: Optional[str] = None,
+    op_name_scan: Optional[str] = None,
+    op_name_mut: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
+    op_iter_order_scan: Optional[Real] = None,
+    op_iter_order_mut: Optional[Real] = None,
+    _factory_name: Optional[str] = 'mutagenize_scan',
 ) -> Pool:
     """
     Apply mutagenesis within a window at specified scanning positions.
@@ -65,6 +71,8 @@ def mutagenize_scan(
         Iteration order priority for the resulting Pool.
     op_iter_order : Optional[Real], default=None
         Iteration order priority for the underlying Operation.
+    _factory_name: Optional[str], default=None
+        Sets default name of the resulting operation
 
     Returns
     -------
@@ -77,7 +85,7 @@ def mutagenize_scan(
     from ..marker_ops import marker_scan, apply_at_marker, insert_marker
 
     # Convert string inputs to pools if needed
-    bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+    bg_pool = from_seq(bg_pool_factory_name=f'{_factory_name}(from_seq)') if isinstance(bg_pool, str) else bg_pool
 
     # Validate num_mutations/mutation_rate
     if num_mutations is None and mutation_rate is None:
@@ -94,139 +102,45 @@ def mutagenize_scan(
     if remove_marker is None:
         remove_marker = party.get_default('remove_marker', True) if party else True
 
-    # If region is specified, apply scan within that region
-    if region is not None:
-        # Define transform function that applies mutagenize_scan to region content
-        def do_mutagenize_scan(region_content_pool):
-            return _mutagenize_scan_impl(
-                bg_pool=region_content_pool,
-                mutagenize_length=mutagenize_length,
-                num_mutations=num_mutations,
-                mutation_rate=mutation_rate,
-                positions=positions,
-                spacer_str=spacer_str,
-                mark_changes=mark_changes,
-                seq_name_prefix=seq_name_prefix,
-                mode=mode,
-                num_hybrid_states=num_hybrid_states,
-                op_name=op_name,
-                op_iter_order=op_iter_order,
-            )
-
-        if isinstance(region, str):
-            # Region is a marker name
-            return apply_at_marker(
-                bg_pool,
-                marker_name=region,
-                transform_fn=do_mutagenize_scan,
-                remove_marker=remove_marker,
-                name=name,
-                iter_order=iter_order,
-            )
-        else:
-            # Region is [start, stop] - insert temporary marker
-            temp_marker = '_mutagenize_scan_region'
-            marked_pool = insert_marker(
-                bg_pool,
-                marker_name=temp_marker,
-                start=int(region[0]),
-                stop=int(region[1]),
-            )
-            return apply_at_marker(
-                marked_pool,
-                marker_name=temp_marker,
-                transform_fn=do_mutagenize_scan,
-                remove_marker=True,  # Always remove temp marker
-                name=name,
-                iter_order=iter_order,
-            )
-
-    # No region specified - apply to entire bg_pool
-    return _mutagenize_scan_impl(
-        bg_pool=bg_pool,
-        mutagenize_length=mutagenize_length,
-        num_mutations=num_mutations,
-        mutation_rate=mutation_rate,
-        positions=positions,
-        spacer_str=spacer_str,
-        mark_changes=mark_changes,
-        seq_name_prefix=seq_name_prefix,
-        mode=mode,
-        num_hybrid_states=num_hybrid_states,
-        name=name,
-        op_name=op_name,
-        iter_order=iter_order,
-        op_iter_order=op_iter_order,
-    )
-
-
-def _mutagenize_scan_impl(
-    bg_pool: Pool,
-    mutagenize_length: Integral,
-    num_mutations: Optional[Integral],
-    mutation_rate: Optional[Real],
-    positions: PositionsType,
-    spacer_str: str,
-    mark_changes: bool,
-    seq_name_prefix: Optional[str],
-    mode: ModeType,
-    num_hybrid_states: Optional[Integral],
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
-    iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
-) -> Pool:
-    """Core mutagenize scan implementation without region handling."""
-    from ..base_ops.mutagenize import mutagenize
-    from ..marker_ops import marker_scan
-
-    # Validate bg_pool has defined seq_length
-    bg_length = bg_pool.seq_length
-    if bg_length is None:
-        raise ValueError("bg_pool must have a defined seq_length")
-
-    # Validate mutagenize_length
-    if mutagenize_length <= 0:
-        raise ValueError(f"mutagenize_length must be > 0, got {mutagenize_length}")
-    if mutagenize_length >= bg_length:
-        raise ValueError(
-            f"mutagenize_length ({mutagenize_length}) must be < bg_pool.seq_length ({bg_length})"
-        )
-
-    # For mutagenize: marker_length=mutagenize_length, max_position=bg_length - mutagenize_length
+    # Determine marker configuration based on replace mode
+    # replace=False: marker_length=0 (insert without removing background)
+    # replace=True: marker_length=ins_length (replace background content)
+    # Use different marker names to avoid conflicts when both are used in same Party
     marker_name = '_mut'
-    marker_length = int(mutagenize_length)
-    max_position = bg_length - mutagenize_length
-
-    # Validate positions
-    validated_positions = validate_positions(positions, max_position, min_position=0)
+    marker_length = mutagenize_length
 
     # 1. Insert marker at scanning positions
     marked = marker_scan(
         bg_pool,
         marker=marker_name,
         marker_length=marker_length,
-        positions=validated_positions,
-        seq_name_prefix=seq_name_prefix,
-        mode=mode,
-        num_hybrid_states=num_hybrid_states,
-        op_name=op_name,
-        op_iter_order=op_iter_order,
+        positions=positions,
+        region=region,
+        remove_marker=False,  # Keep outer region marker for now
+        seq_name_prefix=seq_name_prefix_scan,
+        mode=mode_scan,
+        num_hybrid_states=num_hybrid_states_scan,
+        op_name=op_name_scan,
+        op_iter_order=op_iter_order_scan,
+        _factory_name=f'{_factory_name}(marker_scan)',
     )
 
-    # 2. Apply mutagenize directly to the marked region
-    # Note: MutagenizeOp always uses 'random' mode for the actual mutagenesis.
-    # The 'mode' parameter controls position selection via marker_scan above.
-    # spacer_str is handled by Operation base class in wrapped_compute_seq_from_card
+    # 2. Mutagenize marker with content 
     return mutagenize(
-        marked,
-        region=marker_name,
-        remove_marker=True,  # Always remove the internal _mut marker
-        spacer_str=spacer_str,
+        pool=marked,
         num_mutations=num_mutations,
         mutation_rate=mutation_rate,
+        region='_mut',
+        remove_marker=True,
+        spacer_str=spacer_str,
         mark_changes=mark_changes,
-        mode='random',  # Always random for mutagenesis
+        swapcase=False,
+        seq_name_prefix=seq_name_prefix_mut,
+        mode=mode_mut,
+        num_hybrid_states=num_hybrid_states_mut,
         name=name,
+        op_name=op_name_mut,
         iter_order=iter_order,
+        op_iter_order=op_iter_order_mut,
+        _factory_name=f'{_factory_name}(mutagenize)',
     )

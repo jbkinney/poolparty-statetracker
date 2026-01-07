@@ -25,6 +25,7 @@ def mutagenize(
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
+    _factory_name: Optional[str] = 'mutagenize',
 ) -> Pool:
     """
     Create a Pool that applies mutations to a sequence.
@@ -60,7 +61,8 @@ def mutagenize(
         Iteration order for the Pool.
     op_iter_order : Optional[Real], default=None
         Iteration order for the Operation.
-
+    _factory_name: Optional[str], default=None
+        Sets default name of the resulting operation
     Returns
     -------
     Pool
@@ -68,7 +70,7 @@ def mutagenize(
     """
     
     from ..fixed_ops.from_seq import from_seq
-    pool = from_seq(pool) if isinstance(pool, str) else pool
+    pool = from_seq(pool, factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
     op = MutagenizeOp(
         parent_pool=pool,
         num_mutations=num_mutations,
@@ -83,6 +85,7 @@ def mutagenize(
         num_hybrid_states=num_hybrid_states,
         name=op_name,
         iter_order=op_iter_order,
+        _factory_name=_factory_name,
     )
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool
@@ -117,7 +120,12 @@ class MutagenizeOp(Operation):
         num_hybrid_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        _factory_name: Optional[str] = 'mutagenize',
     ) -> None:
+        # Set factory name if provided
+        if _factory_name is not None:
+            self.factory_name = _factory_name
+            
         # Get alphabet from active Party context
         party = get_active_party()
         if party is None:

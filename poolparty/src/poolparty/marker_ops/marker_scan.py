@@ -332,7 +332,8 @@ class MarkerScanOp(Operation):
             if end_nonmarker_idx < len(nonmarker_positions):
                 end_literal = nonmarker_positions[end_nonmarker_idx]
             else:
-                end_literal = len(seq)
+                # One past the last non-marker character (preserves trailing marker tags)
+                end_literal = nonmarker_positions[-1] + 1 if nonmarker_positions else len(seq)
             result_seq = seq[:start_literal] + marker_tag + seq[end_literal:]
         else:
             # Zero-length marker: insert at position
