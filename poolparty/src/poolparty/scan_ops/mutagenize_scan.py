@@ -85,7 +85,7 @@ def mutagenize_scan(
     from ..marker_ops import marker_scan, apply_at_marker, insert_marker
 
     # Convert string inputs to pools if needed
-    bg_pool = from_seq(bg_pool_factory_name=f'{_factory_name}(from_seq)') if isinstance(bg_pool, str) else bg_pool
+    bg_pool = from_seq(bg_pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(bg_pool, str) else bg_pool
 
     # Validate num_mutations/mutation_rate
     if num_mutations is None and mutation_rate is None:

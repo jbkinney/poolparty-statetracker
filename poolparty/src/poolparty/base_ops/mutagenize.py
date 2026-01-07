@@ -70,7 +70,7 @@ def mutagenize(
     """
     
     from ..fixed_ops.from_seq import from_seq
-    pool = from_seq(pool, factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
+    pool = from_seq(pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
     op = MutagenizeOp(
         parent_pool=pool,
         num_mutations=num_mutations,
