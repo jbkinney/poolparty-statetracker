@@ -24,56 +24,26 @@ class OpsContainer:
         iter_order = kwargs.pop('iter_order', None)
         return apply_at_marker(self.pool, marker_name, transform_fn, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
     
-    def mutagenize(
-        self,
-        region: str,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply mutagenize() to a marked region."""
+    def mutagenize(self, **kwargs) -> Pool_type:
         from .base_ops.mutagenize import mutagenize
-        iter_order = kwargs.pop('iter_order', None)
-        return mutagenize(self.pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
-    
-    def deletion_scan(
-        self,
-        region: str,
-        deletion_length: Integral,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply deletion_scan() to a marked region."""
-        from .scan_ops.deletion_scan import deletion_scan
-        iter_order = kwargs.pop('iter_order', None)
-        return deletion_scan(self.pool, deletion_length, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
-    
-    def insertion_scan(
-        self,
-        region: str,
-        ins_pool: Union[Pool_type, str],
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply insertion_scan() to a marked region."""
-        from .scan_ops.insertion_scan import insertion_scan
-        iter_order = kwargs.pop('iter_order', None)
-        return insertion_scan(self.pool, ins_pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
-    
-    def replacement_scan(
-        self,
-        region: str,
-        ins_pool: Union[Pool_type, str],
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply replacement_scan() to a marked region."""
-        from .scan_ops.insertion_scan import replacement_scan
-        iter_order = kwargs.pop('iter_order', None)
-        return replacement_scan(self.pool, ins_pool, region=region, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
+        return mutagenize(self.pool, **kwargs)
     
     def mutagenize_scan(self, **kwargs) -> Pool_type:
         from .scan_ops.mutagenize_scan import mutagenize_scan
         return mutagenize_scan(bg_pool=self.pool, **kwargs)
+    
+    def deletion_scan(self, **kwargs) -> Pool_type:
+        from .scan_ops.deletion_scan import deletion_scan
+        return deletion_scan(self.pool, **kwargs)
+    
+    def insertion_scan(self, **kwargs) -> Pool_type:
+        from .scan_ops.insertion_scan import insertion_scan
+        return insertion_scan(self.pool, **kwargs)
+    
+    def replacement_scan(self, **kwargs) -> Pool_type:
+        from .scan_ops.insertion_scan import replacement_scan
+        return replacement_scan(self.pool, **kwargs)
+    
     
     def shuffle_scan(
         self,

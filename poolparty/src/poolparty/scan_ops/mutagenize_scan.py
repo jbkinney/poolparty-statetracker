@@ -1,10 +1,11 @@
 """Mutagenize scan operation - apply mutagenesis within a window at scanning positions."""
 from numbers import Integral, Real
 
-from ..types import Union, ModeType, Optional, PositionsType, RegionType, beartype
+from ..types import Union, ModeType, Optional, PositionsType, RegionType, Tuple, Sequence, beartype
 from ..seq_utils import validate_positions
 from ..party import get_active_party
 from ..pool import Pool
+import statecounter as sc
 
 
 @beartype
@@ -18,18 +19,13 @@ def mutagenize_scan(
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
     mark_changes: Optional[bool] = None,
-    seq_name_prefix_scan: Optional[str] = None,
-    seq_name_prefix_mut: Optional[str] = None,
-    mode_scan: ModeType = 'random',
-    mode_mut: ModeType = 'random',
-    num_hybrid_states_scan: Optional[Integral] = None,
-    num_hybrid_states_mut: Optional[Integral] = None,
+    seq_name_prefix: Optional[Union[str, Sequence[str]]] = None,
+    mode: Union[ModeType, Tuple[ModeType, ModeType]] = 'random',
+    num_hybrid_states: Optional[Union[Integral, Sequence[Integral]]] = None,
     name: Optional[str] = None,
-    op_name_scan: Optional[str] = None,
-    op_name_mut: Optional[str] = None,
+    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order_scan: Optional[Real] = None,
-    op_iter_order_mut: Optional[Real] = None,
+    op_iter_order: Optional[Union[Real, Sequence[Real]]] = None,
     _factory_name: Optional[str] = 'mutagenize_scan',
 ) -> Pool:
     """
@@ -58,19 +54,24 @@ def mutagenize_scan(
         String to insert as a spacer around the mutagenized region.
     mark_changes : Optional[bool], default=None
         If True, apply swapcase() to the mutated bases. If None, uses party default.
-    mode : ModeType, default='random'
+    seq_name_prefix : Optional[Union[str, Sequence[str]]], default=None
+        Prefix for sequence names. 
+        If sequence, first element is for scanning positions, second element is for mutagenization.
+    mode : Union[ModeType, Sequence[ModeType]], default='random'
         Selection mode for scanning positions: 'random', 'sequential', or 'hybrid'.
-        Note: The underlying MutagenizeOp always uses 'random' mode.
-    num_hybrid_states : Optional[Integral], default=None
+        If sequence, first element is for scanning positions, second element is for mutagenization.
+    num_hybrid_states : Optional[Union[Integral, Sequence[Integral]]], default=None
         Number of pool states when using 'hybrid' mode (ignored by other modes).
+        If sequence, first element is for scanning positions, second element is for mutagenization.
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
         Name for the underlying Operation.
     iter_order : Optional[Real], default=None
         Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
+    op_iter_order : Optional[Union[Real, Sequence[Real]]], default=None
         Iteration order priority for the underlying Operation.
+        If sequence, first element is for scanning positions, second element is for mutagenization.
     _factory_name: Optional[str], default=None
         Sets default name of the resulting operation
 
@@ -82,7 +83,7 @@ def mutagenize_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..base_ops.mutagenize import mutagenize
-    from ..marker_ops import marker_scan, apply_at_marker, insert_marker
+    from ..marker_ops import marker_scan
 
     # Convert string inputs to pools if needed
     bg_pool = from_seq(bg_pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(bg_pool, str) else bg_pool
@@ -109,6 +110,37 @@ def mutagenize_scan(
     marker_name = '_mut'
     marker_length = mutagenize_length
 
+    # Resolve mode - expand single value to tuple of two
+    # Note: str is a Sequence, so check for str first
+    if mode is None or isinstance(mode, str):
+        mode = (mode, mode)
+    elif isinstance(mode, Sequence) and len(mode) != 2:
+        raise ValueError("mode must be a sequence of length 2")
+    mode_scan, mode_mut = mode[0], mode[1]
+
+    # Resolve num_hybrid_states - expand single value to tuple of two
+    if num_hybrid_states is None or isinstance(num_hybrid_states, Integral):
+        num_hybrid_states = (num_hybrid_states, num_hybrid_states)
+    elif isinstance(num_hybrid_states, Sequence) and len(num_hybrid_states) != 2:
+        raise ValueError("num_hybrid_states must be a sequence of length 2")
+    num_hybrid_states_scan, num_hybrid_states_mut = num_hybrid_states[0], num_hybrid_states[1]
+
+    # Resolve seq_name_prefix - expand single value to tuple of two
+    # Note: str is a Sequence, so check for str first
+    if seq_name_prefix is None or isinstance(seq_name_prefix, str):
+        seq_name_prefix = (seq_name_prefix, seq_name_prefix)
+    elif isinstance(seq_name_prefix, Sequence) and len(seq_name_prefix) != 2:
+        raise ValueError("seq_name_prefix must be a sequence of length 2")
+    seq_name_prefix_scan, seq_name_prefix_mut = seq_name_prefix[0], seq_name_prefix[1]
+
+    # Resolve op_iter_order - expand single value to tuple of two
+    if op_iter_order is None or isinstance(op_iter_order, Real):
+        op_iter_order = (op_iter_order, op_iter_order)
+    elif isinstance(op_iter_order, Sequence) and len(op_iter_order) != 2:
+        raise ValueError("op_iter_order must be a sequence of length 2")
+    op_iter_order_scan, op_iter_order_mut = op_iter_order[0], op_iter_order[1]
+
+
     # 1. Insert marker at scanning positions
     marked = marker_scan(
         bg_pool,
@@ -120,13 +152,13 @@ def mutagenize_scan(
         seq_name_prefix=seq_name_prefix_scan,
         mode=mode_scan,
         num_hybrid_states=num_hybrid_states_scan,
-        op_name=op_name_scan,
+        op_name=op_name,
         op_iter_order=op_iter_order_scan,
         _factory_name=f'{_factory_name}(marker_scan)',
     )
 
     # 2. Mutagenize marker with content 
-    return mutagenize(
+    result = mutagenize(
         pool=marked,
         num_mutations=num_mutations,
         mutation_rate=mutation_rate,
@@ -139,8 +171,16 @@ def mutagenize_scan(
         mode=mode_mut,
         num_hybrid_states=num_hybrid_states_mut,
         name=name,
-        op_name=op_name_mut,
+        op_name=op_name,
         iter_order=iter_order,
         op_iter_order=op_iter_order_mut,
         _factory_name=f'{_factory_name}(mutagenize)',
     )
+    
+    # mutated.op.counter has been overridden by mutagenize, so we need to
+    # manually multiply it by the counter in marked.op. 
+    print('debugging here')
+    marked.counter.print_tree()
+    result.counter.print_tree()
+    
+    return result
