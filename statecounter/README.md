@@ -137,7 +137,7 @@ with Manager():
     C = A * B
     C.name = 'C'
     
-    C.print_tree()
+    C.print_dag()
 ```
 
 Output:

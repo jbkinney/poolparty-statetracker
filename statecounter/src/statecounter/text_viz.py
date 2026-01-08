@@ -83,7 +83,7 @@ def format_operation_node(op, style: StyleType = 'clean') -> str:
         return f"[op={op_name}]"
 
 
-def print_tree(counter, style: StyleType = 'clean') -> None:
+def print_dag(counter, style: StyleType = 'clean') -> None:
     """Print ASCII tree for a single Counter and its ancestors.
     
     The tree alternates between Counter and Operation nodes:
@@ -155,6 +155,6 @@ def print_graph(counters: list, style: StyleType = 'clean') -> None:
         return
     
     for i, root in enumerate(roots):
-        print_tree(root, style=style)
+        print_dag(root, style=style)
         if i < len(roots) - 1:
             print()

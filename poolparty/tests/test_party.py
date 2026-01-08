@@ -603,7 +603,7 @@ class TestCounterManagerIntegration:
 
 
 class TestPrintGraph:
-    """Test Party.print_graph() and Pool.print_tree() visualization."""
+    """Test Party.print_graph() and Pool.print_dag() visualization."""
     
     def test_print_graph_simple_clean(self, capsys):
         """Test print_graph() with clean style (default)."""
@@ -713,11 +713,11 @@ class TestPrintGraph:
         
         assert '(no pools registered)' in captured.out
     
-    def test_pool_print_tree(self, capsys):
-        """Test Pool.print_tree() method directly."""
+    def test_pool_print_dag(self, capsys):
+        """Test Pool.print_dag() method directly."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='mypool', mode='sequential')
-            pool.print_tree()  # clean is default
+            pool.print_dag()  # clean is default
         
         captured = capsys.readouterr()
         
@@ -726,11 +726,11 @@ class TestPrintGraph:
         # Should show n=3
         assert 'n=3' in captured.out
     
-    def test_pool_print_tree_repr(self, capsys):
-        """Test Pool.print_tree() with repr style."""
+    def test_pool_print_dag_repr(self, capsys):
+        """Test Pool.print_dag() with repr style."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='mypool', mode='sequential')
-            pool.print_tree(style='repr')
+            pool.print_dag(style='repr')
         
         captured = capsys.readouterr()
         
@@ -738,20 +738,20 @@ class TestPrintGraph:
         assert captured.out.startswith('Pool(')
         assert 'num_states=3' in captured.out
     
-    def test_operation_print_tree(self, capsys):
-        """Test Operation.print_tree() method directly."""
+    def test_operation_print_dag(self, capsys):
+        """Test Operation.print_dag() method directly."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='mypool', mode='sequential')
-            pool.operation.print_tree()  # clean is default
+            pool.operation.print_dag()  # clean is default
         
         captured = capsys.readouterr()
         
     
-    def test_operation_print_tree_repr(self, capsys):
-        """Test Operation.print_tree() with repr style."""
+    def test_operation_print_dag_repr(self, capsys):
+        """Test Operation.print_dag() with repr style."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], name='mypool', mode='sequential')
-            pool.operation.print_tree(style='repr')
+            pool.operation.print_dag(style='repr')
         
         captured = capsys.readouterr()
         

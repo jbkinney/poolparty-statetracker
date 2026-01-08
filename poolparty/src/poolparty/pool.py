@@ -322,14 +322,10 @@ class Pool:
     # Tree visualization
     #########################################################################
     
-    def print_tree(self, style: str = 'clean') -> Pool_type:
-        """Print the ASCII tree visualization rooted at this pool.
-        
-        Args:
-            style: Display style - 'clean' (default), 'minimal', or 'repr'.
-        """
+    def print_dag(self, style: str = 'clean', show_pools: bool = True) -> Pool_type:
+        """Print the ASCII tree visualization rooted at this pool."""
         from .text_viz import print_pool_tree
-        print_pool_tree(self, style=style)
+        print_pool_tree(self, style=style, show_pools=show_pools)
         return self # For chaining
     
     #########################################################################

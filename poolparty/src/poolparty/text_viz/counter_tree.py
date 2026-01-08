@@ -1,6 +1,6 @@
 """Counter-specific tree visualization utilities."""
 from poolparty.types import Literal
-from .tree import print_tree
+from .tree import print_dag
 
 StyleType = Literal['clean', 'minimal', 'repr']
 
@@ -47,5 +47,5 @@ def print_counter_tree(counter, style: StyleType = 'clean') -> None:
     def get_children(c):
         return list(c._parents)
     
-    print_tree(counter, get_label, get_children)
+    print_dag(counter, get_label, get_children)
 

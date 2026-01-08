@@ -448,7 +448,7 @@ class Operation:
         
         return self.__class__(**init_params)
     
-    def print_tree(self, style: str = 'clean') -> None:
+    def print_dag(self, style: str = 'clean') -> None:
         """Print the ASCII tree visualization rooted at this operation.
         
         Args:

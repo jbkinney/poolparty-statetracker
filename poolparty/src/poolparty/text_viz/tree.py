@@ -38,7 +38,7 @@ def build_tree_lines(
     return lines
 
 
-def print_tree(
+def print_dag(
     root: Any,
     get_label: Callable[[Any], str],
     get_children: Callable[[Any], list],

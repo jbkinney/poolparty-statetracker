@@ -198,14 +198,14 @@ class Counter:
         else:
             return f"Counter(name={self._name!r}, id={self._id}, num_states={self._num_states}, state={self._state}, iter_order={self._iter_order})"
     
-    def print_tree(self, style: str = 'clean'):
+    def print_dag(self, style: str = 'clean'):
         """Print the ASCII tree visualization rooted at this counter.
         
         Args:
             style: Display style - 'clean' (default), 'minimal', or 'repr'.
         """
-        from .text_viz import print_tree
-        print_tree(self, style=style)
+        from .text_viz import print_dag
+        print_dag(self, style=style)
 
     def get_iteration_df(self, **kwargs):
         ancestors = self._manager.get_ancestors(self)

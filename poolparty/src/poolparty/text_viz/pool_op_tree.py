@@ -1,6 +1,6 @@
 """Pool and Operation tree visualization utilities."""
 from poolparty.types import Literal
-from .tree import print_tree
+from .tree import print_dag
 
 StyleType = Literal['clean', 'minimal', 'repr']
 
@@ -41,18 +41,8 @@ def format_operation_node(op, style: StyleType = 'clean') -> str:
         return f"{op.name} [mode={op.mode}, n={op.num_states}]"
 
 
-def print_pool_tree(pool, style: StyleType = 'clean') -> None:
-    """Print ASCII tree for a single Pool and its upstream DAG.
-    
-    The tree alternates between Pool and Operation nodes:
-    - Pool -> its Operation -> Operation's parent Pools -> ...
-    
-    Args:
-        pool: The root Pool to visualize.
-        style: Display style - 'clean', 'minimal', or 'repr'.
-    """
-    # We need to handle the alternating Pool/Operation structure.
-    # We'll wrap nodes to track their type.
+def print_pool_tree(pool, style: StyleType = 'clean', show_pools: bool = True) -> None:
+    """Print ASCII tree for a single Pool and its upstream DAG."""
     
     class PoolNode:
         def __init__(self, pool):
@@ -69,14 +59,18 @@ def print_pool_tree(pool, style: StyleType = 'clean') -> None:
             return format_operation_node(node.op, style)
     
     def get_children(node):
-        if isinstance(node, PoolNode):
-            # Pool's child is its operation
-            return [OpNode(node.pool.operation)]
+        if show_pools:
+            # Alternating Pool/Op structure
+            if isinstance(node, PoolNode):
+                return [OpNode(node.pool.operation)]
+            else:
+                return [PoolNode(p) for p in node.op.parent_pools]
         else:
-            # Operation's children are its parent pools
-            return [PoolNode(p) for p in node.op.parent_pools]
+            # Ops only - skip pools, link ops directly
+            return [OpNode(p.operation) for p in node.op.parent_pools]
     
-    print_tree(PoolNode(pool), get_label, get_children)
+    root = PoolNode(pool) if show_pools else OpNode(pool.operation)
+    print_dag(root, get_label, get_children)
 
 
 def print_operation_tree(op, style: StyleType = 'clean') -> None:
@@ -111,5 +105,5 @@ def print_operation_tree(op, style: StyleType = 'clean') -> None:
             # Operation's children are its parent pools
             return [PoolNode(p) for p in node.op.parent_pools]
     
-    print_tree(OpNode(op), get_label, get_children)
+    print_dag(OpNode(op), get_label, get_children)
 

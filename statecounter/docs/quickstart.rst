@@ -91,7 +91,7 @@ state automatically updates all parent counters:
 Visualization
 -------------
 
-Use ``print_tree()`` to visualize counter dependencies:
+Use ``print_dag()`` to visualize counter dependencies:
 
 .. code-block:: python
 
@@ -101,7 +101,7 @@ Use ``print_tree()`` to visualize counter dependencies:
         C = A * B
         C.name = 'C'
         
-        C.print_tree()
+        C.print_dag()
         # Output:
         # C [Multiply, n=6]
         # ├── A [Leaf, n=2]

@@ -10,20 +10,6 @@ class OpsContainer:
         """Initialize with a reference to the parent Pool."""
         self.pool = pool
     
-    def apply_at_marker(
-        self,
-        marker_name: str,
-        transform_fn: Callable,
-        remove_tags: Optional[bool] = None,
-        **kwargs,
-    ) -> Pool_type:
-        """Apply a transformation to the content of a marked region."""
-        from .marker_ops.apply_at_marker import apply_at_marker
-        if remove_tags is None:
-            remove_tags = self.pool._party.get_default('remove_marker', True)
-        iter_order = kwargs.pop('iter_order', None)
-        return apply_at_marker(self.pool, marker_name, transform_fn, remove_marker=remove_tags, op_iter_order=iter_order, **kwargs)
-    
     def mutagenize(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .base_ops.mutagenize import mutagenize
         return mutagenize(pool=self.pool, region=region, **kwargs)
@@ -111,6 +97,10 @@ class OpsContainer:
     #########################################################################
     # Marker management methods
     #########################################################################
+    
+    def apply_at_marker(self, marker_name: str, transform_fn: Callable, remove_tags: Optional[bool] = None, **kwargs) -> Pool_type:
+        from .marker_ops.apply_at_marker import apply_at_marker
+        return apply_at_marker(self.pool, marker_name, transform_fn, remove_marker=remove_tags, **kwargs)
     
     def insert_marker(
         self,
