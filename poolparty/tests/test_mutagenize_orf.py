@@ -268,14 +268,14 @@ class TestMutagenizeOrfMutationTypes:
     def test_missense_only_first_type(self):
         """Test missense_only_first mutation type (default)."""
         with pp.Party() as party:
-            pool = mutagenize_orf('ATGAAA', num_mutations=1, mode='sequential').named('mutant')
+            pool = mutagenize_orf('ATGAAA', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
         df = pool.generate_library(num_cycles=1, report_design_cards=True)
         ct = CodonTable('standard')
         
         for _, row in df.iterrows():
-            wt_aas = row['mutant.op.key.wt_aas']
-            mut_aas = row['mutant.op.key.mut_aas']
+            wt_aas = row['mutate.key.wt_aas']
+            mut_aas = row['mutate.key.mut_aas']
             for wt_aa, mut_aa in zip(wt_aas, mut_aas):
                 # Should be different AA
                 assert wt_aa != mut_aa
@@ -286,13 +286,13 @@ class TestMutagenizeOrfMutationTypes:
         """Test nonsense mutation type."""
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'ATGAAA', num_mutations=1, mutation_type='nonsense', mode='sequential'
+                'ATGAAA', num_mutations=1, mutation_type='nonsense', mode='sequential', op_name='mutate'
             ).named('mutant')
         
         df = pool.generate_library(num_cycles=1, report_design_cards=True)
         
         for _, row in df.iterrows():
-            mut_aas = row['mutant.op.key.mut_aas']
+            mut_aas = row['mutate.key.mut_aas']
             for mut_aa in mut_aas:
                 # All mutations should be stops
                 assert mut_aa == '*'
@@ -302,15 +302,15 @@ class TestMutagenizeOrfMutationTypes:
         # Use a codon with synonymous options (Leucine CTG has 5 alternatives)
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'CTGCTG', num_mutations=1, mutation_type='synonymous', mode='random'
+                'CTGCTG', num_mutations=1, mutation_type='synonymous', mode='random', op_name='mutate'
             ).named('mutant')
         
         df = pool.generate_library(num_seqs=20, seed=42, report_design_cards=True)
         ct = CodonTable('standard')
         
         for _, row in df.iterrows():
-            wt_aas = row['mutant.op.key.wt_aas']
-            mut_aas = row['mutant.op.key.mut_aas']
+            wt_aas = row['mutate.key.wt_aas']
+            mut_aas = row['mutate.key.mut_aas']
             for wt_aa, mut_aa in zip(wt_aas, mut_aas):
                 # AA should be the same (synonymous)
                 assert wt_aa == mut_aa
@@ -354,9 +354,9 @@ class TestMutagenizeOrfSequentialMode:
         
         for _, row in df.iterrows():
             mutant = row['seq']
-            positions = row['mutant.op.key.codon_positions']
-            wt_codons = row['mutant.op.key.wt_codons']
-            mut_codons = row['mutant.op.key.mut_codons']
+            positions = row['mutate.key.codon_positions']
+            wt_codons = row['mutate.key.wt_codons']
+            mut_codons = row['mutate.key.mut_codons']
             
             # Verify mutations are applied
             for pos, wt, mut in zip(positions, wt_codons, mut_codons):
@@ -374,13 +374,13 @@ class TestMutagenizeOrfRandomMode:
         """Test random mode with fixed num_mutations."""
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'ATGAAATTTGGG', num_mutations=2, mode='random'
+                'ATGAAATTTGGG', num_mutations=2, mode='random', op_name='mutate'
             ).named('mutant')
         
         df = pool.generate_library(num_seqs=50, seed=42, report_design_cards=True)
         
         for _, row in df.iterrows():
-            positions = row['mutant.op.key.codon_positions']
+            positions = row['mutate.key.codon_positions']
             # Should have exactly 2 mutations
             assert len(positions) == 2
     
@@ -388,13 +388,13 @@ class TestMutagenizeOrfRandomMode:
         """Test random mode with mutation_rate."""
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'ATGAAATTTGGGCCCAAA', mutation_rate=0.5, mode='random'
+                'ATGAAATTTGGGCCCAAA', mutation_rate=0.5, mode='random', op_name='mutate'
             ).named('mutant')
         
         df = pool.generate_library(num_seqs=100, seed=42, report_design_cards=True)
         
         # Should have variable number of mutations
-        num_mutations_list = [len(row['mutant.op.key.codon_positions']) for _, row in df.iterrows()]
+        num_mutations_list = [len(row['mutate.key.codon_positions']) for _, row in df.iterrows()]
         # With 6 codons and 50% rate, should see some variation
         assert len(set(num_mutations_list)) > 1
     
@@ -450,11 +450,11 @@ class TestMutagenizeOrfDesignCards:
         
         df = pool.generate_library(num_seqs=4, report_design_cards=True)
         
-        assert 'mutant.op.key.codon_positions' in df.columns
-        assert 'mutant.op.key.wt_codons' in df.columns
-        assert 'mutant.op.key.mut_codons' in df.columns
-        assert 'mutant.op.key.wt_aas' in df.columns
-        assert 'mutant.op.key.mut_aas' in df.columns
+        assert 'mutate.key.codon_positions' in df.columns
+        assert 'mutate.key.wt_codons' in df.columns
+        assert 'mutate.key.mut_codons' in df.columns
+        assert 'mutate.key.wt_aas' in df.columns
+        assert 'mutate.key.mut_aas' in df.columns
     
     def test_design_card_consistency(self):
         """Design card values match actual mutations."""
@@ -468,11 +468,11 @@ class TestMutagenizeOrfDesignCards:
         
         for _, row in df.iterrows():
             mutant = row['seq']
-            positions = row['mutant.op.key.codon_positions']
-            wt_codons = row['mutant.op.key.wt_codons']
-            mut_codons = row['mutant.op.key.mut_codons']
-            wt_aas = row['mutant.op.key.wt_aas']
-            mut_aas = row['mutant.op.key.mut_aas']
+            positions = row['mutate.key.codon_positions']
+            wt_codons = row['mutate.key.wt_codons']
+            mut_codons = row['mutate.key.mut_codons']
+            wt_aas = row['mutate.key.wt_aas']
+            mut_aas = row['mutate.key.mut_aas']
             
             for pos, wt_c, mut_c, wt_aa, mut_aa in zip(
                 positions, wt_codons, mut_codons, wt_aas, mut_aas

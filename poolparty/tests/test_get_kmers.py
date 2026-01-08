@@ -207,8 +207,8 @@ class TestGetKmersDesignCards:
             pool = get_kmers(length=2, mode='sequential', op_name='kmers').named('mypool')
         
         df = pool.generate_library(num_seqs=4, report_design_cards=True)
-        assert 'mypool.op.key.kmer_index' in df.columns
-        assert list(df['mypool.op.key.kmer_index']) == [0, 1, 2, 3]
+        assert 'kmers.key.kmer_index' in df.columns
+        assert list(df['kmers.key.kmer_index']) == [0, 1, 2, 3]
     
     def test_design_card_keys_defined(self):
         """Test design_card_keys is defined correctly."""
@@ -317,5 +317,5 @@ class TestGetKmersCustomName:
             pool = get_kmers(length=4, op_name='my_barcode').named('mypool')
         
         df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
-        assert 'mypool.op.key.kmer_index' in df.columns
+        assert 'my_barcode.key.kmer_index' in df.columns
 

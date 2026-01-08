@@ -172,7 +172,7 @@ class Pool:
     def named(self, name: str, op_name: Optional[str] = None) -> Pool_type:
         """Set the name of this pool and its operation, return self for chaining."""
         self.name = name
-        self.operation.name = op_name if op_name is not None else name + '.op'
+        #self.operation.name = op_name if op_name is not None else name + '.op'
         return self
     
     def clear_seq_names(self) -> Pool_type:

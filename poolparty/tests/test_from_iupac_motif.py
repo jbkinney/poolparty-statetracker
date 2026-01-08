@@ -222,7 +222,7 @@ class TestFromIupacMotifDesignCards:
             pool = from_iupac_motif('ACGT', op_name='motif').named('mypool')
         
         df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
-        assert 'mypool.op.key.iupac_state' in df.columns
+        assert 'motif.key.iupac_state' in df.columns
     
     def test_design_card_keys_defined(self):
         """design_card_keys is defined correctly."""

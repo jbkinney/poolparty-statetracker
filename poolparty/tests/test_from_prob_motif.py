@@ -231,7 +231,7 @@ class TestFromProbMotifDesignCards:
             pool = from_prob_motif(prob_df, op_name='motif').named('mypool')
         
         df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
-        assert 'mypool.op.key.prob_state' in df.columns
+        assert 'motif.key.prob_state' in df.columns
     
     def test_prob_state_is_indices(self):
         """Test that prob_state contains indices."""
@@ -241,7 +241,7 @@ class TestFromProbMotifDesignCards:
             pool = from_prob_motif(prob_df, op_name='motif').named('mypool')
         
         df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
-        prob_state = df['mypool.op.key.prob_state'].iloc[0]
+        prob_state = df['motif.key.prob_state'].iloc[0]
         assert prob_state == [0, 0]
     
     def test_design_card_keys_defined(self):

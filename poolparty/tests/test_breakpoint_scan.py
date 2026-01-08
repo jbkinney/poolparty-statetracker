@@ -291,7 +291,7 @@ class TestBreakpointScanDesignCards:
             left = left.named('left')
         
         df = left.generate_library(num_seqs=3, report_design_cards=True)
-        assert 'left.op.key.breakpoints' in df.columns
+        assert 'split.key.breakpoints' in df.columns
     
     def test_breakpoints_values(self):
         """Test breakpoint values are correct."""
@@ -303,7 +303,7 @@ class TestBreakpointScanDesignCards:
         df = left.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[right])
         
         for _, row in df.iterrows():
-            breakpoints = row['right.op.key.breakpoints']
+            breakpoints = row['split.key.breakpoints']
             # Breakpoint value should equal length of left segment
             assert breakpoints[0] == len(row['seq'])
 
@@ -445,7 +445,7 @@ class TestBreakpointScanCustomName:
             left = left.named('left')
         
         df = left.generate_library(num_seqs=1, report_design_cards=True)
-        assert 'left.op.key.breakpoints' in df.columns
+        assert 'split.key.breakpoints' in df.columns
 
 
 class TestBreakpointScanSpacing:
@@ -469,7 +469,7 @@ class TestBreakpointScanSpacing:
         
         # Verify all generated combinations have spacing >= 3
         for _, row in df.iterrows():
-            breakpoints = row['seg2.op.key.breakpoints']
+            breakpoints = row['split.key.breakpoints']
             assert len(breakpoints) == 2
             spacing = breakpoints[1] - breakpoints[0]
             assert spacing >= 3
@@ -491,7 +491,7 @@ class TestBreakpointScanSpacing:
         
         # Verify all generated combinations have spacing <= 2
         for _, row in df.iterrows():
-            breakpoints = row['seg2.op.key.breakpoints']
+            breakpoints = row['split.key.breakpoints']
             assert len(breakpoints) == 2
             spacing = breakpoints[1] - breakpoints[0]
             assert spacing <= 2
@@ -512,7 +512,7 @@ class TestBreakpointScanSpacing:
         
         # Verify all generated combinations have 2 <= spacing <= 4
         for _, row in df.iterrows():
-            breakpoints = row['seg2.op.key.breakpoints']
+            breakpoints = row['split.key.breakpoints']
             spacing = breakpoints[1] - breakpoints[0]
             assert 2 <= spacing <= 4
     
@@ -566,7 +566,7 @@ class TestBreakpointScanSpacing:
         
         # All random samples should satisfy spacing constraints
         for _, row in df.iterrows():
-            breakpoints = row['seg2.op.key.breakpoints']
+            breakpoints = row['split.key.breakpoints']
             spacing = breakpoints[1] - breakpoints[0]
             assert spacing >= 3
     
@@ -587,7 +587,7 @@ class TestBreakpointScanSpacing:
         
         # Verify all spacings are within constraints
         for _, row in df.iterrows():
-            breakpoints = row['seg3.op.key.breakpoints']
+            breakpoints = row['split.key.breakpoints']
             assert len(breakpoints) == 3
             for i in range(len(breakpoints) - 1):
                 spacing = breakpoints[i + 1] - breakpoints[i]

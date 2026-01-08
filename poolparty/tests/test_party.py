@@ -227,9 +227,9 @@ class TestDesignCards:
         
         df = mutants.generate_library(num_seqs=3, report_design_cards=True)
         
-        assert 'mutant.op.key.positions' in df.columns
-        assert 'mutant.op.key.wt_chars' in df.columns
-        assert 'mutant.op.key.mut_chars' in df.columns
+        assert 'mutate.key.positions' in df.columns
+        assert 'mutate.key.wt_chars' in df.columns
+        assert 'mutate.key.mut_chars' in df.columns
     
     def test_from_seqs_metadata(self):
         """Test that from_seqs includes name and index metadata."""
@@ -238,9 +238,9 @@ class TestDesignCards:
         
         df = pool.generate_library(num_seqs=2, report_design_cards=True)
         
-        assert 'myseq.op.key.seq_name' in df.columns
-        assert 'myseq.op.key.seq_index' in df.columns
-        assert list(df['myseq.op.key.seq_name']) == ['seq_a', 'seq_b']
+        assert 'seqs.key.seq_name' in df.columns
+        assert 'seqs.key.seq_index' in df.columns
+        assert list(df['seqs.key.seq_name']) == ['seq_a', 'seq_b']
 
 
 class TestSeqSliceOp:

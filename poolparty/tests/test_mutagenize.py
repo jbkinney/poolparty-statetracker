@@ -305,9 +305,9 @@ class TestMutagenizeRandomModeWithRate:
         
         for _, row in df.iterrows():
             mutant = row['seq']
-            positions = row['mutant.op.key.positions']
-            wt_chars = row['mutant.op.key.wt_chars']
-            mut_chars = row['mutant.op.key.mut_chars']
+            positions = row['mutate.key.positions']
+            wt_chars = row['mutate.key.wt_chars']
+            mut_chars = row['mutate.key.mut_chars']
             
             # Check that mutations differ from wild-type
             for pos, wt, mut in zip(positions, wt_chars, mut_chars):
@@ -378,14 +378,14 @@ class TestMutagenizeRateStatistics:
     def test_zero_mutations_possible(self):
         """Low mutation_rate can produce zero mutations."""
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGTACGT', mutation_rate=0.001, mode='random').named('mutant')
+            pool = mutagenize('ACGTACGTACGT', mutation_rate=0.001, mode='random', op_name='mutate').named('mutant')
         
         df = pool.generate_library(num_seqs=100, seed=42, report_design_cards=True)
         
         # With very low rate, some sequences should have zero mutations
         zero_mut_count = 0
         for _, row in df.iterrows():
-            positions = row['mutant.op.key.positions']
+            positions = row['mutate.key.positions']
             if len(positions) == 0:
                 zero_mut_count += 1
         
@@ -399,13 +399,13 @@ class TestMutagenizeRateStatistics:
         num_samples = 1000
         
         with pp.Party() as party:
-            pool = mutagenize('A' * seq_len, mutation_rate=mutation_rate, mode='random').named('mutant')
+            pool = mutagenize('A' * seq_len, mutation_rate=mutation_rate, mode='random', op_name='mutate').named('mutant')
         
         df = pool.generate_library(num_seqs=num_samples, seed=42, report_design_cards=True)
         
         total_mutations = 0
         for _, row in df.iterrows():
-            positions = row['mutant.op.key.positions']
+            positions = row['mutate.key.positions']
             total_mutations += len(positions)
         
         avg_mutations = total_mutations / num_samples
@@ -420,13 +420,13 @@ class TestMutagenizeRateStatistics:
         seq_len = 50
         
         with pp.Party() as party:
-            pool = mutagenize('A' * seq_len, mutation_rate=mutation_rate, mode='random').named('mutant')
+            pool = mutagenize('A' * seq_len, mutation_rate=mutation_rate, mode='random', op_name='mutate').named('mutant')
         
         df = pool.generate_library(num_seqs=100, seed=42, report_design_cards=True)
         
         total_mutations = 0
         for _, row in df.iterrows():
-            positions = row['mutant.op.key.positions']
+            positions = row['mutate.key.positions']
             total_mutations += len(positions)
         
         avg_mutations = total_mutations / 100
@@ -512,7 +512,7 @@ class TestMutagenizeDesignCards:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
         df = pool.generate_library(num_seqs=4, report_design_cards=True)
-        assert 'mutant.op.key.positions' in df.columns
+        assert 'mutate.key.positions' in df.columns
     
     def test_wt_chars_in_output(self):
         """Design card contains 'wt_chars' column."""
@@ -520,7 +520,7 @@ class TestMutagenizeDesignCards:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
         df = pool.generate_library(num_seqs=4, report_design_cards=True)
-        assert 'mutant.op.key.wt_chars' in df.columns
+        assert 'mutate.key.wt_chars' in df.columns
     
     def test_mut_chars_in_output(self):
         """Design card contains 'mut_chars' column."""
@@ -528,7 +528,7 @@ class TestMutagenizeDesignCards:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
         
         df = pool.generate_library(num_seqs=4, report_design_cards=True)
-        assert 'mutant.op.key.mut_chars' in df.columns
+        assert 'mutate.key.mut_chars' in df.columns
     
     def test_design_card_consistency_with_num(self):
         """Design card values match actual mutations in sequence (num_mutations)."""
@@ -539,9 +539,9 @@ class TestMutagenizeDesignCards:
         
         for _, row in df.iterrows():
             mutant = row['seq']
-            positions = row['mutant.op.key.positions']
-            wt_chars = row['mutant.op.key.wt_chars']
-            mut_chars = row['mutant.op.key.mut_chars']
+            positions = row['mutate.key.positions']
+            wt_chars = row['mutate.key.wt_chars']
+            mut_chars = row['mutate.key.mut_chars']
             
             # Verify the mutation is at the stated position
             for pos, wt, mut in zip(positions, wt_chars, mut_chars):
@@ -557,9 +557,9 @@ class TestMutagenizeDesignCards:
         
         for _, row in df.iterrows():
             mutant = row['seq']
-            positions = row['mutant.op.key.positions']
-            wt_chars = row['mutant.op.key.wt_chars']
-            mut_chars = row['mutant.op.key.mut_chars']
+            positions = row['mutate.key.positions']
+            wt_chars = row['mutate.key.wt_chars']
+            mut_chars = row['mutate.key.mut_chars']
             
             # Verify the mutation is at the stated position
             for pos, wt, mut in zip(positions, wt_chars, mut_chars):
@@ -578,9 +578,9 @@ class TestMutagenizeMutationMap:
         df = pool.generate_library(num_cycles=1, report_design_cards=True)
         
         for _, row in df.iterrows():
-            positions = row['mutant.op.key.positions']
-            wt_chars = row['mutant.op.key.wt_chars']
-            mut_chars = row['mutant.op.key.mut_chars']
+            positions = row['mutate.key.positions']
+            wt_chars = row['mutate.key.wt_chars']
+            mut_chars = row['mutate.key.mut_chars']
             
             for wt, mut in zip(wt_chars, mut_chars):
                 assert wt != mut
@@ -681,9 +681,9 @@ class TestMutagenizeCustomName:
             pool = mutagenize('ACGT', num_mutations=1, op_name='mutants').named('mypool')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        assert 'mypool.op.key.positions' in df.columns
-        assert 'mypool.op.key.wt_chars' in df.columns
-        assert 'mypool.op.key.mut_chars' in df.columns
+        assert 'mutants.key.positions' in df.columns
+        assert 'mutants.key.wt_chars' in df.columns
+        assert 'mutants.key.mut_chars' in df.columns
 
 
 class TestMutagenizeHybridModeWithNum:
@@ -746,13 +746,13 @@ class TestMutagenizeMarkChanges:
     def test_mark_changes_with_rate(self):
         """mark_changes works with mutation_rate."""
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', mutation_rate=0.5, mark_changes=True).named('mutant')
+            pool = mutagenize('ACGTACGT', mutation_rate=0.5, mark_changes=True, op_name='mutate').named('mutant')
         
         df = pool.generate_library(num_seqs=50, seed=42, report_design_cards=True)
         # Check that mutations produce lowercase chars
         for _, row in df.iterrows():
             seq = row['seq']
-            positions = row['mutant.op.key.positions']
+            positions = row['mutate.key.positions']
             lowercase_count = sum(1 for c in seq if c.islower())
             assert lowercase_count == len(positions)
     
