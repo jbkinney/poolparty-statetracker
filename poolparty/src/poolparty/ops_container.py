@@ -74,6 +74,10 @@ class OpsContainer:
         from .fixed_ops.clear_gap_chars import clear_gap_chars
         return clear_gap_chars(pool=self.pool, region=region, **kwargs)
     
+    def clear_annotation(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+        from .fixed_ops.clear_annotation import clear_annotation
+        return clear_annotation(pool=self.pool, region=region, **kwargs)
+    
     #########################################################################
     # State operation convenience methods
     #########################################################################
@@ -152,3 +156,4 @@ class OpsContainer:
         )
         result._markers = set()
         return result
+
