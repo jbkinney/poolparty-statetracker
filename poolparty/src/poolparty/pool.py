@@ -264,6 +264,7 @@ class Pool:
         pad_names: bool = True,
         seed: Optional[Integral] = None,
         highlights: Optional[Sequence] = None,
+        show_highlights: bool = True,
     ) -> Pool_type:
         """Print preview sequences from this pool; returns self for chaining.
         
@@ -277,7 +278,13 @@ class Pool:
             pad_names: Whether to pad names to align sequences.
             seed: Random seed for reproducibility.
             highlights: List of Highlighter objects to apply to sequences.
+                        If None, uses party's global highlights (set via add_highlight()).
+            show_highlights: Whether to apply highlighting to sequences.
         """
+        # Use party's global highlights if none provided
+        if highlights is None:
+            highlights = self._party._highlights
+        
         if num_seqs is None and num_cycles is None:
             num_cycles = 1
         df = self.generate_library(
@@ -317,7 +324,7 @@ class Pool:
                     row_parts.append(f"{row['name']}")
             if show_seq:
                 seq = row['seq']
-                if highlights:
+                if show_highlights and highlights:
                     from .seq_highlighter import apply_highlights
                     seq = apply_highlights(seq, highlights)
                 row_parts.append(seq)

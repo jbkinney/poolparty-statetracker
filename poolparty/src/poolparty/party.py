@@ -82,6 +82,8 @@ class Party:
         self._codon_table: CodonTable = CodonTable(genetic_code)
         # Default parameter values for operations
         self._defaults: dict[str, Any] = {}
+        # Global highlights for print_library()
+        self._highlights: list = []
     
     def _get_next_pool_id(self) -> int:
         """Get the next unique pool ID."""
