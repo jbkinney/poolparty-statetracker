@@ -106,6 +106,7 @@ def insertion_scan(
         op_iter_order=op_iter_order,
         _factory_name=f'{_factory_name}(marker_scan)',
     )
+    marked = marked.named(f'{marked.name}:{_factory_name}(intermediate)')
 
     # 2. Replace marker with content (spacer_str is handled by replace_marker_content)
     return replace_marker_content(

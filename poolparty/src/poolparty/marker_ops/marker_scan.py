@@ -122,7 +122,7 @@ def _validate_positions(positions: PositionsType, max_position: int, min_positio
 class MarkerScanOp(Operation):
     """Insert XML markers at scanning positions."""
     factory_name = "marker_scan"
-    design_card_keys = ['position', 'strand', 'marker_tag']
+    design_card_keys = ['position_index', 'start', 'stop', 'length', 'region_name', 'region_content', 'strand', 'region_seq']
     
     def __init__(
         self,
@@ -317,13 +317,31 @@ class MarkerScanOp(Operation):
                 for i in range(nonmarker_idx, nonmarker_idx + self._marker_length)
             )
             marker_tag = build_marker_tag(self.marker_name, content, strand, explicit_strand=explicit_strand)
+            start = nonmarker_idx
+            stop = nonmarker_idx + self._marker_length
+            # Get raw sequence from literal start to end (including markers/gaps, excluding new marker_tag)
+            start_literal = nonmarker_positions[nonmarker_idx]
+            end_nonmarker_idx = nonmarker_idx + self._marker_length
+            if end_nonmarker_idx < len(nonmarker_positions):
+                end_literal = nonmarker_positions[end_nonmarker_idx]
+            else:
+                end_literal = nonmarker_positions[-1] + 1 if nonmarker_positions else len(seq)
+            marked_seq = seq[start_literal:end_literal]
         else:
             marker_tag = build_marker_tag(self.marker_name, '', strand, explicit_strand=explicit_strand)
+            start = nonmarker_idx
+            stop = nonmarker_idx
+            marked_seq = ''
         
         return {
-            'position': position_index,
+            'position_index': position_index,
+            'start': start,
+            'stop': stop,
+            'length': self._marker_length,
+            'region_name': self.marker_name,
+            'region_content': marked_seq,
             'strand': strand,
-            'marker_tag': marker_tag,
+            'region_seq': marker_tag,
         }
     
     def compute_seq_from_card(
@@ -333,8 +351,8 @@ class MarkerScanOp(Operation):
     ) -> dict:
         """Insert marker at position based on design card."""
         seq = parent_seqs[0]
-        position_index = card['position']
-        marker_tag = card['marker_tag']
+        position_index = card['position_index']
+        marker_tag = card['region_seq']
         
         valid_indices, nonmarker_positions = self._get_valid_marker_positions(seq)
         nonmarker_idx = valid_indices[position_index]

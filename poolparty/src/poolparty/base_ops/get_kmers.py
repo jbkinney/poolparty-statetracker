@@ -84,7 +84,7 @@ def get_kmers(
 class GetKmersOp(Operation):
     """Generate k-mers from an alphabet."""
     factory_name = "get_kmers"
-    design_card_keys = ['kmer_index']
+    design_card_keys = ['kmer_index', 'kmer']
     
     def __init__(
         self,
@@ -140,11 +140,35 @@ class GetKmersOp(Operation):
             num_states = 1
         
         parent_pools = [pool] if pool is not None else []
+        
+        # Compute seq_length: kmer length when standalone, adjusted when replacing region
+        if pool is None:
+            seq_length = length
+        else:
+            parent_seq_length = pool.seq_length
+            # Determine region length
+            if isinstance(region, str):
+                # Marker name - get length from registered marker
+                try:
+                    marker = party.get_marker_by_name(region)
+                    region_length = marker.seq_length
+                except (ValueError, KeyError):
+                    region_length = None
+            else:
+                # Interval [start, stop]
+                region_length = region[1] - region[0] if region is not None else None
+            
+            # Compute output seq_length (None if any component is None)
+            if parent_seq_length is None or region_length is None:
+                seq_length = None
+            else:
+                seq_length = parent_seq_length - region_length + length
+        
         super().__init__(
             parent_pools=parent_pools,
             num_states=num_states,
             mode=mode,
-            seq_length=length,
+            seq_length=seq_length,
             name=name,
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
@@ -182,7 +206,8 @@ class GetKmersOp(Operation):
             # Use state 0 when inactive (state is None)
             idx = self.counter.state
             idx = 0 if idx is None else idx
-            return {'kmer_index': idx}
+            kmer = self._state_to_kmer(idx)
+            return {'kmer_index': idx, 'kmer': kmer}
     
     def compute_seq_from_card(
         self,
