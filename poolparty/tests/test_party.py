@@ -5,13 +5,13 @@ Pool operators now work on Counters:
 - pool * n: Repeat (repeat states n times)
 - pool[start:stop]: State slice (select subset of states)
 
-For sequence operations, use join(), seq_slice(), etc.
+For sequence operations, use join(), slice_seq(), etc.
 """
 
 import pytest
 import poolparty as pp
 from poolparty import join
-from poolparty.fixed_ops.seq_slice import seq_slice
+from poolparty.fixed_ops.slice_seq import slice_seq
 from poolparty.state_ops.stack import stack, StackOp
 import statecounter as sc
 
@@ -243,50 +243,50 @@ class TestDesignCards:
         assert list(df['seqs.key.seq_name']) == ['seq_a', 'seq_b']
 
 
-class TestSeqSliceOp:
-    """Test sequence slicing operations using seq_slice()."""
+class TestSliceSeqOp:
+    """Test sequence slicing operations using slice_seq()."""
     
-    def test_seq_slice_with_range(self):
+    def test_slice_seq_with_range(self):
         """Test sequence slicing with a range."""
         with pp.Party() as party:
             pool = pp.from_seqs(['ACGTACGT'])
-            sliced = seq_slice(pool, slice(0, 4)).named('sliced')
+            sliced = slice_seq(pool, slice(0, 4)).named('sliced')
         
         df = sliced.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ACGT'
     
-    def test_seq_slice_negative_index(self):
+    def test_slice_seq_negative_index(self):
         """Test sequence slicing with negative index."""
         with pp.Party() as party:
             pool = pp.from_seqs(['ACGTACGT'])
-            last = seq_slice(pool, -1).named('last')
+            last = slice_seq(pool, -1).named('last')
         
         df = last.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'T'
     
-    def test_seq_slice_with_step(self):
+    def test_slice_seq_with_step(self):
         """Test sequence slicing with step."""
         with pp.Party() as party:
             pool = pp.from_seqs(['ABCDEFGH'])
-            every_other = seq_slice(pool, slice(None, None, 2)).named('every_other')
+            every_other = slice_seq(pool, slice(None, None, 2)).named('every_other')
         
         df = every_other.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'ACEG'
     
-    def test_seq_slice_reverse(self):
+    def test_slice_seq_reverse(self):
         """Test reversing a sequence with slice."""
         with pp.Party() as party:
             pool = pp.from_seqs(['ACGT'])
-            reversed_seq = seq_slice(pool, slice(None, None, -1)).named('reversed')
+            reversed_seq = slice_seq(pool, slice(None, None, -1)).named('reversed')
         
         df = reversed_seq.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'TGCA'
     
-    def test_seq_slice_with_mutation(self):
-        """Test combining seq_slice with mutation."""
+    def test_slice_seq_with_mutation(self):
+        """Test combining slice_seq with mutation."""
         with pp.Party() as party:
             pool = pp.from_seqs(['ACGTACGT'])
-            first_half = seq_slice(pool, slice(0, 4))
+            first_half = slice_seq(pool, slice(0, 4))
             mutated = pp.mutagenize(first_half, num_mutations=1, mode='sequential').named('mutated')
         
         df = mutated.generate_library(num_seqs=3)
@@ -433,12 +433,12 @@ class TestDefaultParameters:
         lowercase_count = sum(1 for c in seq if c.islower())
         assert lowercase_count == 0
     
-    def test_from_iupac_motif_uses_party_default_with_region(self):
-        """Test that from_iupac_motif uses party default for mark_changes when region is specified."""
+    def test_from_iupac_uses_party_default_with_region(self):
+        """Test that from_iupac uses party default for mark_changes when region is specified."""
         with pp.Party() as party:
             party.set_default('mark_changes', True)
             bg = 'AAA<region>XX</region>TTT'
-            pool = pp.from_iupac_motif('NN', bg_pool=bg, region='region', mode='sequential')
+            pool = pp.from_iupac('NN', bg_pool=bg, region='region', mode='sequential')
         
         df = pool.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
@@ -448,12 +448,12 @@ class TestDefaultParameters:
         insert = seq[3:5]
         assert insert == insert.lower()
     
-    def test_from_iupac_motif_explicit_overrides_default(self):
-        """Test that explicit mark_changes overrides party default for from_iupac_motif."""
+    def test_from_iupac_explicit_overrides_default(self):
+        """Test that explicit mark_changes overrides party default for from_iupac."""
         with pp.Party() as party:
             party.set_default('mark_changes', True)
             # Explicitly set mark_changes=False
-            pool = pp.from_iupac_motif('ACGN', mode='sequential', mark_changes=False)
+            pool = pp.from_iupac('ACGN', mode='sequential', mark_changes=False)
         
         df = pool.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
@@ -466,7 +466,7 @@ class TestDefaultParameters:
         pp.set_default('mark_changes', True)
         
         bg = 'AAA<region>XX</region>TTT'
-        pool = pp.from_iupac_motif('NN', bg_pool=bg, region='region', mode='sequential')
+        pool = pp.from_iupac('NN', bg_pool=bg, region='region', mode='sequential')
         df = pool.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
         # With region and mark_changes=True, insert should be lowercase
@@ -506,7 +506,7 @@ class TestDefaultParameters:
         pp.load_defaults(str(toml_file))
         
         bg = 'AAA<region>XX</region>TTT'
-        pool = pp.from_iupac_motif('NN', bg_pool=bg, region='region', mode='sequential')
+        pool = pp.from_iupac('NN', bg_pool=bg, region='region', mode='sequential')
         df = pool.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]
         # With region and mark_changes=True, insert should be lowercase

@@ -1,4 +1,4 @@
-"""FromIupacMotif operation - generate DNA sequences from IUPAC notation."""
+"""FromIupac operation - generate DNA sequences from IUPAC notation."""
 from numbers import Real
 from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
 from ..operation import Operation
@@ -8,7 +8,7 @@ import numpy as np
 
 
 @beartype
-def from_iupac_motif(
+def from_iupac(
     iupac_seq: str,
     bg_pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
@@ -66,7 +66,7 @@ def from_iupac_motif(
     """
     from ..fixed_ops.from_seq import from_seq
     bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
-    op = FromIupacMotifOp(
+    op = FromIupacOp(
         iupac_seq=iupac_seq,
         bg_pool=bg_pool_obj,
         region=region,
@@ -84,9 +84,9 @@ def from_iupac_motif(
 
 
 @beartype
-class FromIupacMotifOp(Operation):
+class FromIupacOp(Operation):
     """Generate DNA sequences from IUPAC notation."""
-    factory_name = "from_iupac_motif"
+    factory_name = "from_iupac"
     design_card_keys = ['iupac_state']
 
     def __init__(
@@ -103,12 +103,12 @@ class FromIupacMotifOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
-        """Initialize FromIupacMotifOp."""
+        """Initialize FromIupacOp."""
         from ..party import get_active_party
         party = get_active_party()
         if party is None:
             raise RuntimeError(
-                "from_iupac_motif requires an active Party context. "
+                "from_iupac requires an active Party context. "
                 "Use 'with pp.Party() as party:' to create one."
             )
         

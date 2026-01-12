@@ -27,7 +27,7 @@ def apply_at_marker(
         Name of the marker whose content to transform.
     transform_fn : Callable[[Pool], Pool]
         Function that takes a Pool and returns a transformed Pool.
-        Examples: pp.reverse_complement, pp.shuffle_seq, lambda p: pp.mutagenize(p, ...)
+        Examples: pp.rc, pp.shuffle_seq, lambda p: pp.mutagenize(p, ...)
     remove_marker : bool, default=True
         If True, marker tags are removed from the result.
         If False, marker tags are preserved around the transformed content.
@@ -46,7 +46,7 @@ def apply_at_marker(
     >>> with pp.Party():
     ...     # Reverse complement a marked region (marker removed)
     ...     bg = pp.from_seq('ACGT<orf>ATGCCC</orf>TTTT')
-    ...     result = pp.apply_at_marker(bg, 'orf', pp.reverse_complement)
+    ...     result = pp.apply_at_marker(bg, 'orf', pp.rc)
     ...     # Result: 'ACGTGGGCATTTTT'
     ...
     ...     # Keep marker tags around transformed content

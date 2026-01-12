@@ -1,11 +1,11 @@
-"""SeqSlice operation - slice SEQUENCES (string slicing)."""
+"""SliceSeq operation - slice SEQUENCES (string slicing)."""
 from numbers import Real, Integral
 from ..types import Union, Optional, Sequence, beartype
 from ..pool import Pool
 
 
 @beartype
-def seq_slice(
+def slice_seq(
     pool: Pool,
     key: Union[Integral, slice],
     name: Optional[str] = None,
@@ -59,5 +59,5 @@ def seq_slice(
         op_name=op_name,
         iter_order=iter_order,
         op_iter_order=op_iter_order,
-        _factory_name='seq_slice',
+        _factory_name='slice_seq',
     )

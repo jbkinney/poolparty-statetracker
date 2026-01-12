@@ -340,11 +340,11 @@ class TestReplaceMarkerContent:
 class TestApplyAtMarker:
     """Test apply_at_marker operation."""
     
-    def test_apply_reverse_complement(self):
-        """Test applying reverse_complement at marker."""
+    def test_apply_rc(self):
+        """Test applying rc at marker."""
         with pp.Party():
             bg = pp.from_seq('ACGT<orf>ATGCCC</orf>TTTT')
-            result = pp.apply_at_marker(bg, 'orf', pp.reverse_complement)
+            result = pp.apply_at_marker(bg, 'orf', pp.rc)
         df = result.generate_library(num_seqs=1)
         # ATGCCC reverse complement = GGGCAT
         assert df['seq'].iloc[0] == 'ACGTGGGCATTTTT'
@@ -578,8 +578,8 @@ class TestMarkerClass:
             # Create pool with marker
             parent = pp.from_seq('AAA<orf>ATGCCC</orf>TTT')
             
-            # Create child pool (e.g., through reverse_complement)
-            child = pp.reverse_complement(parent)
+            # Create child pool (e.g., through rc)
+            child = pp.rc(parent)
             
             # Child should inherit markers
             assert child.has_marker('orf')
@@ -694,7 +694,7 @@ class TestIntegration:
             bg = pp.from_seq('AAAACGTACGTTTTT')  # 15 chars
             marked = pp.insert_marker(bg, 'target', start=4, stop=12)  # marks CGTACGTT
             # Apply transformation at marker
-            result = pp.apply_at_marker(marked, 'target', pp.reverse_complement)
+            result = pp.apply_at_marker(marked, 'target', pp.rc)
         
         df = result.generate_library(num_seqs=1)
         seq = df['seq'].iloc[0]

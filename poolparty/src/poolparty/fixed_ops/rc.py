@@ -1,4 +1,4 @@
-"""ReverseComplement operation - reverse complement a sequence."""
+"""rc operation - reverse complement a sequence."""
 from numbers import Real
 from ..types import Pool_type, Union, Optional, RegionType, beartype
 from ..pool import Pool
@@ -6,7 +6,7 @@ from ..marker_ops.parsing import reverse_complement_with_markers
 
 
 @beartype
-def reverse_complement(
+def rc(
     pool: Union[Pool_type, str],
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
@@ -64,5 +64,5 @@ def reverse_complement(
         op_name=op_name,
         iter_order=iter_order,
         op_iter_order=op_iter_order,
-        _factory_name='reverse_complement',
+        _factory_name='rc',
     )

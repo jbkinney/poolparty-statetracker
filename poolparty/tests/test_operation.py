@@ -421,12 +421,12 @@ class TestOperationCopy:
             
             assert copied_op.parent_pools == sliced.operation.parent_pools
     
-    def test_copy_seq_slice_op(self):
-        """Test copying SeqSliceOp."""
+    def test_copy_slice_seq_op(self):
+        """Test copying SliceSeqOp."""
         with pp.Party() as party:
-            from poolparty.fixed_ops.seq_slice import seq_slice
+            from poolparty.fixed_ops.slice_seq import slice_seq
             pool = pp.from_seqs(['ACGT'])
-            sliced = seq_slice(pool, slice(1, 3))
+            sliced = slice_seq(pool, slice(1, 3))
             copied_op = sliced.operation.copy()
             
             assert copied_op.parent_pools == sliced.operation.parent_pools

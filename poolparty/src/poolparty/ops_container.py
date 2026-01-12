@@ -39,12 +39,12 @@ class OpsContainer:
         return shuffle_seq(pool=self.pool, region=region, **kwargs)
     
     def insert_from_iupac(self, region: Optional[str] = None, **kwargs) -> Pool_type:
-        from .base_ops.from_iupac_motif import from_iupac_motif
-        return from_iupac_motif(pool=self.pool, region=region, **kwargs)
+        from .base_ops.from_iupac import from_iupac
+        return from_iupac(pool=self.pool, region=region, **kwargs)
     
     def insert_from_motif(self, region: Optional[str] = None, **kwargs) -> Pool_type:
-        from .base_ops.from_prob_motif import from_prob_motif
-        return from_prob_motif(pool=self.pool, region=region, **kwargs)
+        from .base_ops.from_motif import from_motif
+        return from_motif(pool=self.pool, region=region, **kwargs)
     
     def insert_kmers(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .base_ops.get_kmers import get_kmers
@@ -54,9 +54,9 @@ class OpsContainer:
     # Fixed operation convenience methods
     #########################################################################
     
-    def reverse_complement(self, region: Optional[str] = None, **kwargs) -> Pool_type:
-        from .fixed_ops.reverse_complement import reverse_complement
-        return reverse_complement(pool=self.pool, region=region, **kwargs)
+    def rc(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+        from .fixed_ops.rc import rc
+        return rc(pool=self.pool, region=region, **kwargs)
     
     def swapcase(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .fixed_ops.swapcase import swapcase
@@ -70,9 +70,9 @@ class OpsContainer:
         from .fixed_ops.lower import lower
         return lower(pool=self.pool, region=region, **kwargs)
     
-    def clear_gap_chars(self, region: Optional[str] = None, **kwargs) -> Pool_type:
-        from .fixed_ops.clear_gap_chars import clear_gap_chars
-        return clear_gap_chars(pool=self.pool, region=region, **kwargs)
+    def clear_gaps(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+        from .fixed_ops.clear_gaps import clear_gaps
+        return clear_gaps(pool=self.pool, region=region, **kwargs)
     
     def clear_annotation(self, region: Optional[str] = None, **kwargs) -> Pool_type:
         from .fixed_ops.clear_annotation import clear_annotation

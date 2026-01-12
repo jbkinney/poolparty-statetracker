@@ -1,4 +1,4 @@
-"""ClearGapChars operation - remove all gap/non-molecular characters from sequences."""
+"""ClearGaps operation - remove all gap/non-molecular characters from sequences."""
 from numbers import Real
 from ..types import Pool_type, Union, Optional, RegionType, beartype
 from ..pool import Pool
@@ -6,7 +6,7 @@ from ..marker_ops.parsing import TAG_PATTERN
 
 
 @beartype
-def clear_gap_chars(
+def clear_gaps(
     pool: Union[Pool_type, str],
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
@@ -79,5 +79,5 @@ def clear_gap_chars(
         op_name=op_name,
         iter_order=iter_order,
         op_iter_order=op_iter_order,
-        _factory_name='clear_gap_chars',
+        _factory_name='clear_gaps',
     )

@@ -5,7 +5,7 @@ Pool operators now work on Counters:
 - pool * n: Repeat (repeat states n times)
 - pool[start:stop]: State slice (select subset of states)
 
-For sequence operations, use join(), seq_slice(), etc.
+For sequence operations, use join(), slice_seq(), etc.
 """
 
 import pytest

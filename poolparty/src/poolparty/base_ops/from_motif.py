@@ -1,4 +1,4 @@
-"""FromProbMotif operation - generate sequences by sampling from a position probability matrix."""
+"""FromMotif operation - generate sequences by sampling from a position probability matrix."""
 from numbers import Real
 from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
 from ..operation import Operation
@@ -10,7 +10,7 @@ import pandas as pd
 
 
 @beartype
-def from_prob_motif(
+def from_motif(
     prob_df: pd.DataFrame,
     bg_pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
@@ -67,12 +67,12 @@ def from_prob_motif(
     """
     if mode not in ('random', 'hybrid'):
         raise ValueError(
-            f"from_prob_motif only supports mode='random' or mode='hybrid', got mode='{mode}'. "
+            f"from_motif only supports mode='random' or mode='hybrid', got mode='{mode}'. "
             "Sequential iteration is not available for probability-based sampling."
         )
     from ..fixed_ops.from_seq import from_seq
     bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
-    op = FromProbMotifOp(
+    op = FromMotifOp(
         prob_df=prob_df,
         bg_pool=bg_pool_obj,
         region=region,
@@ -90,9 +90,9 @@ def from_prob_motif(
 
 
 @beartype
-class FromProbMotifOp(Operation):
+class FromMotifOp(Operation):
     """Sample sequences from a position probability matrix."""
-    factory_name = "from_prob_motif"
+    factory_name = "from_motif"
     design_card_keys = ['prob_state']
 
     def __init__(
@@ -109,7 +109,7 @@ class FromProbMotifOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
-        """Initialize FromProbMotifOp."""
+        """Initialize FromMotifOp."""
         if mode == 'hybrid' and num_hybrid_states is None:
             raise ValueError("num_hybrid_states is required when mode='hybrid'")
 
@@ -117,7 +117,7 @@ class FromProbMotifOp(Operation):
         party = get_active_party()
         if party is None:
             raise RuntimeError(
-                "from_prob_motif requires an active Party context. "
+                "from_motif requires an active Party context. "
                 "Use 'with pp.Party() as party:' to create one."
             )
         

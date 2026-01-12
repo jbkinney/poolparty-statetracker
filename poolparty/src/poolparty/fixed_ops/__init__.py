@@ -3,19 +3,19 @@ from .fixed import fixed_operation, FixedOp
 from .from_seq import from_seq
 from .from_fasta import from_fasta
 from .join import join
-from .reverse_complement import reverse_complement
+from .rc import rc
 
 from .swapcase import swapcase
-from .seq_slice import seq_slice
+from .slice_seq import slice_seq
 from .upper import upper
 from .lower import lower
-from .clear_gap_chars import clear_gap_chars
+from .clear_gaps import clear_gaps
 from .clear_annotation import clear_annotation
 
 __all__ = [
     'fixed_operation', 'FixedOp',
-    'from_seq', 'from_fasta', 'join', 'reverse_complement',
-    'swapcase', 'seq_slice',
+    'from_seq', 'from_fasta', 'join', 'rc',
+    'swapcase', 'slice_seq',
     'upper', 'lower',
-    'clear_gap_chars', 'clear_annotation',
+    'clear_gaps', 'clear_annotation',
 ]
