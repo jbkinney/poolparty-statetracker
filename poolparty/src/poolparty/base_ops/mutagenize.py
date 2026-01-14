@@ -1,10 +1,11 @@
 """Mutagenize operation - apply mutations to a sequence."""
 from itertools import combinations
-from math import comb
+from math import comb, prod
 from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, beartype
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
+from ..alphabet import IUPAC_TO_DNA
 import numpy as np
 
 
@@ -13,6 +14,7 @@ def mutagenize(
     pool: Union[Pool, str],
     num_mutations: Optional[Integral] = None,
     mutation_rate: Optional[Real] = None,
+    allowed_chars: Optional[str] = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
@@ -38,6 +40,10 @@ def mutagenize(
         Fixed number of mutations to apply (mutually exclusive with mutation_rate).
     mutation_rate : Optional[Real], default=None
         Probability of mutation at each position (mutually exclusive with num_mutations).
+    allowed_chars : Optional[str], default=None
+        IUPAC string of same length as sequence, specifying allowed bases at each position.
+        Each character is an IUPAC code (A, C, G, T, R, Y, S, W, K, M, B, D, H, V, N).
+        Positions where only the wild-type is allowed are treated as non-mutable.
     region : Union[str, Sequence[Integral], None], default=None
         Region to mutagenize. Can be a marker name (str), explicit interval [start, stop],
         or None to mutagenize entire sequence. Positions are region-relative.
@@ -61,8 +67,7 @@ def mutagenize(
         Iteration order for the Pool.
     op_iter_order : Optional[Real], default=None
         Iteration order for the Operation.
-    _factory_name: Optional[str], default=None
-        Sets default name of the resulting operation
+
     Returns
     -------
     Pool
@@ -75,6 +80,7 @@ def mutagenize(
         pool=pool,
         num_mutations=num_mutations,
         mutation_rate=mutation_rate,
+        allowed_chars=allowed_chars,
         region=region,
         remove_marker=remove_marker,
         spacer_str=spacer_str,
@@ -110,6 +116,7 @@ class MutagenizeOp(Operation):
         pool: Pool,
         num_mutations: Optional[Integral] = None,
         mutation_rate: Optional[Real] = None,
+        allowed_chars: Optional[str] = None,
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         spacer_str: str = '',
@@ -156,6 +163,7 @@ class MutagenizeOp(Operation):
         
         self.num_mutations = num_mutations
         self.mutation_rate = mutation_rate
+        self.allowed_chars = allowed_chars
         # Resolve mark_changes from party defaults if not explicitly set
         if mark_changes is None:
             mark_changes = party.get_default('mark_changes', False)
@@ -164,6 +172,28 @@ class MutagenizeOp(Operation):
         self.alphabet = party.alphabet
         self.alpha_size = self.alphabet.size
         self._mode = mode
+        
+        # Validate and process allowed_chars if provided
+        self._allowed_bases_per_pos = None  # Will be set if allowed_chars is provided
+        self._mutation_counts_from_allowed = None  # Pre-computed mutation counts
+        if allowed_chars is not None:
+            invalid_chars = set()
+            allowed_bases_per_pos = []
+            mutation_counts = []
+            for char in allowed_chars.upper():
+                if char not in IUPAC_TO_DNA:
+                    invalid_chars.add(char)
+                else:
+                    bases = set(IUPAC_TO_DNA[char])
+                    allowed_bases_per_pos.append(bases)
+                    mutation_counts.append(len(bases) - 1)  # -1 for the wt
+            if invalid_chars:
+                raise ValueError(
+                    f"allowed_chars contains invalid IUPAC character(s): {sorted(invalid_chars)}. "
+                    f"Valid IUPAC characters are: {sorted(set(IUPAC_TO_DNA.keys()) - set('acgtryswkmbdhvn'))}"
+                )
+            self._allowed_bases_per_pos = allowed_bases_per_pos
+            self._mutation_counts_from_allowed = mutation_counts
         
         # Build mutation map: (wt_char, index) -> mut_char
         # Uses alphabet.mutation_map which maps char -> list of mutation targets
@@ -180,8 +210,6 @@ class MutagenizeOp(Operation):
         # Determine num_states based on mode
         if mode == 'sequential':
             # Sequential mode only available with num_mutations
-            # If seq_length is known, eagerly build cache assuming all chars are mutable
-            # This will be verified/rebuilt at runtime if actual mutable positions differ
             effective_length = self._seq_length
             # If seq_length is unknown but region is a marker, try to get marker's seq_length
             if effective_length is None and isinstance(region, str):
@@ -191,7 +219,19 @@ class MutagenizeOp(Operation):
                 except ValueError:
                     pass  # Marker not found, stay with None
             
-            if effective_length is not None:
+            # If allowed_chars is provided, use its length and pre-computed mutation counts
+            if self._mutation_counts_from_allowed is not None:
+                effective_length = len(self._mutation_counts_from_allowed)
+                # Filter to positions with at least 1 mutation option
+                mutable_counts = [c for c in self._mutation_counts_from_allowed if c > 0]
+                num_mutable = len(mutable_counts)
+                if num_mutable < num_mutations:
+                    raise ValueError(
+                        f"{num_mutations=} exceeds mutable positions={num_mutable}. "
+                        f"Cannot apply {num_mutations} mutations."
+                    )
+                num_states = self._build_caches(num_mutable, mutable_counts)
+            elif effective_length is not None:
                 if effective_length < num_mutations:
                     raise ValueError(
                         f"{num_mutations=} exceeds sequence length={effective_length}. "
@@ -218,61 +258,139 @@ class MutagenizeOp(Operation):
             spacer_str=spacer_str,
         )
     
-    def _build_caches(self, num_positions: int) -> int:
+    def _build_caches(self, num_positions: int, mutation_counts: Optional[list[int]] = None) -> int:
         """Build caches for sequential enumeration.
         
         Parameters
         ----------
         num_positions : int
             Number of mutable positions (valid alphabet characters only).
+        mutation_counts : Optional[list[int]]
+            Number of valid mutations per position. If None, uses uniform alpha_size-1.
         """
         if num_positions < self.num_mutations:
             raise ValueError(
                 f"num_mutations={self.num_mutations} exceeds mutable positions={num_positions}. "
                 f"Cannot apply {self.num_mutations} mutations."
             )
-        alpha_minus_1 = self.alpha_size - 1
-        num_combinations = comb(num_positions, self.num_mutations) * (alpha_minus_1 ** self.num_mutations)
-        num_mut_patterns = alpha_minus_1 ** self.num_mutations
-        cache = []
-        for positions in combinations(range(num_positions), self.num_mutations):
-            for mut_pattern in range(num_mut_patterns):
-                mut_indices = []
-                remaining = mut_pattern
-                for _ in range(self.num_mutations):
-                    mut_indices.append(remaining % alpha_minus_1)
-                    remaining //= alpha_minus_1
-                cache.append((positions, tuple(reversed(mut_indices))))
+        
+        if mutation_counts is None:
+            # Uniform case: each position has alpha_size - 1 mutations
+            alpha_minus_1 = self.alpha_size - 1
+            num_combinations = comb(num_positions, self.num_mutations) * (alpha_minus_1 ** self.num_mutations)
+            cache = []
+            for positions in combinations(range(num_positions), self.num_mutations):
+                num_mut_patterns = alpha_minus_1 ** self.num_mutations
+                for mut_pattern in range(num_mut_patterns):
+                    mut_indices = []
+                    remaining = mut_pattern
+                    for _ in range(self.num_mutations):
+                        mut_indices.append(remaining % alpha_minus_1)
+                        remaining //= alpha_minus_1
+                    cache.append((positions, tuple(reversed(mut_indices))))
+        else:
+            # Non-uniform case: each position has different number of mutations
+            cache = []
+            for positions in combinations(range(num_positions), self.num_mutations):
+                counts_for_positions = [mutation_counts[p] for p in positions]
+                num_mut_patterns = prod(counts_for_positions)
+                for mut_pattern in range(num_mut_patterns):
+                    mut_indices = []
+                    remaining = mut_pattern
+                    for count in counts_for_positions:
+                        mut_indices.append(remaining % count)
+                        remaining //= count
+                    cache.append((positions, tuple(mut_indices)))
+            num_combinations = len(cache)
+        
         self._sequential_cache = cache
         self._num_mutable_positions = num_positions
+        self._mutation_counts = tuple(mutation_counts) if mutation_counts else None
         return num_combinations
+    
+    def _get_position_mutations(self, seq: str, valid_char_positions: list[int]) -> tuple[list[int], list[list[str]]]:
+        """Get mutable positions and their valid mutation options.
+        
+        Returns a tuple of (mutable_logical_positions, mutation_options_per_position).
+        Positions where wt is the only allowed char are excluded.
+        
+        When allowed_chars is set, also validates that the input sequence has
+        allowed characters at each position.
+        """
+        mutable_positions = []
+        mutation_options = []
+        
+        for logical_pos, raw_pos in enumerate(valid_char_positions):
+            wt = seq[raw_pos]
+            wt_upper = wt.upper()
+            
+            if self._allowed_bases_per_pos is not None:
+                # Validate length
+                if len(self._allowed_bases_per_pos) != len(valid_char_positions):
+                    raise ValueError(
+                        f"allowed_chars length ({len(self._allowed_bases_per_pos)}) must match "
+                        f"sequence length ({len(valid_char_positions)})"
+                    )
+                # Get pre-computed allowed bases at this position
+                allowed_bases_upper = self._allowed_bases_per_pos[logical_pos]
+                
+                # Validate that wt is in the allowed set
+                if wt_upper not in allowed_bases_upper:
+                    raise ValueError(
+                        f"Sequence character '{wt}' at position {logical_pos} is not in "
+                        f"allowed_chars '{self.allowed_chars[logical_pos]}' (allowed: {sorted(allowed_bases_upper)})"
+                    )
+                
+                # Get mutation targets (allowed bases minus wt), preserving case
+                if wt.islower():
+                    valid_muts = [b.lower() for b in sorted(allowed_bases_upper) if b != wt_upper]
+                else:
+                    valid_muts = [b for b in sorted(allowed_bases_upper) if b != wt_upper]
+            else:
+                # No restriction: all non-wt bases are valid
+                valid_muts = self.alphabet.mutation_map[wt]
+            
+            if valid_muts:
+                mutable_positions.append(logical_pos)
+                mutation_options.append(valid_muts)
+        
+        return mutable_positions, mutation_options
     
     def _random_mutation(self, seq: str, rng: np.random.Generator) -> tuple:
         """Generate random mutation positions (logical) and characters."""
-        seq_len = self._get_effective_seq_length(seq)
         valid_char_positions = self._get_molecular_positions(seq)
+        
+        # Get mutable positions and their options (respects allowed_chars)
+        mutable_positions, mutation_options = self._get_position_mutations(seq, valid_char_positions)
+        num_mutable = len(mutable_positions)
+        
+        if num_mutable == 0:
+            return tuple(), tuple(), tuple()
         
         # Determine number of mutations
         if self.num_mutations is not None:
-            num_mut = self.num_mutations
+            num_mut = min(self.num_mutations, num_mutable)
         else:
             # Use binomial distribution based on mutation_rate
-            num_mut = rng.binomial(seq_len, self.mutation_rate)
+            num_mut = rng.binomial(num_mutable, self.mutation_rate)
             if num_mut == 0:
                 return tuple(), tuple(), tuple()
         
-        # Choose random logical positions (indices into valid_char_positions)
-        positions = tuple(sorted(rng.choice(seq_len, size=num_mut, replace=False)))
+        # Choose random positions from mutable positions
+        chosen_indices = sorted(rng.choice(num_mutable, size=num_mut, replace=False))
+        positions = tuple(mutable_positions[i] for i in chosen_indices)
         
         # Determine wild-type and mutant characters using raw positions
         wt_chars = []
         mut_chars = []
-        for logical_pos in positions:
+        for idx in chosen_indices:
+            logical_pos = mutable_positions[idx]
             raw_pos = valid_char_positions[logical_pos]
             wt = seq[raw_pos]
             wt_chars.append(wt)
-            mut_idx = rng.integers(0, self.alpha_size - 1)
-            mut = self._mutation_map[(wt, mut_idx)]
+            # Select randomly from position-specific options
+            opts = mutation_options[idx]
+            mut = opts[rng.integers(0, len(opts))]
             mut_chars.append(mut)
         
         return positions, tuple(wt_chars), tuple(mut_chars)
@@ -288,12 +406,14 @@ class MutagenizeOp(Operation):
         parent_seqs[0] is the region content when region is specified.
         """
         seq = parent_seqs[0]
-        
-        seq_len = self._get_effective_seq_length(seq)
         valid_char_positions = self._get_molecular_positions(seq)
         
-        if self.num_mutations is not None and self.num_mutations > seq_len:
-            raise ValueError(f"Cannot apply {self.num_mutations} mutations to sequence of length {seq_len}")
+        # Get mutable positions and their options (also validates allowed_chars compatibility)
+        mutable_positions, mutation_options = self._get_position_mutations(seq, valid_char_positions)
+        num_mutable = len(mutable_positions)
+        
+        if self.num_mutations is not None and self.num_mutations > num_mutable:
+            raise ValueError(f"Cannot apply {self.num_mutations} mutations: only {num_mutable} mutable positions")
         
         if self.mode in ('random', 'hybrid'):
             if rng is None:
@@ -301,27 +421,36 @@ class MutagenizeOp(Operation):
             positions, wt_chars, mut_chars = self._random_mutation(seq, rng)
         else:
             # Sequential mode (only available with num_mutations)
-            # Build or rebuild cache based on actual mutable positions
-            num_mutable = len(valid_char_positions)
-            if self._sequential_cache is None:
-                # First use - build cache
-                self._build_caches(num_mutable)
-                self.counter._num_states = len(self._sequential_cache)
-            elif self._num_mutable_positions != num_mutable:
-                # Actual mutable positions differ from cached - rebuild
-                self._build_caches(num_mutable)
-                self.counter._num_states = len(self._sequential_cache)
+            # When allowed_chars is set, cache is pre-built at init time with correct num_states
+            # Otherwise, build/rebuild cache based on actual mutable positions
+            if self._allowed_bases_per_pos is None:
+                # No allowed_chars - may need to build cache dynamically
+                if self._sequential_cache is None:
+                    self._build_caches(num_mutable)
+                    self._num_states = len(self._sequential_cache)
+                    self.counter._num_states = self._num_states
+                elif self._num_mutable_positions != num_mutable:
+                    self._build_caches(num_mutable)
+                    self._num_states = len(self._sequential_cache)
+                    self.counter._num_states = self._num_states
+            # With allowed_chars, cache was built at init - just use it
+            
             # Use state 0 when inactive (state is None)
             state = self.counter.state
             state = 0 if state is None else state
-            positions, mut_indices = self._sequential_cache[state % len(self._sequential_cache)]
+            rel_positions, mut_indices = self._sequential_cache[state % len(self._sequential_cache)]
+            
+            # Map relative positions back to logical positions
+            positions = tuple(mutable_positions[p] for p in rel_positions)
             wt_chars = []
             mut_chars = []
-            for logical_pos, mut_idx in zip(positions, mut_indices):
+            for rel_pos, mut_idx in zip(rel_positions, mut_indices):
+                logical_pos = mutable_positions[rel_pos]
                 raw_pos = valid_char_positions[logical_pos]
                 wt = seq[raw_pos]
                 wt_chars.append(wt)
-                mut = self._mutation_map[(wt, mut_idx)]
+                # Use position-specific mutation options
+                mut = mutation_options[rel_pos][mut_idx]
                 mut_chars.append(mut)
             wt_chars = tuple(wt_chars)
             mut_chars = tuple(mut_chars)
@@ -372,6 +501,7 @@ class MutagenizeOp(Operation):
             'pool': self.parent_pools[0],
             'num_mutations': self.num_mutations,
             'mutation_rate': self.mutation_rate,
+            'allowed_chars': self.allowed_chars,
             'region': self._region,
             'remove_marker': self._remove_marker,
             'spacer_str': self._spacer_str,

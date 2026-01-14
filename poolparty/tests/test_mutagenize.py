@@ -702,6 +702,165 @@ class TestMutagenizeHybridModeWithNum:
             assert pool.operation.num_states == 100
 
 
+class TestMutagenizeAllowedChars:
+    """Test allowed_chars parameter for position-specific mutation constraints."""
+    
+    def test_allowed_chars_basic(self):
+        """Test allowed_chars restricts mutations to specified bases."""
+        with pp.Party() as party:
+            # Only allow purines (R=AG) at all positions - sequence must be all purines
+            pool = mutagenize('AAGG', num_mutations=1, allowed_chars='RRRR', mode='sequential').named('mutant')
+        
+        df = pool.generate_library(num_cycles=1)
+        # Check that all mutant chars are purines (A or G)
+        for seq in df['seq']:
+            for i, (orig, mut) in enumerate(zip('AAGG', seq)):
+                if orig != mut:
+                    assert mut in 'AG', f"Position {i}: expected purine, got {mut}"
+    
+    def test_allowed_chars_pyrimidines_only(self):
+        """Test allowing only pyrimidines (Y=CT) at all positions."""
+        with pp.Party() as party:
+            # Sequence must be all pyrimidines to match Y constraint
+            pool = mutagenize('CCTT', num_mutations=1, allowed_chars='YYYY', mode='sequential').named('mutant')
+        
+        df = pool.generate_library(num_cycles=1)
+        for seq in df['seq']:
+            for i, (orig, mut) in enumerate(zip('CCTT', seq)):
+                if orig != mut:
+                    assert mut in 'CT', f"Position {i}: expected pyrimidine, got {mut}"
+    
+    def test_allowed_chars_position_specific(self):
+        """Test position-specific constraints."""
+        with pp.Party() as party:
+            # Use ACGT with position-specific IUPAC codes that include each wt
+            # Position 0: R (A,G) - wt=A is valid, can mutate to G
+            # Position 1: Y (C,T) - wt=C is valid, can mutate to T
+            # Position 2: S (G,C) - wt=G is valid, can mutate to C
+            # Position 3: W (A,T) - wt=T is valid, can mutate to A
+            pool = mutagenize('ACGT', num_mutations=1, allowed_chars='RYSW', mode='sequential').named('mutant')
+        
+        df = pool.generate_library(num_cycles=1)
+        # Each position has 1 mutation option, total = 4 states
+        assert len(df) == 4
+        seqs = set(df['seq'])
+        assert seqs == {'GCGT', 'ATGT', 'ACCT', 'ACGA'}
+    
+    def test_allowed_chars_with_n_is_default(self):
+        """Test that 'N' (all bases) is equivalent to no restriction."""
+        with pp.Party() as party:
+            pool1 = mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant1')
+        df1 = pool1.generate_library(num_cycles=1)
+        
+        with pp.Party() as party:
+            pool2 = mutagenize('ACGT', num_mutations=1, allowed_chars='NNNN', mode='sequential').named('mutant2')
+        df2 = pool2.generate_library(num_cycles=1)
+        
+        assert len(df1) == len(df2)
+        assert set(df1['seq']) == set(df2['seq'])
+    
+    def test_allowed_chars_random_mode(self):
+        """Test allowed_chars works in random mode."""
+        with pp.Party() as party:
+            # Use all-purine sequence for R constraint
+            pool = mutagenize('AGAG', num_mutations=1, allowed_chars='RRRR', mode='random').named('mutant')
+        
+        df = pool.generate_library(num_seqs=50, seed=42)
+        for seq in df['seq']:
+            for i, (orig, mut) in enumerate(zip('AGAG', seq)):
+                if orig != mut:
+                    assert mut in 'AG', f"Position {i}: expected purine, got {mut}"
+    
+    def test_allowed_chars_with_mutation_rate(self):
+        """Test allowed_chars works with mutation_rate."""
+        with pp.Party() as party:
+            # Use all-purine sequence for R constraint
+            pool = mutagenize('AGAGAGAG', mutation_rate=0.5, allowed_chars='RRRRRRRR', mode='random').named('mutant')
+        
+        df = pool.generate_library(num_seqs=50, seed=42)
+        for seq in df['seq']:
+            for i, (orig, mut) in enumerate(zip('AGAGAGAG', seq)):
+                if orig != mut:
+                    assert mut in 'AG', f"Position {i}: expected purine, got {mut}"
+    
+    def test_allowed_chars_sequential_state_count(self):
+        """Test that sequential mode calculates correct state count with allowed_chars."""
+        with pp.Party() as party:
+            # 'RRRR' at AAGG: R={A,G}, each position has 1 mutation option
+            # A->G (1), A->G (1), G->A (1), G->A (1)
+            # Total for k=1: 4 positions * 1 option = 4
+            pool = mutagenize('AAGG', num_mutations=1, allowed_chars='RRRR', mode='sequential').named('mutant')
+        
+        df = pool.generate_library(num_cycles=1)
+        assert len(df) == 4
+    
+    def test_allowed_chars_double_mutations(self):
+        """Test allowed_chars with num_mutations=2."""
+        with pp.Party() as party:
+            # 'RR': positions 0,1 allow A,G only
+            # wt=AG: pos0 A->G (1), pos1 G->A (1)
+            # k=2: C(2,2)*1*1 = 1 state
+            pool = mutagenize('AG', num_mutations=2, allowed_chars='RR', mode='sequential').named('mutant')
+        
+        df = pool.generate_library(num_cycles=1)
+        assert len(df) == 1
+        assert df['seq'].iloc[0] == 'GA'
+    
+    def test_allowed_chars_invalid_iupac_error(self):
+        """Test that invalid IUPAC characters raise an error."""
+        with pp.Party() as party:
+            with pytest.raises(ValueError, match="invalid IUPAC"):
+                mutagenize('ACGT', num_mutations=1, allowed_chars='XXXX')
+    
+    def test_allowed_chars_length_mismatch_error(self):
+        """Test that length mismatch raises an error."""
+        with pp.Party() as party:
+            pool = mutagenize('ACGT', num_mutations=1, allowed_chars='NN', mode='sequential').named('mutant')
+            with pytest.raises(ValueError, match="length"):
+                pool.generate_library(num_cycles=1)
+    
+    def test_allowed_chars_in_copy_params(self):
+        """Test allowed_chars is included in _get_copy_params."""
+        with pp.Party() as party:
+            pool = mutagenize('AAGG', num_mutations=1, allowed_chars='RRRR')
+            params = pool.operation._get_copy_params()
+        assert params['allowed_chars'] == 'RRRR'
+    
+    def test_allowed_chars_skip_non_mutable_positions(self):
+        """Test that positions with no valid mutations are skipped."""
+        with pp.Party() as party:
+            # Position 0: only A allowed, wt=A, no valid mutations -> skip
+            # Position 1: N allowed, wt=C, valid mutations: A,G,T
+            pool = mutagenize('AC', num_mutations=1, allowed_chars='AN', mode='sequential').named('mutant')
+        
+        df = pool.generate_library(num_cycles=1)
+        # Only position 1 is mutable with 3 options
+        assert len(df) == 3
+        seqs = set(df['seq'])
+        assert seqs == {'AA', 'AG', 'AT'}
+    
+    def test_allowed_chars_lowercase_sequence(self):
+        """Test allowed_chars with lowercase input sequence."""
+        with pp.Party() as party:
+            # Use all-purine lowercase sequence
+            pool = mutagenize('agag', num_mutations=1, allowed_chars='RRRR', mode='sequential').named('mutant')
+        
+        df = pool.generate_library(num_cycles=1)
+        # Mutant chars should be lowercase (preserving case)
+        for seq in df['seq']:
+            for i, (orig, mut) in enumerate(zip('agag', seq)):
+                if orig != mut:
+                    assert mut in 'ag', f"Position {i}: expected lowercase purine, got {mut}"
+    
+    def test_allowed_chars_validation_error(self):
+        """Test that incompatible sequence raises validation error."""
+        with pp.Party() as party:
+            # R={A,G}, but sequence has C which is not in R
+            pool = mutagenize('ACGT', num_mutations=1, allowed_chars='RRRR', mode='random').named('mutant')
+            with pytest.raises(ValueError, match="not in allowed_chars"):
+                pool.generate_library(num_seqs=1, seed=42)
+
+
 class TestMutagenizeMarkChanges:
     """Test mark_changes parameter."""
     
