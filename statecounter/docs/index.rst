@@ -5,6 +5,22 @@ StateCounter Documentation
 unidirectional state propagation. It provides a powerful way to enumerate
 combinatorial spaces through counter algebra operations.
 
+Why StateCounter?
+-----------------
+
+StateCounter was developed to support the design of complex DNA sequence 
+libraries (see `PoolParty <https://github.com/jkinney/poolparty>`_), but it 
+solves a general problem: **random access to combinatorial spaces**.
+
+If you've ever written nested loops to enumerate a Cartesian product and then 
+wished you could shuffle the order, sample a subset, or split into train/test 
+sets—all while tracking which component indices correspond to each item—
+StateCounter is for you. Build your combinatorial structure once using counter 
+algebra, and StateCounter handles the index math automatically.
+
+See the :doc:`motivation` page for a detailed explanation of the problem 
+StateCounter solves.
+
 .. code-block:: python
 
     from statecounter import Counter, Manager, product
@@ -16,6 +32,17 @@ combinatorial spaces through counter algebra operations.
         
         for state in C:
             print(f"C={state}, A={A.state}, B={B.state}")
+
+Output:
+
+.. code-block:: text
+
+    C=0, A=0, B=0
+    C=1, A=1, B=0
+    C=2, A=0, B=1
+    C=3, A=1, B=1
+    C=4, A=0, B=2
+    C=5, A=1, B=2
 
 Features
 --------
@@ -79,6 +106,21 @@ Create counters and combine them to enumerate a combinatorial space:
             else:
                 print(f"Treatment sample {treatment.state}")
 
+Output:
+
+.. code-block:: text
+
+    Treatment sample 2
+    Control sample 3
+    Control sample 2
+    Treatment sample 3
+    Treatment sample 0
+    Treatment sample 1
+    Treatment sample 4
+    Control sample 4
+    Control sample 0
+    Control sample 1
+
 Contents
 --------
 
@@ -86,9 +128,11 @@ Contents
    :maxdepth: 2
    :caption: User Guide
 
+   motivation
    quickstart
    concepts
    operations
+   alternatives
 
 .. toctree::
    :maxdepth: 2
