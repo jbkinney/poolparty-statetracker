@@ -18,7 +18,12 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
     'sphinx_autodoc_typehints',
+    'nbsphinx',
+    'sphinx_copybutton',
 ]
+
+# Do NOT automatically execute notebooks when building.
+nbsphinx_execute = 'never'
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']

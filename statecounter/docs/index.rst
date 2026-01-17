@@ -87,6 +87,7 @@ Contents
    :caption: User Guide
 
    quickstart
+   tutorials
    concepts
    operations
 

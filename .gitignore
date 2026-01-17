@@ -32,6 +32,9 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Sphinx documentation
+statecounter/docs/_build/
+
 # LaTeX auxiliary files
 *.aux
 *.bbl
