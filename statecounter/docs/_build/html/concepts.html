@@ -52,7 +52,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#unidirectional-state-propagation">Unidirectional State Propagation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#active-vs-inactive-states">Active vs Inactive States</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#conflict-detection">Conflict Detection</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#iteration-order">Iteration Order</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#iteration-order-and-ordered-product">Iteration Order and <code class="docutils literal notranslate"><span class="pre">ordered_product()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#counter-identity">Counter Identity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#copying-counters">Copying Counters</a></li>
 </ul>
@@ -100,7 +100,7 @@
 <li><p><a class="reference internal" href="#unidirectional-state-propagation" id="id4">Unidirectional State Propagation</a></p></li>
 <li><p><a class="reference internal" href="#active-vs-inactive-states" id="id5">Active vs Inactive States</a></p></li>
 <li><p><a class="reference internal" href="#conflict-detection" id="id6">Conflict Detection</a></p></li>
-<li><p><a class="reference internal" href="#iteration-order" id="id7">Iteration Order</a></p></li>
+<li><p><a class="reference internal" href="#iteration-order-and-ordered-product" id="id7">Iteration Order and <code class="docutils literal notranslate"><span class="pre">ordered_product()</span></code></a></p></li>
 <li><p><a class="reference internal" href="#counter-identity" id="id8">Counter Identity</a></p></li>
 <li><p><a class="reference internal" href="#copying-counters" id="id9">Copying Counters</a></p></li>
 </ul>
@@ -216,28 +216,43 @@ only one parent is “active” at a time:</p>
 assign different values to the same parent counter.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
-    <span class="n">B</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># States 0, 1 of A</span>
-    <span class="n">C</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>  <span class="c1"># States 1, 2 of A</span>
-    <span class="n">D</span> <span class="o">=</span> <span class="n">stack</span><span class="p">([</span><span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">])</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># B=0 → A=0, B=1 → A=1</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>  <span class="c1"># C=0 → A=1, C=1 → A=2</span>
 
-    <span class="c1"># State 0 of D → B state 0 → A state 0 ✓</span>
-    <span class="c1"># State 2 of D → C state 0 → A state 1</span>
-    <span class="c1"># But what if we try to set both B and C active?</span>
+    <span class="c1"># Using product tries to activate BOTH B and C simultaneously</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">product</span><span class="p">([</span><span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">])</span>
 
-    <span class="c1"># This would conflict: A can&#39;t be both 0 and 1</span>
+    <span class="c1"># D state 0 means B=0 (A=0) and C=0 (A=1)</span>
+    <span class="c1"># But A can&#39;t be both 0 and 1 at the same time!</span>
+    <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">D</span><span class="p">:</span>  <span class="c1"># Raises ConflictingStateAssignmentError</span>
+        <span class="k">pass</span>
 </pre></div>
 </div>
-<p>A <a class="reference internal" href="api.html#statecounter.ConflictingStateAssignmentError" title="statecounter.ConflictingStateAssignmentError"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConflictingStateAssignmentError</span></code></a> is raised when such
-conflicts are detected during state propagation.</p>
+<p>This raises:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ConflictingStateAssignmentError: Counter &#39;A&#39; received conflicting
+state assignments: already set to 0, now attempting to set to 1.
+</pre></div>
+</div>
+<p>Note that <a class="reference internal" href="api.html#statecounter.stack" title="statecounter.stack"><code class="xref py py-func docutils literal notranslate"><span class="pre">stack()</span></code></a> does NOT cause conflicts because it only
+activates one parent at a time. The conflict arises when an operation like
+<a class="reference internal" href="api.html#statecounter.product" title="statecounter.product"><code class="xref py py-func docutils literal notranslate"><span class="pre">product()</span></code></a> tries to activate multiple counters that share
+a common ancestor with incompatible state requirements.</p>
 </section>
-<section id="iteration-order">
-<h2><a class="toc-backref" href="#id7" role="doc-backlink">Iteration Order</a><a class="headerlink" href="#iteration-order" title="Link to this heading"></a></h2>
-<p>Each counter has an <code class="docutils literal notranslate"><span class="pre">iter_order</span></code> property that influences how counters are
-ordered in operations like <a class="reference internal" href="api.html#statecounter.ordered_product" title="statecounter.ordered_product"><code class="xref py py-func docutils literal notranslate"><span class="pre">ordered_product()</span></code></a>. Lower values
-iterate “faster” (change more frequently in the inner loop).</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
-    <span class="n">A</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="n">iter_order</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">B</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="n">iter_order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<section id="iteration-order-and-ordered-product">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Iteration Order and <code class="docutils literal notranslate"><span class="pre">ordered_product()</span></code></a><a class="headerlink" href="#iteration-order-and-ordered-product" title="Link to this heading"></a></h2>
+<p>Sometimes you want certain counters to have priority over others when they
+appear together in Cartesian products. For example, you might want a “position”
+counter to always vary slower than a “mutation” counter, regardless of the
+order they appear in your code.</p>
+<p>To accommodate this, StateCounter provides the <a class="reference internal" href="api.html#statecounter.ordered_product" title="statecounter.ordered_product"><code class="xref py py-func docutils literal notranslate"><span class="pre">ordered_product()</span></code></a>
+function, which reads an <code class="docutils literal notranslate"><span class="pre">iter_order</span></code> property from each counter to determine
+ordering. Counters with lower <code class="docutils literal notranslate"><span class="pre">iter_order</span></code> values iterate “faster” (change
+more frequently in the inner loop).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">statecounter</span><span class="w"> </span><span class="kn">import</span> <span class="n">ordered_product</span>
+
+<span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="n">iter_order</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Fast</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="n">iter_order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># Slow</span>
 
     <span class="n">C</span> <span class="o">=</span> <span class="n">ordered_product</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
 
@@ -254,12 +269,14 @@ iterate “faster” (change more frequently in the inner loop).</p>
 </div>
 <p>The default <code class="docutils literal notranslate"><span class="pre">iter_order</span></code> is 0 for leaf counters. Derived counters inherit
 the minimum <code class="docutils literal notranslate"><span class="pre">iter_order</span></code> of their parents.</p>
-<p>You can control the global ordering behavior with
+<p>You can also control the global ordering behavior with
 <a class="reference internal" href="api.html#statecounter.set_product_order_mode" title="statecounter.set_product_order_mode"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_product_order_mode()</span></code></a>:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">'first_counter_slowest'</span></code> (default): First counter in sorted order changes slowest</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">'first_counter_fastest'</span></code>: First counter in sorted order changes fastest</p></li>
 </ul>
+<p>Note that the regular <a class="reference internal" href="api.html#statecounter.product" title="statecounter.product"><code class="xref py py-func docutils literal notranslate"><span class="pre">product()</span></code></a> function does not use
+<code class="docutils literal notranslate"><span class="pre">iter_order</span></code>—it preserves the exact order of counters you pass to it.</p>
 </section>
 <section id="counter-identity">
 <h2><a class="toc-backref" href="#id8" role="doc-backlink">Counter Identity</a><a class="headerlink" href="#counter-identity" title="Link to this heading"></a></h2>
@@ -276,7 +293,7 @@ the same <code class="docutils literal notranslate"><span class="pre">num_states
 <p>Counters support two types of copying:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="api.html#statecounter.Counter.copy" title="statecounter.Counter.copy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">copy()</span></code></a>: Creates a new counter with the same parents (shallow copy)</p></li>
-<li><p><a class="reference internal" href="api.html#statecounter.Counter.deepcopy" title="statecounter.Counter.deepcopy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">deepcopy()</span></code></a>: Creates a new counter with copied parents (deep copy)</p></li>
+<li><p><a class="reference internal" href="api.html#statecounter.Counter.deepcopy" title="statecounter.Counter.deepcopy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">deepcopy()</span></code></a>: Recursively creates a new counter with copied ancestors</p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
     <span class="n">A</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>

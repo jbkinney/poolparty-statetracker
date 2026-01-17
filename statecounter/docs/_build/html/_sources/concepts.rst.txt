@@ -140,31 +140,49 @@ assign different values to the same parent counter.
 
     with Manager():
         A = Counter(num_states=3, name='A')
-        B = A[0:2]  # States 0, 1 of A
-        C = A[1:3]  # States 1, 2 of A
-        D = stack([B, C])
+        B = A[0:2]  # B=0 → A=0, B=1 → A=1
+        C = A[1:3]  # C=0 → A=1, C=1 → A=2
         
-        # State 0 of D → B state 0 → A state 0 ✓
-        # State 2 of D → C state 0 → A state 1
-        # But what if we try to set both B and C active?
+        # Using product tries to activate BOTH B and C simultaneously
+        D = product([B, C])
         
-        # This would conflict: A can't be both 0 and 1
+        # D state 0 means B=0 (A=0) and C=0 (A=1)
+        # But A can't be both 0 and 1 at the same time!
+        for state in D:  # Raises ConflictingStateAssignmentError
+            pass
 
-A :class:`~statecounter.ConflictingStateAssignmentError` is raised when such
-conflicts are detected during state propagation.
+This raises:
 
-Iteration Order
----------------
+.. code-block:: text
 
-Each counter has an ``iter_order`` property that influences how counters are
-ordered in operations like :func:`~statecounter.ordered_product`. Lower values
-iterate "faster" (change more frequently in the inner loop).
+    ConflictingStateAssignmentError: Counter 'A' received conflicting 
+    state assignments: already set to 0, now attempting to set to 1.
+
+Note that :func:`~statecounter.stack` does NOT cause conflicts because it only
+activates one parent at a time. The conflict arises when an operation like
+:func:`~statecounter.product` tries to activate multiple counters that share
+a common ancestor with incompatible state requirements.
+
+Iteration Order and ``ordered_product()``
+-----------------------------------------
+
+Sometimes you want certain counters to have priority over others when they
+appear together in Cartesian products. For example, you might want a "position"
+counter to always vary slower than a "mutation" counter, regardless of the
+order they appear in your code.
+
+To accommodate this, StateCounter provides the :func:`~statecounter.ordered_product`
+function, which reads an ``iter_order`` property from each counter to determine
+ordering. Counters with lower ``iter_order`` values iterate "faster" (change
+more frequently in the inner loop).
 
 .. code-block:: python
 
+    from statecounter import ordered_product
+
     with Manager():
-        A = Counter(num_states=2, name='A', iter_order=0)
-        B = Counter(num_states=2, name='B', iter_order=1)
+        A = Counter(num_states=2, name='A', iter_order=0)  # Fast
+        B = Counter(num_states=2, name='B', iter_order=1)  # Slow
         
         C = ordered_product([A, B])
         
@@ -181,11 +199,14 @@ Output::
 The default ``iter_order`` is 0 for leaf counters. Derived counters inherit
 the minimum ``iter_order`` of their parents.
 
-You can control the global ordering behavior with
+You can also control the global ordering behavior with
 :func:`~statecounter.set_product_order_mode`:
 
 - ``'first_counter_slowest'`` (default): First counter in sorted order changes slowest
 - ``'first_counter_fastest'``: First counter in sorted order changes fastest
+
+Note that the regular :func:`~statecounter.product` function does not use
+``iter_order``—it preserves the exact order of counters you pass to it.
 
 Counter Identity
 ----------------
@@ -204,7 +225,7 @@ Copying Counters
 Counters support two types of copying:
 
 - :meth:`~statecounter.Counter.copy`: Creates a new counter with the same parents (shallow copy)
-- :meth:`~statecounter.Counter.deepcopy`: Creates a new counter with copied parents (deep copy)
+- :meth:`~statecounter.Counter.deepcopy`: Recursively creates a new counter with copied ancestors
 
 .. code-block:: python
 
