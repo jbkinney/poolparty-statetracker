@@ -386,40 +386,37 @@ class TestRemoveMarker:
         assert df['seq'].iloc[0] == 'ACGTGCGC'
 
 
-class TestAlphabetWithXMLMarkers:
-    """Test Alphabet methods work with XML markers."""
+class TestDNAWithXMLMarkers:
+    """Test dna module functions work with XML markers."""
     
     def test_get_seq_length_with_markers(self):
         """Test get_seq_length excludes marker tags but includes content."""
-        from poolparty.alphabet import get_alphabet
-        alpha = get_alphabet('dna')
+        from poolparty import dna
         
         # Without marker
-        assert alpha.get_seq_length('ACGT') == 4
+        assert dna.get_seq_length('ACGT') == 4
         
         # With marker - counts content but not tags
-        assert alpha.get_seq_length('AC<region>TG</region>GT') == 6
-        assert alpha.get_seq_length('<m/>ACGT') == 4
-        assert alpha.get_seq_length('ACGT<m/>') == 4
+        assert dna.get_seq_length('AC<region>TG</region>GT') == 6
+        assert dna.get_seq_length('<m/>ACGT') == 4
+        assert dna.get_seq_length('ACGT<m/>') == 4
     
     def test_get_length_without_markers(self):
-        """Test get_length_without_markers on Alphabet."""
-        from poolparty.alphabet import get_alphabet
-        alpha = get_alphabet('dna')
+        """Test get_length_without_markers from dna module."""
+        from poolparty import dna
         
-        assert alpha.get_length_without_markers('ACGT') == 4
-        assert alpha.get_length_without_markers('AC<region>TG</region>GT') == 6
+        assert dna.get_length_without_markers('ACGT') == 4
+        assert dna.get_length_without_markers('AC<region>TG</region>GT') == 6
     
     def test_get_nonmarker_positions(self):
-        """Test get_nonmarker_positions on Alphabet."""
-        from poolparty.alphabet import get_alphabet
-        alpha = get_alphabet('dna')
+        """Test get_nonmarker_positions from dna module."""
+        from poolparty import dna
         
         # Without marker
-        assert alpha.get_nonmarker_positions('ACGT') == [0, 1, 2, 3]
+        assert dna.get_nonmarker_positions('ACGT') == [0, 1, 2, 3]
         
         # With marker - should skip tag positions
-        positions = alpha.get_nonmarker_positions('A<m/>CG')
+        positions = dna.get_nonmarker_positions('A<m/>CG')
         # A=0, <m/>=1-4, C=5, G=6
         assert positions == [0, 5, 6]
 

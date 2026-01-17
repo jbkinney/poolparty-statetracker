@@ -3,7 +3,7 @@ from numbers import Real
 from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
 from ..operation import Operation
 from ..pool import Pool
-from ..alphabet import Alphabet
+from .. import dna
 from ..party import get_active_party
 import numpy as np
 import pandas as pd
@@ -132,11 +132,9 @@ class FromMotifOp(Operation):
         if mark_changes is None:
             mark_changes = party.get_default('mark_changes', False)
         self.mark_changes = mark_changes
-        
-        self.alphabet = party.alphabet
 
         # Validate and store probability matrix
-        self.prob_df = _validate_prob_df(prob_df, self.alphabet)
+        self.prob_df = _validate_prob_df(prob_df)
         self._cumprobs = np.cumsum(self.prob_df.values, axis=1)
 
         match mode:
@@ -179,8 +177,7 @@ class FromMotifOp(Operation):
     ) -> dict:
         """Return the sequence based on design card indices."""
         indices = card['prob_state']
-        alphabet_chars = self.alphabet.chars
-        seq = ''.join(alphabet_chars[i] for i in indices)
+        seq = ''.join(dna.BASES[i] for i in indices)
         # Apply mark_changes swapcase only when inserting into a region
         if self.mark_changes and self._region is not None:
             seq = seq.swapcase()
@@ -203,32 +200,30 @@ class FromMotifOp(Operation):
         }
 
 
-def _validate_prob_df(prob_df: pd.DataFrame, alphabet: Alphabet) -> pd.DataFrame:
+def _validate_prob_df(prob_df: pd.DataFrame) -> pd.DataFrame:
     """Validate and normalize a probability DataFrame.
 
     Args:
-        prob_df: DataFrame with columns that are a subset of alphabet characters.
-            Missing alphabet columns are filled with zeros.
-        alphabet: Alphabet object from the active Party.
+        prob_df: DataFrame with columns that are a subset of DNA bases (A, C, G, T).
+            Missing columns are filled with zeros.
 
     Returns:
-        Normalized DataFrame with rows summing to 1 and columns ordered by alphabet.
+        Normalized DataFrame with rows summing to 1 and columns ordered by dna.BASES.
 
     Raises:
-        ValueError: If prob_df is empty, has columns not in alphabet, contains NaN,
+        ValueError: If prob_df is empty, has columns not in BASES, contains NaN,
             contains negative values, or has rows summing to zero.
     """
     if prob_df.empty or len(prob_df) == 0:
         raise ValueError("prob_df must be a non-empty DataFrame")
 
-    # Validate columns are a subset of alphabet chars
-    alphabet_chars = alphabet.chars
-    expected_cols = set(alphabet_chars)
+    # Validate columns are a subset of DNA bases
+    expected_cols = set(dna.BASES)
     actual_cols = set(prob_df.columns)
     extra = actual_cols - expected_cols
     if extra:
         raise ValueError(
-            f"prob_df columns must be alphabet characters ({alphabet_chars}). "
+            f"prob_df columns must be DNA bases ({dna.BASES}). "
             f"Extra columns: {sorted(extra)}."
         )
 
@@ -240,15 +235,15 @@ def _validate_prob_df(prob_df: pd.DataFrame, alphabet: Alphabet) -> pd.DataFrame
 
     # Add missing columns with zeros
     result_df = prob_df.copy()
-    for col in alphabet_chars:
+    for col in dna.BASES:
         if col not in result_df.columns:
             result_df[col] = 0.0
 
     # Normalize rows to sum to 1
-    prob_matrix = result_df[alphabet_chars].values.astype(np.float64).copy()
+    prob_matrix = result_df[dna.BASES].values.astype(np.float64).copy()
     row_sums = prob_matrix.sum(axis=1, keepdims=True)
     if np.any(row_sums == 0):
         raise ValueError("prob_df rows must not sum to zero")
     prob_matrix /= row_sums
 
-    return pd.DataFrame(prob_matrix, columns=alphabet_chars)
+    return pd.DataFrame(prob_matrix, columns=dna.BASES)

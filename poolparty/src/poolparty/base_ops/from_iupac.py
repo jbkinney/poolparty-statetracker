@@ -3,7 +3,7 @@ from numbers import Real
 from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
 from ..operation import Operation
 from ..pool import Pool
-from ..alphabet import IUPAC_TO_DNA
+from .. import dna
 import numpy as np
 
 
@@ -126,16 +126,15 @@ class FromIupacOp(Operation):
 
         # Validate and build position options
         # Handle ignore chars (e.g., '.', '-', ' ') as pass-through positions
-        ignore_chars = party._alphabet.ignore_chars
         iupac_seq_upper = iupac_seq.upper()
         invalid_chars = set()
         position_options = []
         for char, char_upper in zip(iupac_seq, iupac_seq_upper):
-            if char in ignore_chars:
+            if char in dna.IGNORE_CHARS:
                 # Pass through ignore chars unchanged
                 position_options.append([char])
-            elif char_upper in IUPAC_TO_DNA:
-                opts = IUPAC_TO_DNA[char]
+            elif char_upper in dna.IUPAC_TO_DNA:
+                opts = dna.IUPAC_TO_DNA[char]
                 position_options.append(opts)
             else:
                 invalid_chars.add(char)
@@ -143,8 +142,8 @@ class FromIupacOp(Operation):
         if invalid_chars:
             raise ValueError(
                 f"iupac_seq contains invalid IUPAC character(s): {sorted(invalid_chars)}. "
-                f"Valid IUPAC characters are: {sorted(IUPAC_TO_DNA.keys())} "
-                f"(plus ignore characters: {sorted(ignore_chars)})"
+                f"Valid IUPAC characters are: {sorted(dna.IUPAC_TO_DNA.keys())} "
+                f"(plus ignore characters: {sorted(dna.IGNORE_CHARS)})"
             )
 
         self.iupac_seq = iupac_seq
@@ -169,7 +168,7 @@ class FromIupacOp(Operation):
 
         self._total_states = total_states
         # Use length without markers for consistency
-        seq_length = party._alphabet.get_length_without_markers(iupac_seq)
+        seq_length = dna.get_length_without_markers(iupac_seq)
         
         parent_pools = [bg_pool] if bg_pool is not None else []
         super().__init__(

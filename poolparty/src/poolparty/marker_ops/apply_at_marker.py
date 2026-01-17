@@ -1,6 +1,7 @@
 """Apply a transformation to content at a marked region."""
 from numbers import Real
 from poolparty.types import Optional, Callable
+from .. import dna
 
 
 def apply_at_marker(
@@ -109,7 +110,6 @@ def _replace_keeping_marker(
 ):
     """Replace marker content while preserving marker tags."""
     from ..fixed_ops.fixed import fixed_operation
-    from ..party import get_active_party
     from .parsing import validate_single_marker, build_marker_tag
     
     def seq_from_seqs_fn(seqs: list[str]) -> str:
@@ -121,9 +121,7 @@ def _replace_keeping_marker(
         
         # If strand='-', reverse complement the content before insertion
         if marker.strand == '-':
-            party = get_active_party()
-            alphabet = party.alphabet
-            content_seq = ''.join(alphabet.get_complement(c) for c in reversed(content_seq))
+            content_seq = dna.reverse_complement(content_seq)
         
         # Build wrapped content with marker tags
         wrapped = build_marker_tag(

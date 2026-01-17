@@ -3,6 +3,7 @@ from numbers import Real
 from poolparty.types import Union, Optional
 
 from .parsing import validate_single_marker
+from .. import dna
 
 
 def extract_marker_content(
@@ -67,9 +68,7 @@ def extract_marker_content(
         
         # If strand='-', reverse complement the content
         if marker.strand == '-':
-            party = get_active_party()
-            alphabet = party.alphabet
-            content = ''.join(alphabet.get_complement(c) for c in reversed(content))
+            content = dna.reverse_complement(content)
         
         return content
     

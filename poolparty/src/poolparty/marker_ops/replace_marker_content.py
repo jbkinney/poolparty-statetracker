@@ -5,6 +5,7 @@ import numpy as np
 
 from .parsing import validate_single_marker
 from ..operation import Operation
+from .. import dna
 
 
 def replace_marker_content(
@@ -144,8 +145,6 @@ class ReplaceMarkerContentOp(Operation):
         card: dict,
     ) -> dict:
         """Replace marker in bg_seq with content_seq."""
-        from ..party import get_active_party
-        
         bg_seq = parent_seqs[0]
         content_seq = parent_seqs[1]
         
@@ -154,9 +153,7 @@ class ReplaceMarkerContentOp(Operation):
         
         # If strand='-', reverse complement the content before insertion
         if marker.strand == '-':
-            party = get_active_party()
-            alphabet = party.alphabet
-            content_seq = ''.join(alphabet.get_complement(c) for c in reversed(content_seq))
+            content_seq = dna.reverse_complement(content_seq)
         
         # Apply spacer_str if specified
         if self._spacer_str:

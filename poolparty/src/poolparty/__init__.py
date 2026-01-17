@@ -9,7 +9,7 @@ from .pool import Pool
 from .operation import Operation
 from .marker import Marker
 from .generate_library import generate_library
-from .alphabet import get_alphabet, NAMED_ALPHABETS
+from .dna import BASES, COMPLEMENT, IUPAC_TO_DNA, IGNORE_CHARS, VALID_CHARS
 # Import fixed operations from fixed_ops module
 from .fixed_ops import (
     fixed_operation, FixedOp,
@@ -79,7 +79,7 @@ __all__ = [
     'Party', 'get_active_party', 'init', 'clear_pools',
     'set_default', 'load_defaults',
     'Pool', 'Operation', 'Marker', 'Counter', 'CounterManager', 'generate_library',
-    'get_alphabet', 'NAMED_ALPHABETS',
+    'BASES', 'COMPLEMENT', 'IUPAC_TO_DNA', 'IGNORE_CHARS', 'VALID_CHARS',
     'fixed_operation', 'FixedOp',
     'from_seq',
     'from_fasta',

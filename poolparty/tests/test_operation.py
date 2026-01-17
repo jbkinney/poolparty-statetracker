@@ -377,7 +377,7 @@ class TestOperationCopy:
     
     def test_copy_get_kmers_op(self):
         """Test copying GetKmersOp."""
-        with pp.Party(alphabet='dna') as party:
+        with pp.Party() as party:
             kmers = pp.get_kmers(length=3, mode='sequential')
             copied_op = kmers.operation.copy()
             

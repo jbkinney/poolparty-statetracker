@@ -144,7 +144,7 @@ class TestHybridModeGetKmers:
     
     def test_get_kmers_hybrid_valid_kmers(self):
         """Test that hybrid get_kmers produces valid k-mers."""
-        with pp.Party(alphabet='dna') as party:
+        with pp.Party() as party:
             pool = get_kmers(length=4, mode='hybrid', num_hybrid_states=50).named('kmer')
         
         df = pool.generate_library(num_cycles=1, seed=42)

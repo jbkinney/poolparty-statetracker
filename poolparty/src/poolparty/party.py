@@ -7,7 +7,7 @@ else:
 import statecounter as sc
 from .types import Pool_type, Operation_type, Optional, beartype, Union, Any
 from .codon_table import CodonTable
-from .alphabet import Alphabet, get_alphabet
+from . import dna
 from .marker import Marker
 
 _active_party: Optional["Party"] = None
@@ -22,7 +22,6 @@ def get_active_party() -> Optional["Party"]:
 
 @beartype
 def init(
-    alphabet: Union[str, Alphabet] = 'dna',
     genetic_code: Union[str, dict] = 'standard',
 ) -> "Party":
     """Initialize (or reset) the default Party, clearing all registered pools/operations/markers."""
@@ -32,7 +31,7 @@ def init(
         _default_party._counter_manager.__exit__(None, None, None)
         _default_party._is_active = False
     # Create new default party
-    _default_party = Party(alphabet=alphabet, genetic_code=genetic_code)
+    _default_party = Party(genetic_code=genetic_code)
     _default_party._counter_manager.__enter__()
     _default_party._is_active = True
     _active_party = _default_party
@@ -63,7 +62,6 @@ class Party:
     
     def __init__(
         self,
-        alphabet: Union[str, Alphabet] = 'dna',
         genetic_code: Union[str, dict] = 'standard',
     ) -> None:
         self._operations: list = []
@@ -82,11 +80,6 @@ class Party:
         # Track markers by ID (list) and name (dict)
         self._markers_by_id: list[Marker] = []
         self._markers_by_name: dict[str, Marker] = {}
-        # Build alphabet for sequence operations
-        if isinstance(alphabet, str):
-            self._alphabet: Alphabet = get_alphabet(alphabet)
-        else:
-            self._alphabet = alphabet
         # Build codon table for ORF operations
         self._codon_table: CodonTable = CodonTable(genetic_code)
         # Default parameter values for operations
@@ -120,18 +113,6 @@ class Party:
         """Set or change the genetic code used for ORF operations."""
         self._codon_table = CodonTable(genetic_code)
     
-    @property
-    def alphabet(self) -> Alphabet:
-        """Access the Alphabet for sequence operations."""
-        return self._alphabet
-    
-    def set_alphabet(self, alphabet: Union[str, Alphabet]) -> None:
-        """Set or change the alphabet used for sequence operations."""
-        if isinstance(alphabet, str):
-            self._alphabet = get_alphabet(alphabet)
-        else:
-            self._alphabet = alphabet
-    
     def set_default(self, key: str, value: Any) -> None:
         """Set a default parameter value for operations in this party."""
         self._defaults[key] = value
@@ -147,16 +128,16 @@ class Party:
         self._defaults.update(defaults)
     
     def get_effective_seq_length(self, seq: str) -> int:
-        """Get effective sequence length (alphabet characters only, excluding markers)."""
-        return self._alphabet.get_seq_length(seq)
+        """Get effective sequence length (DNA characters only, excluding markers)."""
+        return dna.get_seq_length(seq)
     
     def get_length_without_markers(self, seq: str) -> int:
         """Get sequence length excluding only marker tags (includes all chars)."""
-        return self._alphabet.get_length_without_markers(seq)
+        return dna.get_length_without_markers(seq)
     
     def get_molecular_positions(self, seq: str) -> list[int]:
-        """Get raw string positions of valid alphabet characters, excluding marker interiors."""
-        return self._alphabet.get_molecular_positions(seq)
+        """Get raw string positions of valid DNA characters, excluding marker interiors."""
+        return dna.get_molecular_positions(seq)
     
     def __enter__(self) -> "Party":
         """Enter the Party context, saving any previous active party."""
@@ -312,7 +293,6 @@ class Party:
         
         Unlike init(), this preserves:
         - Highlighting configuration (_highlights)
-        - Alphabet settings (_alphabet)
         - Genetic code settings (_codon_table)
         - Default parameter values (_defaults)
         """

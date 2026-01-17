@@ -3,6 +3,7 @@ from numbers import Real
 from pyfaidx import Fasta
 from ..types import Pool_type, Union, Optional, RegionType, beartype, Literal
 from ..pool import Pool
+from .. import dna
 
 
 @beartype
@@ -44,8 +45,7 @@ def from_fasta(
     
     # Reverse complement if strand is '-'
     if strand == '-':
-        alphabet = party.alphabet
-        seq = ''.join(alphabet.get_complement(c) for c in reversed(seq))
+        seq = dna.reverse_complement(seq)
     
     # Delegate to from_seq with appropriate factory name
     return from_seq(

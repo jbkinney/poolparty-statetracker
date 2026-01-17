@@ -440,67 +440,26 @@ class TestMutagenizeRateStatistics:
 # Common tests (both modes)
 # =============================================================================
 
-class TestMutagenizeAlphabets:
-    """Test different alphabet support via Party."""
+class TestMutagenizeDNA:
+    """Test DNA mutagenesis."""
     
-    def test_dna_alphabet_with_num(self):
-        """DNA alphabet mutations use only ACGT (num_mutations)."""
-        with pp.Party(alphabet='dna') as party:
+    def test_dna_with_num(self):
+        """DNA mutations use only ACGT (num_mutations)."""
+        with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
         
         df = pool.generate_library(num_cycles=1)
         for mutant in df['seq']:
             assert all(c in 'ACGT' for c in mutant)
     
-    def test_dna_alphabet_with_rate(self):
-        """DNA alphabet mutations use only ACGT (mutation_rate)."""
-        with pp.Party(alphabet='dna') as party:
+    def test_dna_with_rate(self):
+        """DNA mutations use only ACGT (mutation_rate)."""
+        with pp.Party() as party:
             pool = mutagenize('ACGT', mutation_rate=0.3, mode='random').named('mutant')
         
         df = pool.generate_library(num_seqs=20, seed=42)
         for mutant in df['seq']:
             assert all(c in 'ACGT' for c in mutant)
-    
-    def test_rna_alphabet(self):
-        """RNA alphabet mutations use only ACGU."""
-        with pp.Party(alphabet='rna') as party:
-            pool = mutagenize('ACGU', num_mutations=1, mode='sequential').named('mutant')
-        
-        df = pool.generate_library(num_cycles=1)
-        for mutant in df['seq']:
-            assert all(c in 'ACGU' for c in mutant)
-    
-    def test_rna_alphabet_with_rate(self):
-        """RNA alphabet mutations use only ACGU (mutation_rate)."""
-        with pp.Party(alphabet='rna') as party:
-            pool = mutagenize('ACGU', mutation_rate=0.3, mode='random').named('mutant')
-        
-        df = pool.generate_library(num_seqs=20, seed=42)
-        for mutant in df['seq']:
-            assert all(c in 'ACGU' for c in mutant)
-    
-    def test_custom_alphabet_with_num(self):
-        """Custom alphabet mutations use only specified characters (num_mutations)."""
-        from poolparty.alphabet import Alphabet
-        custom_alph = Alphabet(chars=['A', 'B'])
-        with pp.Party(alphabet=custom_alph) as party:
-            pool = mutagenize('AB', num_mutations=1, mode='sequential').named('mutant')
-        
-        df = pool.generate_library(num_cycles=1)
-        # 2 positions * 1 mutation each = 2 mutants
-        assert len(df) == 2
-        assert set(df['seq']) == {'BB', 'AA'}
-    
-    def test_custom_alphabet_with_rate(self):
-        """Custom alphabet mutations use only specified characters (mutation_rate)."""
-        from poolparty.alphabet import Alphabet
-        custom_alph = Alphabet(chars=['A', 'B'])
-        with pp.Party(alphabet=custom_alph) as party:
-            pool = mutagenize('AB', mutation_rate=0.5, mode='random').named('mutant')
-        
-        df = pool.generate_library(num_seqs=20, seed=42)
-        for mutant in df['seq']:
-            assert all(c in 'AB' for c in mutant)
 
 
 class TestMutagenizeDesignCards:
@@ -587,7 +546,7 @@ class TestMutagenizeMutationMap:
     
     def test_all_mutations_covered(self):
         """Test that all possible mutations are covered."""
-        with pp.Party(alphabet='dna') as party:
+        with pp.Party() as party:
             pool = mutagenize('A', num_mutations=1, mode='sequential').named('mutant')
         
         df = pool.generate_library(num_cycles=1)

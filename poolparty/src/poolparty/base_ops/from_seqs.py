@@ -3,6 +3,7 @@ from numbers import Real
 from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
 from ..operation import Operation
 from ..pool import Pool
+from .. import dna
 import numpy as np
 
 
@@ -149,7 +150,7 @@ class FromSeqsOp(Operation):
             case _:
                 num_states = 1
         # Use lengths without markers (includes all chars except marker tags)
-        lengths = [party._alphabet.get_length_without_markers(s) for s in self.seqs]
+        lengths = [dna.get_length_without_markers(s) for s in self.seqs]
         seq_length = lengths[0] if all(L == lengths[0] for L in lengths) else None
         
         parent_pools = [bg_pool] if bg_pool is not None else []

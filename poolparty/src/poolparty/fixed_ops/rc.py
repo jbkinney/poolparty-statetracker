@@ -3,6 +3,7 @@ from numbers import Real
 from ..types import Pool_type, Union, Optional, RegionType, beartype
 from ..pool import Pool
 from ..marker_ops.parsing import reverse_complement_with_markers
+from .. import dna
 
 
 @beartype
@@ -44,14 +45,11 @@ def rc(
     Pool
         A Pool containing reverse-complemented sequences.
     """
-    from ..party import get_active_party
     from .fixed import fixed_operation
-
-    alphabet = get_active_party().alphabet
 
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         seq = seqs[0]
-        return reverse_complement_with_markers(seq, alphabet.get_complement)
+        return reverse_complement_with_markers(seq, dna.complement)
 
     return fixed_operation(
         parent_pools=[pool],

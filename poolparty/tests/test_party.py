@@ -31,18 +31,16 @@ class TestBasicUsage:
     
     def test_get_kmers_sequential(self):
         """Test generating k-mers in sequential mode."""
-        from poolparty.alphabet import Alphabet
-        custom_alph = Alphabet(chars=['A', 'B'])
-        with pp.Party(alphabet=custom_alph) as party:
+        with pp.Party() as party:
             pool = pp.get_kmers(length=2, mode='sequential').named('kmer')
         
         df = pool.generate_library(num_cycles=1)
-        assert len(df) == 4  # 2^2 = 4 k-mers
-        assert list(df['seq']) == ['AA', 'AB', 'BA', 'BB']
+        assert len(df) == 16  # 4^2 = 16 k-mers for DNA
+        assert df['seq'].iloc[0] == 'AA'
     
     def test_get_kmers_random(self):
         """Test generating k-mers in random mode."""
-        with pp.Party(alphabet='dna') as party:
+        with pp.Party() as party:
             pool = pp.get_kmers(length=5, mode='random').named('kmer')
         
         df = pool.generate_library(num_seqs=10, seed=42)
@@ -64,7 +62,7 @@ class TestBasicUsage:
     
     def test_join_with_kmer(self):
         """Test joining a sequence with a random barcode."""
-        with pp.Party(alphabet='dna') as party:
+        with pp.Party() as party:
             seq_pool = pp.from_seqs(['ACGT'])
             barcode = pp.get_kmers(length=4, mode='random')
             oligo = join([seq_pool, '...', barcode]).named('oligo')
@@ -204,7 +202,7 @@ class TestMixedModes:
     
     def test_sequential_with_random_barcode(self):
         """Test sequential mutations with random barcodes."""
-        with pp.Party(alphabet='dna') as party:
+        with pp.Party() as party:
             mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential')
             barcode = pp.get_kmers(length=4, mode='random')
             oligo = join([mutants, '.', barcode]).named('oligo')
@@ -373,10 +371,10 @@ class TestErrors:
     """Test error handling."""
     
     def test_nested_party_allowed(self):
-        """Test that nested Party contexts are now allowed (they stack)."""
-        with pp.Party(alphabet='dna') as outer:
+        """Test that nested Party contexts are allowed (they stack)."""
+        with pp.Party() as outer:
             pool1 = pp.from_seqs(['AAA'])
-            with pp.Party(alphabet='rna') as inner:
+            with pp.Party() as inner:
                 # Inner party is now active
                 assert pp.get_active_party() is inner
                 pool2 = pp.from_seqs(['AAA'])
@@ -581,7 +579,7 @@ class TestCounterManagerIntegration:
     
     def test_complex_dag_counters_registered(self):
         """Test that counters from a complex DAG are all registered."""
-        with pp.Party(alphabet='dna') as party:
+        with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], mode='sequential')
             mutants = pp.mutagenize(seq, num_mutations=1, mode='sequential')
             barcode = pp.get_kmers(length=4, mode='random')

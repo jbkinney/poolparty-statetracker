@@ -1,9 +1,10 @@
-"""GetKmers operation - generate k-mers from an alphabet."""
+"""GetKmers operation - generate DNA k-mers."""
 from numbers import Real
 from ..types import Pool_type, ModeType, Optional, Literal, Union, RegionType, Integral, beartype
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
+from .. import dna
 import numpy as np
 
 
@@ -24,10 +25,9 @@ def get_kmers(
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
 ) -> Pool_type:
-    """Create a Pool that generates k-mers from an alphabet.
+    """Create a Pool that generates DNA k-mers (all possible sequences of length k).
     
-    Must be called within a Party context. The alphabet is set via the Party
-    constructor or Party.set_alphabet() method.
+    Must be called within a Party context.
 
     Parameters
     ----------
@@ -59,7 +59,7 @@ def get_kmers(
     Returns
     -------
     Pool_type
-        A Pool whose states yield k-mers of the specified length and alphabet.
+        A Pool whose states yield DNA k-mers of the specified length.
     
     Raises
     ------
@@ -82,7 +82,7 @@ def get_kmers(
 
 @beartype
 class GetKmersOp(Operation):
-    """Generate k-mers from an alphabet."""
+    """Generate DNA k-mers."""
     factory_name = "get_kmers"
     design_card_keys = ['kmer_index', 'kmer']
     
@@ -102,7 +102,6 @@ class GetKmersOp(Operation):
         iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize GetKmersOp."""
-        # Get alphabet from active Party context
         party = get_active_party()
         if party is None:
             raise RuntimeError(
@@ -129,8 +128,7 @@ class GetKmersOp(Operation):
         
         self.length = length
         self.case = case
-        self.alphabet = party.alphabet
-        self.alpha_size = self.alphabet.size
+        self.alpha_size = len(dna.BASES)
         total_kmers = self.alpha_size ** length
         if mode == 'sequential':
             num_states = self.validate_num_states(total_kmers, mode)
@@ -182,14 +180,14 @@ class GetKmersOp(Operation):
         result = []
         remaining = state
         for _ in range(self.length):
-            result.append(self.alphabet.chars[remaining % self.alpha_size])
+            result.append(dna.BASES[remaining % self.alpha_size])
             remaining //= self.alpha_size
         return ''.join(reversed(result))
     
     def _random_kmer(self, rng: np.random.Generator) -> str:
         """Generate a random k-mer."""
         indices = rng.integers(0, self.alpha_size, size=self.length)
-        return ''.join(self.alphabet.chars[i] for i in indices)
+        return ''.join(dna.BASES[i] for i in indices)
     
     def compute_design_card(
         self,

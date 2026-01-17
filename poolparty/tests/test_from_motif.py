@@ -196,27 +196,21 @@ class TestFromMotifNormalization:
         assert pool.operation.prob_df['G'].iloc[0] == 0.0
 
 
-class TestFromMotifAlphabet:
-    """Test FromMotif alphabet handling."""
+class TestFromMotifDNA:
+    """Test FromMotif DNA handling."""
     
-    def test_uses_party_alphabet(self):
-        """Test that alphabet comes from Party."""
-        prob_df = pd.DataFrame({'A': [0.5], 'U': [0.5]})
-        with pp.Party(alphabet='rna') as party:
-            pool = from_motif(prob_df, mode='random')
-            assert pool.operation.alphabet.chars == ['A', 'C', 'G', 'U']
-    
-    def test_dna_alphabet_default(self):
-        """Test that DNA alphabet is used by default."""
+    def test_dna_columns(self):
+        """Test that DNA columns are accepted."""
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
             pool = from_motif(prob_df, mode='random')
-            assert pool.operation.alphabet.chars == ['A', 'C', 'G', 'T']
+            # prob_df columns should be normalized
+            assert set(pool.operation.prob_df.columns) == {'A', 'C', 'G', 'T'}
     
-    def test_rna_column_rejected_for_dna(self):
-        """Test that RNA columns are rejected for DNA alphabet."""
+    def test_non_dna_column_rejected(self):
+        """Test that non-DNA columns are rejected."""
         prob_df = pd.DataFrame({'A': [0.5], 'U': [0.5]})
-        with pp.Party(alphabet='dna') as party:
+        with pp.Party() as party:
             with pytest.raises(ValueError, match="Extra columns"):
                 from_motif(prob_df)
 

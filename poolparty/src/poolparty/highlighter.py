@@ -1,6 +1,7 @@
 """Sequence highlighting with regex-based ANSI styling."""
 import re
 from .types import Literal, Sequence, Optional, beartype
+from . import dna
 
 # ANSI escape codes for styling
 STYLE_CODES = {
@@ -71,7 +72,7 @@ WhichType = Literal['all', 'upper', 'lower', 'gap', 'tags', 'contents']
 # Regex to match ANSI escape sequences
 ANSI_ESCAPE_PATTERN = re.compile(r'\033\[[0-9;]*m')
 
-# Default gap characters (from alphabet.py DEFAULT_IGNORE_CHARS)
+# Default gap characters - subset of dna.IGNORE_CHARS commonly used as gaps
 DEFAULT_GAP_CHARS = '-. '
 
 # Basic ANSI foreground color codes (mutually exclusive)
