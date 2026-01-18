@@ -1,5 +1,5 @@
 ---
-title: 'StateCounter: Composable Counters with Unidirectional State Propagation for Enumerating Combinatorial Spaces'
+title: 'StateCounter: state tracking for composite objects in complex combinatorial libraries'
 tags:
   - Python
   - combinatorics
@@ -23,9 +23,18 @@ bibliography: paper.bib
 
 # Summary
 
-StateCounter is a Python library that provides composable counters with unidirectional state propagation for enumerating combinatorial spaces. The library enables users to declaratively define complex combinatorial structures using counter algebra operations—including Cartesian products, disjoint unions (stacks), slices, shuffles, samples, and splits—and then iterate through the resulting space while automatically tracking which component indices correspond to each enumerated state. StateCounter was developed to support the design of complex DNA sequence libraries but addresses a general problem that arises whenever random access to a combinatorial space is needed.
+StateCounter is a Python library created to solve a technical problem that can arise in a variety of scientific computing tasks: given the state of a composite object created using complex combinatorial processes, determine the states of each component object. The core computational units in StateCounter are Counters, each of which represents the state of an abstract object. After defining a set of parent Counters, users create child counters using combinatorial operations that include Cartesian products, disjoint unions (i.e., stacking), repetition, slicing, shuffling, splitting, and sampling. Then when a user sets the state of a derived Counter, StateCounter automatically computes the state of all parent counters by traversing of the derived Counter's computational graph in reverse. We developed StateCounter specifically to allow tracking of DNA sequence generation and mutation processes used to create complex DNA sequence libraries. More generally, however, StateCounter addresses a fundamental computational need that is not addressed by existing Python software.
 
 # Statement of Need
+
+We encountered the need for StateCounter when creating PoolParty, a Python package for generating complex DNA sequence libraries. Fig. 1 shows one example application--creating a DNA sequence library comprising different types of variants of a cis-regulatory element (CRE). Each variant CRE is created using a specific mutational process applied to a wild-type sequence:
+- The first sequence is the wild-type sequence; no mutations are applied. 
+- The next 5 sequences comprise CREs with randomly scattered point mutations. 
+- The next 5 sequences comprise CREs containing 5 nt deletions at tiled positions. 
+- The next 10 sequences comprise CREs with one of two 5 nt binding sites inserted at tiled postions.
+Each one of these sequences is then repeated 3 times and linked to a random 5-mer serving as a barcode. The problem we faced was this: given a value $n$, how do we compute which mutations to introduce into the sequence and which barcode to attach? 
+
+To solve this problem, we 
 
 Enumerating combinatorial spaces is a fundamental task in experimental design, machine learning, and scientific computing. Consider designing an experiment with multiple conditions: 3 treatments and 4 replicates yield 12 experimental samples. While nested loops make enumeration trivial, they fail when researchers need to:
 
