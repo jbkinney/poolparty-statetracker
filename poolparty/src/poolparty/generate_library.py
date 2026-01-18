@@ -218,10 +218,6 @@ def _compute_one(
     # of all pool and operation counters that affect this state. 
     pool.counter.state = global_state % pool.counter.num_states
     
-    for i, counter in enumerate(counters):
-        col_name = counter_col_name(counter, i)
-        row[col_name] = counter.state
-    
     # Iterates over the operations in topological order.
     # This is the code that effectively implements the DAG.
     for op in sorted_ops:
@@ -263,6 +259,12 @@ def _compute_one(
                         row[f"{op.name}.key.{key}"] = None
                     else:
                         row[f"{op.name}.key.{key}"] = card[key]
+    
+    # Read counter states AFTER design card computation
+    # (allows operations like StackOp to set counter state during compute_design_card)
+    for i, counter in enumerate(counters):
+        col_name = counter_col_name(counter, i)
+        row[col_name] = counter.state
     
     for output_name, output_pool in outputs.items():
         if output_pool.counter.state is None:

@@ -65,7 +65,7 @@ class StackOp(Operation):
             seq_length = None
         super().__init__(
             parent_pools=parent_pools,
-            num_states=1,
+            num_states=len(parent_pools),  # Number of branches
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
@@ -88,7 +88,10 @@ class StackOp(Operation):
         """Return design card with active parent index."""
         for i, parent in enumerate(self.parent_pools):
             if parent.counter.state is not None:
+                # Set operation counter to branch index (safe for leaf counter)
+                self.counter.state = i
                 return {'active_parent': i}
+        self.counter.state = None
         return {'active_parent': None}
     
     def compute_seq_from_card(

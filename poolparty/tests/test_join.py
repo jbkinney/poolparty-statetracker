@@ -386,3 +386,72 @@ class TestJoinSpacerStr:
         
         df = combined.generate_library(num_seqs=1)
         assert df['seq'].iloc[0] == 'AAA'  # No spacer for single item
+
+
+class TestStackBranchIndex:
+    """Test that stack operation counter tracks the active branch index."""
+    
+    def test_stack_state_matches_branch_index(self):
+        """Test that op[X]:stack.state matches the active branch (0, 1, 2...)."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['A1', 'A2', 'A3'], mode='sequential').named('A')
+            b = pp.from_seqs(['B1', 'B2'], mode='sequential').named('B')
+            c = pp.from_seqs(['C1', 'C2', 'C3', 'C4'], mode='sequential').named('C')
+            stacked = pp.stack([a, b, c]).named('stacked')
+        
+        df = stacked.generate_library(num_cycles=1, report_design_cards=True)
+        
+        # Find the stack state column
+        stack_state_col = [c for c in df.columns if 'stack.state' in c][0]
+        
+        # A has 3 states (indices 0-2), B has 2 states (indices 3-4), C has 4 states (indices 5-8)
+        # Stack state should be: 0,0,0, 1,1, 2,2,2,2
+        expected_branch_indices = [0, 0, 0, 1, 1, 2, 2, 2, 2]
+        actual_branch_indices = list(df[stack_state_col])
+        
+        assert actual_branch_indices == expected_branch_indices
+    
+    def test_stack_state_two_branches(self):
+        """Test stack state with two branches."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['A1', 'A2'], mode='sequential').named('A')
+            b = pp.from_seqs(['B1', 'B2', 'B3'], mode='sequential').named('B')
+            stacked = pp.stack([a, b]).named('stacked')
+        
+        df = stacked.generate_library(num_cycles=1, report_design_cards=True)
+        
+        stack_state_col = [c for c in df.columns if 'stack.state' in c][0]
+        
+        # A has 2 states (branch 0), B has 3 states (branch 1)
+        expected = [0, 0, 1, 1, 1]
+        actual = list(df[stack_state_col])
+        
+        assert actual == expected
+    
+    def test_stack_state_matches_active_parent(self):
+        """Test that stack state equals active_parent design card key."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['A1', 'A2'], mode='sequential').named('A')
+            b = pp.from_seqs(['B1'], mode='sequential').named('B')
+            c = pp.from_seqs(['C1', 'C2', 'C3'], mode='sequential').named('C')
+            stacked = pp.stack([a, b, c]).named('stacked')
+        
+        df = stacked.generate_library(num_cycles=1, report_design_cards=True)
+        
+        stack_state_col = [c for c in df.columns if 'stack.state' in c][0]
+        active_parent_col = [c for c in df.columns if 'stack.key.active_parent' in c][0]
+        
+        # Both should have the same values
+        assert list(df[stack_state_col]) == list(df[active_parent_col])
+    
+    def test_stack_num_states_equals_num_branches(self):
+        """Test that StackOp.num_states equals number of parent pools."""
+        with pp.Party() as party:
+            a = pp.from_seqs(['A1', 'A2'])
+            b = pp.from_seqs(['B1'])
+            c = pp.from_seqs(['C1', 'C2', 'C3'])
+            stacked = pp.stack([a, b, c])
+            
+            # Operation counter should have num_states = 3 (number of branches)
+            assert stacked.operation.num_states == 3
+            assert stacked.operation.counter.num_states == 3
