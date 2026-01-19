@@ -16,7 +16,7 @@ class TestHybridModeBasic:
         """Test that hybrid mode uses num_hybrid_states for counter."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=100)
-            assert pool.operation.num_states == 100
+            assert pool.operation.num_values == 100
     
     def test_hybrid_mode_requires_num_states(self):
         """Test that hybrid mode requires num_hybrid_states."""
@@ -140,7 +140,7 @@ class TestHybridModeGetKmers:
         """Test that get_kmers hybrid mode uses correct num_states."""
         with pp.Party() as party:
             pool = get_kmers(length=3, mode='hybrid', num_hybrid_states=100)
-            assert pool.operation.num_states == 100
+            assert pool.operation.num_values == 100
     
     def test_get_kmers_hybrid_valid_kmers(self):
         """Test that hybrid get_kmers produces valid k-mers."""
@@ -184,7 +184,7 @@ class TestHybridModeFromSeqs:
         """Test that from_seqs hybrid mode uses correct num_states."""
         with pp.Party() as party:
             pool = from_seqs(['AAA', 'TTT', 'GGG'], mode='hybrid', num_hybrid_states=100)
-            assert pool.operation.num_states == 100
+            assert pool.operation.num_values == 100
     
     def test_from_seqs_hybrid_random_selection(self):
         """Test that from_seqs hybrid mode randomly selects sequences."""
@@ -232,7 +232,7 @@ class TestHybridModeBreakpointScan:
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, 
                                           mode='hybrid', num_hybrid_states=50)
-            assert left.operation.num_states == 50
+            assert left.operation.num_values == 50
     
     def test_breakpoint_scan_hybrid_valid_splits(self):
         """Test that hybrid breakpoint_scan produces valid splits."""
@@ -280,8 +280,8 @@ class TestHybridModeVsRandomMode:
             random_pool = mutagenize('ACGT', num_mutations=1, mode='random')
             hybrid_pool = mutagenize('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=50)
             
-            assert random_pool.operation.num_states == 1
-            assert hybrid_pool.operation.num_states == 50
+            assert random_pool.operation.num_values == 1
+            assert hybrid_pool.operation.num_values == 50
     
     def test_hybrid_iterates_deterministically(self):
         """Test that hybrid mode iterates through states deterministically."""

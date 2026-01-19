@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import poolparty as pp
 from poolparty.base_ops.breakpoint_scan import BreakpointScanOp, breakpoint_scan
-import statecounter as sc
+import statetracker as st
 
 
 class TestBreakpointScanFactory:
@@ -147,14 +147,14 @@ class TestBreakpointScanSequentialMode:
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential')
             # C(5, 1) = 5 (positions 0, 1, 2, 3, 4)
-            assert left.operation.num_states == 5
+            assert left.operation.num_values == 5
     
     def test_sequential_num_states_double(self):
         """Test num_states for double breakpoint."""
         with pp.Party() as party:
             pools = breakpoint_scan('ABCDEF', num_breakpoints=2, mode='sequential')
             # 7 positions (0-6), choose 2: C(7,2) = 21
-            assert pools[0].operation.num_states == 21
+            assert pools[0].operation.num_values == 21
 
 
 class TestBreakpointScanRandomMode:
@@ -184,10 +184,10 @@ class TestBreakpointScanRandomMode:
         assert unique_lefts > 1
     
     def test_random_num_states_is_one(self):
-        """Test that random mode has num_states=1."""
+        """Test that random mode has num_values=1."""
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='random')
-            assert left.operation.num_states == 1
+            assert left.operation.num_values == 1
 
 
 class TestBreakpointScanPositions:
@@ -365,7 +365,7 @@ class TestBreakpointScanCompute:
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='sequential')
         
-        left.operation.counter._state = 0
+        left.operation.state._value = 0
         card = left.operation.compute_design_card(['ACGT'])
         result = left.operation.compute_seq_from_card(['ACGT'], card)
         assert 'seq_0' in result
@@ -528,7 +528,7 @@ class TestBreakpointScanSpacing:
                 min_spacing=5, mode='sequential'
             )
             # Count should be 21, not 55
-            assert pools[0].operation.num_states == 21
+            assert pools[0].operation.num_values == 21
     
     def test_spacing_error_no_valid_combinations(self):
         """Test error when no valid combinations after filtering."""
@@ -602,13 +602,13 @@ class TestSynchronizePoolsParameter:
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1)
             # Default: pools share the same counter
-            assert left.counter is right.counter
+            assert left.state is right.state
     
     def test_synchronize_pools_true_shares_counter(self):
         """Test that synchronize_pools=True shares counter across pools."""
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1)
-            assert left.counter is right.counter
+            assert left.state is right.state
     
     
     def test_synchronized_pools_can_join(self):
@@ -649,6 +649,6 @@ class TestSynchronizePoolsParameter:
         with pp.Party() as party:
             seg0, seg1, seg2 = breakpoint_scan('ACGTACGT', num_breakpoints=2)
             # All three share the same counter
-            assert seg0.counter is seg1.counter
-            assert seg1.counter is seg2.counter
+            assert seg0.state is seg1.state
+            assert seg1.state is seg2.state
     

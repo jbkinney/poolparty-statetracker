@@ -4,7 +4,7 @@ if sys.version_info >= (3, 11):
     import tomllib
 else:
     import tomli as tomllib
-import statecounter as sc
+import statetracker as st
 from .types import Pool_type, Operation_type, Optional, beartype, Union, Any
 from .codon_table import CodonTable
 from . import dna
@@ -68,7 +68,7 @@ class Party:
         self._outputs: dict[str, Pool_type] = {}
         self._is_active: bool = False
         self._previous_party: Optional["Party"] = None
-        self._counter_manager: sc.Manager = sc.Manager()
+        self._counter_manager: st.Manager = st.Manager()
         self._next_pool_id: int = 0
         self._next_op_id: int = 0
         self._next_marker_id: int = 0
@@ -100,8 +100,13 @@ class Party:
         return id_
     
     @property
-    def counter_manager(self) -> sc.Manager:
-        """Access the statecounter Manager for debugging counter iteration."""
+    def state_manager(self) -> st.Manager:
+        """Access the statetracker Manager for debugging state iteration."""
+        return self._counter_manager
+    
+    @property
+    def counter_manager(self) -> st.Manager:
+        """Deprecated: Use state_manager instead. Access the statetracker Manager for debugging state iteration."""
         return self._counter_manager
     
     @property
@@ -315,10 +320,10 @@ class Party:
         # Reset counter manager to clear counter state
         if self._is_active:
             self._counter_manager.__exit__(None, None, None)
-            self._counter_manager = sc.Manager()
+            self._counter_manager = st.Manager()
             self._counter_manager.__enter__()
         else:
-            self._counter_manager = sc.Manager()
+            self._counter_manager = st.Manager()
     
     def output(self, pool: Pool_type, name: Optional[str] = None) -> None:
         """Mark a pool as an output of this library."""

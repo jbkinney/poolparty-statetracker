@@ -11,35 +11,35 @@ from poolparty.df_format import (
 )
 
 
-class TestCounterColName:
+class TestStateColName:
     """Test counter_col_name function."""
     
     def test_uses_counter_name_if_present(self):
         """Test that counter name is used when available."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'])
-            pool.counter.name = "my_counter"
+            pool.state.name = "my_counter"
             
-            result = counter_col_name(pool.counter, 0)
+            result = counter_col_name(pool.state, 0)
             assert result == "my_counter"
     
     def test_uses_counter_id_if_no_name(self):
         """Test fallback to id_{counter.id} when no name."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'])
-            pool.counter.name = ""  # Clear name
+            pool.state.name = ""  # Clear name
             
-            result = counter_col_name(pool.counter, 0)
-            assert result == f"id_{pool.counter.id}"
+            result = counter_col_name(pool.state, 0)
+            assert result == f"id_{pool.state.id}"
     
     def test_uses_index_fallback(self):
         """Test fallback to id_{index} when no name or id."""
         # Create a mock counter with no name and no id
-        class MockCounter:
+        class MockState:
             name = ""
             id = None
         
-        mock_counter = MockCounter()
+        mock_counter = MockState()
         result = counter_col_name(mock_counter, 5)
         assert result == "id_5"
 

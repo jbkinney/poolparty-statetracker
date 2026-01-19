@@ -65,7 +65,7 @@ class RepeatOp(Operation):
         self.times = times
         super().__init__(
             parent_pools=[pool],
-            num_states=times,
+            num_values=times,
             mode='sequential',
             seq_length=pool.seq_length,
             name=name,
@@ -79,7 +79,7 @@ class RepeatOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
         """Return design card with repeat index."""
-        state = self.counter.state
+        state = self.state.value
         repeat_index = 0 if state is None else state
         return {'repeat_index': repeat_index}
     

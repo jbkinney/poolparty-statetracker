@@ -1,6 +1,6 @@
 """Stack operation - combine pools sequentially (disjoint union)."""
 from numbers import Real
-import statecounter as sc
+import statetracker as st
 from ..types import Optional, Sequence, Integral, Real, beartype
 from ..operation import Operation
 from ..pool import Pool
@@ -65,7 +65,7 @@ class StackOp(Operation):
             seq_length = None
         super().__init__(
             parent_pools=parent_pools,
-            num_states=len(parent_pools),  # Number of branches
+            num_values=len(parent_pools),  # Number of branches
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
@@ -75,10 +75,10 @@ class StackOp(Operation):
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool],
-    ) -> sc.Counter:
-        """Build pool counter using sc.stack (disjoint union)."""
-        parent_counters = [p.counter for p in parent_pools]
-        return sc.stack(parent_counters)
+    ) -> st.State:
+        """Build pool state using st.stack (disjoint union)."""
+        parent_states = [p.state for p in parent_pools]
+        return st.stack(parent_states)
     
     def compute_design_card(
         self,
@@ -87,11 +87,11 @@ class StackOp(Operation):
     ) -> dict:
         """Return design card with active parent index."""
         for i, parent in enumerate(self.parent_pools):
-            if parent.counter.state is not None:
+            if parent.state.value is not None:
                 # Set operation counter to branch index (safe for leaf counter)
-                self.counter.state = i
+                self.state.value = i
                 return {'active_parent': i}
-        self.counter.state = None
+        self.state.value = None
         return {'active_parent': None}
     
     def compute_seq_from_card(
@@ -129,7 +129,7 @@ class StackOp(Operation):
         
         # Append prefix if set
         if self.name_prefix is not None:
-            state = self.counter.state
+            state = self.state.value
             if state is not None:
                 op_name = f'{self.name_prefix}{state}'
                 name = f'{name}.{op_name}' if name else op_name

@@ -146,7 +146,7 @@ class FromMotifOp(Operation):
         parent_pools = [bg_pool] if bg_pool is not None else []
         super().__init__(
             parent_pools=parent_pools,
-            num_states=num_states,
+            num_values=num_states,
             mode=mode,
             seq_length=len(self.prob_df),
             name=name,
@@ -194,7 +194,7 @@ class FromMotifOp(Operation):
             'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
             'name': None,
             'iter_order': self.iter_order,
         }

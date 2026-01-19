@@ -192,7 +192,7 @@ class MarkerScanOp(Operation):
         # Initialize as Operation
         super().__init__(
             parent_pools=[parent_pool],
-            num_states=num_states,
+            num_values=num_states,
             mode=mode,
             seq_length=None,  # Variable due to marker tags
             name=name,
@@ -285,7 +285,7 @@ class MarkerScanOp(Operation):
         if self._strand == 'both':
             # For sequential mode, alternate strands
             if self.mode == 'sequential':
-                state = self.counter.state
+                state = self.state.value
                 state = 0 if state is None else state
                 num_pos = len(valid_indices)
                 position_index = (state // 2) % num_pos
@@ -303,7 +303,7 @@ class MarkerScanOp(Operation):
                     raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
                 position_index = int(rng.integers(0, len(valid_indices)))
             else:
-                state = self.counter.state
+                state = self.state.value
                 state = 0 if state is None else state
                 position_index = state % len(valid_indices)
         
@@ -392,7 +392,7 @@ class MarkerScanOp(Operation):
             'marker_length': self._marker_length,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
             'name': None,
             'iter_order': self.iter_order,
         }

@@ -8,7 +8,7 @@ from numbers import Real, Integral
 # Forward reference type aliases (resolve circular imports)
 Pool_type: TypeAlias = "poolparty.pool.Pool"
 Operation_type: TypeAlias = "poolparty.operation.Operation"
-Counter_type: TypeAlias = "poolparty.counter.Counter"
+State_type: TypeAlias = "statetracker.state.State"
 
 # Mode type for operations
 ModeType: TypeAlias = Literal['random', 'sequential', 'fixed', 'hybrid']
@@ -38,7 +38,7 @@ __all__ = [
     'Any',
     'Pool_type',
     'Operation_type',
-    'Counter_type',
+    'State_type',
     'ModeType',
     'AlphabetType',
     'FilterFunc',

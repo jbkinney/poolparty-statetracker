@@ -477,12 +477,12 @@ state propagation enables lazy sequence generation.]
 The following example demonstrates basic StateCounter usage with the product operation:
 
 \begin{minted}{python}
-from statecounter import Counter, Manager
+from statetracker import Counter, Manager
 
 with Manager():
     # Create leaf counters
-    A = Counter(num_states=2, name='A')
-    B = Counter(num_states=3, name='B')
+    A = Counter(num_values=2, name='A')
+    B = Counter(num_values=3, name='B')
     
     # Combine with product (Cartesian product)
     C = A * B  # 6 states total
@@ -493,7 +493,7 @@ with Manager():
 \end{minted}
 
 % You can also use inline code like this:
-To create a counter, use \mintinline{python}{Counter(num_states=n, name='X')}.
+To create a counter, use \mintinline{python}{Counter(num_values=n, name='X')}.
 
 
 \subsection{PoolParty Example}

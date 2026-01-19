@@ -12,7 +12,7 @@ class TestStateSampleFactory:
         """Test that state_sample returns a Pool."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
-            sampled = state_sample(pool, num_states=3, seed=42)
+            sampled = state_sample(pool, num_values=3, seed=42)
             assert sampled is not None
             assert hasattr(sampled, 'operation')
     
@@ -20,7 +20,7 @@ class TestStateSampleFactory:
         """Test that state_sample creates a StateSampleOp."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
-            sampled = state_sample(pool, num_states=3, seed=42)
+            sampled = state_sample(pool, num_values=3, seed=42)
             assert isinstance(sampled.operation, StateSampleOp)
 
 
@@ -31,21 +31,21 @@ class TestStateSampleNumStates:
         """Test sampling fewer states than parent."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')  # 5 states
-            sampled = state_sample(pool, num_states=3, seed=42)
+            sampled = state_sample(pool, num_values=3, seed=42)
             assert sampled.num_states == 3
     
     def test_num_states_equal_to_parent(self):
         """Test sampling same number of states as parent."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')  # 5 states
-            sampled = state_sample(pool, num_states=5, seed=42, with_replacement=False)
+            sampled = state_sample(pool, num_values=5, seed=42, with_replacement=False)
             assert sampled.num_states == 5
     
     def test_num_states_greater_with_replacement(self):
         """Test sampling more states than parent with replacement."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')  # 3 states
-            sampled = state_sample(pool, num_states=10, seed=42, with_replacement=True)
+            sampled = state_sample(pool, num_values=10, seed=42, with_replacement=True)
             assert sampled.num_states == 10
 
 
@@ -77,7 +77,7 @@ class TestStateSampleOutput:
         with pp.Party() as party:
             seqs = ['A', 'B', 'C', 'D', 'E']
             pool = pp.from_seqs(seqs, mode='sequential')
-            sampled = state_sample(pool, num_states=3, seed=42).named('samp')
+            sampled = state_sample(pool, num_values=3, seed=42).named('samp')
         
         df = sampled.generate_library(num_cycles=1)
         for seq in df['seq'].tolist():
@@ -91,12 +91,12 @@ class TestStateSampleDeterminism:
         """Test that same seed produces same result."""
         with pp.Party() as party:
             pool1 = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
-            sampled1 = state_sample(pool1, num_states=3, seed=42).named('samp1')
+            sampled1 = state_sample(pool1, num_values=3, seed=42).named('samp1')
         df1 = sampled1.generate_library(num_cycles=1)
         
         with pp.Party() as party:
             pool2 = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
-            sampled2 = state_sample(pool2, num_states=3, seed=42).named('samp2')
+            sampled2 = state_sample(pool2, num_values=3, seed=42).named('samp2')
         df2 = sampled2.generate_library(num_cycles=1)
         
         assert df1['seq'].tolist() == df2['seq'].tolist()
@@ -105,12 +105,12 @@ class TestStateSampleDeterminism:
         """Test that different seeds produce different results."""
         with pp.Party() as party:
             pool1 = pp.from_seqs(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], mode='sequential')
-            sampled1 = state_sample(pool1, num_states=4, seed=42).named('samp1')
+            sampled1 = state_sample(pool1, num_values=4, seed=42).named('samp1')
         df1 = sampled1.generate_library(num_cycles=1)
         
         with pp.Party() as party:
             pool2 = pp.from_seqs(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], mode='sequential')
-            sampled2 = state_sample(pool2, num_states=4, seed=123).named('samp2')
+            sampled2 = state_sample(pool2, num_values=4, seed=123).named('samp2')
         df2 = sampled2.generate_library(num_cycles=1)
         
         # Very likely to be different with different seeds
@@ -124,7 +124,7 @@ class TestStateSampleNoSeed:
         """Test that state_sample works without explicit seed."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
-            sampled = state_sample(pool, num_states=3).named('samp')  # No seed
+            sampled = state_sample(pool, num_values=3).named('samp')  # No seed
         
         df = sampled.generate_library(num_cycles=1)
         # Should still output 3 valid sequences
@@ -140,7 +140,7 @@ class TestStateSampleCustomName:
         """Test default operation name."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
-            sampled = state_sample(pool, num_states=2, seed=42)
+            sampled = state_sample(pool, num_values=2, seed=42)
             assert sampled.operation.name.startswith('op[')
             assert ':state_sample' in sampled.operation.name
     
@@ -148,7 +148,7 @@ class TestStateSampleCustomName:
         """Test custom operation name."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
-            sampled = state_sample(pool, num_states=2, seed=42, op_name='my_sample')
+            sampled = state_sample(pool, num_values=2, seed=42, op_name='my_sample')
             assert sampled.operation.name == 'my_sample'
 
 
@@ -182,7 +182,7 @@ class TestStateSampleWithReplacement:
         """Test that with_replacement=True allows sampling more states."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
-            sampled = state_sample(pool, num_states=10, seed=42, with_replacement=True).named('samp')
+            sampled = state_sample(pool, num_values=10, seed=42, with_replacement=True).named('samp')
         
         assert sampled.num_states == 10
         df = sampled.generate_library(num_cycles=1)
@@ -192,7 +192,7 @@ class TestStateSampleWithReplacement:
         """Test that with_replacement=False works when num_states <= parent."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
-            sampled = state_sample(pool, num_states=3, seed=42, with_replacement=False).named('samp')
+            sampled = state_sample(pool, num_values=3, seed=42, with_replacement=False).named('samp')
         
         assert sampled.num_states == 3
         df = sampled.generate_library(num_cycles=1)
@@ -203,8 +203,8 @@ class TestStateSampleWithReplacement:
         """Test that with_replacement=False raises when num_states > parent."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
-            with pytest.raises(ValueError, match="exceeds parent.num_states"):
-                state_sample(pool, num_states=10, with_replacement=False)
+            with pytest.raises(ValueError, match="exceeds parent.num_values"):
+                state_sample(pool, num_values=10, with_replacement=False)
 
 
 class TestStateSampleValidation:
@@ -222,7 +222,7 @@ class TestStateSampleValidation:
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
             with pytest.raises(ValueError, match="Cannot specify both"):
-                state_sample(pool, num_states=2, sampled_states=[0, 1])
+                state_sample(pool, num_values=2, sampled_states=[0, 1])
     
     def test_cannot_specify_seed_with_sampled_states(self):
         """Test that seed cannot be used with sampled_states."""
@@ -250,14 +250,14 @@ class TestStateSampleGetCopyParams:
     """Test StateSampleOp._get_copy_params method."""
     
     def test_get_copy_params_with_num_states(self):
-        """Test _get_copy_params with num_states."""
+        """Test _get_copy_params with num_values."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
-            sampled = state_sample(pool, num_states=2, seed=42, with_replacement=False)
+            sampled = state_sample(pool, num_values=2, seed=42, with_replacement=False)
             params = sampled.operation._get_copy_params()
             
             assert params['parent_pool'] is pool
-            assert params['num_states'] == 2
+            assert params['num_values'] == 2
             assert params['sampled_states'] is None
             assert params['seed'] == 42
             assert params['with_replacement'] == False
@@ -270,6 +270,6 @@ class TestStateSampleGetCopyParams:
             params = sampled.operation._get_copy_params()
             
             assert params['parent_pool'] is pool
-            assert params['num_states'] is None
+            assert params['num_values'] is None
             assert params['sampled_states'] == [0, 2]
             assert params['seed'] is None

@@ -40,7 +40,7 @@ class TestSeqShuffleBehavior:
     def test_hybrid_num_states(self):
         with pp.Party():
             pool = shuffle_seq('ACGT', mode='hybrid', num_hybrid_states=10).named('shuf')
-        assert pool.operation.num_states == 10
+        assert pool.operation.num_values == 10
         df = pool.generate_library(num_cycles=1, seed=99)
         assert len(df) == 10
     

@@ -247,7 +247,7 @@ class MutagenizeOp(Operation):
         
         super().__init__(
             parent_pools=[pool],
-            num_states=num_states,
+            num_values=num_states,
             mode=mode,
             seq_length=self._seq_length,
             name=name,
@@ -427,16 +427,16 @@ class MutagenizeOp(Operation):
                 # No allowed_chars - may need to build cache dynamically
                 if self._sequential_cache is None:
                     self._build_caches(num_mutable)
-                    self._num_states = len(self._sequential_cache)
-                    self.counter._num_states = self._num_states
+                    self._num_values = len(self._sequential_cache)
+                    self.state._num_values = self._num_values
                 elif self._num_mutable_positions != num_mutable:
                     self._build_caches(num_mutable)
-                    self._num_states = len(self._sequential_cache)
-                    self.counter._num_states = self._num_states
+                    self._num_values = len(self._sequential_cache)
+                    self.state._num_values = self._num_values
             # With allowed_chars, cache was built at init - just use it
             
             # Use state 0 when inactive (state is None)
-            state = self.counter.state
+            state = self.state.value
             state = 0 if state is None else state
             rel_positions, mut_indices = self._sequential_cache[state % len(self._sequential_cache)]
             
@@ -509,7 +509,7 @@ class MutagenizeOp(Operation):
             'swapcase': self.swapcase,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
             'name': None,
             'iter_order': self.iter_order,
         }

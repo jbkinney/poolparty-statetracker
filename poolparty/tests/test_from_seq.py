@@ -44,7 +44,7 @@ class TestFromSeqGeneration:
         """Test that num_states is always 1."""
         with pp.Party() as party:
             pool = from_seq('AAA')
-            assert pool.operation.num_states == 1
+            assert pool.operation.num_values == 1
             assert pool.num_states == 1
 
 

@@ -1,6 +1,6 @@
 """Operation base class for poolparty."""
 from numbers import Real
-import statecounter as sc
+import statetracker as st
 from .types import Pool_type, Sequence, ModeType, Optional, RegionType, beartype
 from . import dna
 import numpy as np
@@ -15,24 +15,24 @@ class Operation:
     factory_name: str = "op"
     
     @classmethod
-    def validate_num_states(cls, num_states: int | float, mode: ModeType) -> int | float:
-        """Validate num_states against max_num_sequential_states."""
-        if num_states != np.inf and num_states < 1:
-            raise ValueError(f"num_states must be >= 1 or np.inf, got {num_states}")
-        if num_states > cls.max_num_sequential_states:
+    def validate_num_values(cls, num_values: int | float, mode: ModeType) -> int | float:
+        """Validate num_values against max_num_sequential_states."""
+        if num_values != np.inf and num_values < 1:
+            raise ValueError(f"num_values must be >= 1 or np.inf, got {num_values}")
+        if num_values > cls.max_num_sequential_states:
             if mode == 'sequential':
                 raise ValueError(
-                    f"Number of states ({num_states}) exceeds "
+                    f"Number of values ({num_values}) exceeds "
                     f"max_num_sequential_states ({cls.max_num_sequential_states}). "
                     f"Use mode='random' or mode='hybrid' instead."
                 )
             return np.inf
-        return num_states
+        return num_values
     
     def __init__(
         self,
         parent_pools: Sequence[Pool_type],
-        num_states: int = 1,
+        num_values: int = 1,
         mode: ModeType = 'fixed',
         seq_length: Optional[int] = None,
         name: Optional[str] = None,
@@ -54,14 +54,15 @@ class Operation:
         self.parent_pools = list(parent_pools)
         self.mode = mode
         self._id = party._get_next_op_id()
-        # Set _name directly during init (counter doesn't exist yet)
+        # Set _name directly during init (state doesn't exist yet)
         self._name = name if name is not None else f'op[{self._id}]:{self.factory_name}'
         self._seq_length = seq_length
         if mode == 'random':
-            num_states = 1
-        self.counter = sc.Counter(num_states=num_states, name=f"{self._name}.state", iter_order=iter_order)
+            num_values = 1
+        validated_num_values = self.validate_num_values(num_values, mode)
+        self.state = st.State(num_values=validated_num_values, name=f"{self._name}.state", iter_order=iter_order)
         self.rng: np.random.Generator | None = None
-        self.num_states = num_states
+        self.num_values = validated_num_values
         # Sequence naming attributes
         self.name_prefix: Optional[str] = seq_name_prefix
         self.clear_parent_names: bool = False
@@ -87,12 +88,12 @@ class Operation:
     @property
     def iter_order(self) -> Real:
         """Iteration order for this operation."""
-        return self.counter.iter_order
+        return self.state.iter_order
     
     @iter_order.setter
     def iter_order(self, value: Real) -> None:
         """Set iteration order for this operation."""
-        self.counter.iter_order = value
+        self.state.iter_order = value
     
     @property
     def seq_length(self) -> Optional[int]:
@@ -201,34 +202,34 @@ class Operation:
         self._party._validate_op_name(value, self)
         old_name = self._name
         self._name = value
-        # Update counter name if counter exists
-        if hasattr(self, 'counter'):
-            self.counter.name = f"{value}.state"
+        # Update state name if state exists
+        if hasattr(self, 'state'):
+            self.state.name = f"{value}.state"
         # Update party's name tracking if this is a rename (not initial set)
         if old_name:
             self._party._update_op_name(self, old_name, value)
     
     @property
     def iter_order(self) -> Real:
-        """Iteration order for this operation's counter."""
-        return self.counter.iter_order
+        """Iteration order for this operation's state."""
+        return self.state.iter_order
     
     @iter_order.setter
     def iter_order(self, value: Real) -> None:
-        """Set iteration order on this operation's counter."""
-        self.counter.iter_order = value
+        """Set iteration order on this operation's state."""
+        self.state.iter_order = value
     
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool_type],
-    ) -> sc.Counter:
-        """Build the output Pool's counter from parent pool counters, sorted by iteration_order."""
-        parent_counters = [p.counter for p in parent_pools]
-        if not parent_counters:
-            # Source operation: pool counter IS the operation counter
-            return sc.passthrough(self.counter)
+    ) -> st.State:
+        """Build the output Pool's state from parent pool states, sorted by iteration_order."""
+        parent_states = [p.state for p in parent_pools]
+        if not parent_states:
+            # Source operation: pool state IS the operation state
+            return st.passthrough(self.state)
         else: 
-            return sc.ordered_product(counters=parent_counters + [self.counter])
+            return st.ordered_product(states=parent_states + [self.state])
 
     
     def compute_design_card(
@@ -353,26 +354,26 @@ class Operation:
             return {f'name_{i}': parent_name for i in range(self.num_outputs)}
         
         # Build name(s) with prefix
-        state = self.counter.state
+        value = self.state.value
         if state is None:
             # Inactive state - return None for all outputs
             return {f'name_{i}': None for i in range(self.num_outputs)}
         
         if self.num_outputs == 1:
-            op_name = f'{self.name_prefix}{state}'
+            op_name = f'{self.name_prefix}{value}'
             full_name = f'{parent_name}.{op_name}' if parent_name else op_name
             return {'name_0': full_name}
         else:
-            # Multi-output: use f'{prefix}{state}({i})' format
+            # Multi-output: use f'{prefix}{value}({i})' format
             result = {}
             for i in range(self.num_outputs):
-                op_name = f'{self.name_prefix}{state}({i})'
+                op_name = f'{self.name_prefix}{value}({i})'
                 full_name = f'{parent_name}.{op_name}' if parent_name else op_name
                 result[f'name_{i}'] = full_name
             return result
     
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self._id}, name={self.name!r}, mode={self.mode!r}, num_states={self.num_states})"
+        return f"{self.__class__.__name__}(id={self._id}, name={self.name!r}, mode={self.mode!r}, num_values={self.num_values})"
     
     def _get_copy_params(self) -> dict:
         """Return the parameters needed to create a copy of this operation.

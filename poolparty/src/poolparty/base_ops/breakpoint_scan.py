@@ -74,12 +74,12 @@ def breakpoint_scan(
         name=op_name,
         iter_order=op_iter_order,
     )
-    shared_counter = op.build_pool_counter(op.parent_pools)
+    shared_state = op.build_pool_counter(op.parent_pools)
     result_pools = tuple(
         Pool(
             operation=op,
             output_index=i,
-            counter=shared_counter,
+            state=shared_state,
             iter_order=iter_order,
             name=names[i],
         )
@@ -132,7 +132,7 @@ class BreakpointScanOp(Operation):
             num_states = 1
         super().__init__(
             parent_pools=[parent_pool],
-            num_states=num_states,
+            num_values=num_states,
             mode=mode,
             seq_length=None,  # Variable output lengths
             name=name,
@@ -215,9 +215,9 @@ class BreakpointScanOp(Operation):
             if self._sequential_cache is None:
                 self._seq_length = seq_len
                 self._build_caches()
-                self.counter._num_states = len(self._sequential_cache)
+                self.state._num_values = len(self._sequential_cache)
             # Use state 0 when inactive (state is None)
-            state = self.counter.state
+            state = self.state.value
             state = 0 if state is None else state
             breakpoints = self._sequential_cache[state % len(self._sequential_cache)]
         return {'breakpoints': breakpoints}
@@ -260,7 +260,7 @@ class BreakpointScanOp(Operation):
             'max_spacing': self.max_spacing,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
             'name': None,
             'iter_order': self.iter_order,
         }

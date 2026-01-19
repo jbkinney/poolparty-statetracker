@@ -2,7 +2,7 @@
 
 __version__ = "0.3.0"
 
-import statecounter as sc
+import statetracker as st
 
 from .party import Party, get_active_party, init, clear_pools, _init_default_party
 from .pool import Pool
@@ -78,7 +78,7 @@ __all__ = [
     '__version__',
     'Party', 'get_active_party', 'init', 'clear_pools',
     'set_default', 'load_defaults',
-    'Pool', 'Operation', 'Marker', 'Counter', 'CounterManager', 'generate_library',
+    'Pool', 'Operation', 'Marker', 'State', 'StateManager', 'generate_library',
     'BASES', 'COMPLEMENT', 'IUPAC_TO_DNA', 'IGNORE_CHARS', 'VALID_CHARS',
     'fixed_operation', 'FixedOp',
     'from_seq',
@@ -131,9 +131,9 @@ __all__ = [
     'print_named_colors',
 ]
 
-# Re-export statecounter primitives for backward compatibility
-Counter = sc.Counter
-CounterManager = sc.Manager
+# Re-export statetracker primitives for backward compatibility
+State = st.State
+StateManager = st.Manager
 
 # Initialize default Party context on import
 _init_default_party()
@@ -142,7 +142,7 @@ _init_default_party()
 def set_default(key: str, value) -> None:
     """Set a default parameter on the active Party."""
     if key == 'iter_order':
-        sc.set_product_order_mode(value)
+        st.set_product_order_mode(value)
     get_active_party().set_default(key, value)
 
 

@@ -1,23 +1,23 @@
 """DataFrame formatting utilities for poolparty."""
 from poolparty.types import Literal
-import statecounter as sc
+import statetracker as st
 import pandas as pd
 
 
-def counter_col_name(counter: "sc.Counter", index: int) -> str:
-    """Get column name for a counter's state.
+def counter_col_name(state: "st.State", index: int) -> str:
+    """Get column name for a state's value.
     
     Args:
-        counter: The counter to get a column name for.
-        index: Fallback index if counter has no name or id.
+        state: The state to get a column name for.
+        index: Fallback index if state has no name or id.
     
     Returns:
-        A string column name for the counter.
+        A string column name for the state.
     """
-    if counter.name:
-        return counter.name
-    elif counter.id is not None:
-        return f"id_{counter.id}"
+    if state.name:
+        return state.name
+    elif state.id is not None:
+        return f"id_{state.id}"
     else:
         return f"id_{index}"
 

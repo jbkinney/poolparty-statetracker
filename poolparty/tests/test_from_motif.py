@@ -64,11 +64,11 @@ class TestFromMotifRandomMode:
         assert all(seq == 'A' for seq in df['seq'])
     
     def test_random_num_states_is_one(self):
-        """Test that random mode has num_states=1."""
+        """Test that random mode has num_values=1."""
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
             pool = from_motif(prob_df, mode='random')
-            assert pool.operation.num_states == 1
+            assert pool.operation.num_values == 1
     
     def test_deterministic_with_seed(self):
         """Test that same seed produces same results."""
@@ -94,7 +94,7 @@ class TestFromMotifHybridMode:
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
             pool = from_motif(prob_df, mode='hybrid', num_hybrid_states=10)
-            assert pool.operation.num_states == 10
+            assert pool.operation.num_values == 10
     
     def test_hybrid_mode_requires_num_hybrid_states(self):
         """Test that hybrid mode requires num_hybrid_states."""

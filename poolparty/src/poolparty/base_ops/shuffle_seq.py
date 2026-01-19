@@ -119,7 +119,7 @@ class SeqShuffleOp(Operation):
             num_states = 1
         super().__init__(
             parent_pools=[parent_pool],
-            num_states=num_states,
+            num_values=num_states,
             mode=mode,
             seq_length=parent_pool.seq_length,
             name=name,
@@ -220,7 +220,7 @@ class SeqShuffleOp(Operation):
             'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
             'name': None,
             'iter_order': self.iter_order,
         }

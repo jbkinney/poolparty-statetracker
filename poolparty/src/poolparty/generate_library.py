@@ -1,5 +1,5 @@
 """Library generation functions for poolparty."""
-import statecounter as sc
+import statetracker as st
 from .types import Pool_type, Union, Sequence, Literal, Optional, beartype
 from .utils import clean_df_int_columns
 from .df_format import counter_col_name, organize_columns, finalize_generate_df
@@ -48,7 +48,7 @@ def generate_library(
     
     # Validate arguments    
     if num_seqs is None:
-        num_seqs = num_cycles * pool.counter.num_states
+        num_seqs = num_cycles * pool.state.num_values
     if init_state is not None:
         pool._current_state = init_state
     if seed is not None:
@@ -82,11 +82,11 @@ def generate_library(
             if key not in outputs:
                 outputs[key] = p
         
-        counters = _collect_counters(pools_filter, report_pool_states, report_op_states)
+        states = _collect_counters(pools_filter, report_pool_states, report_op_states)
     else:
         pools_filter = {pool}
         ops_to_report = set()
-        counters = []
+        states = []
     
     # Generate rows
     rows = []
@@ -94,7 +94,7 @@ def generate_library(
         global_state = pool._current_state + i
         row = _compute_one(
             pool, sorted_ops, outputs, global_state, 
-            counters, report_op_keys if report_design_cards else False, 
+            states, report_op_keys if report_design_cards else False, 
             ops_to_report, pools_filter
         )
         rows.append(row)
@@ -176,20 +176,20 @@ def _collect_all_pools(outputs: dict) -> set:
 
 def _collect_counters(
     pools_filter: set,
-    include_pool_counters: bool = True,
-    include_op_counters: bool = True,
-) -> list[sc.Counter]:
+    include_pool_states: bool = True,
+    include_op_states: bool = True,
+) -> list[st.State]:
     """Collect counters from the specified pools."""
     visited: set[int] = set()
-    result: list[sc.Counter] = []
+    result: list[st.State] = []
     for pool in pools_filter:
-        if include_pool_counters:
-            counter_id = id(pool.counter)
+        if include_pool_states:
+            counter_id = id(pool.state)
             if counter_id not in visited:
                 visited.add(counter_id)
-                result.append(pool.counter)
-        if include_op_counters:
-            op_counter = pool.operation.counter
+                result.append(pool.state)
+        if include_op_states:
+            op_counter = pool.operation.state
             op_counter_id = id(op_counter)
             if op_counter_id not in visited:
                 visited.add(op_counter_id)
@@ -203,7 +203,7 @@ def _compute_one(
     sorted_ops: list,
     outputs: dict,
     global_state: int,
-    counters: list[sc.Counter] = (),
+    states: list[st.State] = (),
     report_op_keys: bool = True,
     ops_to_report: set = None,
     pools_filter: set = None,
@@ -214,9 +214,9 @@ def _compute_one(
     card_cache: dict[int, dict] = {}
     row: dict = {}
     
-    # Sets the state of the pool counter and, in doing so, the state
-    # of all pool and operation counters that affect this state. 
-    pool.counter.state = global_state % pool.counter.num_states
+    # Sets the value of the pool state and, in doing so, the value
+    # of all pool and operation states that affect this state. 
+    pool.state.value = global_state % pool.state.num_values
     
     # Iterates over the operations in topological order.
     # This is the code that effectively implements the DAG.
@@ -236,7 +236,7 @@ def _compute_one(
         # Determine RNG for this operation
         if op.mode == 'hybrid':
             # Create state-specific RNG for hybrid mode using SeedSequence
-            state = op.counter.state if op.counter.state is not None else 0
+            state = op.state.value if op.state.value is not None else 0
             seed_seq = np.random.SeedSequence([pool._master_seed, op.id, state])
             op_rng = np.random.default_rng(seed_seq)
         else:
@@ -255,19 +255,19 @@ def _compute_one(
         if report_op_keys and (ops_to_report is None or op.id in ops_to_report):
             for key in op.design_card_keys:
                 if key in card:
-                    if op.counter.state is None:
+                    if op.state.value is None:
                         row[f"{op.name}.key.{key}"] = None
                     else:
                         row[f"{op.name}.key.{key}"] = card[key]
     
-    # Read counter states AFTER design card computation
-    # (allows operations like StackOp to set counter state during compute_design_card)
-    for i, counter in enumerate(counters):
-        col_name = counter_col_name(counter, i)
-        row[col_name] = counter.state
+    # Read state values AFTER design card computation
+    # (allows operations like StackOp to set state value during compute_design_card)
+    for i, state in enumerate(states):
+        col_name = counter_col_name(state, i)
+        row[col_name] = state.value
     
     for output_name, output_pool in outputs.items():
-        if output_pool.counter.state is None:
+        if output_pool.state.value is None:
             row[output_name] = None
         else:
             result = seqs_cache[output_pool.operation.id]

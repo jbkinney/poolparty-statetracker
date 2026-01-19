@@ -156,7 +156,7 @@ class FromSeqsOp(Operation):
         parent_pools = [bg_pool] if bg_pool is not None else []
         super().__init__(
             parent_pools=parent_pools,
-            num_states=num_states,
+            num_values=num_states,
             mode=mode,
             seq_length=seq_length,
             name=name,
@@ -179,7 +179,7 @@ class FromSeqsOp(Operation):
             idx = rng.integers(0, len(self.seqs))
         else:
             # Use state 0 when inactive (state is None)
-            state = self.counter.state
+            state = self.state.value
             idx = (0 if state is None else state) % len(self.seqs)
         return {
             'seq_name': self.seq_names[idx],
@@ -215,7 +215,7 @@ class FromSeqsOp(Operation):
         # Otherwise fall back to prefix logic
         if self.name_prefix is None:
             return {'name_0': None}
-        state = self.counter.state
+        state = self.state.value
         if state is None:
             return {'name_0': None}
         return {'name_0': f'{self.name_prefix}{state}'}
@@ -232,7 +232,7 @@ class FromSeqsOp(Operation):
             'seq_names': self.seq_names if self._seq_names_explicit else None,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
             'name': None,
             'iter_order': self.iter_order,
         }

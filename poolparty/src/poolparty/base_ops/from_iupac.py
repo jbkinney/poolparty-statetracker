@@ -173,7 +173,7 @@ class FromIupacOp(Operation):
         parent_pools = [bg_pool] if bg_pool is not None else []
         super().__init__(
             parent_pools=parent_pools,
-            num_states=num_states,
+            num_values=num_states,
             mode=mode,
             seq_length=seq_length,
             name=name,
@@ -195,8 +195,8 @@ class FromIupacOp(Operation):
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
             state = rng.integers(0, self._total_states)
         else:
-            counter_state = self.counter.state
-            state = (0 if counter_state is None else counter_state) % self._total_states
+            state_value = self.state.value
+            state = (0 if state_value is None else state_value) % self._total_states
         return {'iupac_state': state}
 
     def compute_seq_from_card(
@@ -232,7 +232,7 @@ class FromIupacOp(Operation):
             'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
             'name': None,
             'iter_order': self.iter_order,
         }

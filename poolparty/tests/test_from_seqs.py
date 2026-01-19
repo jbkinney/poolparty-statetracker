@@ -54,7 +54,7 @@ class TestFromSeqsSequentialMode:
         """Test num_states equals number of sequences."""
         with pp.Party() as party:
             pool = from_seqs(['A', 'B', 'C'], mode='sequential')
-            assert pool.operation.num_states == 3
+            assert pool.operation.num_values == 3
 
 
 class TestFromSeqsRandomMode:
@@ -82,10 +82,10 @@ class TestFromSeqsRandomMode:
         assert 400 < counts['B'] < 600
     
     def test_random_num_states_is_one(self):
-        """Test that random mode has num_states=1."""
+        """Test that random mode has num_values=1."""
         with pp.Party() as party:
             pool = from_seqs(['A', 'B', 'C'], mode='random')
-            assert pool.operation.num_states == 1
+            assert pool.operation.num_values == 1
 
 
 class TestFromSeqsFixedMode:
@@ -106,10 +106,10 @@ class TestFromSeqsFixedMode:
                 from_seqs(['A', 'B'], mode='fixed')
     
     def test_fixed_num_states_is_one(self):
-        """Test that fixed mode has num_states=1."""
+        """Test that fixed mode has num_values=1."""
         with pp.Party() as party:
             pool = from_seqs(['AAA'], mode='fixed')
-            assert pool.operation.num_states == 1
+            assert pool.operation.num_values == 1
 
 
 class TestFromSeqsNames:
@@ -186,14 +186,14 @@ class TestFromSeqsCompute:
             pool = from_seqs(['AAA', 'TTT', 'GGG'], mode='sequential')
         
         # Set counter state to 0
-        pool.operation.counter._state = 0
+        pool.operation.state._value = 0
         card = pool.operation.compute_design_card([])
         result = pool.operation.compute_seq_from_card([], card)
         assert result['seq_0'] == 'AAA'
         assert card['seq_index'] == 0
         
         # Set counter state to 1
-        pool.operation.counter._state = 1
+        pool.operation.state._value = 1
         card = pool.operation.compute_design_card([])
         result = pool.operation.compute_seq_from_card([], card)
         assert result['seq_0'] == 'TTT'

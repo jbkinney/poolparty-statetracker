@@ -8,7 +8,7 @@ from poolparty.operation import Operation
 from poolparty.pool import Pool
 
 
-class TestOperationIdCounter:
+class TestOperationIdState:
     """Test Operation ID counter behavior."""
     
     def test_ids_start_at_zero(self):
@@ -64,7 +64,7 @@ class TestOperationAttributes:
         """Test num_states attribute."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
-            assert pool.operation.num_states == 3
+            assert pool.operation.num_values == 3
     
     def test_mode_attribute(self):
         """Test mode attribute."""
@@ -106,56 +106,56 @@ class TestOperationModeValidation:
             # Create a direct Operation with invalid mode
             op = Operation(
                 parent_pools=[],
-                num_states=1,
+                num_values=1,
                 mode='invalid',  # type: ignore
             )
 
 
 class TestValidateNumStates:
-    """Test Operation.validate_num_states class method."""
+    """Test Operation.validate_num_values class method."""
     
     def test_valid_num_states(self):
         """Test valid num_states passes through."""
-        result = Operation.validate_num_states(100, 'sequential')
+        result = Operation.validate_num_values(100, 'sequential')
         assert result == 100
     
     def test_num_states_one(self):
-        """Test num_states=1 is valid."""
-        result = Operation.validate_num_states(1, 'sequential')
+        """Test num_values=1 is valid."""
+        result = Operation.validate_num_values(1, 'sequential')
         assert result == 1
     
     def test_num_states_inf(self):
-        """Test num_states=np.inf is valid (for infinite)."""
+        """Test num_values=np.inf is valid (for infinite)."""
         import numpy as np
-        result = Operation.validate_num_states(np.inf, 'random')
+        result = Operation.validate_num_values(np.inf, 'random')
         assert result == np.inf
     
     def test_invalid_num_states_zero(self):
-        """Test num_states=0 raises error."""
-        with pytest.raises(ValueError, match="num_states must be >= 1 or np.inf"):
-            Operation.validate_num_states(0, 'sequential')
+        """Test num_values=0 raises error."""
+        with pytest.raises(ValueError, match="num_values must be >= 1 or np.inf"):
+            Operation.validate_num_values(0, 'sequential')
     
     def test_invalid_num_states_negative(self):
-        """Test num_states=-1 raises error."""
-        with pytest.raises(ValueError, match="num_states must be >= 1 or np.inf"):
-            Operation.validate_num_states(-1, 'sequential')
+        """Test num_values=-1 raises error."""
+        with pytest.raises(ValueError, match="num_values must be >= 1 or np.inf"):
+            Operation.validate_num_values(-1, 'sequential')
     
     def test_exceeds_max_sequential_error(self):
         """Test exceeding max in sequential mode raises error."""
         huge_num = Operation.max_num_sequential_states + 1
         with pytest.raises(ValueError, match="exceeds max_num_sequential_states"):
-            Operation.validate_num_states(huge_num, 'sequential')
+            Operation.validate_num_values(huge_num, 'sequential')
     
     def test_exceeds_max_random_returns_inf(self):
         """Test exceeding max in random mode returns np.inf."""
         import numpy as np
         huge_num = Operation.max_num_sequential_states + 1
-        result = Operation.validate_num_states(huge_num, 'random')
+        result = Operation.validate_num_values(huge_num, 'random')
         assert result == np.inf
     
     def test_at_max_is_valid(self):
         """Test exactly max_num_sequential_states is valid."""
-        result = Operation.validate_num_states(Operation.max_num_sequential_states, 'sequential')
+        result = Operation.validate_num_values(Operation.max_num_sequential_states, 'sequential')
         assert result == Operation.max_num_sequential_states
 
 
@@ -167,7 +167,7 @@ class TestOperationCompute:
         with pp.Party() as party:
             op = Operation(
                 parent_pools=[],
-                num_states=1,
+                num_values=1,
                 mode='fixed',
             )
             
@@ -179,7 +179,7 @@ class TestOperationCompute:
         with pp.Party() as party:
             op = Operation(
                 parent_pools=[],
-                num_states=1,
+                num_values=1,
                 mode='fixed',
             )
             
@@ -192,12 +192,12 @@ class TestOperationCompute:
             pool = pp.from_seqs(['AAA', 'TTT'], mode='sequential')
         
         # Set counter state and compute
-        pool.operation.counter._state = 0
+        pool.operation.state._value = 0
         card = pool.operation.compute_design_card([])
         result = pool.operation.compute_seq_from_card([], card)
         assert result['seq_0'] == 'AAA'
         
-        pool.operation.counter._state = 1
+        pool.operation.state._value = 1
         card = pool.operation.compute_design_card([])
         result = pool.operation.compute_seq_from_card([], card)
         assert result['seq_0'] == 'TTT'
@@ -332,7 +332,7 @@ class TestOperationCopy:
             original_op = pool.operation
             copied_op = original_op.copy()
             
-            assert copied_op.num_states == original_op.num_states
+            assert copied_op.num_values == original_op.num_values
             assert copied_op.mode == original_op.mode
     
     def test_copy_with_custom_name(self):
@@ -350,8 +350,8 @@ class TestOperationCopy:
             original_op = pool.operation
             copied_op = original_op.copy()
             
-            assert copied_op.counter is not original_op.counter
-            assert copied_op.counter.num_states == original_op.counter.num_states
+            assert copied_op.state is not original_op.state
+            assert copied_op.state.num_values == original_op.state.num_values
     
     def test_copy_from_seqs_op(self):
         """Test copying FromSeqsOp."""
@@ -360,7 +360,7 @@ class TestOperationCopy:
             copied_op = pool.operation.copy()
             
             # Verify copied op produces same results
-            copied_op.counter._state = 0
+            copied_op.state._value = 0
             card = copied_op.compute_design_card([])
             result = copied_op.compute_seq_from_card([], card)
             assert result['seq_0'] == 'A'
@@ -373,7 +373,7 @@ class TestOperationCopy:
             copied_op = mutants.operation.copy()
             
             assert copied_op.parent_pools == mutants.operation.parent_pools
-            assert copied_op.num_states == mutants.operation.num_states
+            assert copied_op.num_values == mutants.operation.num_values
     
     def test_copy_get_kmers_op(self):
         """Test copying GetKmersOp."""
@@ -381,7 +381,7 @@ class TestOperationCopy:
             kmers = pp.get_kmers(length=3, mode='sequential')
             copied_op = kmers.operation.copy()
             
-            assert copied_op.num_states == kmers.operation.num_states
+            assert copied_op.num_values == kmers.operation.num_values
     
     def test_copy_join_op(self):
         """Test copying JoinOp."""
@@ -445,7 +445,7 @@ class TestOperationCopy:
         with pp.Party() as party:
             op = Operation(
                 parent_pools=[],
-                num_states=1,
+                num_values=1,
                 mode='fixed',
             )
             
@@ -518,7 +518,7 @@ class TestOperationDeepCopy:
             mutants = pp.mutagenize(seq, num_mutations=2, mode='sequential')
             copied_op = mutants.operation.deepcopy()
             
-            assert copied_op.num_states == mutants.operation.num_states
+            assert copied_op.num_values == mutants.operation.num_values
             assert copied_op.mode == mutants.operation.mode
     
     def test_deepcopy_recursive_chain(self):

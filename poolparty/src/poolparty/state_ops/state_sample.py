@@ -1,6 +1,6 @@
 """StateSample operation - sample states from a pool."""
 from numbers import Real
-import statecounter as sc
+import statetracker as st
 from ..types import Optional, Sequence, Integral, Real, beartype
 from ..operation import Operation
 from ..pool import Pool
@@ -10,7 +10,7 @@ import numpy as np
 @beartype
 def state_sample(
     pool: Pool,
-    num_states: Optional[Integral] = None,
+    num_values: Optional[Integral] = None,
     sampled_states: Optional[Sequence[Integral]] = None,
     seed: Optional[Integral] = None,
     with_replacement: bool = True,
@@ -27,14 +27,14 @@ def state_sample(
     ----------
     pool : Pool
         The Pool to sample states from.
-    num_states : Optional[Integral], default=None
+    num_values : Optional[Integral], default=None
         Number of states to sample. Mutually exclusive with sampled_states.
     sampled_states : Optional[Sequence[Integral]], default=None
-        Explicit list of states to sample. Mutually exclusive with num_states.
+        Explicit list of states to sample. Mutually exclusive with num_values.
     seed : Optional[Integral], default=None
-        Random seed for deterministic sampling. Only used with num_states.
+        Random seed for deterministic sampling. Only used with num_values.
     with_replacement : bool, default=True
-        If False, num_states must be <= pool.num_states (no duplicates).
+        If False, num_values must be <= pool.num_states (no duplicates).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -51,7 +51,7 @@ def state_sample(
     """
     op = StateSampleOp(
         pool,
-        num_states=num_states,
+        num_values=num_values,
         sampled_states=sampled_states,
         seed=seed,
         with_replacement=with_replacement,
@@ -72,7 +72,7 @@ class StateSampleOp(Operation):
     def __init__(
         self,
         parent_pool: Pool,
-        num_states: Optional[Integral] = None,
+        num_values: Optional[Integral] = None,
         sampled_states: Optional[Sequence[Integral]] = None,
         seed: Optional[Integral] = None,
         with_replacement: bool = True,
@@ -81,13 +81,13 @@ class StateSampleOp(Operation):
         iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize StateSampleOp."""
-        self._num_states = num_states
+        self._num_values = num_values
         self.sampled_states = sampled_states
         self.seed = seed
         self.with_replacement = with_replacement
         super().__init__(
             parent_pools=[parent_pool],
-            num_states=1,
+            num_values=1,
             name=name,
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
@@ -96,11 +96,11 @@ class StateSampleOp(Operation):
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool],
-    ) -> sc.Counter:
-        """Build pool counter using sc.sample."""
-        return sc.sample(
-            parent_pools[0].counter,
-            num_states=self._num_states,
+    ) -> st.State:
+        """Build pool counter using st.sample."""
+        return st.sample(
+            parent_pools[0].state,
+            num_values=self._num_values,
             sampled_states=self.sampled_states,
             seed=self.seed,
             with_replacement=self.with_replacement,
@@ -126,7 +126,7 @@ class StateSampleOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'parent_pool': self.parent_pools[0],
-            'num_states': self._num_states,
+            'num_values': self._num_values,
             'sampled_states': self.sampled_states,
             'seed': self.seed,
             'with_replacement': self.with_replacement,

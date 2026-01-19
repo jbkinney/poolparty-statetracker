@@ -50,3 +50,6 @@ statecounter/docs/_build/
 *.pygtex
 *.pygstyle
 _minted-*/
+
+# Other
+*.tmp

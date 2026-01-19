@@ -1,0 +1,274 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>statecounter.ops.product_op &mdash; StateCounter 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=5b39e102" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            StateCounter
+              <img src="../../../_static/statecounter_logo2.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../motivation.html">Why StateCounter?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../concepts.html">Core Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../operations.html">Operations Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alternatives.html">Alternative Approaches</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">StateCounter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">statecounter.ops.product_op</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for statecounter.ops.product_op</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;ProductOp - Cartesian product of N counters.&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..imports</span><span class="w"> </span><span class="kn">import</span> <span class="n">beartype</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">math</span><span class="p">,</span> <span class="n">Integral</span><span class="p">,</span> <span class="n">Counter_type</span><span class="p">,</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..operation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Operation</span>
+
+<span class="c1"># Module-level flag for product ordering mode</span>
+<span class="n">_product_order_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;first_counter_slowest&#39;</span>
+
+<div class="viewcode-block" id="set_product_order_mode">
+<a class="viewcode-back" href="../../../api.html#statecounter.set_product_order_mode">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_product_order_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;first_counter_fastest&#39;</span><span class="p">,</span> <span class="s1">&#39;first_counter_slowest&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the global ordering mode for ordered_product().&quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">_product_order_mode</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;first_counter_fastest&#39;</span><span class="p">,</span> <span class="s1">&#39;first_counter_slowest&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mode must be &#39;first_counter_fastest&#39; or &#39;first_counter_slowest&#39;, got </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">_product_order_mode</span> <span class="o">=</span> <span class="n">mode</span></div>
+
+
+<div class="viewcode-block" id="get_product_order_mode">
+<a class="viewcode-back" href="../../../api.html#statecounter.get_product_order_mode">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_product_order_mode</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the current global ordering mode for ordered_product().&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_product_order_mode</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_collect_product_bases</span><span class="p">(</span><span class="n">counter</span><span class="p">:</span> <span class="n">Counter_type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recursively collect base counters, flattening through ProductOp only.</span>
+<span class="sd">    </span>
+<span class="sd">    This enables proper deduplication when the same counter appears at different</span>
+<span class="sd">    levels of a nested product hierarchy (diamond pattern).</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    counter : Counter_type</span>
+<span class="sd">        A counter to collect bases from.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        List of base counters. For ProductOp counters, this recursively collects</span>
+<span class="sd">        from parents. For leaf counters or non-product operations, returns [counter].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">counter</span><span class="o">.</span><span class="n">_parents</span><span class="p">:</span>
+        <span class="c1"># Leaf counter (no parents)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">counter</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">counter</span><span class="o">.</span><span class="n">_op</span><span class="p">,</span> <span class="n">ProductOp</span><span class="p">):</span>
+        <span class="c1"># Product counter - recurse into parents</span>
+        <span class="n">bases</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">counter</span><span class="o">.</span><span class="n">_parents</span><span class="p">:</span>
+            <span class="n">bases</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_collect_product_bases</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">bases</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Other operation (stack, slice, etc.) - treat as atomic</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">counter</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="ordered_product">
+<a class="viewcode-back" href="../../../api.html#statecounter.ordered_product">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ordered_product</span><span class="p">(</span><span class="n">counters</span><span class="p">:</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Counter_type</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a product Counter from the provided counters, removing duplicates and </span>
+<span class="sd">    automatically imposing an order based on counter.iter_order and counter.id.</span>
+<span class="sd">    </span>
+<span class="sd">    This function recursively flattens nested product counters before deduplication,</span>
+<span class="sd">    which handles diamond patterns where the same counter appears both as a direct</span>
+<span class="sd">    parent and as an ancestor through another parent.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    counters : Sequence[Counter_type]</span>
+<span class="sd">        Sequence of parent Counters to combine into the product. Duplicates are removed </span>
+<span class="sd">        and order is determined by (iter_order, id).</span>
+<span class="sd">    name : Optional[str], default=None</span>
+<span class="sd">        Name for the resulting product Counter.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Counter_type</span>
+<span class="sd">        A Counter representing the ordered, uniquified cartesian product of the input counters.</span>
+<span class="sd">    </span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Product is associative, so nested products are flattened:</span>
+<span class="sd">    ``ordered_product([A*B, C, D*A])`` becomes ``ordered_product([A, B, C, D])``</span>
+<span class="sd">    </span>
+<span class="sd">    Non-product operations (like stack, slice) are NOT flattened:</span>
+<span class="sd">    ``ordered_product([stack(A,B), C])`` keeps ``stack(A,B)`` as an atomic unit.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">..counter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">counters</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Counter</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+    
+    <span class="c1"># Recursively collect bases, flattening through ProductOp only</span>
+    <span class="n">base_counters</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">counters</span><span class="p">:</span>
+        <span class="n">base_counters</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_collect_product_bases</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+    
+    <span class="c1"># Deduplicate and order</span>
+    <span class="n">unique_counters</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">base_counters</span><span class="p">))</span>
+    <span class="n">id_sign</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">_product_order_mode</span> <span class="o">==</span> <span class="s1">&#39;first_counter_slowest&#39;</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="n">ordered_counters</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">unique_counters</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">_iter_order</span><span class="p">,</span> <span class="n">id_sign</span> <span class="o">*</span> <span class="n">c</span><span class="o">.</span><span class="n">_id</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">Counter</span><span class="p">(</span><span class="n">_parents</span><span class="o">=</span><span class="n">ordered_counters</span><span class="p">,</span> <span class="n">_op</span><span class="o">=</span><span class="n">ProductOp</span><span class="p">(),</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="product">
+<a class="viewcode-back" href="../../../api.html#statecounter.product">[docs]</a>
+<span class="nd">@beartype</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">product</span><span class="p">(</span><span class="n">counters</span><span class="p">:</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Counter_type</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a Counter representing the cartesian product of the provided Counters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    counters : Sequence[Counter_type]</span>
+<span class="sd">        Sequence of parent Counters to combine into a product Counter. No duplicates allowed.</span>
+<span class="sd">    name : Optional[str], default=None</span>
+<span class="sd">        Optional name for the resulting product Counter.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Counter_type</span>
+<span class="sd">        A Counter whose states index the cartesian product of the input counters&#39; states.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">..counter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">counters</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">counters</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;product() does not allow duplicate counters&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">counters</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">_parents</span><span class="o">=</span><span class="n">counters</span><span class="p">,</span> <span class="n">_op</span><span class="o">=</span><span class="n">ProductOp</span><span class="p">(),</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="ProductOp">
+<a class="viewcode-back" href="../../../api.html#statecounter.ProductOp">[docs]</a>
+<span class="nd">@beartype</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProductOp</span><span class="p">(</span><span class="n">Operation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cartesian product of N counters.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ProductOp.compute_num_states">
+<a class="viewcode-back" href="../../../api.html#statecounter.ProductOp.compute_num_states">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_num_states</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_num_states</span><span class="p">:</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Integral</span><span class="p">]):</span>
+        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">parent_num_states</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ProductOp.decompose">
+<a class="viewcode-back" href="../../../api.html#statecounter.ProductOp.decompose">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decompose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">parent_num_states</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">parent_num_states</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">parent_num_states</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+            <span class="n">state</span> <span class="o">//=</span> <span class="n">n</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Justin Kinney.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

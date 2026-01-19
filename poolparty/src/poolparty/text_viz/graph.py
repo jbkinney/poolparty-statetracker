@@ -1,36 +1,36 @@
 """High-level graph visualization functions."""
 from poolparty.types import Literal
-from .counter_tree import print_counter_tree
+from .state_tree import print_counter_tree
 from .pool_op_tree import print_pool_tree
 
 StyleType = Literal['clean', 'minimal', 'repr']
 
 
-def print_counter_graph(counters: list, style: StyleType = 'clean') -> None:
-    """Print ASCII tree visualization of Counter dependency graphs.
+def print_counter_graph(states: list, style: StyleType = 'clean') -> None:
+    """Print ASCII tree visualization of State dependency graphs.
     
-    Finds root counters (those not used as parents by others) and prints
+    Finds root states (those not used as parents by others) and prints
     each tree.
     
     Args:
-        counters: List of all Counter objects to consider.
+        states: List of all State objects to consider.
         style: Display style - 'clean', 'minimal', or 'repr'.
     """
-    if not counters:
-        print("(no counters registered)")
+    if not states:
+        print("(no states registered)")
         return
     
-    # Find counters that are parents of other counters
+    # Find states that are parents of other states
     parent_ids = set()
-    for counter in counters:
-        for parent in counter._parents:
+    for state in states:
+        for parent in state._parents:
             parent_ids.add(parent._id)
     
-    # Root counters are those not used as parents
-    roots = [c for c in counters if c._id not in parent_ids]
+    # Root states are those not used as parents
+    roots = [s for s in states if s._id not in parent_ids]
     
     if not roots:
-        print("(no counters registered)")
+        print("(no states registered)")
         return
     
     for i, root in enumerate(roots):

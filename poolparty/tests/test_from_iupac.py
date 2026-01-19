@@ -70,17 +70,17 @@ class TestFromIupacSequentialMode:
         with pp.Party() as party:
             # N = 4 options, so NN = 16 states
             pool = from_iupac('NN', mode='sequential')
-            assert pool.operation.num_states == 16
+            assert pool.operation.num_values == 16
 
 
 class TestFromIupacRandomMode:
     """Test random mode."""
     
     def test_random_num_states_is_one(self):
-        """Random mode has num_states=1."""
+        """Random mode has num_values=1."""
         with pp.Party() as party:
             pool = from_iupac('ACGT', mode='random')
-            assert pool.operation.num_states == 1
+            assert pool.operation.num_values == 1
     
     def test_random_sampling(self):
         """Random mode produces valid DNA sequences."""
@@ -297,7 +297,7 @@ class TestFromIupacIgnoreChars:
             # N = 4 options, separators = 1 option each
             pool = from_iupac('N.N', mode='sequential')
             # 4 * 1 * 4 = 16 states
-            assert pool.operation.num_states == 16
+            assert pool.operation.num_values == 16
 
 
 class TestFromIupacIgnoreCharsExtended:

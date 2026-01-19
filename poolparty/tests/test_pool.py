@@ -1,6 +1,6 @@
 """Tests for the Pool class.
 
-Pool operators now work on Counters:
+Pool operators now work on States:
 - pool1 + pool2: Stack (union of states)
 - pool * n: Repeat (repeat states n times)
 - pool[start:stop]: State slice (select subset of states)
@@ -830,7 +830,7 @@ class TestPoolGenerateRecordStates:
         # Design card cols have '.key.' (operation key columns)
         design_cols = [c for c in df.columns if '.key.' in c]
         
-        # Counter columns should come before design card columns
+        # State columns should come before design card columns
         if counter_cols and design_cols:
             first_counter_idx = min(list(df.columns).index(c) for c in counter_cols)
             first_design_idx = min(list(df.columns).index(c) for c in design_cols)
@@ -1129,7 +1129,7 @@ class TestPoolStateMinusOneReturnsNone:
         assert df.loc[2, 'C.seq'] == 'C'
     
     def test_inactive_operation_design_keys_are_none(self):
-        """Test that operation design card keys are None when op.counter.state=None."""
+        """Test that operation design card keys are None when op.state.value=None."""
         import pandas as pd
         with pp.Party() as party:
             a = pp.from_seqs(['AAAAA', 'TTTTT'], name='A', op_name='op_A', mode='sequential')

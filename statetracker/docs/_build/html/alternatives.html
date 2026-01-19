@@ -1,0 +1,618 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alternative Approaches &mdash; StateCounter 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=5b39e102" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api.html" />
+    <link rel="prev" title="Operations Guide" href="operations.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            StateCounter
+              <img src="_static/statecounter_logo2.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="motivation.html">Why StateCounter?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts.html">Core Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations.html">Operations Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Alternative Approaches</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#The-Problem:-Complex-Combinatorial-Structures">The Problem: Complex Combinatorial Structures</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#The-Manual-Approach">The Manual Approach</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#StateCounter's-Solution:-The-Counter-DAG">StateCounter’s Solution: The Counter DAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Alternative-Approaches-in-Python">Alternative Approaches in Python</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#itertools">itertools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NumPy's-unravel_index-/-ravel_multi_index">NumPy’s unravel_index / ravel_multi_index</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Manual-Index-Math-(divmod)">Manual Index Math (divmod)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#What-Makes-StateCounter-Different">What Makes StateCounter Different</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Comparison-Summary">Comparison Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#When-to-Use-Each-Approach">When to Use Each Approach</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Use-itertools-when:">Use itertools when:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Use-NumPy-when:">Use NumPy when:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Use-manual-divmod-when:">Use manual divmod when:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Use-StateCounter-when:">Use StateCounter when:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#Summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">StateCounter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Alternative Approaches</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/alternatives.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Alternative-Approaches">
+<h1>Alternative Approaches<a class="headerlink" href="#Alternative-Approaches" title="Link to this heading"></a></h1>
+<p>This page compares StateCounter to other Python methods for working with combinatorial structures. Understanding these alternatives will help you appreciate what makes StateCounter unique.</p>
+<p><strong>The key insight</strong>: StateCounter’s power comes from building a <em>computation DAG</em> (directed acyclic graph) of counters, where setting the state of a derived counter automatically propagates to all parent counters. No other approach provides this.</p>
+<section id="The-Problem:-Complex-Combinatorial-Structures">
+<h2>The Problem: Complex Combinatorial Structures<a class="headerlink" href="#The-Problem:-Complex-Combinatorial-Structures" title="Link to this heading"></a></h2>
+<p>Real-world combinatorial problems often involve more than simple Cartesian products. Consider designing an experiment with:</p>
+<ul class="simple">
+<li><p>2 control samples</p></li>
+<li><p>Plus a treatment arm with 3 treatments x 4 replicates</p></li>
+</ul>
+<p>This is a <strong>stack</strong> (disjoint union) of a simple counter and a <strong>product</strong>. The total is 2 + 12 = 14 samples, but they have different structure depending on which “arm” is active.</p>
+<p>When you iterate through these 14 samples, you need to know:</p>
+<ol class="arabic simple">
+<li><p>Which arm is active (control or treatment)?</p></li>
+<li><p>If treatment, what are the treatment and replicate indices?</p></li>
+<li><p>If you shuffle, slice, or sample, how do you track all this?</p></li>
+</ol>
+<p>Let’s see how hard this is without StateCounter:</p>
+<section id="The-Manual-Approach">
+<h3>The Manual Approach<a class="headerlink" href="#The-Manual-Approach" title="Link to this heading"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Manual approach: 2 controls + (3 treatments x 4 replicates)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_indices_manual</span><span class="p">(</span><span class="n">sample_idx</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manually compute which arm is active and the component indices.&quot;&quot;&quot;</span>
+    <span class="n">num_controls</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">num_treatments</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">num_replicates</span> <span class="o">=</span> <span class="mi">4</span>
+
+    <span class="k">if</span> <span class="n">sample_idx</span> <span class="o">&lt;</span> <span class="n">num_controls</span><span class="p">:</span>
+        <span class="c1"># Control arm</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;control&#39;</span><span class="p">:</span> <span class="n">sample_idx</span><span class="p">,</span> <span class="s1">&#39;treatment&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;replicate&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Treatment arm: need to decompose into treatment x replicate</span>
+        <span class="n">adjusted</span> <span class="o">=</span> <span class="n">sample_idx</span> <span class="o">-</span> <span class="n">num_controls</span>
+        <span class="n">treatment</span> <span class="o">=</span> <span class="n">adjusted</span> <span class="o">%</span> <span class="n">num_treatments</span>
+        <span class="n">replicate</span> <span class="o">=</span> <span class="n">adjusted</span> <span class="o">//</span> <span class="n">num_treatments</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;control&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;treatment&#39;</span><span class="p">:</span> <span class="n">treatment</span><span class="p">,</span> <span class="s1">&#39;replicate&#39;</span><span class="p">:</span> <span class="n">replicate</span><span class="p">}</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Manual enumeration of 14 samples:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">14</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Sample </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">get_indices_manual</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Manual enumeration of 14 samples:
+  Sample 0: {&#39;control&#39;: 0, &#39;treatment&#39;: None, &#39;replicate&#39;: None}
+  Sample 1: {&#39;control&#39;: 1, &#39;treatment&#39;: None, &#39;replicate&#39;: None}
+  Sample 2: {&#39;control&#39;: None, &#39;treatment&#39;: 0, &#39;replicate&#39;: 0}
+  Sample 3: {&#39;control&#39;: None, &#39;treatment&#39;: 1, &#39;replicate&#39;: 0}
+  Sample 4: {&#39;control&#39;: None, &#39;treatment&#39;: 2, &#39;replicate&#39;: 0}
+  Sample 5: {&#39;control&#39;: None, &#39;treatment&#39;: 0, &#39;replicate&#39;: 1}
+  Sample 6: {&#39;control&#39;: None, &#39;treatment&#39;: 1, &#39;replicate&#39;: 1}
+  Sample 7: {&#39;control&#39;: None, &#39;treatment&#39;: 2, &#39;replicate&#39;: 1}
+  Sample 8: {&#39;control&#39;: None, &#39;treatment&#39;: 0, &#39;replicate&#39;: 2}
+  Sample 9: {&#39;control&#39;: None, &#39;treatment&#39;: 1, &#39;replicate&#39;: 2}
+  Sample 10: {&#39;control&#39;: None, &#39;treatment&#39;: 2, &#39;replicate&#39;: 2}
+  Sample 11: {&#39;control&#39;: None, &#39;treatment&#39;: 0, &#39;replicate&#39;: 3}
+  Sample 12: {&#39;control&#39;: None, &#39;treatment&#39;: 1, &#39;replicate&#39;: 3}
+  Sample 13: {&#39;control&#39;: None, &#39;treatment&#39;: 2, &#39;replicate&#39;: 3}
+</pre></div></div>
+</div>
+<p>This works, but now imagine you want to <strong>shuffle</strong> these samples. You need to:</p>
+<ol class="arabic simple">
+<li><p>Generate a random permutation</p></li>
+<li><p>Apply it before looking up indices</p></li>
+<li><p>Rewrite all your index math to account for the permutation</p></li>
+</ol>
+<p>And what if you want to <strong>slice</strong> (take samples 5-10)? Or <strong>split</strong> into train/test? Each operation requires rewriting the index logic. This quickly becomes unmanageable.</p>
+</section>
+</section>
+<section id="StateCounter's-Solution:-The-Counter-DAG">
+<h2>StateCounter’s Solution: The Counter DAG<a class="headerlink" href="#StateCounter's-Solution:-The-Counter-DAG" title="Link to this heading"></a></h2>
+<p>StateCounter solves this by building a <strong>directed acyclic graph (DAG)</strong> of counters. You declare the structure once, and StateCounter handles all the index math automatically, including for shuffles, slices, samples, and splits.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">statecounter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">Manager</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">stack</span>
+
+<span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
+    <span class="c1"># Declare the structure</span>
+    <span class="n">control</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;control&#39;</span><span class="p">)</span>
+    <span class="n">treatment</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;treatment&#39;</span><span class="p">)</span>
+    <span class="n">replicate</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;replicate&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Build: controls + (treatments x replicates)</span>
+    <span class="n">treatment_arm</span> <span class="o">=</span> <span class="n">product</span><span class="p">([</span><span class="n">treatment</span><span class="p">,</span> <span class="n">replicate</span><span class="p">])</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">stack</span><span class="p">([</span><span class="n">control</span><span class="p">,</span> <span class="n">treatment_arm</span><span class="p">])</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;StateCounter enumeration of 14 samples:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Sample </span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2">: control=</span><span class="si">{</span><span class="n">control</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">, treatment=</span><span class="si">{</span><span class="n">treatment</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">, replicate=</span><span class="si">{</span><span class="n">replicate</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+StateCounter enumeration of 14 samples:
+  Sample 0: control=0, treatment=None, replicate=None
+  Sample 1: control=1, treatment=None, replicate=None
+  Sample 2: control=None, treatment=0, replicate=0
+  Sample 3: control=None, treatment=1, replicate=0
+  Sample 4: control=None, treatment=2, replicate=0
+  Sample 5: control=None, treatment=0, replicate=1
+  Sample 6: control=None, treatment=1, replicate=1
+  Sample 7: control=None, treatment=2, replicate=1
+  Sample 8: control=None, treatment=0, replicate=2
+  Sample 9: control=None, treatment=1, replicate=2
+  Sample 10: control=None, treatment=2, replicate=2
+  Sample 11: control=None, treatment=0, replicate=3
+  Sample 12: control=None, treatment=1, replicate=3
+  Sample 13: control=None, treatment=2, replicate=3
+</pre></div></div>
+</div>
+<p>The magic is <strong>automatic state propagation</strong>: when you set the state of the derived counter, all parent counters (control, treatment, replicate) update automatically. The inactive counters show <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<p>Now adding shuffle, slice, or split is trivial:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">statecounter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">Manager</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">stack</span><span class="p">,</span> <span class="n">shuffle</span><span class="p">,</span> <span class="n">split</span>
+
+<span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
+    <span class="n">control</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;control&#39;</span><span class="p">)</span>
+    <span class="n">treatment</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;treatment&#39;</span><span class="p">)</span>
+    <span class="n">replicate</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;replicate&#39;</span><span class="p">)</span>
+
+    <span class="n">treatment_arm</span> <span class="o">=</span> <span class="n">product</span><span class="p">([</span><span class="n">treatment</span><span class="p">,</span> <span class="n">replicate</span><span class="p">])</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">stack</span><span class="p">([</span><span class="n">control</span><span class="p">,</span> <span class="n">treatment_arm</span><span class="p">])</span>
+
+    <span class="c1"># Shuffle - no manual permutation tracking needed!</span>
+    <span class="n">shuffled</span> <span class="o">=</span> <span class="n">shuffle</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+
+    <span class="c1"># Split into train/test - no manual index math!</span>
+    <span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">shuffled</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">])</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total: </span><span class="si">{</span><span class="n">samples</span><span class="o">.</span><span class="n">num_states</span><span class="si">}</span><span class="s2">, Train: </span><span class="si">{</span><span class="n">train</span><span class="o">.</span><span class="n">num_states</span><span class="si">}</span><span class="s2">, Test: </span><span class="si">{</span><span class="n">test</span><span class="o">.</span><span class="n">num_states</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Test set (states still propagate correctly):&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">test</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  control=</span><span class="si">{</span><span class="n">control</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">, treatment=</span><span class="si">{</span><span class="n">treatment</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">, replicate=</span><span class="si">{</span><span class="n">replicate</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Total: 14, Train: 11, Test: 3
+
+Test set (states still propagate correctly):
+  control=0, treatment=None, replicate=None
+  control=1, treatment=None, replicate=None
+  control=None, treatment=2, replicate=2
+</pre></div></div>
+</div>
+<p>You can visualize the counter DAG to understand the structure:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">statecounter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">Manager</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">stack</span><span class="p">,</span> <span class="n">shuffle</span><span class="p">,</span> <span class="n">split</span>
+
+<span class="k">with</span> <span class="n">Manager</span><span class="p">():</span>
+    <span class="n">control</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;control&#39;</span><span class="p">)</span>
+    <span class="n">treatment</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;treatment&#39;</span><span class="p">)</span>
+    <span class="n">replicate</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">num_states</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;replicate&#39;</span><span class="p">)</span>
+
+    <span class="n">treatment_arm</span> <span class="o">=</span> <span class="n">product</span><span class="p">([</span><span class="n">treatment</span><span class="p">,</span> <span class="n">replicate</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;treatment_arm&#39;</span><span class="p">)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">stack</span><span class="p">([</span><span class="n">control</span><span class="p">,</span> <span class="n">treatment_arm</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;samples&#39;</span><span class="p">)</span>
+    <span class="n">shuffled</span> <span class="o">=</span> <span class="n">shuffle</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;shuffled&#39;</span><span class="p">)</span>
+    <span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">shuffled</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">])</span>
+
+    <span class="n">test</span><span class="o">.</span><span class="n">print_dag</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+test (counter, io=0, n=3)
+└── [op=Slice]
+    └── shuffled (counter, io=0, n=14)
+        └── [op=Shuffle]
+            └── samples (counter, io=0, n=14)
+                └── [op=Stack]
+                    ├── control (counter, io=0, n=2)
+                    └── treatment_arm (counter, io=0, n=12)
+                        └── [op=Product]
+                            ├── treatment (counter, io=0, n=3)
+                            └── replicate (counter, io=0, n=4)
+</pre></div></div>
+</div>
+</section>
+<section id="Alternative-Approaches-in-Python">
+<h2>Alternative Approaches in Python<a class="headerlink" href="#Alternative-Approaches-in-Python" title="Link to this heading"></a></h2>
+<p>Let’s examine what other Python tools offer and why they fall short for problems involving both products and stacks with additional operations.</p>
+<section id="itertools">
+<h3>itertools<a class="headerlink" href="#itertools" title="Link to this heading"></a></h3>
+<p>Python’s <code class="docutils literal notranslate"><span class="pre">itertools</span></code> module provides <code class="docutils literal notranslate"><span class="pre">product</span></code> for Cartesian products and <code class="docutils literal notranslate"><span class="pre">chain</span></code> for concatenation:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">product</span><span class="p">,</span> <span class="n">chain</span>
+
+<span class="c1"># itertools.product for Cartesian products</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;itertools.product (2 x 3):&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: (</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">r</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+<span class="c1"># itertools.chain for concatenation</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">itertools.chain (2 controls + 3 treatments):&quot;</span><span class="p">)</span>
+<span class="n">controls</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;control&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span>
+<span class="n">treatments</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;treatment&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="n">controls</span><span class="p">,</span> <span class="n">treatments</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+itertools.product (2 x 3):
+  0: (0, 0)
+  1: (0, 1)
+  2: (0, 2)
+  3: (1, 0)
+  4: (1, 1)
+  5: (1, 2)
+
+itertools.chain (2 controls + 3 treatments):
+  0: (&#39;control&#39;, 0)
+  1: (&#39;control&#39;, 1)
+  2: (&#39;treatment&#39;, 0)
+  3: (&#39;treatment&#39;, 1)
+  4: (&#39;treatment&#39;, 2)
+</pre></div></div>
+</div>
+<p><strong>Limitations of itertools:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>No state propagation</strong>: You get tuples, not connected objects. There is no way to ask “given index 4, what are the component values?”</p></li>
+<li><p><strong>No composition</strong>: You cannot easily combine <code class="docutils literal notranslate"><span class="pre">product</span></code> and <code class="docutils literal notranslate"><span class="pre">chain</span></code> into a single enumerable structure with unified indexing.</p></li>
+<li><p><strong>No tracking for chain</strong>: With <code class="docutils literal notranslate"><span class="pre">chain</span></code>, you lose information about which source contributed each element. You have to encode it manually (as we did with the tuples).</p></li>
+<li><p><strong>Operations do not compose</strong>: To shuffle an <code class="docutils literal notranslate"><span class="pre">itertools.product</span></code>, you must materialize it into a list first. Then you lose the ability to know which original indices correspond to each shuffled position.</p></li>
+</ol>
+</section>
+<section id="NumPy's-unravel_index-/-ravel_multi_index">
+<h3>NumPy’s unravel_index / ravel_multi_index<a class="headerlink" href="#NumPy's-unravel_index-/-ravel_multi_index" title="Link to this heading"></a></h3>
+<p>NumPy provides functions to convert between flat indices and multi-dimensional indices for arrays:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Shape: 2 treatments x 3 replicates</span>
+<span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="c1"># Convert flat index 4 to multi-dimensional indices</span>
+<span class="c1"># Note: numpy uses row-major (C) order by default</span>
+<span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Flat index 4 -&gt; treatment=</span><span class="si">{</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, replicate=</span><span class="si">{</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Convert back to flat index</span>
+<span class="n">flat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;treatment=</span><span class="si">{</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, replicate=</span><span class="si">{</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; flat index </span><span class="si">{</span><span class="n">flat</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Flat index 4 -&gt; treatment=1, replicate=1
+treatment=1, replicate=1 -&gt; flat index 4
+</pre></div></div>
+</div>
+<p><strong>Limitations of NumPy’s index functions:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Only rectangular products</strong>: NumPy assumes a regular multi-dimensional array shape. It cannot represent structures like “2 controls + (3 x 4 treatments)” which are not rectangular.</p></li>
+<li><p><strong>No stacks (disjoint unions)</strong>: There is no NumPy equivalent for StateCounter’s <code class="docutils literal notranslate"><span class="pre">stack</span></code> operation.</p></li>
+<li><p><strong>No state propagation</strong>: You get index tuples, not connected counter objects that track state.</p></li>
+<li><p><strong>No composable operations</strong>: Slicing, shuffling, or sampling requires manual reimplementation of all the index math.</p></li>
+</ol>
+</section>
+<section id="Manual-Index-Math-(divmod)">
+<h3>Manual Index Math (divmod)<a class="headerlink" href="#Manual-Index-Math-(divmod)" title="Link to this heading"></a></h3>
+<p>You can always compute indices manually using <code class="docutils literal notranslate"><span class="pre">divmod</span></code>, as shown in the <a class="reference internal" href="motivation.html"><span class="doc">Motivation</span></a> page:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_product_indices</span><span class="p">(</span><span class="n">flat_idx</span><span class="p">,</span> <span class="n">sizes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert flat index to component indices for a Cartesian product.&quot;&quot;&quot;</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">:</span>
+        <span class="n">flat_idx</span><span class="p">,</span> <span class="n">idx</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">flat_idx</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+        <span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+
+<span class="c1"># Example: 2 treatments x 3 replicates</span>
+<span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Manual product enumeration:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">flat</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">get_product_indices</span><span class="p">(</span><span class="n">flat</span><span class="p">,</span> <span class="n">sizes</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">flat</span><span class="si">}</span><span class="s2">: treatment=</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">, replicate=</span><span class="si">{</span><span class="n">r</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Manual product enumeration:
+  0: treatment=0, replicate=0
+  1: treatment=1, replicate=0
+  2: treatment=0, replicate=1
+  3: treatment=1, replicate=1
+  4: treatment=0, replicate=2
+  5: treatment=1, replicate=2
+</pre></div></div>
+</div>
+<p><strong>Limitations of manual index math:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Does not compose</strong>: Every new operation (stack, slice, shuffle, sample) requires writing new index logic from scratch.</p></li>
+<li><p><strong>Error-prone</strong>: Off-by-one errors, wrong divisors, forgetting edge cases. Manual index math is a minefield.</p></li>
+<li><p><strong>No state tracking</strong>: You get tuples, not connected objects. You cannot ask “what is the current treatment value?” without recomputing.</p></li>
+<li><p><strong>Tedious for complex structures</strong>: As shown in the first example, combining products and stacks manually is already complicated. Adding shuffle or slice makes it worse.</p></li>
+</ol>
+</section>
+</section>
+<section id="What-Makes-StateCounter-Different">
+<h2>What Makes StateCounter Different<a class="headerlink" href="#What-Makes-StateCounter-Different" title="Link to this heading"></a></h2>
+<p>The key difference is that StateCounter builds a <strong>computation DAG</strong> where:</p>
+<ol class="arabic simple">
+<li><p><strong>Leaf counters</strong> represent basic dimensions (control, treatment, replicate, etc.)</p></li>
+<li><p><strong>Operations</strong> (product, stack, slice, shuffle, etc.) create derived counters</p></li>
+<li><p><strong>State propagation</strong> flows automatically from any derived counter to all its ancestors</p></li>
+</ol>
+<p>This means you declare your structure once, and StateCounter handles all the index math for every operation you compose on top.</p>
+<section id="Comparison-Summary">
+<h3>Comparison Summary<a class="headerlink" href="#Comparison-Summary" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>itertools</p></th>
+<th class="head"><p>NumPy</p></th>
+<th class="head"><p>Manual divmod</p></th>
+<th class="head"><p>StateCounter</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Cartesian products</strong></p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Disjoint unions (stack)</strong></p></td>
+<td><p>chain (no tracking)</p></td>
+<td><p>No</p></td>
+<td><p>Manual</p></td>
+<td><p><strong>Yes, with tracking</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>State propagation</strong></p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p><strong>Automatic</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Composable operations</strong></p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p><strong>Yes</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Shuffle/slice/sample</strong></p></td>
+<td><p>Must materialize</p></td>
+<td><p>Manual</p></td>
+<td><p>Manual</p></td>
+<td><p><strong>Built-in</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Conflict detection</strong></p></td>
+<td><p>N/A</p></td>
+<td><p>N/A</p></td>
+<td><p>Manual</p></td>
+<td><p><strong>Automatic</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Synchronization</strong></p></td>
+<td><p>N/A</p></td>
+<td><p>N/A</p></td>
+<td><p>Manual</p></td>
+<td><p><strong>Built-in</strong></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="When-to-Use-Each-Approach">
+<h2>When to Use Each Approach<a class="headerlink" href="#When-to-Use-Each-Approach" title="Link to this heading"></a></h2>
+<section id="Use-itertools-when:">
+<h3>Use itertools when:<a class="headerlink" href="#Use-itertools-when:" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>You just need to iterate through all combinations once</p></li>
+<li><p>You do not need to track which component indices correspond to each element</p></li>
+<li><p>Your structure is simple (just products or just chains, not both)</p></li>
+</ul>
+</section>
+<section id="Use-NumPy-when:">
+<h3>Use NumPy when:<a class="headerlink" href="#Use-NumPy-when:" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>You are working with actual array data, not just indices</p></li>
+<li><p>Your structure is a regular rectangular grid</p></li>
+<li><p>You need fast vectorized operations on the data</p></li>
+</ul>
+</section>
+<section id="Use-manual-divmod-when:">
+<h3>Use manual divmod when:<a class="headerlink" href="#Use-manual-divmod-when:" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>You have a one-off simple product</p></li>
+<li><p>You are comfortable with the math and do not need composition</p></li>
+</ul>
+</section>
+<section id="Use-StateCounter-when:">
+<h3>Use StateCounter when:<a class="headerlink" href="#Use-StateCounter-when:" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>You have complex structures combining products AND stacks</p></li>
+<li><p>You need automatic tracking of which components are active</p></li>
+<li><p>You want to compose operations (shuffle, slice, sample, split) without reimplementing index math</p></li>
+<li><p>You need synchronization between counters</p></li>
+<li><p>You want automatic conflict detection</p></li>
+</ul>
+</section>
+</section>
+<section id="Summary">
+<h2>Summary<a class="headerlink" href="#Summary" title="Link to this heading"></a></h2>
+<p>StateCounter’s unique value is <strong>automatic child-to-parent state propagation through a computation DAG</strong>. This is fundamentally different from:</p>
+<ul class="simple">
+<li><p><strong>itertools</strong>: Provides iteration but no state tracking or composition</p></li>
+<li><p><strong>NumPy</strong>: Provides index math for rectangular arrays but cannot handle stacks or complex compositions</p></li>
+<li><p><strong>Manual divmod</strong>: Works for simple cases but does not compose and is error-prone</p></li>
+</ul>
+<p>When you need to enumerate combinatorial structures that combine products, stacks, slices, shuffles, samples, or splits, while always knowing which component values correspond to each state, StateCounter is the right tool.</p>
+<p>For more details on StateCounter’s capabilities, see:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="quickstart.html"><span class="doc">Quick Start</span></a> - Get started with basic usage</p></li>
+<li><p><a class="reference internal" href="concepts.html"><span class="doc">Core Concepts</span></a> - Understand the counter DAG and state propagation</p></li>
+<li><p><a class="reference internal" href="operations.html"><span class="doc">Operations</span></a> - Complete reference for all operations</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="operations.html" class="btn btn-neutral float-left" title="Operations Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Justin Kinney.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

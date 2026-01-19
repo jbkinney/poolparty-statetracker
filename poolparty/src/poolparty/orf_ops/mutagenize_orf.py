@@ -172,7 +172,7 @@ class MutagenizeOrfOp(Operation):
         
         super().__init__(
             parent_pools=[parent_pool],
-            num_states=num_states,
+            num_values=num_states,
             mode=mode,
             seq_length=self._seq_length,
             name=name,
@@ -322,7 +322,7 @@ class MutagenizeOrfOp(Operation):
         else:
             if self._sequential_cache is None:
                 self._build_caches()
-            state = self.counter.state
+            state = self.state.value
             cache_idx = (0 if state is None else state) % len(self._sequential_cache)
             positions, mut_indices = self._sequential_cache[cache_idx]
             
@@ -380,7 +380,7 @@ class MutagenizeOrfOp(Operation):
             'orf_extent': (self.orf_start, self.orf_end),
             'codon_positions': self.eligible_positions,
             'mode': self.mode,
-            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
             'name': None,
             'iter_order': self.iter_order,
         }

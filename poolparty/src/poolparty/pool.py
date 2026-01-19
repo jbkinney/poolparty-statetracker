@@ -1,5 +1,5 @@
 """Pool class for poolparty."""
-import statecounter as sc
+import statetracker as st
 from .types import Pool_type, Operation_type, Union, Optional, Real, Integral, Sequence, beartype
 from .marker import Marker
 from .ops_container import OpsContainer
@@ -15,11 +15,11 @@ class Pool:
         operation: Operation_type,
         output_index: int = 0,
         name: Optional[str] = None,
-        counter: Optional[sc.Counter] = None,
+        state: Optional[st.State] = None,
         iter_order: Optional[Real] = None,
         markers: Optional[set[Marker]] = None,
     ) -> None:
-        """Initialize Pool and build its counter."""
+        """Initialize Pool and build its state."""
         from .party import get_active_party
         from .marker import Marker
         
@@ -33,14 +33,14 @@ class Pool:
         self._id = party._get_next_pool_id()
         self.operation = operation
         self.output_index = output_index
-        if counter is not None:
-            self.counter = counter
+        if state is not None:
+            self.state = state
         else:
-            self.counter: sc.Counter = operation.build_pool_counter(
+            self.state: st.State = operation.build_pool_counter(
                 operation.parent_pools
             )
         if iter_order is not None:  
-            self.counter.iter_order = iter_order
+            self.state.iter_order = iter_order
         self._name: str = ""
         self.name = name if name is not None else f'pool[{self._id}]'
         
@@ -63,12 +63,12 @@ class Pool:
     @property
     def iter_order(self) -> Real:
         """Iteration order for this pool."""
-        return self.counter.iter_order
+        return self.state.iter_order
     
     @iter_order.setter
     def iter_order(self, value: Real) -> None:
         """Set iteration order for this pool."""
-        self.counter.iter_order = value
+        self.state.iter_order = value
     
     @property
     def name(self) -> str:
@@ -77,7 +77,7 @@ class Pool:
     
     @name.setter
     def name(self, value: str) -> None:
-        """Set pool name and update counter name.
+        """Set pool name and update state name.
         
         Validates name uniqueness with the Party before accepting.
         
@@ -88,23 +88,23 @@ class Pool:
         self._party._validate_pool_name(value, self)
         old_name = self._name
         self._name = value
-        # When pool.counter is the same as operation.counter (source operations),
-        # preserve operation counter name if operation has explicit name (not default)
-        # Otherwise, use pool counter name
-        if self.counter is self.operation.counter:
+        # When pool.state is the same as operation.state (source operations),
+        # preserve operation state name if operation has explicit name (not default)
+        # Otherwise, use pool state name
+        if self.state is self.operation.state:
             # Check if operation has explicit name (not default like "op[0]:from_seqs")
             op_name = self.operation.name
             is_default_op_name = op_name.startswith('op[') and ']:' in op_name
             if not is_default_op_name:
                 # Operation has explicit name, preserve it
-                # Counter name should already be set to operation name
+                # State name should already be set to operation name
                 pass
             else:
                 # Operation has default name, use pool name
-                self.counter.name = f"{value}.state"
+                self.state.name = f"{value}.state"
         else:
-            # Different counters, set pool counter name normally
-            self.counter.name = f"{value}.state"
+            # Different states, set pool state name normally
+            self.state.name = f"{value}.state"
         # Update party's name tracking if this is a rename (not initial set)
         if old_name:
             self._party._update_pool_name(self, old_name, value)
@@ -112,7 +112,7 @@ class Pool:
     @property
     def num_states(self) -> int:
         """Number of states for this pool."""
-        return self.counter.num_states
+        return self.state.num_values
     
     @property
     def parents(self) -> list:
@@ -182,16 +182,16 @@ class Pool:
     
     @property
     def iter_order(self) -> Real:
-        """Iteration order for this pool's counter.
+        """Iteration order for this pool's state.
         
-        Lower values iterate faster (come first in product counters).
+        Lower values iterate faster (come first in product states).
         """
-        return self.counter.iter_order
+        return self.state.iter_order
     
     @iter_order.setter
     def iter_order(self, value: Real) -> None:
-        """Set iteration order on this pool's counter."""
-        self.counter.iter_order = value
+        """Set iteration order on this pool's state."""
+        self.state.iter_order = value
     
     def copy(self, name: Optional[str] = None) -> Pool_type:
         """Create a copy of this pool with a copied operation.

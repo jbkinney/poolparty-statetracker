@@ -1,6 +1,6 @@
 """Tests for the Party context manager and core architecture.
 
-Pool operators now work on Counters:
+Pool operators now work on States:
 - pool1 + pool2: Stack (union of states)
 - pool * n: Repeat (repeat states n times)
 - pool[start:stop]: State slice (select subset of states)
@@ -13,7 +13,7 @@ import poolparty as pp
 from poolparty import join
 from poolparty.fixed_ops.slice_seq import slice_seq
 from poolparty.state_ops.stack import stack, StackOp
-import statecounter as sc
+import statetracker as st
 
 
 class TestBasicUsage:
@@ -515,14 +515,14 @@ class TestDefaultParameters:
         pp.init()
 
 
-class TestCounterManagerIntegration:
-    """Test CounterManager integration with Party."""
+class TestStateManagerIntegration:
+    """Test StateManager integration with Party."""
     
-    def test_counter_manager_accessible(self):
-        """Test that party.counter_manager is accessible."""
+    def test_state_manager_accessible(self):
+        """Test that party.state_manager is accessible."""
         with pp.Party() as party:
-            assert party.counter_manager is not None
-            assert isinstance(party.counter_manager, pp.CounterManager)
+            assert party.state_manager is not None
+            assert isinstance(party.state_manager, pp.StateManager)
     
     def test_counters_registered_from_seqs(self):
         """Test that counters are registered when operations are created."""
@@ -530,7 +530,7 @@ class TestCounterManagerIntegration:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential').named('seq')
             
             # Should have registered counters
-            names = party.counter_manager.get_all_names()
+            names = party.state_manager.get_all_names()
             assert len(names) > 0
     
     def test_counters_registered_mutagenize(self):
@@ -539,7 +539,7 @@ class TestCounterManagerIntegration:
             mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
             
             # Should have multiple counters registered
-            names = party.counter_manager.get_all_names()
+            names = party.state_manager.get_all_names()
             assert len(names) > 0
     
     def test_test_iteration_works(self, capsys):
@@ -548,13 +548,12 @@ class TestCounterManagerIntegration:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential').named('seq')
             
             # get_iteration_df should work on the pool's counter
-            df = party.counter_manager.get_iteration_df(
-                pool.counter,
-                counters=None,
+            df = party.state_manager.get_iteration_df(
+                pool.state, states=None,
             )
             
             # Should have iterated through all states
-            assert len(df) == pool.counter.num_states
+            assert len(df) == pool.state.num_values
     
     def test_print_graph_works(self, capsys):
         """Test that print_graph() shows the counter DAG."""
@@ -562,20 +561,20 @@ class TestCounterManagerIntegration:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential').named('seq')
             
             # Should not raise an error
-            party.counter_manager.print_graph()
+            party.state_manager.print_graph()
             
             # Check that something was printed
             captured = capsys.readouterr()
             assert len(captured.out) > 0
     
-    def test_counter_manager_deactivated_on_exit(self):
-        """Test that CounterManager is deactivated when exiting Party context."""
+    def test_state_manager_deactivated_on_exit(self):
+        """Test that StateManager is deactivated when exiting Party context."""
         with pp.Party() as party:
             # Inside context, manager should be active
-            assert sc.Manager._active_manager is party.counter_manager
+            assert st.Manager._active_manager is party.state_manager
         
         # Outside context, manager should be deactivated
-        assert sc.Manager._active_manager is None
+        assert st.Manager._active_manager is None
     
     def test_complex_dag_counters_registered(self):
         """Test that counters from a complex DAG are all registered."""
@@ -586,7 +585,7 @@ class TestCounterManagerIntegration:
             oligo = pp.join([mutants, '---', barcode]).named('oligo')
             
             # Should have multiple counters registered
-            names = party.counter_manager.get_all_names()
+            names = party.state_manager.get_all_names()
             # At minimum: from_seqs counter, mutagenize counter, get_kmers counter,
             # join counter, and their pool counters
             assert len(names) >= 4
@@ -634,7 +633,7 @@ class TestPrintGraph:
         # Should contain full repr format
         assert 'Pool(' in captured.out
         assert "name='mypool'" in captured.out
-        assert 'num_states=' in captured.out
+        assert 'num_values=' in captured.out
     
     def test_print_graph_chain(self, capsys):
         """Test print_graph() with a chain of pools."""
@@ -726,7 +725,7 @@ class TestPrintGraph:
         
         # Should start with Pool repr
         assert captured.out.startswith('Pool(')
-        assert 'num_states=3' in captured.out
+        assert 'num_values=3' in captured.out
     
     def test_operation_print_dag(self, capsys):
         """Test Operation.print_dag() method directly."""

@@ -112,13 +112,13 @@ class ReplaceMarkerContentOp(Operation):
         if _factory_name is not None:
             self.factory_name = _factory_name
         
-        # The operation itself has num_states=1 because it doesn't add its own states.
+        # The operation itself has num_values=1 because it doesn't add its own states.
         # The total number of output states comes from the product of parent pool counters.
         # When content_pool has multiple states (e.g., from mutagenize), those states
         # are inherited via the parent counter product.
         super().__init__(
             parent_pools=[bg_pool, content_pool],
-            num_states=1,  # Operation doesn't add states
+            num_values=1,  # Operation doesn't add states
             mode='fixed',  # Mode is determined by parent counters
             seq_length=None,  # Variable length
             name=name,

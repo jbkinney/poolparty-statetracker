@@ -263,7 +263,7 @@ class TestMutagenizeOrfMutationTypes:
             ).named('mutant')
         
         # 2 codons * 63 alternatives = 126 states
-        assert pool.operation.num_states == 126
+        assert pool.operation.num_values == 126
     
     def test_missense_only_first_type(self):
         """Test missense_only_first mutation type (default)."""
@@ -328,7 +328,7 @@ class TestMutagenizeOrfSequentialMode:
             ).named('mutant')
         
         # 3 positions * 19 alternatives = 57
-        assert pool.operation.num_states == 57
+        assert pool.operation.num_values == 57
         
         df = pool.generate_library(num_cycles=1)
         assert len(df) == 57
@@ -341,7 +341,7 @@ class TestMutagenizeOrfSequentialMode:
             ).named('mutant')
         
         # C(3,2) * 19^2 = 3 * 361 = 1083
-        assert pool.operation.num_states == 1083
+        assert pool.operation.num_values == 1083
     
     def test_sequential_mutations_correctness(self):
         """Test that sequential mutations are applied correctly."""
@@ -425,7 +425,7 @@ class TestMutagenizeOrfHybridMode:
             pool = mutagenize_orf(
                 'ATGAAATTT', num_mutations=1, mode='hybrid', num_hybrid_states=100
             )
-            assert pool.operation.num_states == 100
+            assert pool.operation.num_values == 100
     
     def test_hybrid_generates_correct_count(self):
         """Hybrid mode generates num_hybrid_states sequences per iteration."""

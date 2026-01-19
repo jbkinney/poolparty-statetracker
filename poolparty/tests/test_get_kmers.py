@@ -59,7 +59,7 @@ class TestGetKmersSequentialMode:
         """Test num_states calculation."""
         with pp.Party() as party:
             pool = get_kmers(length=3, mode='sequential')
-            assert pool.operation.num_states == 64  # 4^3
+            assert pool.operation.num_values == 64  # 4^3
 
 
 class TestGetKmersRandomMode:
@@ -97,10 +97,10 @@ class TestGetKmersRandomMode:
         assert list(df1['seq']) == list(df2['seq'])
     
     def test_random_num_states_is_one(self):
-        """Test that random mode has num_states=1."""
+        """Test that random mode has num_values=1."""
         with pp.Party() as party:
             pool = get_kmers(length=4, mode='random')
-            assert pool.operation.num_states == 1
+            assert pool.operation.num_values == 1
 
 
 class TestGetKmersDNA:
@@ -125,11 +125,11 @@ class TestGetKmersStateToKmer:
             pool = get_kmers(length=2, mode='sequential')
             op = pool.operation
             
-            assert op._state_to_kmer(0) == 'AA'
-            assert op._state_to_kmer(1) == 'AC'
-            assert op._state_to_kmer(2) == 'AG'
-            assert op._state_to_kmer(3) == 'AT'
-            assert op._state_to_kmer(4) == 'CA'
+            assert op._value_to_kmer(0) == 'AA'
+            assert op._value_to_kmer(1) == 'AC'
+            assert op._value_to_kmer(2) == 'AG'
+            assert op._value_to_kmer(3) == 'AT'
+            assert op._value_to_kmer(4) == 'CA'
 
 
 class TestGetKmersDesignCards:
@@ -188,11 +188,11 @@ class TestGetKmersLargeSpace:
             assert len(kmer) == 20
     
     def test_large_kmer_random_num_states_is_one(self):
-        """Test that random mode with large k-mer still has num_states=1."""
+        """Test that random mode with large k-mer still has num_values=1."""
         with pp.Party() as party:
-            # Random mode always has num_states=1
+            # Random mode always has num_values=1
             pool = get_kmers(length=20, mode='random')
-            assert pool.operation.num_states == 1
+            assert pool.operation.num_values == 1
 
 
 class TestGetKmersCompute:
@@ -203,13 +203,13 @@ class TestGetKmersCompute:
         with pp.Party() as party:
             pool = get_kmers(length=2, mode='sequential')
         
-        pool.operation.counter._state = 0
+        pool.operation.state._value = 0
         card = pool.operation.compute_design_card([])
         result = pool.operation.compute_seq_from_card([], card)
         assert result['seq_0'] == 'AA'
         assert card['kmer_index'] == 0
         
-        pool.operation.counter._state = 1
+        pool.operation.state._value = 1
         card = pool.operation.compute_design_card([])
         result = pool.operation.compute_seq_from_card([], card)
         assert result['seq_0'] == 'AC'

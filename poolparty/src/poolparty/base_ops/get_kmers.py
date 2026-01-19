@@ -131,7 +131,7 @@ class GetKmersOp(Operation):
         self.alpha_size = len(dna.BASES)
         total_kmers = self.alpha_size ** length
         if mode == 'sequential':
-            num_states = self.validate_num_states(total_kmers, mode)
+            num_states = self.validate_num_values(total_kmers, mode)
         elif mode == 'hybrid':
             num_states = num_hybrid_states
         else:
@@ -164,7 +164,7 @@ class GetKmersOp(Operation):
         
         super().__init__(
             parent_pools=parent_pools,
-            num_states=num_states,
+            num_values=num_states,
             mode=mode,
             seq_length=seq_length,
             name=name,
@@ -175,10 +175,10 @@ class GetKmersOp(Operation):
             spacer_str=spacer_str,
         )
     
-    def _state_to_kmer(self, state: int) -> str:
-        """Convert a state index to a k-mer string."""
+    def _value_to_kmer(self, value: int) -> str:
+        """Convert a value index to a k-mer string."""
         result = []
-        remaining = state
+        remaining = value
         for _ in range(self.length):
             result.append(dna.BASES[remaining % self.alpha_size])
             remaining //= self.alpha_size
@@ -202,9 +202,9 @@ class GetKmersOp(Operation):
             return {'kmer_index': None, 'kmer': kmer}
         else:
             # Use state 0 when inactive (state is None)
-            idx = self.counter.state
+            idx = self.state.value
             idx = 0 if idx is None else idx
-            kmer = self._state_to_kmer(idx)
+            kmer = self._value_to_kmer(idx)
             return {'kmer_index': idx, 'kmer': kmer}
     
     def compute_seq_from_card(
@@ -218,7 +218,7 @@ class GetKmersOp(Operation):
             kmer = card['kmer']
         else:
             # Sequential mode: compute from index
-            kmer = self._state_to_kmer(card['kmer_index'])
+            kmer = self._value_to_kmer(card['kmer_index'])
         # Apply case transformation
         if self.case == 'lower':
             kmer = kmer.lower()
@@ -239,7 +239,7 @@ class GetKmersOp(Operation):
             'case': self.case,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_states if self.mode == 'hybrid' else None,
+            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
             'name': None,
             'iter_order': self.iter_order,
         }

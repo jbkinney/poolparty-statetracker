@@ -5,7 +5,7 @@ requires-python = ">=3.10"
 dependencies = [
     "nbclient>=0.10.4",
     "poolparty",
-    "statecounter",
+    "statetracker",
 ]
 
 [tool.uv]
@@ -18,11 +18,11 @@ dev = [
 ]
 
 [tool.uv.workspace]
-members = ["poolparty", "statecounter"]
+members = ["poolparty", "statetracker"]
 
 [tool.uv.sources]
 poolparty = { workspace = true }
-statecounter = { workspace = true }
+statetracker = { workspace = true }
 
 [tool.pytest.ini_options]
-testpaths = ["poolparty/tests", "statecounter/tests"]
+testpaths = ["poolparty/tests", "statetracker/tests"]

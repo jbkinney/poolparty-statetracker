@@ -1,6 +1,6 @@
 """StateShuffle operation - randomly permute a pool's states."""
 from numbers import Real
-import statecounter as sc
+import statetracker as st
 from ..types import Optional, Sequence, Integral, Real, beartype
 from ..operation import Operation
 from ..pool import Pool
@@ -68,7 +68,7 @@ class StateShuffleOp(Operation):
         self.permutation = permutation
         super().__init__(
             parent_pools=[parent_pool],
-            num_states=1,
+            num_values=1,
             name=name,
             iter_order=iter_order,
             seq_name_prefix=seq_name_prefix,
@@ -77,10 +77,10 @@ class StateShuffleOp(Operation):
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool],
-    ) -> sc.Counter:
-        """Build pool counter using sc.shuffle."""
-        return sc.shuffle(
-            parent_pools[0].counter,
+    ) -> st.State:
+        """Build pool counter using st.shuffle."""
+        return st.shuffle(
+            parent_pools[0].state,
             seed=self.seed,
             permutation=self.permutation,
         )

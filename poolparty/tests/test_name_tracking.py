@@ -141,7 +141,7 @@ class TestOperationNameTracking:
             pool = pp.from_seq("ACGT")
             op = pool.operation
             op.name = "renamed_op"
-            assert op.counter.name == "renamed_op.state"
+            assert op.state.name == "renamed_op.state"
 
 
 class TestSeparateNamespaces:

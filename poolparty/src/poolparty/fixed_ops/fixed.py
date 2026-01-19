@@ -115,7 +115,7 @@ class FixedOp(Operation):
             self.factory_name = _factory_name
         super().__init__(
             parent_pools=list(parent_pools),
-            num_states=1,
+            num_values=1,
             mode='fixed',
             seq_length=seq_length,
             name=name,
