@@ -4,7 +4,6 @@ from .operation import Operation
 from .ops import (
     ProductOp,
     StackOp,
-    SyncOp,
     SliceOp,
     RepeatOp,
     ShuffleOp,
@@ -32,7 +31,7 @@ __version__ = "0.1.0"
 
 __all__ = [
     'State', 'Manager', 'Operation', 'ConflictingValueAssignmentError',
-    'ProductOp', 'StackOp', 'SyncOp', 'SliceOp',
+    'ProductOp', 'StackOp', 'SliceOp',
     'RepeatOp', 'ShuffleOp', 'SampleOp', 'InterleaveOp', 'PassthroughOp',
     'product', 'ordered_product', 'set_product_order_mode', 'get_product_order_mode',
     'stack', 'sync', 'slice', 'repeat', 'shuffle', 'sample',

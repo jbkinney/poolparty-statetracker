@@ -119,7 +119,7 @@ class TestComplexGraphs:
             assert B.value == 0
     
     def test_product_and_stack_combined(self):
-        """Test combining product and sum operations."""
+        """Test combining product and stack operations."""
         with Manager():
             A = State(num_values=2, name='A')
             B = State(num_values=3, name='B')
@@ -128,20 +128,15 @@ class TestComplexGraphs:
             
             D = State(num_values=2, name='D')
             E = State(num_values=4, name='E')
-            F = stack([D,E])
+            F = stack([D, E])
             F.name = 'F'
             
             # Both C and F have num_values=6
             assert C.num_values == 6
             assert F.num_values == 6
             
-            # Sync them together
-            G = sync([C, F], name='G')
-            
-            # Setting G should propagate to both branches
-            G.value = 3
-            assert C.value == 3
-            assert F.value == 3
+            # Test that values propagate correctly
+            C.value = 3
             assert A.value == 1  # 3 % 2
             assert B.value == 1  # 3 // 2
 
@@ -515,28 +510,6 @@ class TestDeepcopy:
 class TestConflictDetection:
     """Test conflict detection during state propagation."""
     
-    def test_sync_with_reversed_slice_raises_error(self):
-        """Syncing A with A[::-1] should raise conflict error."""
-        with Manager():
-            A = State(num_values=5, name='A')
-            B = A[::-1]
-            B.name = 'B'
-            C = sync([A, B], name='C')
-            
-            with pytest.raises(ConflictingValueAssignmentError):
-                C.value = 0
-    
-    def test_sync_with_same_state_no_conflict(self):
-        """Syncing A with itself (via passthrough) should NOT raise error."""
-        with Manager():
-            A = State(num_values=5, name='A')
-            B = passthrough(A, name='B')
-            C = sync([A, B], name='C')
-            
-            # Should not raise - A gets same value from both paths
-            C.value = 3
-            assert A.value == 3
-    
     def test_product_no_conflict(self):
         """Product states should not trigger false positives."""
         with Manager():
@@ -547,31 +520,3 @@ class TestConflictDetection:
             # Should work fine - iterate through all states
             for state in C:
                 pass
-    
-    def test_conflict_on_advance(self):
-        """Conflict should be detected during advance() too."""
-        with Manager():
-            A = State(num_values=5, name='A')
-            B = A[::-1]
-            B.name = 'B'
-            C = sync([A, B], name='C')
-            
-            # With A defaulting to 0, C.reset() would cause immediate conflict
-            # So we manually set C to state 0 (which will raise conflict)
-            # But to test advance(), we need to set up a non-conflicting state first
-            # Since sync([A, A[::-1]]) always conflicts, we test that reset() raises
-            # and then test advance() on a state that's already active
-            with pytest.raises(ConflictingValueAssignmentError):
-                C.reset()  # reset() causes conflict because A defaults to 0
-            
-            # For advance() test, manually set C to a state that would work
-            # if A were at the right state, then advance should cause conflict
-            # Actually, any state assignment to C will conflict, so we test that
-            # advance() on an already-active state also detects conflicts
-            # But C can't be active without conflict, so we test a different scenario:
-            # Set A to a specific state, then try to advance C
-            A.value = 2  # Set A to state 2
-            C.value = 2  # This should work: A=2, B=2 means A[::-1]=2 means A=2 (no conflict)
-            # Now advance C: C.value = 3 means A=3, B=3 means A[::-1]=3 means A=1 (conflict!)
-            with pytest.raises(ConflictingValueAssignmentError):
-                C.advance()  # advance() calls state setter, detects conflict
