@@ -36,12 +36,17 @@ class Manager:
         self._states.append(state)
     
     def get_ancestors(self, state, visited=None):
-        """Recursively collect all ancestor states in the computation graph."""
+        """Recursively collect all ancestor states and synced parents."""
         if visited is None:
             visited = []
         if state in visited:
             return visited
         visited.append(state)
+        # Include synced parents first (so they appear in first columns)
+        for synced in getattr(state, '_synced_parents', []):
+            if synced not in visited:
+                visited.append(synced)
+        # Then recurse into computational parents
         for parent in state._parents:
             self.get_ancestors(parent, visited)
         return visited

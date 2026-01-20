@@ -355,7 +355,7 @@ class Operation:
         
         # Build name(s) with prefix
         value = self.state.value
-        if state is None:
+        if value is None:
             # Inactive state - return None for all outputs
             return {f'name_{i}': None for i in range(self.num_outputs)}
         

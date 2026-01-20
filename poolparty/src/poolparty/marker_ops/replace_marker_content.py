@@ -18,6 +18,13 @@ def replace_marker_content(
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
+    # Internal parameters for insertion_scan composite naming
+    _seq_name_prefix: Optional[str] = None,
+    _seq_name_pos_prefix: Optional[str] = None,
+    _seq_name_site_prefix: Optional[str] = None,
+    _pos_op: Optional['Operation'] = None,
+    _site_op: Optional['Operation'] = None,
+    _num_sites: Optional[int] = None,
 ):
     """
     Replace a marker region with content from another Pool.
@@ -81,6 +88,12 @@ def replace_marker_content(
         name=op_name,
         iter_order=op_iter_order,
         _factory_name=_factory_name,
+        _seq_name_prefix=_seq_name_prefix,
+        _seq_name_pos_prefix=_seq_name_pos_prefix,
+        _seq_name_site_prefix=_seq_name_site_prefix,
+        _pos_op=_pos_op,
+        _site_op=_site_op,
+        _num_sites=_num_sites,
     )
     result_pool = Pool(operation=op, name=name, iter_order=iter_order)
     
@@ -105,12 +118,28 @@ class ReplaceMarkerContentOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
+        # Internal parameters for insertion_scan composite naming
+        _seq_name_prefix: Optional[str] = None,
+        _seq_name_pos_prefix: Optional[str] = None,
+        _seq_name_site_prefix: Optional[str] = None,
+        _pos_op: Optional['Operation'] = None,
+        _site_op: Optional['Operation'] = None,
+        _num_sites: Optional[int] = None,
     ) -> None:
         self.marker_name = marker_name
         
         # Set factory name if provided
         if _factory_name is not None:
             self.factory_name = _factory_name
+        
+        # Store naming parameters for insertion_scan composite naming
+        self._seq_name_prefix = _seq_name_prefix
+        self._seq_name_pos_prefix = _seq_name_pos_prefix
+        self._seq_name_site_prefix = _seq_name_site_prefix
+        self._pos_op = _pos_op
+        self._site_op = _site_op
+        self._num_sites = _num_sites
+        self._insertion_naming = any([_seq_name_prefix, _seq_name_pos_prefix, _seq_name_site_prefix])
         
         # The operation itself has num_values=1 because it doesn't add its own states.
         # The total number of output states comes from the product of parent pool counters.
@@ -166,6 +195,31 @@ class ReplaceMarkerContentOp(Operation):
         
         return {'seq_0': result_seq}
     
+    def compute_seq_names(
+        self,
+        parent_names: list[Optional[str]],
+        card: dict,
+    ) -> dict:
+        """Compute output sequence names with optional insertion_scan composite naming."""
+        if not self._insertion_naming:
+            return super().compute_seq_names(parent_names, card)
+        
+        # Get position and site indices from the referenced operations
+        pos_idx = self._pos_op.state.value if self._pos_op.state.value is not None else 0
+        site_idx = self._site_op.state.value if self._site_op.state.value is not None else 0
+        
+        # Build name parts in order: product index, position index, site index
+        name_parts = []
+        if self._seq_name_prefix:
+            w = pos_idx * self._num_sites + site_idx
+            name_parts.append(f'{self._seq_name_prefix}{w}')
+        if self._seq_name_pos_prefix:
+            name_parts.append(f'{self._seq_name_pos_prefix}{pos_idx}')
+        if self._seq_name_site_prefix:
+            name_parts.append(f'{self._seq_name_site_prefix}{site_idx}')
+        
+        return {'name_0': '.'.join(name_parts) if name_parts else None}
+    
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
@@ -175,4 +229,10 @@ class ReplaceMarkerContentOp(Operation):
             'spacer_str': self._spacer_str,
             'name': None,
             'iter_order': self.iter_order,
+            '_seq_name_prefix': self._seq_name_prefix,
+            '_seq_name_pos_prefix': self._seq_name_pos_prefix,
+            '_seq_name_site_prefix': self._seq_name_site_prefix,
+            '_pos_op': self._pos_op,
+            '_site_op': self._site_op,
+            '_num_sites': self._num_sites,
         }

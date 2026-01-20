@@ -28,6 +28,8 @@ class State:
         self._name = name
         self._parents = tuple(_parents) if _parents else ()
         self._op = _op
+        self._synced_child = None       # The state this is a synced parent of
+        self._synced_parents = []       # States that are synced parents of this state
         
         # Set iter_order
         if iter_order is None:
@@ -93,6 +95,11 @@ class State:
         self._name = name
         return self
     
+    def synced_parent(self, name: Optional[str] = None):
+        """Create a synced parent state that receives this state's value."""
+        from .ops import synced_to
+        return synced_to(self, name=name)
+    
     @property
     def value(self):
         """Current value of this state."""
@@ -103,9 +110,14 @@ class State:
         """Set value and propagate to parents with conflict detection."""
         if val is None:
             self._value = None
+            for synced_parent in self._synced_parents:
+                synced_parent._value = None
         else:
             self._inactivate_tree()
             self._set_inactivated_values_in_tree(val)
+            # Propagate to synced parents
+            for synced_parent in self._synced_parents:
+                synced_parent._value = val
     
     def _set_inactivated_values_in_tree(self, val: Optional[Integral]):
         """Set value in pre-inactivated tree with conflict detection."""
@@ -150,6 +162,8 @@ class State:
         self._value = None
         for parent in self._parents:
             parent._inactivate_tree()
+        for synced_parent in self._synced_parents:
+            synced_parent._value = None
     
     def is_active(self):
         """Return True if state is active (value is not None)."""
@@ -209,7 +223,7 @@ class State:
 
     def get_iteration_df(self, **kwargs):
         ancestors = self._manager.get_ancestors(self)
-        df = self._manager.get_iteration_df(self, counters=ancestors, **kwargs)
+        df = self._manager.get_iteration_df(self, states=ancestors, **kwargs)
         return df
     
     def get_ancestors(self):

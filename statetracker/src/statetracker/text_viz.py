@@ -107,19 +107,32 @@ def print_dag(state, style: StyleType = 'clean') -> None:
             self.op = op
             self.parent_states = parent_states
     
+    class SyncedNode:
+        def __init__(self, synced_states):
+            self.synced_states = synced_states
+    
     def get_label(node):
         if isinstance(node, StateNode):
             return format_state_node(node.state, style)
+        elif isinstance(node, SyncedNode):
+            return "<synced>"
         else:
             return format_operation_node(node.op, style)
     
     def get_children(node):
         if isinstance(node, StateNode):
-            # State's child is its operation (if non-leaf)
+            children = []
+            # First, add synced parents under <synced> heading
+            synced_parents = getattr(node.state, '_synced_parents', [])
+            if synced_parents:
+                children.append(SyncedNode(synced_parents))
+            # Then, add operation (if non-leaf)
             if node.state._op:
-                return [OpNode(node.state._op, node.state._parents)]
-            else:
-                return []
+                children.append(OpNode(node.state._op, node.state._parents))
+            return children
+        elif isinstance(node, SyncedNode):
+            # SyncedNode's children are the synced parent states
+            return [StateNode(s) for s in node.synced_states]
         else:
             # Operation's children are its parent states
             return [StateNode(s) for s in node.parent_states]

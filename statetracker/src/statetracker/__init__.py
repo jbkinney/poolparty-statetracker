@@ -24,6 +24,7 @@ from .ops import (
     split,
     interleave,
     passthrough,
+    synced_to,
 )
 from .state import State, ConflictingValueAssignmentError
 
@@ -35,5 +36,5 @@ __all__ = [
     'RepeatOp', 'ShuffleOp', 'SampleOp', 'InterleaveOp', 'PassthroughOp',
     'product', 'ordered_product', 'set_product_order_mode', 'get_product_order_mode',
     'stack', 'sync', 'slice', 'repeat', 'shuffle', 'sample',
-    'split', 'interleave', 'passthrough',
+    'split', 'interleave', 'passthrough', 'synced_to',
 ]
