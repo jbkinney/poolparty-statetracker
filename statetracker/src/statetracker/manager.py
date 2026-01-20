@@ -51,6 +51,16 @@ class Manager:
             self.get_ancestors(parent, visited)
         return visited
     
+    def clear_all_values(self):
+        """Directly clear all states and sync groups to None (bypasses setter)."""
+        seen_groups = set()
+        for state in self._states:
+            state._value = None
+            group = state._synced_group
+            if id(group) not in seen_groups:
+                group._value = None
+                seen_groups.add(id(group))
+    
     def inactivate_all(self, states=None):
         """Set states to inactive value (None)."""
         targets = states if states is not None else self._states

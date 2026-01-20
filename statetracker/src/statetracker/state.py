@@ -118,9 +118,15 @@ class State:
         """Set value and propagate to parents."""
         if val is None:
             self._synced_group.inactivate_trees()
-        else:
-            self._synced_group.inactivate_trees()
+        elif self._parents:
+            # Non-leaf state: clear all and propagate
+            self._manager.clear_all_values()
             self._synced_group.set_inactivated_values_in_trees(val)
+        else:
+            # Leaf state: set sync group value (updates all peers, no propagation)
+            self._synced_group._value = val
+            for state in self._synced_group._states:
+                state._value = val if val < state.num_values else None
     
     def advance(self):
         """Advance to next value (wraps around using this state's num_values)."""
@@ -161,7 +167,9 @@ class State:
             new_state = State(_parents=self._parents, _op=self._op, name=name)
         else:
             new_state = State(self._num_values, name=name)
-        new_state.value = self._value
+        # Direct assignment to avoid triggering global clear
+        new_state._synced_group._value = self._value
+        new_state._value = self._value
         return new_state
     
     def deepcopy(self, name: Optional[str] = None):
@@ -171,7 +179,9 @@ class State:
         else:
             new_parents = tuple(p.deepcopy() for p in self._parents)
             new_state = State(_parents=new_parents, _op=self._op, name=name)
-        new_state.value = self._value
+        # Direct assignment to avoid triggering global clear
+        new_state._synced_group._value = self._value
+        new_state._value = self._value
         return new_state
     
     def __repr__(self):

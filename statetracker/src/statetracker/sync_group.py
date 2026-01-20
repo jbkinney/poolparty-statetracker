@@ -90,12 +90,10 @@ class SynchronizedGroup:
                     parent_num_values = tuple(p.num_values for p in state._parents)
                     parent_values = state._op.decompose(state._value, parent_num_values)
                     for parent, pv in zip(state._parents, parent_values):
-                        parent._synced_group.inactivate_trees()
                         parent._synced_group.set_inactivated_values_in_trees(pv)
                 else:
-                    # State is None (out of range) - clear all parent trees
+                    # State is None - propagate None to parents (safe: match preserves existing values)
                     for parent in state._parents:
-                        parent._synced_group.inactivate_trees()
                         parent._synced_group.set_inactivated_values_in_trees(None)
     
     def __iter__(self):

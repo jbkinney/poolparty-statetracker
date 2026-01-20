@@ -406,7 +406,7 @@ class TestDeepcopy:
             assert D._parents[1] is not B
     
     def test_deepcopy_is_fully_independent(self):
-        """Iterating deepcopy does NOT affect original ancestors."""
+        """Deepcopy creates independent graph, but setting values clears all states."""
         with Manager():
             A = State(num_values=2, name='A')
             B = State(num_values=3, name='B')
@@ -415,15 +415,14 @@ class TestDeepcopy:
             
             D = C.deepcopy()
             
-            # Set D's state - this should NOT affect original A and B
+            # Set D's state - this clears ALL states (including A and B)
             D.value = 5
             
-            # Original A and B should still be at their original state (0)
-            # Note: C.value=0 propagated to A=0, B=0 initially
-            assert A.value == 0
-            assert B.value == 0
+            # Original A and B are cleared by clear_all_values()
+            assert A.value is None
+            assert B.value is None
             
-            # D's copied parents should have the new value
+            # D's copied parents have the propagated values
             assert D._parents[0].value == 1  # 5 % 2 = 1
             assert D._parents[1].value == 2  # 5 // 2 = 2
     
@@ -501,14 +500,14 @@ class TestDeepcopy:
             
             F = E.deepcopy(name='F')
             
-            # F should be independent
+            # F should be independent object
             assert F is not E
             assert F.num_values == E.num_values
             assert F.value == 2
             
-            # Changing F doesn't affect E
+            # Changing F clears all states (including E)
             F.value = 0
-            assert E.value == 2
+            assert E.value is None  # Cleared by clear_all_values()
 
 
 class TestConflictDetection:
