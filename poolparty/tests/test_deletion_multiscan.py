@@ -93,7 +93,7 @@ class TestDeletionMultiscanModes:
             bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])  # 18 chars
             result = deletion_multiscan(
                 bg, deletion_length=3, num_deletions=2,
-                mode='hybrid', num_hybrid_states=5
+                mode='random', num_states=5
             ).named('result')
 
         df = result.generate_library(num_seqs=20, seed=42)
@@ -108,7 +108,7 @@ class TestDeletionMultiscanModes:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])
 
-            with pytest.raises(ValueError, match="only mode='random' or 'hybrid'"):
+            with pytest.raises(ValueError, match="only mode='random'"):
                 deletion_multiscan(
                     bg, deletion_length=3, num_deletions=2, mode='sequential'
                 )

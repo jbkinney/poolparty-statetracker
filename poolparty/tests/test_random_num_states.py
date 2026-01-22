@@ -1,4 +1,4 @@
-"""Tests for hybrid mode across operations."""
+"""Tests for random mode with num_states across operations."""
 
 import pytest
 import numpy as np
@@ -9,44 +9,44 @@ from poolparty.base_ops.from_seqs import from_seqs
 from poolparty.base_ops.breakpoint_scan import breakpoint_scan
 
 
-class TestHybridModeBasic:
-    """Test basic hybrid mode functionality."""
+class TestRandomNumStatesBasic:
+    """Test basic random mode with num_states functionality."""
     
-    def test_num_hybrid_states(self):
-        """Test that hybrid mode uses num_hybrid_states for counter."""
+    def test_num_states(self):
+        """Test that random mode with num_states uses num_states for counter."""
         with pp.Party() as party:
-            pool = mutagenize('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=100)
+            pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=100)
             assert pool.operation.num_values == 100
     
-    def test_hybrid_mode_requires_num_states(self):
-        """Test that hybrid mode requires num_hybrid_states."""
+    def test_random_mode_defaults_to_one_state(self):
+        """Test that random mode without num_states defaults to 1."""
         with pp.Party() as party:
-            with pytest.raises(ValueError, match="num_hybrid_states is required"):
-                mutagenize('ACGT', num_mutations=1, mode='hybrid')
+            pool = mutagenize('ACGT', num_mutations=1, mode='random')
+            assert pool.operation.num_values == 1
     
-    def test_hybrid_mode_generates_correct_count(self):
-        """Test that hybrid mode generates the expected number of sequences."""
+    def test_random_mode_generates_correct_count(self):
+        """Test that random mode with num_states generates the expected number of sequences."""
         with pp.Party() as party:
-            pool = mutagenize('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=50).named('mutant')
+            pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=50).named('mutant')
         
         df = pool.generate_library(num_cycles=1)
         assert len(df) == 50
 
 
-class TestHybridModeReproducibility:
-    """Test that hybrid mode produces reproducible results."""
+class TestRandomNumStatesReproducibility:
+    """Test that random mode with num_states produces reproducible results."""
     
     def test_same_seed_same_results(self):
         """Test that same seed produces same results."""
         results1 = []
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutagenize('ACGTACGT', num_mutations=1, mode='random', num_states=10).named('mutant')
             df = pool.generate_library(num_cycles=1, seed=42)
             results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutagenize('ACGTACGT', num_mutations=1, mode='random', num_states=10).named('mutant')
             df = pool.generate_library(num_cycles=1, seed=42)
             results2 = list(df['seq'])
         
@@ -56,13 +56,13 @@ class TestHybridModeReproducibility:
         """Test that different seeds produce different results."""
         results1 = []
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutagenize('ACGTACGT', num_mutations=1, mode='random', num_states=10).named('mutant')
             df = pool.generate_library(num_cycles=1, seed=42)
             results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutagenize('ACGTACGT', num_mutations=1, mode='random', num_states=10).named('mutant')
             df = pool.generate_library(num_cycles=1, seed=123)
             results2 = list(df['seq'])
         
@@ -71,7 +71,7 @@ class TestHybridModeReproducibility:
     def test_same_state_same_output(self):
         """Test that same state always produces same output with same seed."""
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=20).named('mutant')
+            pool = mutagenize('ACGTACGT', num_mutations=1, mode='random', num_states=20).named('mutant')
             df = pool.generate_library(num_seqs=40, seed=42)  # 2 complete iterations
         
         # First and second iteration should be identical
@@ -80,15 +80,15 @@ class TestHybridModeReproducibility:
         assert first_iter == second_iter
 
 
-class TestHybridModeOperationIsolation:
+class TestRandomNumStatesOperationIsolation:
     """Test that different operations produce different results at same state."""
     
     def test_different_ops_different_results(self):
-        """Test that different hybrid operations at same state produce different results."""
+        """Test that different random operations at same state produce different results."""
         with pp.Party() as party:
             # Two mutagenize operations with same config but different op.id
-            pool1 = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant1')
-            pool2 = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant2')
+            pool1 = mutagenize('ACGTACGT', num_mutations=1, mode='random', num_states=10).named('mutant1')
+            pool2 = mutagenize('ACGTACGT', num_mutations=1, mode='random', num_states=10).named('mutant2')
             df = pool1.generate_library(num_cycles=1, seed=42, report_design_cards=True, aux_pools=[pool2])
         
         # They should produce different results because op.id is part of the seed
@@ -100,13 +100,13 @@ class TestHybridModeOperationIsolation:
         assert differences > 0, "Different ops should produce different outputs"
 
 
-class TestHybridModeMutationScan:
-    """Test hybrid mode specifically for mutagenize."""
+class TestRandomNumStatesMutationScan:
+    """Test random mode with num_states specifically for mutagenize."""
     
-    def test_mutagenize_hybrid_valid_mutations(self):
-        """Test that hybrid mutagenize produces valid mutations."""
+    def test_mutagenize_random_valid_mutations(self):
+        """Test that random mutagenize with num_states produces valid mutations."""
         with pp.Party() as party:
-            pool = mutagenize('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=20).named('mutant')
+            pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=20).named('mutant')
             df = pool.generate_library(num_cycles=1, seed=42)
         
         # All outputs should be valid single mutants
@@ -115,10 +115,10 @@ class TestHybridModeMutationScan:
             diffs = sum(1 for a, b in zip('ACGT', mutant) if a != b)
             assert diffs == 1
     
-    def test_mutagenize_hybrid_double_mutation(self):
-        """Test hybrid mode with num_mutations=2."""
+    def test_mutagenize_random_double_mutation(self):
+        """Test random mode with num_states and num_mutations=2."""
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', num_mutations=2, mode='hybrid', num_hybrid_states=30).named('mutant')
+            pool = mutagenize('ACGTACGT', num_mutations=2, mode='random', num_states=30).named('mutant')
             df = pool.generate_library(num_cycles=1, seed=42)
         
         assert len(df) == 30
@@ -127,25 +127,19 @@ class TestHybridModeMutationScan:
             assert diffs == 2
 
 
-class TestHybridModeGetKmers:
-    """Test hybrid mode for get_kmers."""
+class TestRandomNumStatesGetKmers:
+    """Test random mode with num_states for get_kmers."""
     
-    def test_get_kmers_hybrid_requires_num_states(self):
-        """Test that get_kmers hybrid mode requires num_hybrid_states."""
+    def test_get_kmers_random_num_states(self):
+        """Test that get_kmers random mode with num_states uses correct num_states."""
         with pp.Party() as party:
-            with pytest.raises(ValueError, match="num_hybrid_states is required"):
-                get_kmers(length=3, mode='hybrid')
-    
-    def test_get_kmers_hybrid_num_states(self):
-        """Test that get_kmers hybrid mode uses correct num_states."""
-        with pp.Party() as party:
-            pool = get_kmers(length=3, mode='hybrid', num_hybrid_states=100)
+            pool = get_kmers(length=3, mode='random', num_states=100)
             assert pool.operation.num_values == 100
     
-    def test_get_kmers_hybrid_valid_kmers(self):
-        """Test that hybrid get_kmers produces valid k-mers."""
+    def test_get_kmers_random_valid_kmers(self):
+        """Test that random get_kmers with num_states produces valid k-mers."""
         with pp.Party() as party:
-            pool = get_kmers(length=4, mode='hybrid', num_hybrid_states=50).named('kmer')
+            pool = get_kmers(length=4, mode='random', num_states=50).named('kmer')
         
         df = pool.generate_library(num_cycles=1, seed=42)
         
@@ -154,42 +148,36 @@ class TestHybridModeGetKmers:
             assert len(kmer) == 4
             assert all(c in 'ACGT' for c in kmer)
     
-    def test_get_kmers_hybrid_reproducible(self):
-        """Test that get_kmers hybrid mode is reproducible."""
+    def test_get_kmers_random_reproducible(self):
+        """Test that get_kmers random mode with num_states is reproducible."""
         results1 = []
         with pp.Party() as party:
-            pool = get_kmers(length=4, mode='hybrid', num_hybrid_states=20).named('kmer')
+            pool = get_kmers(length=4, mode='random', num_states=20).named('kmer')
         df = pool.generate_library(num_cycles=1, seed=42)
         results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
-            pool = get_kmers(length=4, mode='hybrid', num_hybrid_states=20).named('kmer')
+            pool = get_kmers(length=4, mode='random', num_states=20).named('kmer')
         df = pool.generate_library(num_cycles=1, seed=42)
         results2 = list(df['seq'])
         
         assert results1 == results2
 
 
-class TestHybridModeFromSeqs:
-    """Test hybrid mode for from_seqs."""
+class TestRandomNumStatesFromSeqs:
+    """Test random mode with num_states for from_seqs."""
     
-    def test_from_seqs_hybrid_requires_num_states(self):
-        """Test that from_seqs hybrid mode requires num_hybrid_states."""
+    def test_from_seqs_random_num_states(self):
+        """Test that from_seqs random mode with num_states uses correct num_states."""
         with pp.Party() as party:
-            with pytest.raises(ValueError, match="num_hybrid_states is required"):
-                from_seqs(['AAA', 'TTT', 'GGG'], mode='hybrid')
-    
-    def test_from_seqs_hybrid_num_states(self):
-        """Test that from_seqs hybrid mode uses correct num_states."""
-        with pp.Party() as party:
-            pool = from_seqs(['AAA', 'TTT', 'GGG'], mode='hybrid', num_hybrid_states=100)
+            pool = from_seqs(['AAA', 'TTT', 'GGG'], mode='random', num_states=100)
             assert pool.operation.num_values == 100
     
-    def test_from_seqs_hybrid_random_selection(self):
-        """Test that from_seqs hybrid mode randomly selects sequences."""
+    def test_from_seqs_random_random_selection(self):
+        """Test that from_seqs random mode with num_states randomly selects sequences."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA', 'TTT', 'GGG', 'CCC'], mode='hybrid', num_hybrid_states=50).named('seq')
+            pool = from_seqs(['AAA', 'TTT', 'GGG', 'CCC'], mode='random', num_states=50).named('seq')
         
         df = pool.generate_library(num_cycles=1, seed=42)
         
@@ -201,44 +189,38 @@ class TestHybridModeFromSeqs:
         unique_seqs = df['seq'].nunique()
         assert unique_seqs >= 2
     
-    def test_from_seqs_hybrid_reproducible(self):
-        """Test that from_seqs hybrid mode is reproducible."""
+    def test_from_seqs_random_reproducible(self):
+        """Test that from_seqs random mode with num_states is reproducible."""
         results1 = []
         with pp.Party() as party:
-            pool = from_seqs(['A', 'T', 'G', 'C'], mode='hybrid', num_hybrid_states=30).named('seq')
+            pool = from_seqs(['A', 'T', 'G', 'C'], mode='random', num_states=30).named('seq')
         df = pool.generate_library(num_cycles=1, seed=42)
         results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
-            pool = from_seqs(['A', 'T', 'G', 'C'], mode='hybrid', num_hybrid_states=30).named('seq')
+            pool = from_seqs(['A', 'T', 'G', 'C'], mode='random', num_states=30).named('seq')
         df = pool.generate_library(num_cycles=1, seed=42)
         results2 = list(df['seq'])
         
         assert results1 == results2
 
 
-class TestHybridModeBreakpointScan:
-    """Test hybrid mode for breakpoint_scan."""
+class TestRandomNumStatesBreakpointScan:
+    """Test random mode with num_states for breakpoint_scan."""
     
-    def test_breakpoint_scan_hybrid_requires_num_states(self):
-        """Test that breakpoint_scan hybrid mode requires num_hybrid_states."""
-        with pp.Party() as party:
-            with pytest.raises(ValueError, match="num_hybrid_states is required"):
-                breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, mode='hybrid')
-    
-    def test_breakpoint_scan_hybrid_num_states(self):
-        """Test that breakpoint_scan hybrid mode uses correct num_states."""
+    def test_breakpoint_scan_random_num_states(self):
+        """Test that breakpoint_scan random mode with num_states uses correct num_states."""
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, 
-                                          mode='hybrid', num_hybrid_states=50)
+                                          mode='random', num_states=50)
             assert left.operation.num_values == 50
     
-    def test_breakpoint_scan_hybrid_valid_splits(self):
-        """Test that hybrid breakpoint_scan produces valid splits."""
+    def test_breakpoint_scan_random_valid_splits(self):
+        """Test that random breakpoint_scan with num_states produces valid splits."""
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, 
-                                          mode='hybrid', num_hybrid_states=30)
+                                          mode='random', num_states=30)
             left = left.named('left')
             right = right.named('right')
         
@@ -250,12 +232,12 @@ class TestHybridModeBreakpointScan:
             combined = row['seq'] + row['right.seq']
             assert combined == 'ACGTACGTACGT'
     
-    def test_breakpoint_scan_hybrid_reproducible(self):
-        """Test that breakpoint_scan hybrid mode is reproducible."""
+    def test_breakpoint_scan_random_reproducible(self):
+        """Test that breakpoint_scan random mode with num_states is reproducible."""
         results1 = []
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, 
-                                          mode='hybrid', num_hybrid_states=20)
+                                          mode='random', num_states=20)
             left = left.named('left')
         df = left.generate_library(num_cycles=1, seed=42)
         results1 = list(df['seq'])
@@ -263,7 +245,7 @@ class TestHybridModeBreakpointScan:
         results2 = []
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGTACGTACGT', num_breakpoints=1, 
-                                          mode='hybrid', num_hybrid_states=20)
+                                          mode='random', num_states=20)
             left = left.named('left')
         df = left.generate_library(num_cycles=1, seed=42)
         results2 = list(df['seq'])
@@ -271,36 +253,36 @@ class TestHybridModeBreakpointScan:
         assert results1 == results2
 
 
-class TestHybridModeVsRandomMode:
-    """Test differences between hybrid and random modes."""
+class TestRandomNumStatesVsRandomMode:
+    """Test differences between random mode with and without num_states."""
     
-    def test_hybrid_has_multiple_states(self):
-        """Test that hybrid mode has multiple states unlike random."""
+    def test_random_with_num_states_has_multiple_states(self):
+        """Test that random mode with num_states has multiple states unlike default random."""
         with pp.Party() as party:
             random_pool = mutagenize('ACGT', num_mutations=1, mode='random')
-            hybrid_pool = mutagenize('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=50)
+            random_num_states_pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=50)
             
             assert random_pool.operation.num_values == 1
-            assert hybrid_pool.operation.num_values == 50
+            assert random_num_states_pool.operation.num_values == 50
     
-    def test_hybrid_iterates_deterministically(self):
-        """Test that hybrid mode iterates through states deterministically."""
+    def test_random_with_num_states_iterates_deterministically(self):
+        """Test that random mode with num_states iterates through states deterministically."""
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutagenize('ACGTACGT', num_mutations=1, mode='random', num_states=10).named('mutant')
         
         # Run twice with same seed
         df1 = pool.generate_library(num_seqs=30, seed=42, init_state=0)
         
         # Create a new pool to test reproducibility
         with pp.Party() as party:
-            pool2 = mutagenize('ACGTACGT', num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool2 = mutagenize('ACGTACGT', num_mutations=1, mode='random', num_states=10).named('mutant')
         df2 = pool2.generate_library(num_seqs=30, seed=42, init_state=0)
         
         # Should be identical
         assert list(df1['seq']) == list(df2['seq'])
     
-    def test_random_does_not_cycle(self):
-        """Test that random mode doesn't cycle like hybrid does."""
+    def test_random_default_does_not_cycle(self):
+        """Test that default random mode doesn't cycle like random with num_states does."""
         with pp.Party() as party:
             pool = mutagenize('ACGTACGT', num_mutations=1, mode='random').named('mutant')
         df = pool.generate_library(num_seqs=50, seed=42)
@@ -323,14 +305,14 @@ class TestHybridModeVsRandomMode:
         # (unless extremely unlucky with RNG)
 
 
-class TestHybridModeComposability:
-    """Test that hybrid mode composes correctly with other operations."""
+class TestRandomNumStatesComposability:
+    """Test that random mode with num_states composes correctly with other operations."""
     
-    def test_hybrid_with_sequential_parent(self):
-        """Test hybrid operation with sequential parent."""
+    def test_random_with_num_states_with_sequential_parent(self):
+        """Test random operation with num_states and sequential parent."""
         with pp.Party() as party:
             seqs = from_seqs(['AAAA', 'TTTT'], mode='sequential')
-            mutants = mutagenize(seqs, num_mutations=1, mode='hybrid', num_hybrid_states=10).named('mutant')
+            mutants = mutagenize(seqs, num_mutations=1, mode='random', num_states=10).named('mutant')
         
         df = mutants.generate_library(num_seqs=20, seed=42)
         
@@ -339,11 +321,11 @@ class TestHybridModeComposability:
         for mutant in df['seq']:
             assert len(mutant) == 4
     
-    def test_hybrid_with_hybrid_parent(self):
-        """Test hybrid operation with hybrid parent."""
+    def test_random_with_num_states_with_random_parent(self):
+        """Test random operation with num_states and random parent with num_states."""
         with pp.Party() as party:
-            seqs = from_seqs(['AAAA', 'TTTT', 'GGGG'], mode='hybrid', num_hybrid_states=5)
-            mutants = mutagenize(seqs, num_mutations=1, mode='hybrid', num_hybrid_states=3).named('mutant')
+            seqs = from_seqs(['AAAA', 'TTTT', 'GGGG'], mode='random', num_states=5)
+            mutants = mutagenize(seqs, num_mutations=1, mode='random', num_states=3).named('mutant')
         
         df = mutants.generate_library(num_cycles=1, seed=42)
         

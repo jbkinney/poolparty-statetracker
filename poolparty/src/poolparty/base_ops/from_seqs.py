@@ -18,7 +18,7 @@ def from_seqs(
     seq_names: Optional[Sequence[str]] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[int] = None,
+    num_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -46,9 +46,9 @@ def from_seqs(
         Prefix for auto-generated names (e.g., 'seq_' produces 'seq_0', 'seq_1', ...).
         Cannot be used together with seq_names.
     mode : ModeType, default='random'
-        Sequence selection mode: 'sequential', 'random', or 'hybrid'.
-    num_hybrid_states : Optional[int], default=None
-        Number of pool states when using 'hybrid' mode (ignored for other modes).
+        Sequence selection mode: 'sequential' or 'random'.
+    num_states : Optional[int], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -74,7 +74,7 @@ def from_seqs(
                     remove_marker=remove_marker, spacer_str=spacer_str,
                     mark_changes=mark_changes,
                     seq_names=seq_names, seq_name_prefix=seq_name_prefix,
-                    mode=mode, num_hybrid_states=num_hybrid_states,
+                    mode=mode, num_states=num_states,
                     name=op_name, iter_order=op_iter_order,
                     _factory_name=_factory_name)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
@@ -98,7 +98,7 @@ class FromSeqsOp(Operation):
         seq_names: Optional[Sequence[str]] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
-        num_hybrid_states: Optional[int] = None,
+        num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
@@ -132,8 +132,6 @@ class FromSeqsOp(Operation):
             raise ValueError("seqs must not be empty")
         if mode == 'fixed' and len(seqs) != 1:
             raise ValueError("mode='fixed' requires exactly 1 sequence")
-        if mode == 'hybrid' and num_hybrid_states is None:
-            raise ValueError("num_hybrid_states is required when mode='hybrid'")
         if seq_names is not None and seq_name_prefix is not None:
             raise ValueError("Cannot specify both seq_names and seq_name_prefix")
         self.seqs = list(seqs)
@@ -145,8 +143,8 @@ class FromSeqsOp(Operation):
         match mode:
             case 'sequential':
                 num_states = len(seqs)
-            case 'hybrid':
-                num_states = num_hybrid_states
+            case 'random':
+                num_states = num_states if num_states is not None else 1
             case _:
                 num_states = 1
         # Use lengths without markers (includes all chars except marker tags)
@@ -173,7 +171,7 @@ class FromSeqsOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
         """Return design card with sequence selection."""
-        if self.mode in ('random', 'hybrid'):
+        if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
             idx = rng.integers(0, len(self.seqs))
@@ -232,7 +230,7 @@ class FromSeqsOp(Operation):
             'seq_names': self.seq_names if self._seq_names_explicit else None,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

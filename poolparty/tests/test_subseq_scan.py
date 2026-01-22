@@ -183,8 +183,8 @@ class TestSubseqScanModes:
             result = subseq_scan(
                 'ACGTACGTACGT',
                 seq_length=4,
-                mode='hybrid',
-                num_hybrid_states=3
+                mode='random',
+                num_states=3
             ).named('result')
         
         df = result.generate_library(num_seqs=20, seed=42)

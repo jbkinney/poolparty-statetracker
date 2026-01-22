@@ -93,15 +93,9 @@ class TestFromMotifHybridMode:
         """Test that hybrid mode has specified num_states."""
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
-            pool = from_motif(prob_df, mode='hybrid', num_hybrid_states=10)
+            pool = from_motif(prob_df, mode='random', num_states=10)
             assert pool.operation.num_values == 10
     
-    def test_hybrid_mode_requires_num_hybrid_states(self):
-        """Test that hybrid mode requires num_hybrid_states."""
-        prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
-        with pp.Party() as party:
-            with pytest.raises(ValueError, match="num_hybrid_states is required"):
-                from_motif(prob_df, mode='hybrid')
 
 
 class TestFromMotifModeValidation:
@@ -111,14 +105,14 @@ class TestFromMotifModeValidation:
         """Test that sequential mode is rejected."""
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
-            with pytest.raises(ValueError, match="only supports mode='random' or mode='hybrid'"):
+            with pytest.raises(ValueError, match="only supports mode='random'"):
                 from_motif(prob_df, mode='sequential')
     
     def test_fixed_mode_rejected(self):
         """Test that fixed mode is rejected."""
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
-            with pytest.raises(ValueError, match="only supports mode='random' or mode='hybrid'"):
+            with pytest.raises(ValueError, match="only supports mode='random'"):
                 from_motif(prob_df, mode='fixed')
 
 
@@ -341,18 +335,18 @@ class TestFromMotifCopyParams:
         
         assert 'prob_df' in params
         assert params['mode'] == 'random'
-        assert params['num_hybrid_states'] is None
+        assert params['num_states'] is None
         assert params['name'] is None
     
     def test_copy_params_hybrid_mode(self):
         """Test _get_copy_params in hybrid mode."""
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
-            pool = from_motif(prob_df, mode='hybrid', num_hybrid_states=10)
+            pool = from_motif(prob_df, mode='random', num_states=10)
             params = pool.operation._get_copy_params()
         
-        assert params['mode'] == 'hybrid'
-        assert params['num_hybrid_states'] == 10
+        assert params['mode'] == 'random'
+        assert params['num_states'] == 10
 
 
 class TestFromMotifIntegration:

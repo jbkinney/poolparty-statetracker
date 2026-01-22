@@ -11,7 +11,7 @@ Operation_type: TypeAlias = "poolparty.operation.Operation"
 State_type: TypeAlias = "statetracker.state.State"
 
 # Mode type for operations
-ModeType: TypeAlias = Literal['random', 'sequential', 'fixed', 'hybrid']
+ModeType: TypeAlias = Literal['random', 'sequential', 'fixed']
 
 # Alphabet type alias
 AlphabetType: TypeAlias = Union[str, Sequence[str]]

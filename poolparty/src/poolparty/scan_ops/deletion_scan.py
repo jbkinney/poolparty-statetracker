@@ -20,7 +20,7 @@ def deletion_scan(
     max_spacing: Optional[Integral] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[Integral] = None,
+    num_states: Optional[Integral] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -44,7 +44,7 @@ def deletion_scan(
     positions : PositionsType, default=None
         Positions to consider for the start of the deletion (0-based, relative to region).
     mode : ModeType, default='random'
-        Deletion mode: 'random', 'sequential', or 'hybrid'.
+        Deletion mode: 'random' or 'sequential'.
 
     Returns
     -------
@@ -102,7 +102,7 @@ def deletion_scan(
         remove_marker=False,  # Keep outer region marker for now
         seq_name_prefix=seq_name_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         op_name=op_name,
         op_iter_order=op_iter_order,
         _factory_name='deletion_scan(marker_scan)',

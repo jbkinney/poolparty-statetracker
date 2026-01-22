@@ -19,7 +19,7 @@ def get_kmers(
     case: Literal['lower', 'upper'] = 'upper',
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[Integral] = None,
+    num_states: Optional[Integral] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -44,9 +44,9 @@ def get_kmers(
     case : Literal['lower', 'upper'], default='upper'
         Case of output k-mers: 'upper' for uppercase, 'lower' for lowercase.
     mode : ModeType, default='random'
-        Sequence selection mode: 'sequential', 'random', or 'hybrid'.
-    num_hybrid_states : Optional[int], default=None
-        Number of pool states if mode is 'hybrid'. Ignored for other modes.
+        Sequence selection mode: 'sequential' or 'random'.
+    num_states : Optional[int], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -74,7 +74,7 @@ def get_kmers(
                     remove_marker=remove_marker, spacer_str=spacer_str,
                     mark_changes=mark_changes,
                     case=case, seq_name_prefix=seq_name_prefix, mode=mode,
-                    num_hybrid_states=num_hybrid_states,
+                    num_states=num_states,
                     name=op_name, iter_order=op_iter_order)
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool
@@ -97,7 +97,7 @@ class GetKmersOp(Operation):
         case: Literal['lower', 'upper'] = 'upper',
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
-        num_hybrid_states: Optional[int] = None,
+        num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -118,8 +118,6 @@ class GetKmersOp(Operation):
         
         if length < 1:
             raise ValueError(f"length must be >= 1, got {length}")
-        if mode == 'hybrid' and num_hybrid_states is None:
-            raise ValueError("num_hybrid_states is required when mode='hybrid'")
         
         # Resolve mark_changes from party defaults if not explicitly set
         if mark_changes is None:
@@ -132,8 +130,8 @@ class GetKmersOp(Operation):
         total_kmers = self.alpha_size ** length
         if mode == 'sequential':
             num_states = self.validate_num_values(total_kmers, mode)
-        elif mode == 'hybrid':
-            num_states = num_hybrid_states
+        elif mode == 'random':
+            num_states = num_states if num_states is not None else 1
         else:
             num_states = 1
         
@@ -195,7 +193,7 @@ class GetKmersOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
         """Return design card with kmer selection."""
-        if self.mode in ('random', 'hybrid'):
+        if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
             kmer = self._random_kmer(rng)
@@ -239,7 +237,7 @@ class GetKmersOp(Operation):
             'case': self.case,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

@@ -164,8 +164,8 @@ class TestReplacementScanModes:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             ins = pp.from_seqs(['TTT'])
-            result = replacement_scan(bg, ins, mode='hybrid', 
-                                      num_hybrid_states=5).named('result')
+            result = replacement_scan(bg, ins, mode='random', 
+                                      num_states=5).named('result')
         
         df = result.generate_library(num_seqs=20, seed=42)
         assert len(df) == 20

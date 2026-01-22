@@ -22,7 +22,7 @@ def mutagenize(
     swapcase: bool = False,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[int] = None,
+    num_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -56,9 +56,9 @@ def mutagenize(
         If True, swap case of entire sequence after mutations are applied.
         Preserves XML marker tags unchanged.
     mode : ModeType, default='random'
-        Selection mode: 'random', 'sequential', or 'hybrid'. Sequential only available with num_mutations.
-    num_hybrid_states : Optional[int], default=None
-        Required when mode='hybrid'.
+        Selection mode: 'random' or 'sequential'. Sequential only available with num_mutations.
+    num_states : Optional[int], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -88,7 +88,7 @@ def mutagenize(
         swapcase=swapcase,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         name=op_name,
         iter_order=op_iter_order,
         _factory_name=_factory_name,
@@ -124,7 +124,7 @@ class MutagenizeOp(Operation):
         swapcase: bool = False,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
-        num_hybrid_states: Optional[int] = None,
+        num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = 'mutagenize',
@@ -157,9 +157,6 @@ class MutagenizeOp(Operation):
             if mode == 'sequential':
                 raise ValueError("mode='sequential' is not supported with mutation_rate (use num_mutations instead)")
         
-        # Validate hybrid mode
-        if mode == 'hybrid' and num_hybrid_states is None:
-            raise ValueError("num_hybrid_states is required when mode='hybrid'")
         
         self.num_mutations = num_mutations
         self.mutation_rate = mutation_rate
@@ -240,8 +237,8 @@ class MutagenizeOp(Operation):
                 num_states = self._build_caches(effective_length)
             else:
                 num_states = 1
-        elif mode == 'hybrid':
-            num_states = num_hybrid_states
+        elif mode == 'random':
+            num_states = num_states if num_states is not None else 1
         else:
             num_states = 1
         
@@ -415,7 +412,7 @@ class MutagenizeOp(Operation):
         if self.num_mutations is not None and self.num_mutations > num_mutable:
             raise ValueError(f"Cannot apply {self.num_mutations} mutations: only {num_mutable} mutable positions")
         
-        if self.mode in ('random', 'hybrid'):
+        if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
             positions, wt_chars, mut_chars = self._random_mutation(seq, rng)
@@ -509,7 +506,7 @@ class MutagenizeOp(Operation):
             'swapcase': self.swapcase,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

@@ -19,7 +19,7 @@ def mutagenize_scan(
     mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[Union[str, Sequence[str]]] = None,
     mode: Union[ModeType, Tuple[ModeType, ModeType]] = 'random',
-    num_hybrid_states: Optional[Union[Integral, Sequence[Integral]]] = None,
+    num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -56,10 +56,10 @@ def mutagenize_scan(
         Prefix for sequence names. 
         If sequence, first element is for scanning positions, second element is for mutagenization.
     mode : Union[ModeType, Sequence[ModeType]], default='random'
-        Selection mode for scanning positions: 'random', 'sequential', or 'hybrid'.
+        Selection mode for scanning positions: 'random' or 'sequential'.
         If sequence, first element is for scanning positions, second element is for mutagenization.
-    num_hybrid_states : Optional[Union[Integral, Sequence[Integral]]], default=None
-        Number of pool states when using 'hybrid' mode (ignored by other modes).
+    num_states : Optional[Union[Integral, Sequence[Integral]]], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
         If sequence, first element is for scanning positions, second element is for mutagenization.
     name : Optional[str], default=None
         Name for the resulting Pool.
@@ -167,7 +167,7 @@ def mutagenize_scan(
         swapcase=False,
         seq_name_prefix=seq_name_prefix_mut,
         mode=mode_mut,
-        num_hybrid_states=num_hybrid_states_mut,
+        num_states=num_states_mut,
         name=name,
         op_name=op_name,
         iter_order=iter_order,

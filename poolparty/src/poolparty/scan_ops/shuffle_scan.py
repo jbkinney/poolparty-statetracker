@@ -18,7 +18,7 @@ def shuffle_scan(
     mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[Integral] = None,
+    num_states: Optional[Integral] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -89,7 +89,7 @@ def shuffle_scan(
         remove_marker=False,  # Keep outer region marker for now
         seq_name_prefix=seq_name_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         op_name=op_name,
         op_iter_order=op_iter_order,
         _factory_name=f'{_factory_name}(marker_scan)',
@@ -103,8 +103,8 @@ def shuffle_scan(
         remove_marker=True,  # Always remove the internal _shuf marker
         spacer_str=spacer_str,
         mark_changes=mark_changes,
-        mode='hybrid',
-        num_hybrid_states=shuffles_per_position,
+        mode='random',
+        num_states=shuffles_per_position,
         name=name,
         iter_order=iter_order,
         op_iter_order=-1,

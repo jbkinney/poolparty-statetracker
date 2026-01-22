@@ -16,7 +16,7 @@ def deletion_multiscan(
     positions: PositionsType = None,
     seq_name_prefix: Optional[str] = None,
     mode: str = 'random',
-    num_hybrid_states: Optional[Integral] = None,
+    num_states: Optional[Integral] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -45,9 +45,9 @@ def deletion_multiscan(
         Valid positions for deletion starts (0-based). If None, all valid
         positions are used.
     mode : str, default='random'
-        Position selection mode: 'random' or 'hybrid'.
-    num_hybrid_states : Optional[Integral], default=None
-        Number of pool states when using 'hybrid' mode.
+        Position selection mode: 'random'.
+    num_states : Optional[Integral], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -66,9 +66,9 @@ def deletion_multiscan(
     from ..marker_ops import marker_multiscan, replace_marker_content
 
     # Validate mode
-    if mode not in ('random', 'hybrid'):
+    if mode != 'random':
         raise ValueError(
-            f"deletion_multiscan supports only mode='random' or 'hybrid', got '{mode}'"
+            f"deletion_multiscan supports only mode='random', got '{mode}'"
         )
 
     # Validate num_deletions
@@ -122,7 +122,7 @@ def deletion_multiscan(
         insertion_mode='ordered',
         seq_name_prefix=seq_name_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         op_name=op_name,
         op_iter_order=op_iter_order,
     )

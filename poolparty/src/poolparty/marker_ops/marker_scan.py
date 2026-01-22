@@ -8,7 +8,7 @@ from ..operation import Operation
 
 # Type aliases
 PositionsType = Union[list[int], tuple[int, ...], slice, None]
-ModeType = Literal['random', 'sequential', 'hybrid']
+ModeType = Literal['random', 'sequential']
 StrandType = Literal['+', '-', 'both']
 
 
@@ -23,7 +23,7 @@ def marker_scan(
     marker_length: int = 0,
     seq_name_prefix: Optional[str] = None,
     mode: str = 'random',
-    num_hybrid_states: Optional[int] = None,
+    num_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -51,7 +51,7 @@ def marker_scan(
         Length of sequence to encompass. 0 creates zero-length markers (<name/>),
         >0 creates region markers (<name>BASES</name>).
     mode : ModeType, default='random'
-        Position selection mode: 'random', 'sequential', or 'hybrid'.
+        Position selection mode: 'random' or 'sequential'.
     _factory_name : Optional[str], default=None
         Sets default name of the resulting operation
 
@@ -86,7 +86,7 @@ def marker_scan(
         marker_length=int(marker_length),
         seq_name_prefix=seq_name_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         name=op_name,
         iter_order=op_iter_order,
         _factory_name=_factory_name,
@@ -136,7 +136,7 @@ class MarkerScanOp(Operation):
         marker_length: int = 0,
         seq_name_prefix: Optional[str] = None,
         mode: str = 'random',
-        num_hybrid_states: Optional[int] = None,
+        num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
@@ -144,8 +144,6 @@ class MarkerScanOp(Operation):
         """Initialize MarkerScanOp."""
         from ..party import get_active_party
         
-        if mode == 'hybrid' and num_hybrid_states is None:
-            raise ValueError("num_hybrid_states is required when mode='hybrid'")
         
         self.marker_name = marker_name
         self._positions = positions
@@ -180,8 +178,8 @@ class MarkerScanOp(Operation):
                 num_states = self._build_caches()
             else:
                 num_states = 1
-        elif mode == 'hybrid':
-            num_states = num_hybrid_states
+        elif mode == 'random':
+            num_states = num_states if num_states is not None else 1
         else:
             num_states = 1
         
@@ -392,7 +390,7 @@ class MarkerScanOp(Operation):
             'marker_length': self._marker_length,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

@@ -413,25 +413,19 @@ class TestMutagenizeOrfRandomMode:
 class TestMutagenizeOrfHybridMode:
     """Test hybrid mode."""
     
-    def test_hybrid_requires_num_hybrid_states(self):
-        """Hybrid mode raises error if num_hybrid_states not provided."""
-        with pp.Party() as party:
-            with pytest.raises(ValueError, match="num_hybrid_states is required"):
-                mutagenize_orf('ATGAAATTT', num_mutations=1, mode='hybrid')
-    
-    def test_hybrid_uses_num_hybrid_states(self):
-        """Hybrid mode sets num_states to num_hybrid_states."""
+    def test_random_uses_num_states(self):
+        """Random mode with num_states sets num_states correctly."""
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'ATGAAATTT', num_mutations=1, mode='hybrid', num_hybrid_states=100
+                'ATGAAATTT', num_mutations=1, mode='random', num_states=100
             )
             assert pool.operation.num_values == 100
     
-    def test_hybrid_generates_correct_count(self):
-        """Hybrid mode generates num_hybrid_states sequences per iteration."""
+    def test_random_generates_correct_count(self):
+        """Random mode with num_states generates num_states sequences per iteration."""
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'ATGAAATTT', num_mutations=1, mode='hybrid', num_hybrid_states=25
+                'ATGAAATTT', num_mutations=1, mode='random', num_states=25
             ).named('mutant')
         
         df = pool.generate_library(num_cycles=1, seed=42)

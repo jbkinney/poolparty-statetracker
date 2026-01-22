@@ -143,15 +143,16 @@ def _topo_sort_operations(outputs: dict) -> list:
 def _seed_random_operations(sorted_ops: list, master_seed: int) -> None:
     """Set up shared RNG for random mode operations.
     
-    Note: hybrid mode operations don't get an RNG here - their RNG
+    Note: random mode operations with num_states > 1 don't get an RNG here - their RNG
     is created per-state in _compute_one using SeedSequence.
     """
     shared_rng = np.random.default_rng(master_seed)
     for op in sorted_ops:
-        if op.mode == 'random':
+        if op.mode == 'random' and op.num_values == 1:
+            # Pure random mode (num_states=None) uses shared RNG
             op.rng = shared_rng
         else:
-            # hybrid, sequential, fixed modes don't use shared RNG
+            # random with num_states > 1, sequential, fixed modes don't use shared RNG
             op.rng = None
 
 
@@ -234,8 +235,8 @@ def _compute_one(
             parent_names.append(parent_name_result[name_key])
         
         # Determine RNG for this operation
-        if op.mode == 'hybrid':
-            # Create state-specific RNG for hybrid mode using SeedSequence
+        if op.mode == 'random' and op.num_values > 1:
+            # Create state-specific RNG for random mode with num_states using SeedSequence
             state = op.state.value if op.state.value is not None else 0
             seed_seq = np.random.SeedSequence([pool._master_seed, op.id, state])
             op_rng = np.random.default_rng(seed_seq)

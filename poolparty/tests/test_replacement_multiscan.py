@@ -127,7 +127,7 @@ class TestReplacementMultiscanModes:
             ins = pp.from_seq('GGG')
             result = replacement_multiscan(
                 bg, num_replacements=2, replacement_pools=ins,
-                mode='hybrid', num_hybrid_states=5
+                mode='random', num_states=5
             ).named('result')
 
         df = result.generate_library(num_seqs=20, seed=42)
@@ -143,7 +143,7 @@ class TestReplacementMultiscanModes:
             bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])
             ins = pp.from_seq('GGG')
 
-            with pytest.raises(ValueError, match="only mode='random' or 'hybrid'"):
+            with pytest.raises(ValueError, match="only mode='random'"):
                 replacement_multiscan(
                     bg, num_replacements=2, replacement_pools=ins, mode='sequential'
                 )

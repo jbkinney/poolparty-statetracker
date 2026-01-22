@@ -44,11 +44,6 @@ class TestFromIupacValidation:
             with pytest.raises(ValueError, match="invalid IUPAC character"):
                 from_iupac('ACGTX')
     
-    def test_hybrid_requires_num_hybrid_states(self):
-        """Hybrid mode requires num_hybrid_states."""
-        with pp.Party() as party:
-            with pytest.raises(ValueError, match="num_hybrid_states is required"):
-                from_iupac('ACGT', mode='hybrid')
 
 
 class TestFromIupacSequentialMode:

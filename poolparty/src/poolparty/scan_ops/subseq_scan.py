@@ -17,7 +17,7 @@ def subseq_scan(
     strand: Literal['+', '-', 'both'] = '+',
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[Integral] = None,
+    num_states: Optional[Integral] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -49,9 +49,9 @@ def subseq_scan(
         If '-', content is reverse-complemented.
         If 'both', creates 2x states scanning both strands.
     mode : ModeType, default='random'
-        Position selection mode: 'random', 'sequential', or 'hybrid'.
-    num_hybrid_states : Optional[Integral], default=None
-        Number of pool states when using 'hybrid' mode (ignored by other modes).
+        Position selection mode: 'random' or 'sequential'.
+    num_states : Optional[Integral], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -90,7 +90,7 @@ def subseq_scan(
                 strand=strand,
                 seq_name_prefix=seq_name_prefix,
                 mode=mode,
-                num_hybrid_states=num_hybrid_states,
+                num_states=num_states,
                 name=name,
                 op_name=op_name,
                 iter_order=iter_order,
@@ -113,7 +113,7 @@ def subseq_scan(
                 strand=strand,
                 seq_name_prefix=seq_name_prefix,
                 mode=mode,
-                num_hybrid_states=num_hybrid_states,
+                num_states=num_states,
                 name=name,
                 op_name=op_name,
                 iter_order=iter_order,
@@ -128,7 +128,7 @@ def subseq_scan(
         strand=strand,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         name=name,
         op_name=op_name,
         iter_order=iter_order,
@@ -143,7 +143,7 @@ def _subseq_scan_impl(
     strand: Literal['+', '-', 'both'],
     seq_name_prefix: Optional[str],
     mode: ModeType,
-    num_hybrid_states: Optional[Integral],
+    num_states: Optional[Integral],
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -182,7 +182,7 @@ def _subseq_scan_impl(
         strand=strand,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         op_name=op_name,
         op_iter_order=op_iter_order,
     )

@@ -15,7 +15,7 @@ def shuffle_seq(
     mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[int] = None,
+    num_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -38,9 +38,9 @@ def shuffle_seq(
     mark_changes : Optional[bool], default=None
         If True, swapcase() is applied to the shuffled region. If None, uses party default.
     mode : ModeType, default='random'
-        Shuffle mode: 'random' or 'hybrid'. Sequential is not supported.
-    num_hybrid_states : Optional[int], default=None
-        Number of pool states if mode is 'hybrid'.
+        Shuffle mode: 'random'. Sequential is not supported.
+    num_states : Optional[int], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -65,7 +65,7 @@ def shuffle_seq(
         mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         name=op_name,
         iter_order=op_iter_order,
         _factory_name=_factory_name,
@@ -89,7 +89,7 @@ class SeqShuffleOp(Operation):
         mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
-        num_hybrid_states: Optional[int] = None,
+        num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
@@ -97,8 +97,6 @@ class SeqShuffleOp(Operation):
         """Initialize SeqShuffleOp."""
         from ..party import get_active_party
         
-        if mode == 'hybrid' and num_hybrid_states is None:
-            raise ValueError("num_hybrid_states is required when mode='hybrid'")
         if mode == 'sequential':
             raise ValueError("mode='sequential' is not supported for SeqShuffleOp")
         
@@ -113,8 +111,8 @@ class SeqShuffleOp(Operation):
         self.mark_changes = mark_changes
         
         # Determine num_states
-        if mode == 'hybrid':
-            num_states = num_hybrid_states
+        if mode == 'random':
+            num_states = num_states if num_states is not None else 1
         else:
             num_states = 1
         super().__init__(
@@ -140,7 +138,7 @@ class SeqShuffleOp(Operation):
         Note: Region handling is done by base class wrapper methods.
         parent_seqs[0] is the region content when region is specified.
         """
-        if self.mode in ('random', 'hybrid'):
+        if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
         else:
@@ -220,7 +218,7 @@ class SeqShuffleOp(Operation):
             'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

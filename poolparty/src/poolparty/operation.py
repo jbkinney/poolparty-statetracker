@@ -24,7 +24,7 @@ class Operation:
                 raise ValueError(
                     f"Number of values ({num_values}) exceeds "
                     f"max_num_sequential_states ({cls.max_num_sequential_states}). "
-                    f"Use mode='random' or mode='hybrid' instead."
+                    f"Use mode='random' instead."
                 )
             return np.inf
         return num_values
@@ -57,8 +57,6 @@ class Operation:
         # Set _name directly during init (state doesn't exist yet)
         self._name = name if name is not None else f'op[{self._id}]:{self.factory_name}'
         self._seq_length = seq_length
-        if mode == 'random':
-            num_values = 1
         validated_num_values = self.validate_num_values(num_values, mode)
         self.state = st.State(num_values=validated_num_values, name=f"{self._name}.state", iter_order=iter_order)
         self.rng: np.random.Generator | None = None

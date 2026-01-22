@@ -317,24 +317,18 @@ class TestMutagenizeRandomModeWithRate:
 
 
 class TestMutagenizeHybridModeWithRate:
-    """Test hybrid mode with mutation_rate."""
+    """Test random mode with num_states and mutation_rate."""
     
-    def test_hybrid_requires_num_hybrid_states(self):
-        """Hybrid mode raises ValueError if num_hybrid_states not provided."""
+    def test_random_uses_num_states(self):
+        """Random mode with num_states sets num_states correctly."""
         with pp.Party() as party:
-            with pytest.raises(ValueError, match="num_hybrid_states is required"):
-                mutagenize('ACGT', mutation_rate=0.1, mode='hybrid')
-    
-    def test_hybrid_uses_num_hybrid_states(self):
-        """Hybrid mode sets num_states to num_hybrid_states."""
-        with pp.Party() as party:
-            pool = mutagenize('ACGT', mutation_rate=0.1, mode='hybrid', num_hybrid_states=100)
+            pool = mutagenize('ACGT', mutation_rate=0.1, mode='random', num_states=100)
             assert pool.operation.num_values == 100
     
-    def test_hybrid_generates_correct_count(self):
-        """Hybrid mode generates num_hybrid_states sequences per iteration."""
+    def test_random_generates_correct_count(self):
+        """Random mode with num_states generates num_states sequences per iteration."""
         with pp.Party() as party:
-            pool = mutagenize('ACGT', mutation_rate=0.2, mode='hybrid', num_hybrid_states=50).named('mutant')
+            pool = mutagenize('ACGT', mutation_rate=0.2, mode='random', num_states=50).named('mutant')
         
         df = pool.generate_library(num_cycles=1, seed=42)
         assert len(df) == 50
@@ -343,13 +337,13 @@ class TestMutagenizeHybridModeWithRate:
         """Same seed produces identical results in hybrid mode."""
         results1 = []
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='random', num_states=10).named('mutant')
             df = pool.generate_library(num_cycles=1, seed=42)
             results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='random', num_states=10).named('mutant')
             df = pool.generate_library(num_cycles=1, seed=42)
             results2 = list(df['seq'])
         
@@ -359,13 +353,13 @@ class TestMutagenizeHybridModeWithRate:
         """Different seeds produce different results."""
         results1 = []
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='random', num_states=10).named('mutant')
             df = pool.generate_library(num_cycles=1, seed=42)
             results1 = list(df['seq'])
         
         results2 = []
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='hybrid', num_hybrid_states=10).named('mutant')
+            pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='random', num_states=10).named('mutant')
             df = pool.generate_library(num_cycles=1, seed=123)
             results2 = list(df['seq'])
         
@@ -646,18 +640,12 @@ class TestMutagenizeCustomName:
 
 
 class TestMutagenizeHybridModeWithNum:
-    """Test hybrid mode with num_mutations."""
+    """Test random mode with num_states and num_mutations."""
     
-    def test_hybrid_requires_num_hybrid_states_with_num(self):
-        """Hybrid mode raises ValueError if num_hybrid_states not provided."""
+    def test_random_uses_num_states_with_num(self):
+        """Random mode with num_states sets num_states correctly."""
         with pp.Party() as party:
-            with pytest.raises(ValueError, match="num_hybrid_states is required"):
-                mutagenize('ACGT', num_mutations=1, mode='hybrid')
-    
-    def test_hybrid_uses_num_hybrid_states_with_num(self):
-        """Hybrid mode sets num_states to num_hybrid_states."""
-        with pp.Party() as party:
-            pool = mutagenize('ACGT', num_mutations=1, mode='hybrid', num_hybrid_states=100)
+            pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=100)
             assert pool.operation.num_values == 100
 
 

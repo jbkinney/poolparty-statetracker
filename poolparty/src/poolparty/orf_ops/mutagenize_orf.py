@@ -22,7 +22,7 @@ def mutagenize_orf(
     orf_extent: Optional[Sequence[Integral]] = None,
     codon_positions: Union[Sequence[Integral], slice, None] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[Integral] = None,
+    num_states: Optional[Integral] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -47,9 +47,9 @@ def mutagenize_orf(
     codon_positions : Union[Sequence[Integral], slice, None], default=None
         Eligible codon indices: None (all), list of indices, or slice.
     mode : ModeType, default='random'
-        Selection mode: 'random', 'sequential', or 'hybrid'.
-    num_hybrid_states : Optional[Integral], default=None
-        Required when mode='hybrid'.
+        Selection mode: 'random' or 'sequential'.
+    num_states : Optional[Integral], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -74,7 +74,7 @@ def mutagenize_orf(
         orf_extent=orf_extent,
         codon_positions=codon_positions,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         name=op_name,
         iter_order=op_iter_order,
     )
@@ -96,7 +96,7 @@ class MutagenizeOrfOp(Operation):
         orf_extent: Optional[Sequence[Integral]] = None,
         codon_positions: Union[Sequence[Integral], slice, None] = None,
         mode: ModeType = 'random',
-        num_hybrid_states: Optional[Integral] = None,
+        num_states: Optional[Integral] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -122,8 +122,6 @@ class MutagenizeOrfOp(Operation):
             raise ValueError(f"mutation_type must be one of {sorted(VALID_MUTATION_TYPES)}, got '{mutation_type}'")
         if mode == 'sequential' and mutation_type not in UNIFORM_MUTATION_TYPES:
             raise ValueError(f"mode='sequential' requires a uniform mutation type, got '{mutation_type}'")
-        if mode == 'hybrid' and num_hybrid_states is None:
-            raise ValueError("num_hybrid_states is required when mode='hybrid'")
         
         self.num_mutations = num_mutations
         self.mutation_rate = mutation_rate
@@ -165,8 +163,8 @@ class MutagenizeOrfOp(Operation):
         match mode:
             case 'sequential' if num_mutations is not None and self.uniform_num_alts is not None:
                 num_states = self._build_caches()
-            case 'hybrid':
-                num_states = num_hybrid_states
+            case 'random':
+                num_states = num_states if num_states is not None else 1
             case _:
                 num_states = 1
         
@@ -380,7 +378,7 @@ class MutagenizeOrfOp(Operation):
             'orf_extent': (self.orf_start, self.orf_end),
             'codon_positions': self.eligible_positions,
             'mode': self.mode,
-            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

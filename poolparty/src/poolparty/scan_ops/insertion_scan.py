@@ -19,7 +19,7 @@ def insertion_scan(
     seq_name_pos_prefix: Optional[str] = None,
     seq_name_site_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[Integral] = None,
+    num_states: Optional[Integral] = None,
     spacer_str: str = '',
     name: Optional[str] = None,
     op_name: Optional[str] = None,
@@ -54,7 +54,7 @@ def insertion_scan(
     seq_name_site_prefix : Optional[str], default=None
         Prefix for site index (e.g., 'site_' produces 'site_0', 'site_1', ...).
     mode : ModeType, default='random'
-        Selection mode: 'random', 'sequential', or 'hybrid'.
+        Selection mode: 'random' or 'sequential'.
 
     Returns
     -------
@@ -115,7 +115,7 @@ def insertion_scan(
         region=region,
         remove_marker=False,  # Keep outer region marker for now
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         op_name=op_name,
         op_iter_order=op_iter_order,
         _factory_name=f'{_factory_name}(marker_scan)',
@@ -174,7 +174,7 @@ def replacement_scan(
     seq_name_pos_prefix: Optional[str] = None,
     seq_name_site_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[Integral] = None,
+    num_states: Optional[Integral] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -197,7 +197,7 @@ def replacement_scan(
         seq_name_pos_prefix=seq_name_pos_prefix,
         seq_name_site_prefix=seq_name_site_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         spacer_str=spacer_str,
         name=name,
         op_name=op_name,

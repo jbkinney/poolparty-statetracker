@@ -19,7 +19,7 @@ def from_motif(
     mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[int] = None,
+    num_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -43,9 +43,9 @@ def from_motif(
     remove_marker : Optional[bool], default=None
         If True and region is a marker name, remove marker tags from output.
     mode : ModeType, default='random'
-        Sequence selection mode: 'random' or 'hybrid'.
-    num_hybrid_states : Optional[int], default=None
-        Number of pool states when using 'hybrid' mode.
+        Sequence selection mode: 'random'.
+    num_states : Optional[int], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -65,9 +65,9 @@ def from_motif(
     ValueError
         If bg_pool is provided without region.
     """
-    if mode not in ('random', 'hybrid'):
+    if mode != 'random':
         raise ValueError(
-            f"from_motif only supports mode='random' or mode='hybrid', got mode='{mode}'. "
+            f"from_motif only supports mode='random', got mode='{mode}'. "
             "Sequential iteration is not available for probability-based sampling."
         )
     from ..fixed_ops.from_seq import from_seq
@@ -81,7 +81,7 @@ def from_motif(
         mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         name=op_name,
         iter_order=op_iter_order,
     )
@@ -105,13 +105,11 @@ class FromMotifOp(Operation):
         mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
-        num_hybrid_states: Optional[int] = None,
+        num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
         """Initialize FromMotifOp."""
-        if mode == 'hybrid' and num_hybrid_states is None:
-            raise ValueError("num_hybrid_states is required when mode='hybrid'")
 
         # Get alphabet from active Party context
         party = get_active_party()
@@ -138,8 +136,8 @@ class FromMotifOp(Operation):
         self._cumprobs = np.cumsum(self.prob_df.values, axis=1)
 
         match mode:
-            case 'hybrid':
-                num_states = num_hybrid_states
+            case 'random':
+                num_states = num_states if num_states is not None else 1
             case _:
                 num_states = 1
 
@@ -194,7 +192,7 @@ class FromMotifOp(Operation):
             'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

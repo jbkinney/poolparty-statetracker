@@ -40,7 +40,7 @@ def marker_multiscan(
     insertion_mode: Literal['ordered', 'unordered'] = 'ordered',
     seq_name_prefix: Optional[str] = None,
     mode: str = 'random',
-    num_hybrid_states: Optional[int] = None,
+    num_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -68,9 +68,9 @@ def marker_multiscan(
         - 'ordered': markers[i] goes to the i-th selected position
         - 'unordered': randomly assign markers to positions
     mode : ModeType, default='random'
-        Position selection mode: 'random' or 'hybrid'.
-    num_hybrid_states : Optional[Integral], default=None
-        Number of pool states when using 'hybrid' mode.
+        Position selection mode: 'random'.
+    num_states : Optional[Integral], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -109,7 +109,7 @@ def marker_multiscan(
         insertion_mode=insertion_mode,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         name=op_name,
         iter_order=op_iter_order,
     )
@@ -139,16 +139,14 @@ class MarkerMultiScanOp(Operation):
         insertion_mode: str = 'ordered',
         seq_name_prefix: Optional[str] = None,
         mode: str = 'random',
-        num_hybrid_states: Optional[int] = None,
+        num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
         if num_insertions < 1:
             raise ValueError(f"num_insertions must be >= 1, got {num_insertions}")
-        if mode not in ('random', 'hybrid'):
-            raise ValueError("marker_multiscan supports only mode='random' or 'hybrid'")
-        if mode == 'hybrid' and num_hybrid_states is None:
-            raise ValueError("num_hybrid_states is required when mode='hybrid'")
+        if mode != 'random':
+            raise ValueError("marker_multiscan supports only mode='random'")
         if marker_length < 0:
             raise ValueError(f"marker_length must be >= 0, got {marker_length}")
 
@@ -162,7 +160,7 @@ class MarkerMultiScanOp(Operation):
         self._marker_names = self._coerce_markers(markers)
         self._validate_marker_counts()
 
-        num_states = 1 if mode == 'random' else num_hybrid_states
+        num_states = num_states if num_states is not None else 1
         super().__init__(
             parent_pools=[parent_pool],
             num_values=num_states,
@@ -405,7 +403,7 @@ class MarkerMultiScanOp(Operation):
             'insertion_mode': self.insertion_mode,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

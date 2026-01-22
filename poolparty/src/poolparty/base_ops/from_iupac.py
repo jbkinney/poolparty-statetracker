@@ -17,7 +17,7 @@ def from_iupac(
     mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
-    num_hybrid_states: Optional[int] = None,
+    num_states: Optional[int] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -42,9 +42,9 @@ def from_iupac(
     mark_changes : Optional[bool], default=None
         If True, apply swapcase() to degenerate positions. If None, uses party default.
     mode : ModeType, default='random'
-        Sequence selection mode: 'sequential', 'random', or 'hybrid'.
-    num_hybrid_states : Optional[int], default=None
-        Number of pool states when using 'hybrid' mode.
+        Sequence selection mode: 'sequential' or 'random'.
+    num_states : Optional[int], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
     name : Optional[str], default=None
         Name for the resulting Pool.
     op_name : Optional[str], default=None
@@ -75,7 +75,7 @@ def from_iupac(
         mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
-        num_hybrid_states=num_hybrid_states,
+        num_states=num_states,
         name=op_name,
         iter_order=op_iter_order,
     )
@@ -99,7 +99,7 @@ class FromIupacOp(Operation):
         mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
-        num_hybrid_states: Optional[int] = None,
+        num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -121,8 +121,6 @@ class FromIupacOp(Operation):
         
         if not iupac_seq:
             raise ValueError("iupac_seq must be a non-empty string")
-        if mode == 'hybrid' and num_hybrid_states is None:
-            raise ValueError("num_hybrid_states is required when mode='hybrid'")
 
         # Validate and build position options
         # Handle ignore chars (e.g., '.', '-', ' ') as pass-through positions
@@ -161,8 +159,8 @@ class FromIupacOp(Operation):
         match mode:
             case 'sequential':
                 num_states = total_states
-            case 'hybrid':
-                num_states = num_hybrid_states
+            case 'random':
+                num_states = num_states if num_states is not None else 1
             case _:
                 num_states = 1
 
@@ -190,7 +188,7 @@ class FromIupacOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> dict:
         """Return design card with IUPAC state index."""
-        if self.mode in ('random', 'hybrid'):
+        if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
             state = rng.integers(0, self._total_states)
@@ -232,7 +230,7 @@ class FromIupacOp(Operation):
             'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_hybrid_states': self.num_values if self.mode == 'hybrid' else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }
