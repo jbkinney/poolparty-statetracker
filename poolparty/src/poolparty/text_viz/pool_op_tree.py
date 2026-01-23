@@ -20,7 +20,8 @@ def format_pool_node(pool, style: StyleType = 'clean') -> str:
     elif style == 'minimal':
         return f"{pool.name} (pool)"
     else:  # clean
-        return f"{pool.name} (pool, n={pool.num_states})"
+        num_states_str = "None" if pool.num_states is None else str(pool.num_states)
+        return f"{pool.name} (pool, n={num_states_str})"
 
 
 def format_operation_node(op, style: StyleType = 'clean') -> str:
@@ -38,7 +39,8 @@ def format_operation_node(op, style: StyleType = 'clean') -> str:
     elif style == 'minimal':
         return f"{op.name} [op]"
     else:  # clean
-        return f"{op.name} [mode={op.mode}, n={op.num_values}]"
+        num_values_str = "None" if op.num_values is None else str(op.num_values)
+        return f"{op.name} [mode={op.mode}, n={num_values_str}]"
 
 
 def print_pool_tree(pool, style: StyleType = 'clean', show_pools: bool = True) -> None:

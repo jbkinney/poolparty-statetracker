@@ -137,7 +137,8 @@ class FromMotifOp(Operation):
 
         match mode:
             case 'random':
-                num_states = num_states if num_states is not None else 1
+                # num_states stays None for pure random mode
+                pass
             case _:
                 num_states = 1
 
@@ -192,7 +193,7 @@ class FromMotifOp(Operation):
             'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

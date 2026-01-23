@@ -179,7 +179,8 @@ class MarkerScanOp(Operation):
             else:
                 num_states = 1
         elif mode == 'random':
-            num_states = num_states if num_states is not None else 1
+            # num_states stays None for pure random mode
+            pass
         else:
             num_states = 1
         
@@ -390,7 +391,7 @@ class MarkerScanOp(Operation):
             'marker_length': self._marker_length,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

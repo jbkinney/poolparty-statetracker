@@ -164,7 +164,8 @@ class MutagenizeOrfOp(Operation):
             case 'sequential' if num_mutations is not None and self.uniform_num_alts is not None:
                 num_states = self._build_caches()
             case 'random':
-                num_states = num_states if num_states is not None else 1
+                # num_states stays None for pure random mode
+                pass
             case _:
                 num_states = 1
         
@@ -378,7 +379,7 @@ class MutagenizeOrfOp(Operation):
             'orf_extent': (self.orf_start, self.orf_end),
             'codon_positions': self.eligible_positions,
             'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

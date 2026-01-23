@@ -17,7 +17,8 @@ class TestStateColName:
     def test_uses_counter_name_if_present(self):
         """Test that counter name is used when available."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'])
+            # Use sequential mode to ensure pool has state
+            pool = pp.from_seqs(['AAA', 'TTT'], mode='sequential')
             pool.state.name = "my_counter"
             
             result = counter_col_name(pool.state, 0)
@@ -26,7 +27,8 @@ class TestStateColName:
     def test_uses_counter_id_if_no_name(self):
         """Test fallback to id_{counter.id} when no name."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'])
+            # Use sequential mode to ensure pool has state
+            pool = pp.from_seqs(['AAA', 'TTT'], mode='sequential')
             pool.state.name = ""  # Clear name
             
             result = counter_col_name(pool.state, 0)

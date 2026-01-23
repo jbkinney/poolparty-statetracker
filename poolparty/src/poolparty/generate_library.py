@@ -48,6 +48,11 @@ def generate_library(
     
     # Validate arguments    
     if num_seqs is None:
+        if pool.state is None:
+            raise ValueError(
+                "num_seqs must be specified when pool has no state (mode='random' with num_states=None). "
+                "Cannot use num_cycles for stateless pools."
+            )
         num_seqs = num_cycles * pool.state.num_values
     if init_state is not None:
         pool._current_state = init_state
@@ -148,7 +153,7 @@ def _seed_random_operations(sorted_ops: list, master_seed: int) -> None:
     """
     shared_rng = np.random.default_rng(master_seed)
     for op in sorted_ops:
-        if op.mode == 'random' and op.num_values == 1:
+        if op.mode == 'random' and op.state is None:
             # Pure random mode (num_states=None) uses shared RNG
             op.rng = shared_rng
         else:
@@ -184,12 +189,12 @@ def _collect_counters(
     visited: set[int] = set()
     result: list[st.State] = []
     for pool in pools_filter:
-        if include_pool_states:
+        if include_pool_states and pool.state is not None:
             counter_id = id(pool.state)
             if counter_id not in visited:
                 visited.add(counter_id)
                 result.append(pool.state)
-        if include_op_states:
+        if include_op_states and pool.operation.state is not None:
             op_counter = pool.operation.state
             op_counter_id = id(op_counter)
             if op_counter_id not in visited:
@@ -216,8 +221,10 @@ def _compute_one(
     row: dict = {}
     
     # Sets the value of the pool state and, in doing so, the value
-    # of all pool and operation states that affect this state. 
-    pool.state.value = global_state % pool.state.num_values
+    # of all pool and operation states that affect this state.
+    # Skip if pool has no state (fully random DAG)
+    if pool.state is not None:
+        pool.state.value = global_state % pool.state.num_values
     
     # Iterates over the operations in topological order.
     # This is the code that effectively implements the DAG.
@@ -235,7 +242,7 @@ def _compute_one(
             parent_names.append(parent_name_result[name_key])
         
         # Determine RNG for this operation
-        if op.mode == 'random' and op.num_values > 1:
+        if op.mode == 'random' and op.state is not None and op.num_values > 1:
             # Create state-specific RNG for random mode with num_states using SeedSequence
             state = op.state.value if op.state.value is not None else 0
             seed_seq = np.random.SeedSequence([pool._master_seed, op.id, state])
@@ -256,7 +263,9 @@ def _compute_one(
         if report_op_keys and (ops_to_report is None or op.id in ops_to_report):
             for key in op.design_card_keys:
                 if key in card:
-                    if op.state.value is None:
+                    # For ops with state: return None if state is inactive (value=None)
+                    # For stateless ops (state=None): always report design card
+                    if op.state is not None and op.state.value is None:
                         row[f"{op.name}.key.{key}"] = None
                     else:
                         row[f"{op.name}.key.{key}"] = card[key]
@@ -268,7 +277,9 @@ def _compute_one(
         row[col_name] = state.value
     
     for output_name, output_pool in outputs.items():
-        if output_pool.state.value is None:
+        # For pools with state: return None if state is inactive (value=None)
+        # For stateless pools (state=None): always generate sequences
+        if output_pool.state is not None and output_pool.state.value is None:
             row[output_name] = None
         else:
             result = seqs_cache[output_pool.operation.id]

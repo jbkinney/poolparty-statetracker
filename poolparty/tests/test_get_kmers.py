@@ -97,10 +97,10 @@ class TestGetKmersRandomMode:
         assert list(df1['seq']) == list(df2['seq'])
     
     def test_random_num_states_is_one(self):
-        """Test that random mode has num_values=1."""
+        """Test that random mode has num_values=None."""
         with pp.Party() as party:
             pool = get_kmers(length=4, mode='random')
-            assert pool.operation.num_values == 1
+            assert pool.operation.num_values is None
 
 
 class TestGetKmersDNA:
@@ -190,9 +190,9 @@ class TestGetKmersLargeSpace:
     def test_large_kmer_random_num_states_is_one(self):
         """Test that random mode with large k-mer still has num_values=1."""
         with pp.Party() as party:
-            # Random mode always has num_values=1
+            # Random mode has num_values=None
             pool = get_kmers(length=20, mode='random')
-            assert pool.operation.num_values == 1
+            assert pool.operation.num_values is None
 
 
 class TestGetKmersCompute:

@@ -132,12 +132,12 @@ class TestValidateNumStates:
     
     def test_invalid_num_states_zero(self):
         """Test num_values=0 raises error."""
-        with pytest.raises(ValueError, match="num_values must be >= 1 or np.inf"):
+        with pytest.raises(ValueError, match="num_values must be >= 1"):
             Operation.validate_num_values(0, 'sequential')
     
     def test_invalid_num_states_negative(self):
         """Test num_values=-1 raises error."""
-        with pytest.raises(ValueError, match="num_values must be >= 1 or np.inf"):
+        with pytest.raises(ValueError, match="num_values must be >= 1"):
             Operation.validate_num_values(-1, 'sequential')
     
     def test_exceeds_max_sequential_error(self):
@@ -346,7 +346,8 @@ class TestOperationCopy:
     def test_copy_gets_new_counter(self):
         """Test that copied operation has its own counter."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'])
+            # Use sequential mode to ensure operations have state
+            pool = pp.from_seqs(['AAA', 'TTT'], mode='sequential')
             original_op = pool.operation
             copied_op = original_op.copy()
             
@@ -396,8 +397,9 @@ class TestOperationCopy:
     def test_copy_stack_op(self):
         """Test copying StackOp."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A', 'B'])
-            b = pp.from_seqs(['X', 'Y'])
+            # Use sequential mode to ensure pools have state (required for stacking)
+            a = pp.from_seqs(['A', 'B'], mode='sequential')
+            b = pp.from_seqs(['X', 'Y'], mode='sequential')
             stacked = a + b
             copied_op = stacked.operation.copy()
             
@@ -415,7 +417,8 @@ class TestOperationCopy:
     def test_copy_state_slice_op(self):
         """Test copying StateSliceOp."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D'])
+            # Use sequential mode to ensure pool has state (required for slicing)
+            pool = pp.from_seqs(['A', 'B', 'C', 'D'], mode='sequential')
             sliced = pool[1:3]
             copied_op = sliced.operation.copy()
             
@@ -560,8 +563,9 @@ class TestOperationDeepCopy:
     def test_deepcopy_stack_op(self):
         """Test deepcopy on StackOp."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A', 'B'])
-            b = pp.from_seqs(['X', 'Y'])
+            # Use sequential mode to ensure pools have state (required for stacking)
+            a = pp.from_seqs(['A', 'B'], mode='sequential')
+            b = pp.from_seqs(['X', 'Y'], mode='sequential')
             stacked = a + b
             copied_op = stacked.operation.deepcopy()
             

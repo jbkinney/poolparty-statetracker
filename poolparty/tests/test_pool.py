@@ -377,8 +377,9 @@ class TestPoolAddOperator:
     def test_pool_plus_pool_creates_stack_op(self):
         """Test Pool + Pool creates StackOp."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA'])
-            b = pp.from_seqs(['TTT'])
+            # Use sequential mode to ensure pools have state (required for stacking)
+            a = pp.from_seqs(['AAA'], mode='sequential')
+            b = pp.from_seqs(['TTT'], mode='sequential')
             stacked = a + b
             assert isinstance(stacked.operation, StackOp)
     
@@ -479,7 +480,8 @@ class TestPoolGetitemOperator:
     def test_getitem_creates_state_slice_op(self):
         """Test Pool[key] creates StateSliceOp."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D'])
+            # Use sequential mode to ensure pool has state (required for slicing)
+            pool = pp.from_seqs(['A', 'B', 'C', 'D'], mode='sequential')
             sliced = pool[1:3]
             assert isinstance(sliced.operation, StateSliceOp)
     
@@ -738,9 +740,10 @@ class TestPoolGenerate:
     def test_generate_aux_columns_order(self):
         """Test that seq columns are sorted by reverse topological order."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A'], name='A')
-            b = pp.from_seqs(['B'], name='B')
-            c = pp.from_seqs(['C'], name='C')
+            # Use sequential mode to ensure pools have state (required for stacking)
+            a = pp.from_seqs(['A'], mode='sequential', name='A')
+            b = pp.from_seqs(['B'], mode='sequential', name='B')
+            c = pp.from_seqs(['C'], mode='sequential', name='C')
             combined = (a + b + c)
         
         df = combined.generate_library(num_seqs=3, report_design_cards=True, aux_pools=[a, b])
@@ -776,7 +779,8 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_true_adds_columns(self):
         """Test that report_pool_states=True adds counter state columns."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], name='X')
+            # Use sequential mode to ensure pool has state
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential', name='X')
         
         df = pool.generate_library(num_seqs=3, report_design_cards=True, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -854,7 +858,8 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_named_counter(self):
         """Test that named counters use their name in column."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B'], name='my_pool')
+            # Use sequential mode to ensure pool has state
+            pool = pp.from_seqs(['A', 'B'], mode='sequential', name='my_pool')
         
         df = pool.generate_library(num_seqs=2, report_design_cards=True, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -906,8 +911,9 @@ class TestPoolGenerateRecordKeys:
     def test_report_op_keys_false_with_report_pool_states(self):
         """Test that report_op_keys=False works with report_pool_states=True."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'], name='A')
-            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
+            # Use sequential mode to ensure pool has state
+            pool = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A')
+            mutants = pp.mutagenize(pool, num_mutations=1, mode='sequential', name='B')
         
         df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_op_keys=False, report_pool_states=True)
         
@@ -929,8 +935,9 @@ class TestPoolGeneratePoolsToRecord:
     def test_pools_to_report_all_default(self):
         """Test that pools_to_report='all' (default) includes all pools' info."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
-            b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
+            # Use sequential mode to ensure pools have state
+            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A', op_name='op_A')
+            b = pp.mutagenize(a, num_mutations=1, mode='sequential', name='B', op_name='op_B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True)
         
@@ -947,8 +954,9 @@ class TestPoolGeneratePoolsToRecord:
     def test_pools_to_report_self(self):
         """Test that pools_to_report='self' only includes self pool's info."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
-            b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
+            # Use sequential mode to ensure pools have state
+            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A', op_name='op_A')
+            b = pp.mutagenize(a, num_mutations=1, mode='sequential', name='B', op_name='op_B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self')
         
@@ -965,8 +973,9 @@ class TestPoolGeneratePoolsToRecord:
     def test_pools_to_report_explicit_list(self):
         """Test that pools_to_report=[pool] filters to those pools."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
-            b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
+            # Use sequential mode to ensure pools have state
+            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A', op_name='op_A')
+            b = pp.mutagenize(a, num_mutations=1, mode='sequential', name='B', op_name='op_B')
         
         # Record only A's info
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report=[a])
@@ -1000,8 +1009,9 @@ class TestPoolGeneratePoolsToRecord:
     def test_pools_to_report_with_report_op_keys_false(self):
         """Test that pools_to_report respects report_op_keys=False."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], name='A')
-            b = pp.mutagenize(a, num_mutations=1, name='B')
+            # Use sequential mode to ensure pools have state
+            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A')
+            b = pp.mutagenize(a, num_mutations=1, mode='sequential', name='B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self', report_op_keys=False)
         

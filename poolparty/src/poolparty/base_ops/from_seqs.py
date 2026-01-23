@@ -144,7 +144,8 @@ class FromSeqsOp(Operation):
             case 'sequential':
                 num_states = len(seqs)
             case 'random':
-                num_states = num_states if num_states is not None else 1
+                # num_states stays None for pure random mode
+                pass
             case _:
                 num_states = 1
         # Use lengths without markers (includes all chars except marker tags)
@@ -230,7 +231,7 @@ class FromSeqsOp(Operation):
             'seq_names': self.seq_names if self._seq_names_explicit else None,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

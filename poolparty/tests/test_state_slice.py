@@ -11,7 +11,8 @@ class TestStateSliceFactory:
     def test_returns_pool(self):
         """Test that state_slice returns a Pool."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'])
+            # Use sequential mode to ensure pool has state (required for slicing)
+            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sliced = state_slice(pool, slice(1, 4))
             assert sliced is not None
             assert hasattr(sliced, 'operation')
@@ -19,7 +20,8 @@ class TestStateSliceFactory:
     def test_creates_state_slice_op(self):
         """Test that state_slice creates a StateSliceOp."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'])
+            # Use sequential mode to ensure pool has state (required for slicing)
+            pool = pp.from_seqs(['A', 'B', 'C', 'D', 'E'], mode='sequential')
             sliced = state_slice(pool, slice(1, 4))
             assert isinstance(sliced.operation, StateSliceOp)
 

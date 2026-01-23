@@ -447,9 +447,10 @@ class TestStackBranchIndex:
     def test_stack_num_states_equals_num_branches(self):
         """Test that StackOp.num_values equals number of parent pools."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A1', 'A2'])
-            b = pp.from_seqs(['B1'])
-            c = pp.from_seqs(['C1', 'C2', 'C3'])
+            # Use sequential mode to ensure pools have state (required for stacking)
+            a = pp.from_seqs(['A1', 'A2'], mode='sequential')
+            b = pp.from_seqs(['B1'], mode='sequential')
+            c = pp.from_seqs(['C1', 'C2', 'C3'], mode='sequential')
             stacked = pp.stack([a, b, c])
             
             # Operation counter should have num_states = 3 (number of branches)

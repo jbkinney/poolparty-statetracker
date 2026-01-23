@@ -63,12 +63,12 @@ class TestFromMotifRandomMode:
         # All should be 'A'
         assert all(seq == 'A' for seq in df['seq'])
     
-    def test_random_num_states_is_one(self):
-        """Test that random mode has num_values=1."""
+    def test_random_num_states_is_none(self):
+        """Test that random mode has num_values=None."""
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
             pool = from_motif(prob_df, mode='random')
-            assert pool.operation.num_values == 1
+            assert pool.operation.num_values is None
     
     def test_deterministic_with_seed(self):
         """Test that same seed produces same results."""

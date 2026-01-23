@@ -18,11 +18,11 @@ class TestRandomNumStatesBasic:
             pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=100)
             assert pool.operation.num_values == 100
     
-    def test_random_mode_defaults_to_one_state(self):
-        """Test that random mode without num_states defaults to 1."""
+    def test_random_mode_defaults_to_none_state(self):
+        """Test that random mode without num_states defaults to None."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='random')
-            assert pool.operation.num_values == 1
+            assert pool.operation.num_values is None
     
     def test_random_mode_generates_correct_count(self):
         """Test that random mode with num_states generates the expected number of sequences."""
@@ -262,7 +262,7 @@ class TestRandomNumStatesVsRandomMode:
             random_pool = mutagenize('ACGT', num_mutations=1, mode='random')
             random_num_states_pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=50)
             
-            assert random_pool.operation.num_values == 1
+            assert random_pool.operation.num_values is None
             assert random_num_states_pool.operation.num_values == 50
     
     def test_random_with_num_states_iterates_deterministically(self):

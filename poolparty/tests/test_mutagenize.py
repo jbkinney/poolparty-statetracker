@@ -236,11 +236,11 @@ class TestMutagenizeRandomModeWithNum:
         unique_mutants = df['seq'].nunique()
         assert unique_mutants > 10  # Should have variety
     
-    def test_random_num_states_is_one(self):
-        """Test that random mode has num_values=1."""
+    def test_random_num_states_is_none(self):
+        """Test that random mode has num_values=None."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='random')
-            assert pool.operation.num_values == 1
+            assert pool.operation.num_values is None
 
 
 # =============================================================================
@@ -250,11 +250,11 @@ class TestMutagenizeRandomModeWithNum:
 class TestMutagenizeRandomModeWithRate:
     """Test random mode with mutation_rate."""
     
-    def test_random_mode_num_states_is_one(self):
-        """Random mode has num_values=1."""
+    def test_random_mode_num_states_is_none(self):
+        """Random mode has num_values=None."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', mutation_rate=0.1, mode='random')
-            assert pool.operation.num_values == 1
+            assert pool.operation.num_values is None
     
     def test_random_mode_produces_valid_output(self):
         """Random mode generates valid mutated sequences."""

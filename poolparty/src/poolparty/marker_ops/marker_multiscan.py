@@ -160,7 +160,7 @@ class MarkerMultiScanOp(Operation):
         self._marker_names = self._coerce_markers(markers)
         self._validate_marker_counts()
 
-        num_states = num_states if num_states is not None else 1
+        # num_states stays None for pure random mode
         super().__init__(
             parent_pools=[parent_pool],
             num_values=num_states,
@@ -403,7 +403,7 @@ class MarkerMultiScanOp(Operation):
             'insertion_mode': self.insertion_mode,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
-            'num_states': self.num_values if self.mode == 'random' and self.num_values > 1 else None,
+            'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
         }

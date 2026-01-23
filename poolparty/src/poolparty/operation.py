@@ -15,10 +15,12 @@ class Operation:
     factory_name: str = "op"
     
     @classmethod
-    def validate_num_values(cls, num_values: int | float, mode: ModeType) -> int | float:
+    def validate_num_values(cls, num_values: int | float | None, mode: ModeType) -> int | float | None:
         """Validate num_values against max_num_sequential_states."""
+        if num_values is None:
+            return None
         if num_values != np.inf and num_values < 1:
-            raise ValueError(f"num_values must be >= 1 or np.inf, got {num_values}")
+            raise ValueError(f"num_values must be >= 1, np.inf, or None, got {num_values}")
         if num_values > cls.max_num_sequential_states:
             if mode == 'sequential':
                 raise ValueError(
@@ -32,7 +34,7 @@ class Operation:
     def __init__(
         self,
         parent_pools: Sequence[Pool_type],
-        num_values: int = 1,
+        num_values: int | None = 1,
         mode: ModeType = 'fixed',
         seq_length: Optional[int] = None,
         name: Optional[str] = None,
@@ -58,7 +60,10 @@ class Operation:
         self._name = name if name is not None else f'op[{self._id}]:{self.factory_name}'
         self._seq_length = seq_length
         validated_num_values = self.validate_num_values(num_values, mode)
-        self.state = st.State(num_values=validated_num_values, name=f"{self._name}.state", iter_order=iter_order)
+        if validated_num_values is not None:
+            self.state = st.State(num_values=validated_num_values, name=f"{self._name}.state", iter_order=iter_order)
+        else:
+            self.state = None
         self.rng: np.random.Generator | None = None
         self.num_values = validated_num_values
         # Sequence naming attributes
@@ -86,12 +91,15 @@ class Operation:
     @property
     def iter_order(self) -> Real:
         """Iteration order for this operation."""
+        if self.state is None:
+            return 0
         return self.state.iter_order
     
     @iter_order.setter
     def iter_order(self, value: Real) -> None:
         """Set iteration order for this operation."""
-        self.state.iter_order = value
+        if self.state is not None:
+            self.state.iter_order = value
     
     @property
     def seq_length(self) -> Optional[int]:
@@ -200,8 +208,8 @@ class Operation:
         self._party._validate_op_name(value, self)
         old_name = self._name
         self._name = value
-        # Update state name if state exists
-        if hasattr(self, 'state'):
+        # Update state name if state exists and is not None
+        if hasattr(self, 'state') and self.state is not None:
             self.state.name = f"{value}.state"
         # Update party's name tracking if this is a rename (not initial set)
         if old_name:
@@ -210,24 +218,34 @@ class Operation:
     @property
     def iter_order(self) -> Real:
         """Iteration order for this operation's state."""
+        if self.state is None:
+            return 0
         return self.state.iter_order
     
     @iter_order.setter
     def iter_order(self, value: Real) -> None:
         """Set iteration order on this operation's state."""
-        self.state.iter_order = value
+        if self.state is not None:
+            self.state.iter_order = value
     
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool_type],
-    ) -> st.State:
+    ) -> st.State | None:
         """Build the output Pool's state from parent pool states, sorted by iteration_order."""
-        parent_states = [p.state for p in parent_pools]
-        if not parent_states:
-            # Source operation: pool state IS the operation state
-            return st.passthrough(self.state)
-        else: 
-            return st.ordered_product(states=parent_states + [self.state])
+        parent_states = [p.state for p in parent_pools if p.state is not None]
+        op_states = [self.state] if self.state is not None else []
+        all_states = parent_states + op_states
+        
+        if not all_states:
+            # Fully random DAG - no states
+            return None
+        elif len(all_states) == 1:
+            # Single state - passthrough
+            return st.passthrough(all_states[0])
+        else:
+            # Multiple states - product
+            return st.ordered_product(states=all_states)
 
     
     def compute_design_card(
@@ -352,6 +370,9 @@ class Operation:
             return {f'name_{i}': parent_name for i in range(self.num_outputs)}
         
         # Build name(s) with prefix
+        if self.state is None:
+            # Stateless operation - return None for all outputs
+            return {f'name_{i}': None for i in range(self.num_outputs)}
         value = self.state.value
         if value is None:
             # Inactive state - return None for all outputs
@@ -371,7 +392,8 @@ class Operation:
             return result
     
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self._id}, name={self.name!r}, mode={self.mode!r}, num_values={self.num_values})"
+        num_values_str = "None" if self.num_values is None else str(self.num_values)
+        return f"{self.__class__.__name__}(id={self._id}, name={self.name!r}, mode={self.mode!r}, num_values={num_values_str})"
     
     def _get_copy_params(self) -> dict:
         """Return the parameters needed to create a copy of this operation.

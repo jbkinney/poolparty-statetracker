@@ -39,7 +39,19 @@ def state_slice(
     -------
     Pool
         A Pool containing states selected by applying the provided index or slice to the input Pool's state space.
+    
+    Raises
+    ------
+    ValueError
+        If the input pool has no state (mode='random' with num_states=None).
     """
+    # Check for stateless pool
+    if pool.state is None:
+        raise ValueError(
+            f"Cannot slice stateless pool '{pool.name}'. "
+            f"Pools with mode='random' and num_states=None have no state to slice. "
+            f"Use num_states=N to create a pool with explicit states."
+        )
     if isinstance(key, Integral):
         if key < 0:
             start = key
