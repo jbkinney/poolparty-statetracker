@@ -60,10 +60,36 @@ class Operation:
         self._name = name if name is not None else f'op[{self._id}]:{self.factory_name}'
         self._seq_length = seq_length
         validated_num_values = self.validate_num_values(num_values, mode)
+        
+        # Track whether this operation's state is synced to parent states
+        self._random_synced_to_parents = False
+        
         if validated_num_values is not None:
+            # Explicit num_values provided - create state as usual
             self.state = st.State(num_values=validated_num_values, name=f"{self._name}.state", iter_order=iter_order)
+        elif mode == 'random' and parent_pools:
+            # Random mode with no explicit num_states - check for parent states
+            parent_states = [p.state for p in parent_pools if p.state is not None]
+            if parent_states:
+                # Create state synced to parent states
+                if len(parent_states) == 1:
+                    # Single parent - create synced state
+                    self.state = st.synced_to(parent_states[0], name=f"{self._name}.state")
+                else:
+                    # Multiple parents - create product state
+                    self.state = st.ordered_product(states=parent_states)
+                    self.state.name = f"{self._name}.state"
+                if iter_order is not None:
+                    self.state.iter_order = iter_order
+                self._random_synced_to_parents = True
+                validated_num_values = self.state.num_values
+            else:
+                # All parents are stateless - remain stateless
+                self.state = None
         else:
+            # No parents or not random mode - state is None
             self.state = None
+        
         self.rng: np.random.Generator | None = None
         self.num_values = validated_num_values
         # Sequence naming attributes
@@ -233,6 +259,11 @@ class Operation:
         parent_pools: Sequence[Pool_type],
     ) -> st.State | None:
         """Build the output Pool's state from parent pool states, sorted by iteration_order."""
+        # When op.state is synced/derived from parent states (random mode with auto-sync),
+        # it already represents the parent states, so don't include them separately
+        if self._random_synced_to_parents and self.state is not None:
+            return st.passthrough(self.state)
+        
         parent_states = [p.state for p in parent_pools if p.state is not None]
         op_states = [self.state] if self.state is not None else []
         all_states = parent_states + op_states

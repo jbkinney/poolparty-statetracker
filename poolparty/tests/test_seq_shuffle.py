@@ -33,8 +33,9 @@ class TestSeqShuffleBehavior:
     
     def test_random_variability(self):
         with pp.Party():
-            pool = shuffle_seq('ACGTACGT', region=[0, 8]).named('shuf')
-        df = pool.generate_library(num_seqs=50, seed=42)
+            # Use explicit num_states to get varied outputs
+            pool = shuffle_seq('ACGTACGT', region=[0, 8], num_states=50).named('shuf')
+        df = pool.generate_library(num_cycles=1, seed=42)
         assert df['seq'].nunique() > 5
     
     def test_hybrid_num_states(self):

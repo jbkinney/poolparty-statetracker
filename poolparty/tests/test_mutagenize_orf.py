@@ -387,11 +387,12 @@ class TestMutagenizeOrfRandomMode:
     def test_random_mode_with_mutation_rate(self):
         """Test random mode with mutation_rate."""
         with pp.Party() as party:
+            # Use explicit num_states to get varied outputs
             pool = mutagenize_orf(
-                'ATGAAATTTGGGCCCAAA', mutation_rate=0.5, mode='random', op_name='mutate'
+                'ATGAAATTTGGGCCCAAA', mutation_rate=0.5, mode='random', num_states=100, op_name='mutate'
             ).named('mutant')
         
-        df = pool.generate_library(num_seqs=100, seed=42, report_design_cards=True)
+        df = pool.generate_library(num_cycles=1, seed=42, report_design_cards=True)
         
         # Should have variable number of mutations
         num_mutations_list = [len(row['mutate.key.codon_positions']) for _, row in df.iterrows()]
@@ -399,13 +400,14 @@ class TestMutagenizeOrfRandomMode:
         assert len(set(num_mutations_list)) > 1
     
     def test_random_variability(self):
-        """Test that random mode produces varied outputs."""
+        """Test that random mode with explicit num_states produces varied outputs."""
         with pp.Party() as party:
+            # Use explicit num_states to get varied outputs
             pool = mutagenize_orf(
-                'ATGAAATTTGGG', num_mutations=1, mode='random'
+                'ATGAAATTTGGG', num_mutations=1, mode='random', num_states=50
             ).named('mutant')
         
-        df = pool.generate_library(num_seqs=50, seed=42)
+        df = pool.generate_library(num_cycles=1, seed=42)
         unique_mutants = df['seq'].nunique()
         assert unique_mutants > 5  # Should have variety
 

@@ -242,8 +242,9 @@ def _compute_one(
             parent_names.append(parent_name_result[name_key])
         
         # Determine RNG for this operation
-        if op.mode == 'random' and op.state is not None and op.num_values > 1:
-            # Create state-specific RNG for random mode with num_states using SeedSequence
+        if op.mode == 'random' and op.state is not None:
+            # Create state-specific RNG for random mode with state using SeedSequence
+            # This handles both explicit num_states and auto-synced states from parents
             state = op.state.value if op.state.value is not None else 0
             seed_seq = np.random.SeedSequence([pool._master_seed, op.id, state])
             op_rng = np.random.default_rng(seed_seq)

@@ -174,20 +174,22 @@ class TestBreakpointScanRandomMode:
             assert row['seq'] + row['right.seq'] == 'ACGTACGT'
     
     def test_random_variability(self):
-        """Test that random mode produces varied outputs."""
+        """Test that random mode with explicit num_states produces varied outputs."""
         with pp.Party() as party:
-            left, right = breakpoint_scan('ACGTACGT', num_breakpoints=1, mode='random')
+            # Use explicit num_states to get varied outputs
+            left, right = breakpoint_scan('ACGTACGT', num_breakpoints=1, mode='random', num_states=100)
             left = left.named('left')
         
-        df = left.generate_library(num_seqs=100, seed=42)
+        df = left.generate_library(num_cycles=1, seed=42)
         unique_lefts = df['seq'].nunique()
         assert unique_lefts > 1
     
-    def test_random_num_states_is_one(self):
-        """Test that random mode has num_values=None."""
+    def test_random_syncs_to_parent(self):
+        """Test that random mode syncs to parent state (from_seq has 1 state)."""
         with pp.Party() as party:
             left, right = breakpoint_scan('ACGT', num_breakpoints=1, mode='random')
-            assert left.operation.num_values is None
+            # Syncs to from_seq parent which has 1 state
+            assert left.operation.num_values == 1
 
 
 class TestBreakpointScanPositions:

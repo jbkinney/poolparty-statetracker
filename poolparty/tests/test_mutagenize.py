@@ -228,19 +228,21 @@ class TestMutagenizeRandomModeWithNum:
             assert diffs == 1
     
     def test_random_variability(self):
-        """Test that random mode produces varied outputs."""
+        """Test that random mode with explicit num_states produces varied outputs."""
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', num_mutations=1, mode='random').named('mutant')
+            # Use explicit num_states to get varied outputs
+            pool = mutagenize('ACGTACGT', num_mutations=1, mode='random', num_states=100).named('mutant')
         
-        df = pool.generate_library(num_seqs=100, seed=42)
+        df = pool.generate_library(num_cycles=1, seed=42)
         unique_mutants = df['seq'].nunique()
         assert unique_mutants > 10  # Should have variety
     
-    def test_random_num_states_is_none(self):
-        """Test that random mode has num_values=None."""
+    def test_random_syncs_to_parent(self):
+        """Test that random mode syncs to parent state (from_seq has 1 state)."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='random')
-            assert pool.operation.num_values is None
+            # Syncs to from_seq parent which has 1 state
+            assert pool.operation.num_values == 1
 
 
 # =============================================================================
@@ -250,18 +252,19 @@ class TestMutagenizeRandomModeWithNum:
 class TestMutagenizeRandomModeWithRate:
     """Test random mode with mutation_rate."""
     
-    def test_random_mode_num_states_is_none(self):
-        """Random mode has num_values=None."""
+    def test_random_mode_syncs_to_parent(self):
+        """Random mode syncs to parent state (from_seq has 1 state)."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', mutation_rate=0.1, mode='random')
-            assert pool.operation.num_values is None
+            # Syncs to from_seq parent which has 1 state
+            assert pool.operation.num_values == 1
     
     def test_random_mode_produces_valid_output(self):
         """Random mode generates valid mutated sequences."""
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='random').named('mutant')
+            pool = mutagenize('ACGTACGT', mutation_rate=0.2, mode='random', num_states=100).named('mutant')
         
-        df = pool.generate_library(num_seqs=100, seed=42)
+        df = pool.generate_library(num_cycles=1, seed=42)
         assert len(df) == 100
         
         # All should be valid sequences
@@ -270,11 +273,12 @@ class TestMutagenizeRandomModeWithRate:
             assert all(c in 'ACGT' for c in mutant)
     
     def test_random_mode_variability(self):
-        """Random mode produces varied outputs across many samples."""
+        """Random mode with explicit num_states produces varied outputs."""
         with pp.Party() as party:
-            pool = mutagenize('ACGTACGT', mutation_rate=0.3, mode='random').named('mutant')
+            # Use explicit num_states to get varied outputs
+            pool = mutagenize('ACGTACGT', mutation_rate=0.3, mode='random', num_states=100).named('mutant')
         
-        df = pool.generate_library(num_seqs=100, seed=42)
+        df = pool.generate_library(num_cycles=1, seed=42)
         unique_mutants = df['seq'].nunique()
         assert unique_mutants > 10  # Should have variety
     
@@ -393,9 +397,10 @@ class TestMutagenizeRateStatistics:
         num_samples = 1000
         
         with pp.Party() as party:
-            pool = mutagenize('A' * seq_len, mutation_rate=mutation_rate, mode='random', op_name='mutate').named('mutant')
+            # Use explicit num_states to get varied outputs for statistical testing
+            pool = mutagenize('A' * seq_len, mutation_rate=mutation_rate, mode='random', num_states=num_samples, op_name='mutate').named('mutant')
         
-        df = pool.generate_library(num_seqs=num_samples, seed=42, report_design_cards=True)
+        df = pool.generate_library(num_cycles=1, seed=42, report_design_cards=True)
         
         total_mutations = 0
         for _, row in df.iterrows():
@@ -414,9 +419,10 @@ class TestMutagenizeRateStatistics:
         seq_len = 50
         
         with pp.Party() as party:
-            pool = mutagenize('A' * seq_len, mutation_rate=mutation_rate, mode='random', op_name='mutate').named('mutant')
+            # Use explicit num_states to get varied outputs
+            pool = mutagenize('A' * seq_len, mutation_rate=mutation_rate, mode='random', num_states=100, op_name='mutate').named('mutant')
         
-        df = pool.generate_library(num_seqs=100, seed=42, report_design_cards=True)
+        df = pool.generate_library(num_cycles=1, seed=42, report_design_cards=True)
         
         total_mutations = 0
         for _, row in df.iterrows():

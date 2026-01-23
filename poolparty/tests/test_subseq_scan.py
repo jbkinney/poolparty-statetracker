@@ -162,15 +162,17 @@ class TestSubseqScanModes:
     """Test different modes."""
     
     def test_random_mode(self):
-        """Test random mode samples different positions."""
+        """Test random mode with explicit num_states samples different positions."""
         with pp.Party() as party:
+            # Use explicit num_states to get varied outputs
             result = subseq_scan(
                 'ACGTACGTACGT',
                 seq_length=4,
-                mode='random'
+                mode='random',
+                num_states=50
             ).named('result')
         
-        df = result.generate_library(num_seqs=50, seed=42)
+        df = result.generate_library(num_cycles=1, seed=42)
         assert len(df) == 50
         
         # Should have variability in extracted sequences
