@@ -112,47 +112,28 @@ def deletion_scan(
         _factory_name='deletion_scan(marker_scan)',
     )
 
-    # 2. Build deletion content string
+    # 2. Build deletion content pool (gap characters)
     content_str = del_char * marker_length if mark_changes else ''
+    content_pool = from_seq(content_str)
 
-    # 3. Replace _del marker with content
-    # spacer_str is only applied when mark_changes is True (i.e., when there's content to wrap)
-    # Always remove the internal _del marker (it's our implementation detail)
-    has_styling = style_deletion is not None or style_background is not None
-    result = from_seq(
-        content_str,
-        pool=marked,
-        region=marker_name,
-        remove_marker=True,  # Always remove the internal _del marker
+    # 3. Replace _del marker with gap content using replace_marker_content
+    # This allows proper position tracking for style_deletion and style_background
+    from ..marker_ops.replace_marker_content import replace_marker_content
+    result = replace_marker_content(
+        bg_pool=marked,
+        content_pool=content_pool,
+        marker_name=marker_name,
         spacer_str=spacer_str if mark_changes else '',
-        name=name if not has_styling else None,
+        name=name,
         op_name=op_name,
-        iter_order=iter_order if not has_styling else None,
+        iter_order=iter_order,
         op_iter_order=op_iter_order,
-        _factory_name='deletion_scan(from_seq)',
+        _factory_name='deletion_scan(replace_marker_content)',
+        # Pass style parameters - replace_marker_content handles position tracking
+        # Only apply style_deletion when mark_changes is True (i.e., gap chars exist)
+        _style_insertion=style_deletion if mark_changes else None,
+        _style_background=style_background,  # Style non-deletion positions
+        _outer_region=region,  # Restrict style_background to the outer region
     )
-    
-    # 4. Apply style to gap characters if style_deletion is specified
-    from ..fixed_ops.stylize import stylize
-    if style_deletion is not None and mark_changes:
-        result = stylize(
-            result,
-            style=style_deletion,
-            which='gap',
-        )
-    
-    # 5. Apply style_background to non-gap characters within region only
-    if style_background is not None:
-        result = stylize(
-            result,
-            region=region,  # Only style within the specified region
-            style=style_background,
-            which='contents',  # Styles all non-gap, non-tag positions
-            name=name,
-            iter_order=iter_order,
-        )
-    elif has_styling:
-        # Apply name/iter_order to last operation if we had styling but not style_background
-        result = result.named(name) if name else result
     
     return result
