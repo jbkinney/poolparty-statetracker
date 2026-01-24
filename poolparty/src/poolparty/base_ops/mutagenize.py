@@ -21,6 +21,7 @@ def mutagenize(
     mark_changes: Optional[bool] = None,
     swapcase: bool = False,
     style_mutations: Optional[str] = None,
+    style_background: Optional[str] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
@@ -88,6 +89,7 @@ def mutagenize(
         mark_changes=mark_changes,
         swapcase=swapcase,
         style_mutations=style_mutations,
+        style_background=style_background,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_states=num_states,
@@ -125,6 +127,7 @@ class MutagenizeOp(Operation):
         mark_changes: Optional[bool] = None,
         swapcase: bool = False,
         style_mutations: Optional[str] = None,
+        style_background: Optional[str] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
@@ -170,6 +173,7 @@ class MutagenizeOp(Operation):
         self.mark_changes = mark_changes
         self.swapcase = swapcase
         self._style_mutations = style_mutations
+        self._style_background = style_background
         self.alpha_size = len(dna.BASES)
         self._mode = mode
         
@@ -486,6 +490,13 @@ class MutagenizeOp(Operation):
             raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
             output_styles.append((self._style_mutations, raw_positions))
         
+        if self._style_background is not None:
+            # Style all positions except mutated ones
+            mutated_raw = set(valid_char_positions[p] for p in positions)
+            bg_positions = np.array([p for p in valid_char_positions if p not in mutated_raw], dtype=np.int64)
+            if len(bg_positions) > 0:
+                output_styles.append((self._style_background, bg_positions))
+        
         return {
             'positions': positions,
             'wt_chars': wt_chars,
@@ -507,6 +518,7 @@ class MutagenizeOp(Operation):
             'mark_changes': self.mark_changes,
             'swapcase': self.swapcase,
             'style_mutations': self._style_mutations,
+            'style_background': self._style_background,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,

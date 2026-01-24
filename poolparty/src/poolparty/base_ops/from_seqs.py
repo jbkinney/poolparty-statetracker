@@ -15,6 +15,7 @@ def from_seqs(
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
     mark_changes: Optional[bool] = None,
+    style: Optional[str] = None,
     seq_names: Optional[Sequence[str]] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
@@ -72,7 +73,7 @@ def from_seqs(
     bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     op = FromSeqsOp(seqs, bg_pool=bg_pool_obj, region=region,
                     remove_marker=remove_marker, spacer_str=spacer_str,
-                    mark_changes=mark_changes,
+                    mark_changes=mark_changes, style=style,
                     seq_names=seq_names, seq_name_prefix=seq_name_prefix,
                     mode=mode, num_states=num_states,
                     name=op_name, iter_order=op_iter_order,
@@ -95,6 +96,7 @@ class FromSeqsOp(Operation):
         remove_marker: Optional[bool] = None,
         spacer_str: str = '',
         mark_changes: Optional[bool] = None,
+        style: Optional[str] = None,
         seq_names: Optional[Sequence[str]] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
@@ -127,6 +129,7 @@ class FromSeqsOp(Operation):
         if mark_changes is None:
             mark_changes = party.get_default('mark_changes', False)
         self.mark_changes = mark_changes
+        self._style = style
         
         if len(seqs) == 0:
             raise ValueError("seqs must not be empty")
@@ -190,12 +193,17 @@ class FromSeqsOp(Operation):
         if self.mark_changes and self._region is not None:
             seq = seq.swapcase()
         
-        # Source operation - start with empty styles
+        # Apply style to all positions if specified
+        output_styles: StyleList = []
+        if self._style is not None:
+            positions = np.arange(len(seq), dtype=np.int64)
+            output_styles.append((self._style, positions))
+        
         return {
             'seq_name': self.seq_names[idx],
             'seq_index': idx,
             'seq_0': seq,
-            'style_0': [],
+            'style_0': output_styles,
         }
     
     def compute_seq_names(
@@ -228,6 +236,7 @@ class FromSeqsOp(Operation):
             'remove_marker': self._remove_marker,
             'spacer_str': self._spacer_str,
             'mark_changes': self.mark_changes,
+            'style': self._style,
             'seq_names': self.seq_names if self._seq_names_explicit else None,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,

@@ -1,6 +1,6 @@
 """GetKmers operation - generate DNA k-mers."""
 from numbers import Real
-from ..types import Pool_type, ModeType, Optional, Literal, Union, RegionType, Integral, beartype
+from ..types import Pool_type, ModeType, Optional, Literal, Union, RegionType, Integral, beartype, StyleList
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
@@ -16,6 +16,7 @@ def get_kmers(
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
     mark_changes: Optional[bool] = None,
+    style: Optional[str] = None,
     case: Literal['lower', 'upper'] = 'upper',
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
@@ -72,7 +73,7 @@ def get_kmers(
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
     op = GetKmersOp(length, pool=pool_obj, region=region,
                     remove_marker=remove_marker, spacer_str=spacer_str,
-                    mark_changes=mark_changes,
+                    mark_changes=mark_changes, style=style,
                     case=case, seq_name_prefix=seq_name_prefix, mode=mode,
                     num_states=num_states,
                     name=op_name, iter_order=op_iter_order)
@@ -94,6 +95,7 @@ class GetKmersOp(Operation):
         remove_marker: Optional[bool] = None,
         spacer_str: str = '',
         mark_changes: Optional[bool] = None,
+        style: Optional[str] = None,
         case: Literal['lower', 'upper'] = 'upper',
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
@@ -123,6 +125,7 @@ class GetKmersOp(Operation):
         if mark_changes is None:
             mark_changes = party.get_default('mark_changes', False)
         self.mark_changes = mark_changes
+        self._style = style
         
         self.length = length
         self.case = case
@@ -214,11 +217,17 @@ class GetKmersOp(Operation):
         if self.mark_changes and self._region is not None:
             kmer = kmer.swapcase()
         
+        # Apply style to all positions if specified
+        output_styles: StyleList = []
+        if self._style is not None:
+            positions = np.arange(len(kmer), dtype=np.int64)
+            output_styles.append((self._style, positions))
+        
         return {
             'kmer_index': kmer_index,
             'kmer': kmer,
             'seq_0': kmer,
-            'style_0': [],  # Source operation - start with empty styles
+            'style_0': output_styles,
         }
     
     def _get_copy_params(self) -> dict:
@@ -230,6 +239,7 @@ class GetKmersOp(Operation):
             'remove_marker': self._remove_marker,
             'spacer_str': self._spacer_str,
             'mark_changes': self.mark_changes,
+            'style': self._style,
             'case': self.case,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,

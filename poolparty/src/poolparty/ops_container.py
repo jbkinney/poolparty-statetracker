@@ -46,9 +46,26 @@ class OpsContainer:
         from .base_ops.from_motif import from_motif
         return from_motif(pool=self.pool, region=region, **kwargs)
     
-    def insert_kmers(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def insert_kmers(
+        self,
+        region: Optional[str] = None,
+        style_kmers: Optional[str] = None,
+        style_background: Optional[str] = None,
+        **kwargs,
+    ) -> Pool_type:
         from .base_ops.get_kmers import get_kmers
-        return get_kmers(pool=self.pool, region=region, **kwargs)
+        from .fixed_ops.stylize import stylize
+        
+        # Map style_kmers to style parameter for get_kmers
+        if style_kmers is not None:
+            kwargs['style'] = style_kmers
+        
+        # Apply style_background to pool before kmer insertion
+        pool = self.pool
+        if style_background is not None:
+            pool = stylize(pool, style=style_background)
+        
+        return get_kmers(pool=pool, region=region, **kwargs)
     
     #########################################################################
     # Fixed operation convenience methods

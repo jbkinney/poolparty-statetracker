@@ -25,6 +25,8 @@ def replace_marker_content(
     _pos_state=None,  # State object for position naming
     _site_state=None,  # State object for site naming
     _num_sites: Optional[int] = None,
+    _style_insertion: Optional[str] = None,
+    _style_background: Optional[str] = None,
 ):
     """
     Replace a marker region with content from another Pool.
@@ -94,6 +96,8 @@ def replace_marker_content(
         _pos_state=_pos_state,
         _site_state=_site_state,
         _num_sites=_num_sites,
+        _style_insertion=_style_insertion,
+        _style_background=_style_background,
     )
     result_pool = Pool(operation=op, name=name, iter_order=iter_order)
     
@@ -125,6 +129,8 @@ class ReplaceMarkerContentOp(Operation):
         _pos_state=None,  # State object for position naming
         _site_state=None,  # State object for site naming
         _num_sites: Optional[int] = None,
+        _style_insertion: Optional[str] = None,
+        _style_background: Optional[str] = None,
     ) -> None:
         self.marker_name = marker_name
         
@@ -140,6 +146,8 @@ class ReplaceMarkerContentOp(Operation):
         self._site_state = _site_state
         self._num_sites = _num_sites
         self._insertion_naming = any([_seq_name_prefix, _seq_name_pos_prefix, _seq_name_site_prefix])
+        self._style_insertion = _style_insertion
+        self._style_background = _style_background
         
         # The operation itself has num_values=1 because it doesn't add its own states.
         # The total number of output states comes from the product of parent pool counters.
@@ -229,6 +237,24 @@ class ReplaceMarkerContentOp(Operation):
                 if adjusted_positions:
                     output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
         
+        # Apply style_insertion to all inserted content positions
+        original_content_len = len(parent_seqs[1])  # Length before spacers
+        spacer_offset = len(self._spacer_str) if self._spacer_str else 0
+        ins_start = marker.start + spacer_offset
+        ins_end = ins_start + original_content_len
+        
+        if self._style_insertion is not None:
+            ins_positions = np.arange(ins_start, ins_end, dtype=np.int64)
+            output_styles.append((self._style_insertion, ins_positions))
+        
+        # Apply style_background to all non-inserted positions
+        if self._style_background is not None:
+            result_len = len(result_seq)
+            inserted_positions = set(range(ins_start, ins_end))
+            bg_positions = np.array([p for p in range(result_len) if p not in inserted_positions], dtype=np.int64)
+            if len(bg_positions) > 0:
+                output_styles.append((self._style_background, bg_positions))
+        
         return {'seq_0': result_seq, 'style_0': output_styles}
     
     def compute_seq_names(
@@ -271,4 +297,6 @@ class ReplaceMarkerContentOp(Operation):
             '_pos_state': self._pos_state,
             '_site_state': self._site_state,
             '_num_sites': self._num_sites,
+            '_style_insertion': self._style_insertion,
+            '_style_background': self._style_background,
         }

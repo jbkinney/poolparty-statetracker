@@ -15,6 +15,8 @@ def insertion_scan(
     remove_marker: Optional[bool] = None,
     replace: bool = False,
     mark_changes: Optional[bool] = None,
+    style_insertion: Optional[str] = None,
+    style_background: Optional[str] = None,
     seq_name_prefix: Optional[str] = None,
     seq_name_pos_prefix: Optional[str] = None,
     seq_name_site_prefix: Optional[str] = None,
@@ -157,6 +159,8 @@ def insertion_scan(
         _pos_state=pos_state,
         _site_state=site_state,
         _num_sites=num_sites,
+        _style_insertion=style_insertion,
+        _style_background=style_background,
     )
 
 
@@ -169,6 +173,8 @@ def replacement_scan(
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
     mark_changes: Optional[bool] = None,
+    style_insertion: Optional[str] = None,
+    style_background: Optional[str] = None,
     seq_name_prefix: Optional[str] = None,
     seq_name_pos_prefix: Optional[str] = None,
     seq_name_site_prefix: Optional[str] = None,
@@ -192,6 +198,8 @@ def replacement_scan(
         remove_marker=remove_marker,
         replace=True,
         mark_changes=mark_changes,
+        style_insertion=style_insertion,
+        style_background=style_background,
         seq_name_prefix=seq_name_prefix,
         seq_name_pos_prefix=seq_name_pos_prefix,
         seq_name_site_prefix=seq_name_site_prefix,

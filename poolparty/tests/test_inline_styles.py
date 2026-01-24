@@ -839,6 +839,163 @@ class TestInsertionScanStylePropagation:
             assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions for {spec}"
 
 
+class TestInsertionScanStyleInsertion:
+    """Test insertion_scan with style_insertion parameter."""
+    
+    def test_style_insertion_none_by_default(self):
+        """Default style_insertion is None."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')
+            ins = pp.from_seq('TTT')
+            pool = pp.insertion_scan(bg, ins, positions=[0], mode='sequential')
+            # The final operation is replace_marker_content
+            assert pool.operation._style_insertion is None
+    
+    def test_style_insertion_stored(self):
+        """style_insertion parameter is stored on operation."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')
+            ins = pp.from_seq('TTT')
+            pool = pp.insertion_scan(bg, ins, positions=[0], mode='sequential', 
+                                      style_insertion='red bold')
+            assert pool.operation._style_insertion == 'red bold'
+    
+    def test_style_insertion_in_copy_params(self):
+        """style_insertion is included in _get_copy_params."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')
+            ins = pp.from_seq('TTT')
+            pool = pp.insertion_scan(bg, ins, positions=[0], mode='sequential',
+                                      style_insertion='blue')
+            params = pool.operation._get_copy_params()
+        assert params['_style_insertion'] == 'blue'
+    
+    def test_style_insertion_applies_to_inserted_positions(self):
+        """style_insertion applies style to all inserted positions."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')
+            ins = pp.from_seq('TTT')
+            pool = pp.insertion_scan(bg, ins, positions=[5], mode='sequential',
+                                      style_insertion='red').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        seq = df['seq'].iloc[0]
+        
+        # Should have style for 3 positions (length of insert)
+        assert len(styles) >= 1
+        
+        # Find the red style entry
+        red_styles = [(spec, pos) for spec, pos in styles if spec == 'red']
+        assert len(red_styles) == 1
+        spec, positions = red_styles[0]
+        assert len(positions) == 3  # TTT is 3 chars
+        # Insert at position 5 should style positions 5, 6, 7
+        assert list(positions) == [5, 6, 7]
+    
+    def test_style_insertion_at_start(self):
+        """style_insertion works when inserting at position 0."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')
+            ins = pp.from_seq('GGG')
+            pool = pp.insertion_scan(bg, ins, positions=[0], mode='sequential',
+                                      style_insertion='cyan').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Should style positions 0, 1, 2
+        cyan_styles = [(spec, pos) for spec, pos in styles if spec == 'cyan']
+        assert len(cyan_styles) == 1
+        _, positions = cyan_styles[0]
+        assert list(positions) == [0, 1, 2]
+    
+    def test_style_insertion_at_end(self):
+        """style_insertion works when inserting at the end."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')  # 10 chars
+            ins = pp.from_seq('GGG')
+            pool = pp.insertion_scan(bg, ins, positions=[10], mode='sequential',
+                                      style_insertion='magenta').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Insert at end: positions 10, 11, 12
+        magenta_styles = [(spec, pos) for spec, pos in styles if spec == 'magenta']
+        assert len(magenta_styles) == 1
+        _, positions = magenta_styles[0]
+        assert list(positions) == [10, 11, 12]
+    
+    def test_style_insertion_with_replacement_scan(self):
+        """style_insertion works with replacement_scan."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')  # 10 chars
+            ins = pp.from_seq('GGG')
+            pool = pp.replacement_scan(bg, ins, positions=[5], mode='sequential',
+                                        style_insertion='yellow').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Should style the 3 replacement positions starting at 5
+        yellow_styles = [(spec, pos) for spec, pos in styles if spec == 'yellow']
+        assert len(yellow_styles) == 1
+        _, positions = yellow_styles[0]
+        assert list(positions) == [5, 6, 7]
+    
+    def test_style_insertion_with_spacer_str(self):
+        """style_insertion doesn't include spacer positions, only content."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')
+            ins = pp.from_seq('GG')
+            pool = pp.insertion_scan(bg, ins, positions=[5], mode='sequential',
+                                      spacer_str='.', style_insertion='green').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        seq = df['seq'].iloc[0]
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Sequence should be AAAAA.GG.AAAAA (with spacers)
+        assert '.GG.' in seq
+        
+        # Style should only cover the GG (2 positions), not the dots
+        green_styles = [(spec, pos) for spec, pos in styles if spec == 'green']
+        assert len(green_styles) == 1
+        _, positions = green_styles[0]
+        assert len(positions) == 2  # Only GG, not the dots
+    
+    def test_style_insertion_without_style_returns_empty(self):
+        """insertion_scan without style_insertion has no insertion styles."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')
+            ins = pp.from_seq('TTT')
+            pool = pp.insertion_scan(bg, ins, positions=[5], mode='sequential').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Should be empty (no style_insertion specified)
+        assert styles == []
+    
+    def test_style_insertion_combines_with_insert_pool_styles(self):
+        """style_insertion combines with styles already on insert pool."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')
+            # Insert pool already has styling
+            ins = pp.from_seq('TTT').stylize(style='blue')
+            pool = pp.insertion_scan(bg, ins, positions=[5], mode='sequential',
+                                      style_insertion='red').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Should have both blue (from insert pool) and red (from style_insertion)
+        style_specs = [spec for spec, _ in styles]
+        assert 'blue' in style_specs
+        assert 'red' in style_specs
+
+
 class TestInsertKmersStylePropagation:
     """Test inline styles propagate through insert_kmers operations."""
     
@@ -953,3 +1110,264 @@ class TestCompositeOperationsStyleChain:
         for i in range(3):
             styles = df['_inline_styles'].iloc[i]
             assert len(styles) > 0
+
+
+class TestFromSeqStyle:
+    """Test style parameter on from_seq."""
+    
+    def test_from_seq_style_applies_to_all_positions(self):
+        """style parameter applies to all sequence positions."""
+        with pp.Party() as party:
+            pool = pp.from_seq('ACGT', style='red').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        assert len(styles) == 1
+        spec, positions = styles[0]
+        assert spec == 'red'
+        assert list(positions) == [0, 1, 2, 3]
+    
+    def test_from_seq_no_style_by_default(self):
+        """from_seq without style has empty styles."""
+        with pp.Party() as party:
+            pool = pp.from_seq('ACGT').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        assert styles == []
+
+
+class TestFromSeqsStyle:
+    """Test style parameter on from_seqs."""
+    
+    def test_from_seqs_style_applies_to_all_positions(self):
+        """style parameter applies to all sequence positions."""
+        with pp.Party() as party:
+            pool = pp.from_seqs(['ACGT', 'TTTT'], mode='sequential', style='blue').named('result')
+        
+        df = pool.generate_library(num_seqs=2, report_design_cards=True)
+        
+        for i in range(2):
+            styles = df['_inline_styles'].iloc[i]
+            assert len(styles) == 1
+            spec, positions = styles[0]
+            assert spec == 'blue'
+            assert list(positions) == [0, 1, 2, 3]
+    
+    def test_from_seqs_style_in_copy_params(self):
+        """style is included in _get_copy_params."""
+        with pp.Party() as party:
+            pool = pp.from_seqs(['ACGT'], style='cyan')
+            params = pool.operation._get_copy_params()
+        assert params['style'] == 'cyan'
+
+
+class TestGetKmersStyle:
+    """Test style parameter on get_kmers."""
+    
+    def test_get_kmers_style_applies_to_kmer(self):
+        """style parameter applies to kmer positions."""
+        with pp.Party() as party:
+            pool = pp.get_kmers(length=3, mode='sequential', style='green').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        assert len(styles) == 1
+        spec, positions = styles[0]
+        assert spec == 'green'
+        assert list(positions) == [0, 1, 2]
+    
+    def test_get_kmers_style_in_copy_params(self):
+        """style is included in _get_copy_params."""
+        with pp.Party() as party:
+            pool = pp.get_kmers(length=3, style='magenta')
+            params = pool.operation._get_copy_params()
+        assert params['style'] == 'magenta'
+
+
+class TestMutagenizeStyleBackground:
+    """Test style_background parameter on mutagenize."""
+    
+    def test_style_background_applies_to_non_mutated(self):
+        """style_background styles non-mutated positions."""
+        with pp.Party() as party:
+            pool = pp.mutagenize('ACGT', num_mutations=1, mode='sequential',
+                                  style_background='blue').named('result')
+        
+        pool.operation.state._value = 0
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Should have style_background for 3 positions (one is mutated)
+        blue_styles = [(spec, pos) for spec, pos in styles if spec == 'blue']
+        assert len(blue_styles) == 1
+        _, positions = blue_styles[0]
+        assert len(positions) == 3  # 4 total - 1 mutated = 3 background
+    
+    def test_style_background_with_style_mutations(self):
+        """style_background and style_mutations can be combined."""
+        with pp.Party() as party:
+            pool = pp.mutagenize('ACGT', num_mutations=1, mode='sequential',
+                                  style_mutations='red', style_background='blue').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        style_specs = [spec for spec, _ in styles]
+        assert 'red' in style_specs
+        assert 'blue' in style_specs
+    
+    def test_style_background_in_copy_params(self):
+        """style_background is included in _get_copy_params."""
+        with pp.Party() as party:
+            pool = pp.mutagenize('ACGT', num_mutations=1, style_background='cyan')
+            params = pool.operation._get_copy_params()
+        assert params['style_background'] == 'cyan'
+
+
+class TestInsertionScanStyleBackground:
+    """Test style_background parameter on insertion_scan."""
+    
+    def test_style_background_applies_to_non_inserted(self):
+        """style_background styles non-inserted positions."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')
+            ins = pp.from_seq('GGG')
+            pool = pp.insertion_scan(bg, ins, positions=[5], mode='sequential',
+                                      style_background='blue').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        seq = df['seq'].iloc[0]
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Sequence is AAAAAGGGAAAAA (13 chars)
+        assert len(seq) == 13
+        
+        blue_styles = [(spec, pos) for spec, pos in styles if spec == 'blue']
+        assert len(blue_styles) == 1
+        _, positions = blue_styles[0]
+        # Background: positions 0-4 and 8-12 (excluding insert at 5-7)
+        assert len(positions) == 10  # 13 - 3 = 10 background
+    
+    def test_style_background_with_style_insertion(self):
+        """style_background and style_insertion can be combined."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')
+            ins = pp.from_seq('GGG')
+            pool = pp.insertion_scan(bg, ins, positions=[5], mode='sequential',
+                                      style_insertion='red', style_background='blue').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        style_specs = [spec for spec, _ in styles]
+        assert 'red' in style_specs
+        assert 'blue' in style_specs
+    
+    def test_replacement_scan_style_background(self):
+        """style_background works with replacement_scan."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AAAAAAAAAA')
+            ins = pp.from_seq('GGG')
+            pool = pp.replacement_scan(bg, ins, positions=[5], mode='sequential',
+                                        style_background='green').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        green_styles = [(spec, pos) for spec, pos in styles if spec == 'green']
+        assert len(green_styles) == 1
+        _, positions = green_styles[0]
+        # Background: all non-replacement positions (10 - 3 = 7)
+        assert len(positions) == 7
+
+
+class TestDeletionScanStyleBackground:
+    """Test style_background parameter on deletion_scan."""
+    
+    def test_style_background_applies_to_non_gap(self):
+        """style_background styles non-gap positions."""
+        with pp.Party() as party:
+            pool = pp.deletion_scan('AAAAAAAAAA', deletion_length=2, positions=[5],
+                                     mode='sequential', style_background='blue').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        seq = df['seq'].iloc[0]
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Sequence has gaps (--) where deletion occurred
+        assert '--' in seq
+        
+        blue_styles = [(spec, pos) for spec, pos in styles if spec == 'blue']
+        assert len(blue_styles) == 1
+    
+    def test_style_background_with_style_deletion(self):
+        """style_background and style_deletion can be combined."""
+        with pp.Party() as party:
+            pool = pp.deletion_scan('AAAAAAAAAA', deletion_length=2, positions=[5],
+                                     mode='sequential', style_deletion='gray',
+                                     style_background='blue').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        style_specs = [spec for spec, _ in styles]
+        assert 'gray' in style_specs
+        assert 'blue' in style_specs
+
+
+class TestInsertKmersStyleParams:
+    """Test style_kmers and style_background on insert_kmers."""
+    
+    def test_style_kmers_applies_to_kmer(self):
+        """style_kmers applies style to inserted kmer."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AA<kmer/>TT')
+            pool = bg.insert_kmers('kmer', length=2, mode='sequential',
+                                    style_kmers='red').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        red_styles = [(spec, pos) for spec, pos in styles if spec == 'red']
+        assert len(red_styles) == 1
+        _, positions = red_styles[0]
+        assert len(positions) == 2  # kmer length
+    
+    def test_style_background_applies_to_non_kmer(self):
+        """style_background applies to non-kmer positions."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AA<kmer/>TT')
+            pool = bg.insert_kmers('kmer', length=2, mode='sequential',
+                                    style_background='blue').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Collect all blue-styled positions (may be split across entries)
+        blue_positions = []
+        for spec, pos in styles:
+            if spec == 'blue':
+                blue_positions.extend(pos.tolist())
+        
+        # Background: AA (positions 0,1) + TT (positions 4,5) = 4 positions
+        # Kmer is at positions 2,3
+        assert len(blue_positions) == 4
+        assert 2 not in blue_positions  # kmer position
+        assert 3 not in blue_positions  # kmer position
+    
+    def test_style_kmers_and_style_background_combined(self):
+        """style_kmers and style_background can be combined."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AA<kmer/>TT')
+            pool = bg.insert_kmers('kmer', length=2, mode='sequential',
+                                    style_kmers='red', style_background='blue').named('result')
+        
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        style_specs = [spec for spec, _ in styles]
+        assert 'red' in style_specs
+        assert 'blue' in style_specs

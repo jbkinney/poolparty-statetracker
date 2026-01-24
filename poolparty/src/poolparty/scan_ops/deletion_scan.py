@@ -22,6 +22,7 @@ def deletion_scan(
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
     style_deletion: Optional[str] = None,
+    style_background: Optional[str] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -117,28 +118,40 @@ def deletion_scan(
     # 3. Replace _del marker with content
     # spacer_str is only applied when mark_changes is True (i.e., when there's content to wrap)
     # Always remove the internal _del marker (it's our implementation detail)
+    has_styling = style_deletion is not None or style_background is not None
     result = from_seq(
         content_str,
         pool=marked,
         region=marker_name,
         remove_marker=True,  # Always remove the internal _del marker
         spacer_str=spacer_str if mark_changes else '',
-        name=name if style_deletion is None else None,
+        name=name if not has_styling else None,
         op_name=op_name,
-        iter_order=iter_order if style_deletion is None else None,
+        iter_order=iter_order if not has_styling else None,
         op_iter_order=op_iter_order,
         _factory_name='deletion_scan(from_seq)',
     )
     
     # 4. Apply style to gap characters if style_deletion is specified
+    from ..fixed_ops.stylize import stylize
     if style_deletion is not None and mark_changes:
-        from ..fixed_ops.stylize import stylize
         result = stylize(
             result,
             style=style_deletion,
             which='gap',
+        )
+    
+    # 5. Apply style_background to non-gap characters
+    if style_background is not None:
+        result = stylize(
+            result,
+            style=style_background,
+            which='contents',  # Styles all non-gap, non-tag positions
             name=name,
             iter_order=iter_order,
         )
+    elif has_styling:
+        # Apply name/iter_order to last operation if we had styling but not style_background
+        result = result.named(name) if name else result
     
     return result

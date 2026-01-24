@@ -12,6 +12,7 @@ def from_seq(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
+    style: Optional[str] = None,
     op_name: Optional[str] = None,
     name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -82,5 +83,10 @@ def from_seq(
     # Add validated markers to the pool
     for marker in markers:
         result_pool.add_marker(marker)
+    
+    # Apply style if specified
+    if style is not None:
+        from .stylize import stylize
+        result_pool = stylize(result_pool, style=style, name=name, iter_order=iter_order)
     
     return result_pool
