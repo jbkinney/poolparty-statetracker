@@ -21,6 +21,7 @@ def deletion_scan(
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
+    style_deletion: Optional[str] = None,
     name: Optional[str] = None,
     op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -45,6 +46,8 @@ def deletion_scan(
         Positions to consider for the start of the deletion (0-based, relative to region).
     mode : ModeType, default='random'
         Deletion mode: 'random' or 'sequential'.
+    style_deletion : Optional[str], default=None
+        Style to apply to deletion gap characters (e.g., 'gray', 'red bold').
 
     Returns
     -------
@@ -114,15 +117,28 @@ def deletion_scan(
     # 3. Replace _del marker with content
     # spacer_str is only applied when mark_changes is True (i.e., when there's content to wrap)
     # Always remove the internal _del marker (it's our implementation detail)
-    return from_seq(
+    result = from_seq(
         content_str,
         pool=marked,
         region=marker_name,
         remove_marker=True,  # Always remove the internal _del marker
         spacer_str=spacer_str if mark_changes else '',
-        name=name,
+        name=name if style_deletion is None else None,
         op_name=op_name,
-        iter_order=iter_order,
+        iter_order=iter_order if style_deletion is None else None,
         op_iter_order=op_iter_order,
         _factory_name='deletion_scan(from_seq)',
     )
+    
+    # 4. Apply style to gap characters if style_deletion is specified
+    if style_deletion is not None and mark_changes:
+        from ..fixed_ops.stylize import stylize
+        result = stylize(
+            result,
+            style=style_deletion,
+            which='gap',
+            name=name,
+            iter_order=iter_order,
+        )
+    
+    return result

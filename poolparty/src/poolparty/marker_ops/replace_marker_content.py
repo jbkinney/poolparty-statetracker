@@ -211,6 +211,24 @@ class ReplaceMarkerContentOp(Operation):
                 if adjusted_positions:
                     output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
         
+        # Handle content_pool styles (second parent) - inserted content retains its styling
+        if parent_styles and len(parent_styles) > 1:
+            content_styles = parent_styles[1]
+            original_content_len = len(parent_seqs[1])  # Length before spacers
+            spacer_offset = len(self._spacer_str) if self._spacer_str else 0
+            
+            for spec, positions in content_styles:
+                adjusted_positions = []
+                for pos in positions:
+                    if marker.strand == '-':
+                        # Flip position for reverse complement
+                        pos = original_content_len - 1 - pos
+                    # Shift by prefix length + leading spacer
+                    new_pos = marker.start + spacer_offset + pos
+                    adjusted_positions.append(new_pos)
+                if adjusted_positions:
+                    output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
+        
         return {'seq_0': result_seq, 'style_0': output_styles}
     
     def compute_seq_names(

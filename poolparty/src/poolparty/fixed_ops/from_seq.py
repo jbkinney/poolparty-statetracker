@@ -59,6 +59,10 @@ def from_seq(
     if (pool is not None) and (region is None):
         raise ValueError("region is required when pool is provided")
     
+    # When replacing region content (pool + region provided), don't pass through
+    # styles from the original region to the new content
+    is_replacement = pool is not None and region is not None
+    
     # Create the pool
     result_pool = fixed_operation(
         parent_pools=[pool] if pool is not None else [],
@@ -72,6 +76,7 @@ def from_seq(
         iter_order=iter_order,
         op_iter_order=op_iter_order,
         _factory_name=_factory_name if _factory_name is not None else 'from_seq',
+        _pass_through_styles=not is_replacement,
     )
     
     # Add validated markers to the pool

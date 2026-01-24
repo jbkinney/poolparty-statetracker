@@ -20,7 +20,7 @@ def mutagenize(
     spacer_str: str = '',
     mark_changes: Optional[bool] = None,
     swapcase: bool = False,
-    changes_style: Optional[str] = None,
+    style_mutations: Optional[str] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
@@ -87,7 +87,7 @@ def mutagenize(
         spacer_str=spacer_str,
         mark_changes=mark_changes,
         swapcase=swapcase,
-        changes_style=changes_style,
+        style_mutations=style_mutations,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_states=num_states,
@@ -124,7 +124,7 @@ class MutagenizeOp(Operation):
         spacer_str: str = '',
         mark_changes: Optional[bool] = None,
         swapcase: bool = False,
-        changes_style: Optional[str] = None,
+        style_mutations: Optional[str] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
@@ -169,7 +169,7 @@ class MutagenizeOp(Operation):
             mark_changes = party.get_default('mark_changes', False)
         self.mark_changes = mark_changes
         self.swapcase = swapcase
-        self._changes_style = changes_style
+        self._style_mutations = style_mutations
         self.alpha_size = len(dna.BASES)
         self._mode = mode
         
@@ -476,15 +476,15 @@ class MutagenizeOp(Operation):
             result_seq = transform_nonmarker_chars(result_seq, str.swapcase)
         
         # Build output styles: pass through parent styles (mutagenize preserves length)
-        # and add mutation style if _changes_style is set
+        # and add mutation style if _style_mutations is set
         output_styles: StyleList = []
         if parent_styles and len(parent_styles) > 0:
             output_styles.extend(parent_styles[0])
         
-        if self._changes_style is not None and len(positions) > 0:
+        if self._style_mutations is not None and len(positions) > 0:
             # Convert logical positions to raw positions for styling
             raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
-            output_styles.append((self._changes_style, raw_positions))
+            output_styles.append((self._style_mutations, raw_positions))
         
         return {
             'positions': positions,
@@ -506,7 +506,7 @@ class MutagenizeOp(Operation):
             'spacer_str': self._spacer_str,
             'mark_changes': self.mark_changes,
             'swapcase': self.swapcase,
-            'changes_style': self._changes_style,
+            'style_mutations': self._style_mutations,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,

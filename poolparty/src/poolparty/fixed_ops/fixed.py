@@ -18,6 +18,7 @@ def fixed_operation(
     iter_order: Optional[Real] = None,
     op_iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
+    _pass_through_styles: bool = True,
 ) -> Pool:
     """
     Create a Pool from a fixed transformation of parent sequences.
@@ -63,6 +64,7 @@ def fixed_operation(
         name=op_name,
         iter_order=op_iter_order,
         _factory_name=_factory_name,
+        _pass_through_styles=_pass_through_styles,
     )
     pool = Pool(operation=op, name=name, iter_order=iter_order)
     return pool
@@ -85,6 +87,7 @@ class FixedOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
+        _pass_through_styles: bool = True,
     ) -> None:
         """Initialize FixedOp."""
         from ..party import get_active_party
@@ -94,6 +97,7 @@ class FixedOp(Operation):
         
         self.seq_from_seqs_fn = seq_from_seqs_fn
         self._seq_length_from_pool_lengths_fn = seq_length_from_pool_lengths_fn
+        self._pass_through_styles = _pass_through_styles
         
         # Compute seq_length from pool_lengths
         party = get_active_party()
@@ -137,9 +141,11 @@ class FixedOp(Operation):
         parent_seqs[0] is the region content when region is specified.
         """
         result = self.seq_from_seqs_fn(parent_seqs)
-        # Pass through parent styles (fixed operations preserve sequence length)
+        # Pass through parent styles only if _pass_through_styles is True
+        # When doing content replacement (e.g., from_seq with region), styles
+        # from the original content should not apply to the new content
         output_styles: StyleList = []
-        if parent_styles and len(parent_styles) > 0:
+        if self._pass_through_styles and parent_styles and len(parent_styles) > 0:
             output_styles.extend(parent_styles[0])
         return {'seq_0': result, 'style_0': output_styles}
 
@@ -154,4 +160,5 @@ class FixedOp(Operation):
             'spacer_str': self._spacer_str,
             'name': None,
             'iter_order': self.iter_order,
+            '_pass_through_styles': self._pass_through_styles,
         }

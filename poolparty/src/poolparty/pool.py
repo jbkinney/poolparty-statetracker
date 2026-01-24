@@ -339,7 +339,7 @@ class Pool:
                 seq = row['seq']
                 if show_highlights:
                     from .highlighter import apply_inline_styles_and_highlights
-                    # Get per-sequence inline styles (from operation changes_style parameters)
+                    # Get per-sequence inline styles (from operation style_mutations parameters)
                     inline_styles = row.get('_inline_styles', [])
                     # Apply both inline styles and global highlights
                     seq = apply_inline_styles_and_highlights(seq, inline_styles, highlights or [])
