@@ -275,6 +275,8 @@ class MarkerScanOp(Operation):
         parent_styles: list | None = None,
     ) -> dict:
         """Return design card and sequence with marker inserted together."""
+        from ..types import StyleList
+        
         seq = parent_seqs[0]
         
         valid_indices, nonmarker_positions = self._get_valid_marker_positions(seq)
@@ -346,6 +348,14 @@ class MarkerScanOp(Operation):
                 # One past the last non-marker character (preserves trailing marker tags)
                 end_literal = nonmarker_positions[-1] + 1 if nonmarker_positions else len(seq)
             result_seq = seq[:start_literal] + marker_tag + seq[end_literal:]
+            
+            # Adjust parent styles for region marker insertion
+            # Opening tag length is from start of marker_tag to first '>' + 1
+            opening_tag_end = marker_tag.index('>') + 1
+            opening_tag_len = opening_tag_end
+            # Closing tag length is the rest
+            closing_tag_len = len(marker_tag) - opening_tag_len - len(content)
+            total_tag_len = opening_tag_len + closing_tag_len
         else:
             # Zero-length marker: insert at position
             if nonmarker_idx < len(nonmarker_positions):
@@ -354,7 +364,41 @@ class MarkerScanOp(Operation):
                 raw_position = len(seq)  # Insert at end
             result_seq = seq[:raw_position] + marker_tag + seq[raw_position:]
         
-        # Marker scan modifies sequence structure, so styles not meaningful
+        # Adjust parent styles to account for marker tag insertion
+        output_styles: StyleList = []
+        if parent_styles and len(parent_styles) > 0:
+            input_styles = parent_styles[0]
+            
+            if self._marker_length > 0:
+                # Region marker: positions shift based on where they fall
+                for spec, positions in input_styles:
+                    adjusted_positions = []
+                    for pos in positions:
+                        if pos < start_literal:
+                            # Before marker: unchanged
+                            adjusted_positions.append(pos)
+                        elif pos < end_literal:
+                            # Inside marker region: shift by opening tag length
+                            adjusted_positions.append(pos + opening_tag_len)
+                        else:
+                            # After marker region: shift by total tag length minus replaced content
+                            shift = total_tag_len - (end_literal - start_literal) + len(content)
+                            adjusted_positions.append(pos + shift)
+                    if adjusted_positions:
+                        output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
+            else:
+                # Zero-length marker: positions >= insertion point shift by marker tag length
+                marker_tag_len = len(marker_tag)
+                for spec, positions in input_styles:
+                    adjusted_positions = []
+                    for pos in positions:
+                        if pos < raw_position:
+                            adjusted_positions.append(pos)
+                        else:
+                            adjusted_positions.append(pos + marker_tag_len)
+                    if adjusted_positions:
+                        output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
+        
         return {
             'position_index': position_index,
             'start': start,
@@ -365,7 +409,7 @@ class MarkerScanOp(Operation):
             'strand': strand,
             'region_seq': marker_tag,
             'seq_0': result_seq,
-            'style_0': [],
+            'style_0': output_styles,
         }
     
     def _get_copy_params(self) -> dict:

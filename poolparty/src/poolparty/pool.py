@@ -295,16 +295,18 @@ class Pool:
         if highlights is None:
             highlights = self._party._highlights
         
-        if num_seqs is None and num_cycles is None:
-            num_cycles = 1
-        df = self.generate_library(
-            num_seqs=num_seqs,
-            num_cycles=num_cycles,
-            seqs_only=False,
-            report_design_cards=True,
-            init_state=0,
-            seed=seed,
-        )
+        # Build kwargs for generate_library, only including num_cycles when needed
+        gen_kwargs = {
+            'seqs_only': False,
+            'report_design_cards': True,
+            'init_state': 0,
+            'seed': seed,
+        }
+        if num_seqs is not None:
+            gen_kwargs['num_seqs'] = num_seqs
+        else:
+            gen_kwargs['num_cycles'] = num_cycles if num_cycles is not None else 1
+        df = self.generate_library(**gen_kwargs)
         has_name = show_name and 'name' in df.columns and df['name'].notna().any()
         max_name_len = df['name'].str.len().max() if has_name and pad_names else 0
         

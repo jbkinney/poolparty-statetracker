@@ -596,3 +596,204 @@ class TestCaseTransformInlineStyles:
         result = apply_inline_styles('ACGT', styles)
         clean = Highlighter.reset(result)
         assert clean == 'ACGT'
+
+
+class TestDeletionScanStylePropagation:
+    """Test inline styles propagate through deletion_scan operations."""
+    
+    def test_styles_propagate_through_deletion_scan(self):
+        """Styles from parent pool propagate through deletion_scan."""
+        with pp.Party() as party:
+            # Create a styled sequence - style the flanking regions
+            bg = pp.from_seq('AAAA<test>CCCCGGGG</test>TTTT')\
+                .stylize(region=[0, 4], style='red')\
+                .named('bg')
+            # Apply deletion scan
+            deleted = bg.deletion_scan('test', deletion_length=2, mode='sequential').named('deleted')
+        
+        df = deleted.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Styles should have propagated through
+        # The 'red' style should be present (positions may have shifted)
+        assert len(styles) > 0
+        assert any(spec == 'red' for spec, _ in styles)
+    
+    def test_deletion_scan_styles_adjust_positions(self):
+        """Style positions are adjusted correctly through deletion_scan chain."""
+        with pp.Party() as party:
+            # Create background with styled prefix (not the deletion region itself)
+            bg = pp.from_seq('AAAA<test>CCCCGGGG</test>TTTT')\
+                .stylize(region=[0, 4], style='blue')\
+                .named('bg')
+            deleted = bg.deletion_scan('test', deletion_length=2, mode='sequential').named('deleted')
+        
+        df = deleted.generate_library(num_seqs=1, report_design_cards=True)
+        seq = df['seq'].iloc[0]
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Verify styles exist and have valid positions within seq bounds
+        assert len(styles) > 0
+        for spec, positions in styles:
+            assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions for {spec}: {positions}, seq_len={len(seq)}"
+
+
+class TestInsertionScanStylePropagation:
+    """Test inline styles propagate through insertion_scan operations."""
+    
+    def test_styles_propagate_through_insertion_scan(self):
+        """Styles from parent pool propagate through insertion_scan."""
+        with pp.Party() as party:
+            # Create a styled background - style the flanking regions
+            bg = pp.from_seq('AAAA<test>CCCCGGGG</test>TTTT')\
+                .stylize(region=[0, 4], style='green')\
+                .named('bg')
+            # Create insert pool (same length as region for replace)
+            inserts = pp.from_seqs(['XXXXXXXX'], mode='sequential').named('inserts')
+            # Apply insertion scan with replace
+            inserted = bg.insertion_scan('test', ins_pool=inserts, positions=[0], 
+                                          replace=True, mode='sequential').named('inserted')
+        
+        df = inserted.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Styles should have propagated (green style from bg prefix)
+        assert len(styles) > 0
+        assert any(spec == 'green' for spec, _ in styles)
+    
+    def test_insertion_scan_preserves_non_region_styles(self):
+        """Styles outside the insertion region are preserved."""
+        with pp.Party() as party:
+            # Style the prefix, then insert within a region
+            bg = pp.from_seq('AAAA<ins>XXXX</ins>TTTT')\
+                .stylize(region=[0, 4], style='cyan')\
+                .named('bg')
+            # Insert replaces with same-length content
+            inserts = pp.from_seqs(['GGGG'], mode='sequential').named('inserts')
+            inserted = bg.insertion_scan('ins', ins_pool=inserts, positions=[0], 
+                                          replace=True, mode='sequential').named('inserted')
+        
+        df = inserted.generate_library(num_seqs=1, report_design_cards=True)
+        seq = df['seq'].iloc[0]
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Should have styles for the prefix (AAAA)
+        assert len(styles) > 0
+        for spec, positions in styles:
+            assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions for {spec}: {positions}, seq_len={len(seq)}"
+
+
+class TestInsertKmersStylePropagation:
+    """Test inline styles propagate through insert_kmers operations."""
+    
+    def test_styles_propagate_through_insert_kmers(self):
+        """Styles from parent pool propagate through insert_kmers."""
+        with pp.Party() as party:
+            # Create a styled background with a zero-length marker
+            # Style the prefix region specifically
+            bg = pp.from_seq('AAAA<bc/>TTTT')\
+                .stylize(region=[0, 4], style='red')\
+                .named('bg')
+            # Insert kmers at the marker
+            result = bg.insert_kmers('bc', length=3, mode='sequential').named('result')
+        
+        df = result.generate_library(num_seqs=1, report_design_cards=True)
+        seq = df['seq'].iloc[0]
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Styles should propagate (red style for AAAA prefix)
+        assert len(styles) > 0
+        for spec, positions in styles:
+            assert all(0 <= pos < len(seq) for pos in positions), f"Invalid positions for {spec}: {positions}, seq_len={len(seq)}"
+    
+    def test_insert_kmers_preserves_surrounding_styles(self):
+        """Styles around the kmer insertion point are preserved."""
+        with pp.Party() as party:
+            # Style the prefix
+            bg = pp.from_seq('AAAA<bc/>TTTT')\
+                .stylize(region=[0, 4], style='blue')\
+                .named('bg')
+            result = bg.insert_kmers('bc', length=3, mode='sequential').named('result')
+        
+        df = result.generate_library(num_seqs=1, report_design_cards=True)
+        seq = df['seq'].iloc[0]
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Blue style for AAAA should be preserved
+        assert len(styles) > 0
+        # Check that the 'blue' style is present
+        assert any(spec == 'blue' for spec, _ in styles)
+
+
+class TestStackRepeatStylePropagation:
+    """Test that stack and repeat operations correctly pass through styles."""
+    
+    def test_stack_passes_styles_from_active_parent(self):
+        """stack() passes through styles from the active parent pool."""
+        with pp.Party() as party:
+            pool1 = pp.from_seq('AAAA').stylize(style='red').named('pool1')
+            pool2 = pp.from_seq('GGGG').stylize(style='blue').named('pool2')
+            stacked = pp.stack([pool1, pool2]).named('stacked')
+        
+        df = stacked.generate_library(num_seqs=2, report_design_cards=True)
+        
+        # First row from pool1 should have red style
+        styles0 = df['_inline_styles'].iloc[0]
+        assert len(styles0) > 0
+        assert styles0[0][0] == 'red'
+        
+        # Second row from pool2 should have blue style
+        styles1 = df['_inline_styles'].iloc[1]
+        assert len(styles1) > 0
+        assert styles1[0][0] == 'blue'
+    
+    def test_repeat_passes_styles_unchanged(self):
+        """repeat_states() passes through parent styles unchanged."""
+        with pp.Party() as party:
+            pool = pp.from_seq('ACGT').stylize(style='green').named('pool')
+            repeated = pool.repeat_states(3).named('repeated')
+        
+        df = repeated.generate_library(num_seqs=3, report_design_cards=True)
+        
+        # All rows should have the green style
+        for i in range(3):
+            styles = df['_inline_styles'].iloc[i]
+            assert len(styles) > 0
+            assert styles[0][0] == 'green'
+
+
+class TestCompositeOperationsStyleChain:
+    """Test styles flow through complex chains of operations."""
+    
+    def test_stylize_through_mutagenize_and_stack(self):
+        """Styles propagate through mutagenize and stack operations."""
+        with pp.Party() as party:
+            bg = pp.from_seq('AA<cre>CCCCGGGG</cre>TT').stylize('cre', style='red').named('bg')
+            mutated = bg.mutagenize('cre', num_mutations=1, changes_style='yellow', 
+                                    mode='sequential').named('mutated')
+            stacked = pp.stack([mutated]).named('stacked')
+        
+        df = stacked.generate_library(num_seqs=1, report_design_cards=True)
+        styles = df['_inline_styles'].iloc[0]
+        
+        # Should have both red (from stylize) and yellow (from mutagenize changes)
+        style_specs = [spec for spec, _ in styles]
+        assert 'red' in style_specs
+        assert 'yellow' in style_specs
+    
+    def test_styles_through_full_chain(self):
+        """Styles flow through a full chain: stylize -> mutagenize -> repeat -> stack."""
+        with pp.Party() as party:
+            bg = pp.from_seq('ACGTACGT').stylize(style='cyan').named('bg')
+            mutated = bg.mutagenize(num_mutations=1, changes_style='bold', 
+                                    mode='sequential').named('mutated')
+            repeated = mutated.repeat_states(2).named('repeated')
+            pool2 = pp.from_seq('TTTTTTTT').stylize(style='red').named('pool2')
+            stacked = pp.stack([repeated, pool2]).named('stacked')
+        
+        df = stacked.generate_library(num_seqs=3, report_design_cards=True)
+        
+        # All rows should have styles
+        for i in range(3):
+            styles = df['_inline_styles'].iloc[i]
+            assert len(styles) > 0

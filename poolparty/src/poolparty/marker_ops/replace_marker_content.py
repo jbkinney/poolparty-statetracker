@@ -22,8 +22,8 @@ def replace_marker_content(
     _seq_name_prefix: Optional[str] = None,
     _seq_name_pos_prefix: Optional[str] = None,
     _seq_name_site_prefix: Optional[str] = None,
-    _pos_op: Optional['Operation'] = None,
-    _site_op: Optional['Operation'] = None,
+    _pos_state=None,  # State object for position naming
+    _site_state=None,  # State object for site naming
     _num_sites: Optional[int] = None,
 ):
     """
@@ -91,8 +91,8 @@ def replace_marker_content(
         _seq_name_prefix=_seq_name_prefix,
         _seq_name_pos_prefix=_seq_name_pos_prefix,
         _seq_name_site_prefix=_seq_name_site_prefix,
-        _pos_op=_pos_op,
-        _site_op=_site_op,
+        _pos_state=_pos_state,
+        _site_state=_site_state,
         _num_sites=_num_sites,
     )
     result_pool = Pool(operation=op, name=name, iter_order=iter_order)
@@ -122,8 +122,8 @@ class ReplaceMarkerContentOp(Operation):
         _seq_name_prefix: Optional[str] = None,
         _seq_name_pos_prefix: Optional[str] = None,
         _seq_name_site_prefix: Optional[str] = None,
-        _pos_op: Optional['Operation'] = None,
-        _site_op: Optional['Operation'] = None,
+        _pos_state=None,  # State object for position naming
+        _site_state=None,  # State object for site naming
         _num_sites: Optional[int] = None,
     ) -> None:
         self.marker_name = marker_name
@@ -136,8 +136,8 @@ class ReplaceMarkerContentOp(Operation):
         self._seq_name_prefix = _seq_name_prefix
         self._seq_name_pos_prefix = _seq_name_pos_prefix
         self._seq_name_site_prefix = _seq_name_site_prefix
-        self._pos_op = _pos_op
-        self._site_op = _site_op
+        self._pos_state = _pos_state
+        self._site_state = _site_state
         self._num_sites = _num_sites
         self._insertion_naming = any([_seq_name_prefix, _seq_name_pos_prefix, _seq_name_site_prefix])
         
@@ -167,6 +167,8 @@ class ReplaceMarkerContentOp(Operation):
         parent_styles: list | None = None,
     ) -> dict:
         """Replace marker in bg_seq with content_seq."""
+        from ..types import StyleList
+        
         bg_seq = parent_seqs[0]
         content_seq = parent_seqs[1]
         
@@ -186,8 +188,30 @@ class ReplaceMarkerContentOp(Operation):
         suffix = bg_seq[marker.end:]
         result_seq = prefix + content_seq + suffix
         
-        # Marker replacement modifies sequence structure, so styles not meaningful
-        return {'seq_0': result_seq, 'style_0': []}
+        # Adjust styles from bg_pool (first parent) with position shifts
+        # Styles within the marker region are discarded, suffix styles are shifted
+        output_styles: StyleList = []
+        
+        if parent_styles and len(parent_styles) > 0:
+            bg_styles = parent_styles[0]
+            marker_region_len = marker.end - marker.start
+            new_content_len = len(content_seq)
+            length_delta = new_content_len - marker_region_len
+            
+            for spec, positions in bg_styles:
+                adjusted_positions = []
+                for pos in positions:
+                    if pos < marker.start:
+                        # Before marker: unchanged
+                        adjusted_positions.append(pos)
+                    elif pos >= marker.end:
+                        # After marker region: shift by length change
+                        adjusted_positions.append(pos + length_delta)
+                    # Positions inside the marker region are discarded
+                if adjusted_positions:
+                    output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
+        
+        return {'seq_0': result_seq, 'style_0': output_styles}
     
     def compute_seq_names(
         self,
@@ -198,9 +222,9 @@ class ReplaceMarkerContentOp(Operation):
         if not self._insertion_naming:
             return super().compute_seq_names(parent_names, card)
         
-        # Get position and site indices from the referenced operations
-        pos_idx = self._pos_op.state.value if self._pos_op.state.value is not None else 0
-        site_idx = self._site_op.state.value if self._site_op.state.value is not None else 0
+        # Get position and site indices from the state objects
+        pos_idx = self._pos_state.value if self._pos_state is not None and self._pos_state.value is not None else 0
+        site_idx = self._site_state.value if self._site_state is not None and self._site_state.value is not None else 0
         
         # Build name parts in order: product index, position index, site index
         name_parts = []
@@ -226,7 +250,7 @@ class ReplaceMarkerContentOp(Operation):
             '_seq_name_prefix': self._seq_name_prefix,
             '_seq_name_pos_prefix': self._seq_name_pos_prefix,
             '_seq_name_site_prefix': self._seq_name_site_prefix,
-            '_pos_op': self._pos_op,
-            '_site_op': self._site_op,
+            '_pos_state': self._pos_state,
+            '_site_state': self._site_state,
             '_num_sites': self._num_sites,
         }

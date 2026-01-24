@@ -492,8 +492,18 @@ class Operation:
                     new_region_len = len(output_seq)
                     if self._spacer_str:
                         new_region_len += 2 * len(self._spacer_str)
-                    old_region_len = len(region_content)
-                    length_delta = new_region_len - old_region_len
+                    
+                    # Calculate length delta accounting for marker removal
+                    if isinstance(self._region, str) and self._remove_marker:
+                        # When removing marker, the old region included marker tags
+                        # Find the full marker span in the original sequence
+                        from .marker_ops.parsing import validate_single_marker
+                        marker_info = validate_single_marker(parent_seqs[0], self._region)
+                        old_region_len_with_tags = marker_info.end - marker_info.start
+                        length_delta = new_region_len - old_region_len_with_tags
+                    else:
+                        old_region_len = len(region_content)
+                        length_delta = new_region_len - old_region_len
                     
                     for spec, positions in preserved_suffix_styles:
                         adjusted_positions = positions + length_delta
