@@ -22,6 +22,7 @@ from .fixed_ops import (
     upper,
     lower,
     clear_gaps,
+    stylize, StylizeOp,
 )
 # Import other operations from base_ops module
 from .base_ops import (
@@ -104,6 +105,7 @@ __all__ = [
     'upper',
     'lower',
     'clear_gaps',
+    'stylize', 'StylizeOp',
     'stack', 'StackOp',
     'repeat', 'RepeatOp',
     'state_slice', 'StateSliceOp',

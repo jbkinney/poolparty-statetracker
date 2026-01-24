@@ -11,6 +11,7 @@ from .upper import upper
 from .lower import lower
 from .clear_gaps import clear_gaps
 from .clear_annotation import clear_annotation
+from .stylize import stylize, StylizeOp
 
 __all__ = [
     'fixed_operation', 'FixedOp',
@@ -18,4 +19,5 @@ __all__ = [
     'swapcase', 'slice_seq',
     'upper', 'lower',
     'clear_gaps', 'clear_annotation',
+    'stylize', 'StylizeOp',
 ]

@@ -78,6 +78,10 @@ class OpsContainer:
         from .fixed_ops.clear_annotation import clear_annotation
         return clear_annotation(pool=self.pool, region=region, **kwargs)
     
+    def stylize(self, region=None, *, style: str, **kwargs) -> Pool_type:
+        from .fixed_ops.stylize import stylize
+        return stylize(pool=self.pool, region=region, style=style, **kwargs)
+    
     #########################################################################
     # State operation convenience methods
     #########################################################################
