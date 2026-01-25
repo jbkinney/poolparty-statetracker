@@ -6,8 +6,8 @@ from ..types import Pool_type, Union, Optional, RegionType, Literal, beartype, S
 from ..operation import Operation
 from ..pool import Pool
 
-# Reuse constants from highlighter
-from ..highlighter import DEFAULT_GAP_CHARS
+# Reuse constants from style
+from ..style import DEFAULT_GAP_CHARS
 
 WhichType = Literal['all', 'upper', 'lower', 'gap', 'tags', 'contents']
 
@@ -27,10 +27,8 @@ def stylize(
 ) -> Pool:
     """
     Apply inline styling to sequences without modifying them.
-
-    Unlike add_highlight() which applies global styles at render time,
-    stylize() attaches styles directly to sequences as they flow through
-    the pool chain.
+    
+    Styles are attached directly to sequences as they flow through the pool chain.
 
     Parameters
     ----------

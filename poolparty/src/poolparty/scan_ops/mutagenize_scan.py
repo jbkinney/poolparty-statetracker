@@ -16,7 +16,6 @@ def mutagenize_scan(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[Union[str, Sequence[str]]] = None,
     mode: Union[ModeType, Tuple[ModeType, ModeType]] = 'random',
     num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
@@ -50,8 +49,6 @@ def mutagenize_scan(
         If None, uses Party default.
     spacer_str : str, default=''
         String to insert as a spacer around the mutagenized region.
-    mark_changes : Optional[bool], default=None
-        If True, apply swapcase() to the mutated bases. If None, uses party default.
     seq_name_prefix : Optional[Union[str, Sequence[str]]], default=None
         Prefix for sequence names. 
         If sequence, first element is for scanning positions, second element is for mutagenization.
@@ -92,12 +89,8 @@ def mutagenize_scan(
     if num_mutations is not None and mutation_rate is not None:
         raise ValueError("Only one of num_mutations or mutation_rate can be provided, not both")
 
-    # Resolve mark_changes from party defaults if not explicitly set
-    party = get_active_party()
-    if mark_changes is None:
-        mark_changes = party.get_default('mark_changes', False) if party else False
-
     # Resolve remove_marker from party defaults if not explicitly set
+    party = get_active_party()
     if remove_marker is None:
         remove_marker = party.get_default('remove_marker', True) if party else True
 
@@ -163,7 +156,6 @@ def mutagenize_scan(
         region='_mut',
         remove_marker=True,
         spacer_str=spacer_str,
-        mark_changes=mark_changes,
         swapcase=False,
         seq_name_prefix=seq_name_prefix_mut,
         mode=mode_mut,

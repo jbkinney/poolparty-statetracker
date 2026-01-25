@@ -4,7 +4,6 @@ import pytest
 import numpy as np
 import poolparty as pp
 from poolparty.fixed_ops.stylize import stylize, StylizeOp
-from poolparty.highlighter import Highlighter
 
 
 class TestStylizeBasic:
@@ -161,7 +160,6 @@ class TestStylizeCaseTransforms:
     def test_lower_case_transform(self):
         """Style spec with 'lower' transforms to lowercase."""
         with pp.Party():
-            pp.clear_highlights()
             pool = stylize('ACGT', style='lower cyan').named('styled')
             pool.print_library()
             # The actual case transform happens at render time
@@ -173,7 +171,6 @@ class TestStylizeCaseTransforms:
     def test_upper_case_transform(self):
         """Style spec with 'upper' transforms to uppercase."""
         with pp.Party():
-            pp.clear_highlights()
             pool = stylize('acgt', style='upper red bold').named('styled')
             df = pool.generate_library(num_seqs=1, report_design_cards=True)
             styles = df['_inline_styles'].iloc[0]
@@ -216,17 +213,7 @@ class TestStylizeIntegration:
     def test_print_library_applies_styles(self):
         """print_library() renders stylize styles."""
         with pp.Party():
-            pp.clear_highlights()
             pool = stylize('ACGT', style='red').named('styled')
-            # Just verify it doesn't crash
-            pool.print_library()
-
-    def test_stylize_with_global_highlights(self):
-        """stylize works alongside global highlights."""
-        with pp.Party():
-            pp.clear_highlights()
-            pp.add_highlight('gray', which='tags')
-            pool = stylize('<m>ACGT</m>', style='red', which='contents').named('styled')
             # Just verify it doesn't crash
             pool.print_library()
 

@@ -14,7 +14,6 @@ def from_seqs(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
     style: Optional[str] = None,
     seq_names: Optional[Sequence[str]] = None,
     seq_name_prefix: Optional[str] = None,
@@ -73,7 +72,7 @@ def from_seqs(
     bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     op = FromSeqsOp(seqs, bg_pool=bg_pool_obj, region=region,
                     remove_marker=remove_marker, spacer_str=spacer_str,
-                    mark_changes=mark_changes, style=style,
+                    style=style,
                     seq_names=seq_names, seq_name_prefix=seq_name_prefix,
                     mode=mode, num_states=num_states,
                     name=op_name, iter_order=op_iter_order,
@@ -95,7 +94,6 @@ class FromSeqsOp(Operation):
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         spacer_str: str = '',
-        mark_changes: Optional[bool] = None,
         style: Optional[str] = None,
         seq_names: Optional[Sequence[str]] = None,
         seq_name_prefix: Optional[str] = None,
@@ -125,10 +123,6 @@ class FromSeqsOp(Operation):
                 "Specify which region of bg_pool to replace with the selected sequence."
             )
         
-        # Resolve mark_changes from party defaults if not explicitly set
-        if mark_changes is None:
-            mark_changes = party.get_default('mark_changes', False)
-        self.mark_changes = mark_changes
         self._style = style
         
         if len(seqs) == 0:
@@ -189,9 +183,6 @@ class FromSeqsOp(Operation):
             idx = (0 if state is None else state) % len(self.seqs)
         
         seq = self.seqs[idx]
-        # Apply mark_changes swapcase only when inserting into a region
-        if self.mark_changes and self._region is not None:
-            seq = seq.swapcase()
         
         # Apply style to all positions if specified
         output_styles: StyleList = []
@@ -235,7 +226,6 @@ class FromSeqsOp(Operation):
             'region': self._region,
             'remove_marker': self._remove_marker,
             'spacer_str': self._spacer_str,
-            'mark_changes': self.mark_changes,
             'style': self._style,
             'seq_names': self.seq_names if self._seq_names_explicit else None,
             'seq_name_prefix': self.name_prefix,

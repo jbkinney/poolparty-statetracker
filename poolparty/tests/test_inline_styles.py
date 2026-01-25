@@ -4,11 +4,10 @@ import pytest
 import numpy as np
 import poolparty as pp
 from poolparty.base_ops.mutagenize import MutagenizeOp, mutagenize
-from poolparty.highlighter import (
+from poolparty.style import (
     apply_inline_styles,
-    apply_inline_styles_and_highlights,
     validate_style_positions,
-    Highlighter,
+    reset,
 )
 
 
@@ -44,34 +43,6 @@ class TestInlineStylesBasic:
             ('red', np.array([1])),  # Override with red at position 1
         ]
         result = apply_inline_styles('ACGT', styles)
-        assert '\033[' in result
-
-
-class TestInlineStylesWithHighlights:
-    """Test combining inline styles with global highlighters."""
-    
-    def test_apply_inline_styles_and_highlights_empty(self):
-        """Empty styles and highlighters returns unchanged sequence."""
-        result = apply_inline_styles_and_highlights('ACGT', [], [])
-        assert result == 'ACGT'
-    
-    def test_inline_styles_only(self):
-        """Inline styles without highlighters."""
-        styles = [('red', np.array([0]))]
-        result = apply_inline_styles_and_highlights('ACGT', styles, [])
-        assert '\033[' in result
-    
-    def test_highlighters_only(self):
-        """Highlighters without inline styles."""
-        hl = Highlighter('blue', which='upper')
-        result = apply_inline_styles_and_highlights('ACGT', [], [hl])
-        assert '\033[' in result
-    
-    def test_inline_and_highlighters_combined(self):
-        """Both inline styles and highlighters applied."""
-        styles = [('bold', np.array([0]))]
-        hl = Highlighter('blue', which='upper')
-        result = apply_inline_styles_and_highlights('ACGT', styles, [hl])
         assert '\033[' in result
 
 
@@ -266,18 +237,6 @@ class TestPositionValidation:
         result = apply_inline_styles('ACGT', styles, validate=False)
         assert 'ACGT' in result or result == 'ACGT'
     
-    def test_apply_inline_styles_and_highlights_validates_by_default(self):
-        """apply_inline_styles_and_highlights validates positions by default."""
-        styles = [('red', np.array([10]))]  # Out of bounds
-        with pytest.raises(ValueError):
-            apply_inline_styles_and_highlights('ACGT', styles, [])
-    
-    def test_apply_inline_styles_and_highlights_can_skip_validation(self):
-        """apply_inline_styles_and_highlights can skip validation."""
-        styles = [('red', np.array([10]))]  # Out of bounds
-        # Should not raise when validation disabled
-        result = apply_inline_styles_and_highlights('ACGT', styles, [], validate=False)
-        assert 'ACGT' in result or result == 'ACGT'
 
 
 class TestPositionAdjustmentWithMarkers:
@@ -514,7 +473,7 @@ class TestCaseTransformInlineStyles:
         result = apply_inline_styles('ACGT', styles)
         # Positions 0 and 2 should be lowercase: 'a' and 'g'
         # Strip ANSI codes to check character case
-        clean = Highlighter.reset(result)
+        clean = reset(result)
         assert clean == 'aCgT'
     
     def test_upper_transforms_to_uppercase(self):
@@ -522,7 +481,7 @@ class TestCaseTransformInlineStyles:
         styles = [('upper blue', np.array([1, 3]))]
         result = apply_inline_styles('acgt', styles)
         # Positions 1 and 3 should be uppercase: 'C' and 'T'
-        clean = Highlighter.reset(result)
+        clean = reset(result)
         assert clean == 'aCgT'
     
     def test_lower_with_multiple_styles(self):
@@ -530,7 +489,7 @@ class TestCaseTransformInlineStyles:
         styles = [('lower cyan bold', np.array([0, 1, 2, 3]))]
         result = apply_inline_styles('ACGT', styles)
         # All positions should be lowercase
-        clean = Highlighter.reset(result)
+        clean = reset(result)
         assert clean == 'acgt'
         # Should have ANSI codes for styling
         assert '\033[' in result
@@ -540,7 +499,7 @@ class TestCaseTransformInlineStyles:
         styles = [('upper red underline', np.array([0, 1, 2, 3]))]
         result = apply_inline_styles('acgt', styles)
         # All positions should be uppercase
-        clean = Highlighter.reset(result)
+        clean = reset(result)
         assert clean == 'ACGT'
         # Should have ANSI codes for styling
         assert '\033[' in result
@@ -549,7 +508,7 @@ class TestCaseTransformInlineStyles:
         """Only positions in the style array are case-transformed."""
         styles = [('lower', np.array([1]))]
         result = apply_inline_styles('ACGT', styles)
-        clean = Highlighter.reset(result)
+        clean = reset(result)
         # Only position 1 should be lowercase
         assert clean == 'AcGT'
     
@@ -557,7 +516,7 @@ class TestCaseTransformInlineStyles:
         """Case transform can be used without additional styling."""
         styles = [('lower', np.array([0, 1, 2, 3]))]
         result = apply_inline_styles('ACGT', styles)
-        clean = Highlighter.reset(result)
+        clean = reset(result)
         assert clean == 'acgt'
     
     def test_later_transform_overrides_earlier(self):
@@ -567,26 +526,15 @@ class TestCaseTransformInlineStyles:
             ('upper', np.array([0])),     # Second: make uppercase (overrides at pos 0)
         ]
         result = apply_inline_styles('acgt', styles)
-        clean = Highlighter.reset(result)
+        clean = reset(result)
         # Position 0: upper (later) wins, position 1: lower wins
         assert clean == 'Acgt'
-    
-    def test_case_transform_with_highlights(self):
-        """Case transforms work with apply_inline_styles_and_highlights."""
-        styles = [('lower cyan', np.array([0, 2]))]
-        hl = Highlighter('red', which='upper')
-        result = apply_inline_styles_and_highlights('ACGT', styles, [hl])
-        clean = Highlighter.reset(result)
-        # Positions 0 and 2 should be lowercase
-        assert clean == 'aCgT'
-        # Should have ANSI codes
-        assert '\033[' in result
     
     def test_case_transform_preserves_non_alpha(self):
         """Case transforms preserve non-alphabetic characters."""
         styles = [('lower', np.array([0, 1, 2, 3]))]
         result = apply_inline_styles('A-G.', styles)
-        clean = Highlighter.reset(result)
+        clean = reset(result)
         # Non-alpha chars unchanged, alpha chars lowercased
         assert clean == 'a-g.'
     
@@ -594,7 +542,7 @@ class TestCaseTransformInlineStyles:
         """Empty position array means no transforms."""
         styles = [('lower red', np.array([], dtype=np.int64))]
         result = apply_inline_styles('ACGT', styles)
-        clean = Highlighter.reset(result)
+        clean = reset(result)
         assert clean == 'ACGT'
 
 

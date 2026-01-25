@@ -37,7 +37,6 @@ def init(
     _active_party = _default_party
     # Set default parameter values
     _default_party.set_default('remove_marker', False)
-    _default_party.set_default('mark_changes', True)
     return _default_party
 
 
@@ -84,8 +83,6 @@ class Party:
         self._codon_table: CodonTable = CodonTable(genetic_code)
         # Default parameter values for operations
         self._defaults: dict[str, Any] = {}
-        # Global highlights for print_library()
-        self._highlights: list = []
     
     def _get_next_pool_id(self) -> int:
         """Get the next unique pool ID."""
@@ -297,7 +294,6 @@ class Party:
         """Clear all pools, operations, and markers without resetting highlights.
         
         Unlike init(), this preserves:
-        - Highlighting configuration (_highlights)
         - Genetic code settings (_codon_table)
         - Default parameter values (_defaults)
         """

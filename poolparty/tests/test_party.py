@@ -393,128 +393,12 @@ class TestErrors:
 class TestDefaultParameters:
     """Test Party default parameter functionality."""
     
-    def test_set_default_mark_changes(self):
-        """Test setting default mark_changes parameter."""
-        with pp.Party() as party:
-            party.set_default('mark_changes', True)
-            assert party.get_default('mark_changes') == True
-            assert party.get_default('mark_changes', False) == True
-    
     def test_get_default_with_fallback(self):
         """Test get_default returns fallback when key not set."""
         with pp.Party() as party:
             assert party.get_default('nonexistent') is None
             assert party.get_default('nonexistent', 'default_value') == 'default_value'
     
-    def test_mutagenize_uses_party_default(self):
-        """Test that mutagenize uses party default for mark_changes."""
-        with pp.Party() as party:
-            party.set_default('mark_changes', True)
-            mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential')
-        
-        df = mutants.generate_library(num_seqs=1)
-        # With mark_changes=True, mutated positions should be lowercase
-        seq = df['seq'].iloc[0]
-        # Count lowercase letters
-        lowercase_count = sum(1 for c in seq if c.islower())
-        assert lowercase_count == 1  # One mutation, so one lowercase
-    
-    def test_mutagenize_explicit_overrides_default(self):
-        """Test that explicit mark_changes overrides party default."""
-        with pp.Party() as party:
-            party.set_default('mark_changes', True)
-            # Explicitly set mark_changes=False to override default
-            mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential', mark_changes=False)
-        
-        df = mutants.generate_library(num_seqs=1)
-        seq = df['seq'].iloc[0]
-        # With explicit mark_changes=False, no lowercase
-        lowercase_count = sum(1 for c in seq if c.islower())
-        assert lowercase_count == 0
-    
-    def test_from_iupac_uses_party_default_with_region(self):
-        """Test that from_iupac uses party default for mark_changes when region is specified."""
-        with pp.Party() as party:
-            party.set_default('mark_changes', True)
-            bg = 'AAA<region>XX</region>TTT'
-            pool = pp.from_iupac('NN', bg_pool=bg, region='region', mode='sequential')
-        
-        df = pool.generate_library(num_seqs=1)
-        seq = df['seq'].iloc[0]
-        # With mark_changes=True and region, the insert should be lowercase
-        assert seq.startswith('AAA')
-        assert seq.endswith('TTT')
-        insert = seq[3:5]
-        assert insert == insert.lower()
-    
-    def test_from_iupac_explicit_overrides_default(self):
-        """Test that explicit mark_changes overrides party default for from_iupac."""
-        with pp.Party() as party:
-            party.set_default('mark_changes', True)
-            # Explicitly set mark_changes=False
-            pool = pp.from_iupac('ACGN', mode='sequential', mark_changes=False)
-        
-        df = pool.generate_library(num_seqs=1)
-        seq = df['seq'].iloc[0]
-        # All uppercase with explicit False
-        assert seq.isupper()
-    
-    def test_module_level_set_default(self):
-        """Test module-level set_default function with region."""
-        pp.init()
-        pp.set_default('mark_changes', True)
-        
-        bg = 'AAA<region>XX</region>TTT'
-        pool = pp.from_iupac('NN', bg_pool=bg, region='region', mode='sequential')
-        df = pool.generate_library(num_seqs=1)
-        seq = df['seq'].iloc[0]
-        # With region and mark_changes=True, insert should be lowercase
-        insert = seq[3:5]
-        assert insert == insert.lower()
-        
-        # Clean up
-        pp.init()
-    
-    def test_defaults_reset_with_new_party(self):
-        """Test that defaults are reset when creating a new Party."""
-        with pp.Party() as party1:
-            party1.set_default('mark_changes', True)
-            assert party1.get_default('mark_changes') == True
-        
-        with pp.Party() as party2:
-            # New party should not have the default
-            assert party2.get_default('mark_changes') is None
-    
-    def test_load_defaults_from_file(self, tmp_path):
-        """Test loading defaults from a TOML file."""
-        # Create a temp TOML file
-        toml_file = tmp_path / "defaults.toml"
-        toml_file.write_text("mark_changes = true\n")
-        
-        with pp.Party() as party:
-            party.load_defaults(str(toml_file))
-            assert party.get_default('mark_changes') == True
-    
-    def test_module_level_load_defaults(self, tmp_path):
-        """Test module-level load_defaults function with region."""
-        # Create a temp TOML file
-        toml_file = tmp_path / "defaults.toml"
-        toml_file.write_text("mark_changes = true\n")
-        
-        pp.init()
-        pp.load_defaults(str(toml_file))
-        
-        bg = 'AAA<region>XX</region>TTT'
-        pool = pp.from_iupac('NN', bg_pool=bg, region='region', mode='sequential')
-        df = pool.generate_library(num_seqs=1)
-        seq = df['seq'].iloc[0]
-        # With region and mark_changes=True, insert should be lowercase
-        insert = seq[3:5]
-        assert insert == insert.lower()
-        
-        # Clean up
-        pp.init()
-
 
 class TestStateManagerIntegration:
     """Test StateManager integration with Party."""

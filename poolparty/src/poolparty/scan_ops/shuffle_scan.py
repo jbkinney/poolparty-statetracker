@@ -15,7 +15,6 @@ def shuffle_scan(
     remove_marker: Optional[bool] = None,
     shuffles_per_position: Integral = 1,
     spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
@@ -40,8 +39,6 @@ def shuffle_scan(
         Region to constrain the scan to. Can be a marker name (str) or [start, stop].
     shuffles_per_position : Integral, default=1
         Number of shuffles to perform at each position.
-    mark_changes : Optional[bool], default=None
-        If True, apply swapcase() to the shuffled region.
     mode : ModeType, default='random'
         Selection mode: 'random', 'sequential', or 'hybrid'.
 
@@ -102,7 +99,6 @@ def shuffle_scan(
         region=marker_name,
         remove_marker=True,  # Always remove the internal _shuf marker
         spacer_str=spacer_str,
-        mark_changes=mark_changes,
         mode='random',
         num_states=shuffles_per_position,
         name=name,

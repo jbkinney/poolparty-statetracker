@@ -99,9 +99,6 @@ def deletion_multiscan(
             f"{deletion_length} in sequence of length {bg_length}"
         )
 
-    # Map old API: deletion_marker='-' -> mark_changes=True, del_char='-'
-    #              deletion_marker=None -> mark_changes=False
-    mark_changes = deletion_marker is not None
     del_char = deletion_marker if deletion_marker else '-'
 
     # Generate auto-indexed marker names
@@ -127,8 +124,8 @@ def deletion_multiscan(
         op_iter_order=op_iter_order,
     )
 
-    # 2. Build replacement content based on mark_changes
-    if mark_changes:
+    # 2. Build replacement content based on deletion_marker
+    if deletion_marker is not None:
         # Fill gap with del_char * deletion_length
         marker_str = del_char * marker_length
         content = from_seq(marker_str)

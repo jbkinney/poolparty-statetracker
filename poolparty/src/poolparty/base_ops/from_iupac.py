@@ -14,7 +14,6 @@ def from_iupac(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
@@ -39,8 +38,6 @@ def from_iupac(
         Required if bg_pool is provided.
     remove_marker : Optional[bool], default=None
         If True and region is a marker name, remove marker tags from output.
-    mark_changes : Optional[bool], default=None
-        If True, apply swapcase() to degenerate positions. If None, uses party default.
     mode : ModeType, default='random'
         Sequence selection mode: 'sequential' or 'random'.
     num_states : Optional[int], default=None
@@ -72,7 +69,6 @@ def from_iupac(
         region=region,
         remove_marker=remove_marker,
         spacer_str=spacer_str,
-        mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_states=num_states,
@@ -96,7 +92,6 @@ class FromIupacOp(Operation):
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         spacer_str: str = '',
-        mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
@@ -146,10 +141,6 @@ class FromIupacOp(Operation):
 
         self.iupac_seq = iupac_seq
         self.position_options = position_options
-        # Resolve mark_changes from party defaults if not explicitly set
-        if mark_changes is None:
-            mark_changes = party.get_default('mark_changes', False)
-        self.mark_changes = mark_changes
 
         # Compute total states as product of possibilities at each position
         total_states = 1
@@ -207,10 +198,6 @@ class FromIupacOp(Operation):
         result = list(reversed(result))
         seq = ''.join(result)
         
-        # Apply mark_changes swapcase only when inserting into a region
-        if self.mark_changes and self._region is not None:
-            seq = seq.swapcase()
-        
         return {
             'iupac_state': state,
             'seq_0': seq,
@@ -225,7 +212,6 @@ class FromIupacOp(Operation):
             'region': self._region,
             'remove_marker': self._remove_marker,
             'spacer_str': self._spacer_str,
-            'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,

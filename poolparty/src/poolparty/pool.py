@@ -273,8 +273,6 @@ class Pool:
         show_seq: bool = True,
         pad_names: bool = True,
         seed: Optional[Integral] = None,
-        highlights: Optional[Sequence] = None,
-        show_highlights: bool = True,
     ) -> Pool_type:
         """Print preview sequences from this pool; returns self for chaining.
         
@@ -287,14 +285,7 @@ class Pool:
             show_seq: Whether to show the seq column.
             pad_names: Whether to pad names to align sequences.
             seed: Random seed for reproducibility.
-            highlights: List of Highlighter objects to apply to sequences.
-                        If None, uses party's global highlights (set via add_highlight()).
-            show_highlights: Whether to apply highlighting to sequences.
         """
-        # Use party's global highlights if none provided
-        if highlights is None:
-            highlights = self._party._highlights
-        
         # Build kwargs for generate_library, only including num_cycles when needed
         gen_kwargs = {
             'seqs_only': False,
@@ -337,12 +328,11 @@ class Pool:
                     row_parts.append(f"{row['name']}")
             if show_seq:
                 seq = row['seq']
-                if show_highlights:
-                    from .highlighter import apply_inline_styles_and_highlights
-                    # Get per-sequence inline styles (from operation style_mutations parameters)
-                    inline_styles = row.get('_inline_styles', [])
-                    # Apply both inline styles and global highlights
-                    seq = apply_inline_styles_and_highlights(seq, inline_styles, highlights or [])
+                from .style import apply_inline_styles
+                # Get per-sequence inline styles (from operation style_mutations parameters)
+                inline_styles = row.get('_inline_styles', [])
+                # Apply inline styles
+                seq = apply_inline_styles(seq, inline_styles)
                 row_parts.append(seq)
             print("  ".join(row_parts))
         print('')

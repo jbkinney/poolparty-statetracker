@@ -15,7 +15,6 @@ def get_kmers(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
     style: Optional[str] = None,
     case: Literal['lower', 'upper'] = 'upper',
     seq_name_prefix: Optional[str] = None,
@@ -73,7 +72,7 @@ def get_kmers(
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
     op = GetKmersOp(length, pool=pool_obj, region=region,
                     remove_marker=remove_marker, spacer_str=spacer_str,
-                    mark_changes=mark_changes, style=style,
+                    style=style,
                     case=case, seq_name_prefix=seq_name_prefix, mode=mode,
                     num_states=num_states,
                     name=op_name, iter_order=op_iter_order)
@@ -94,7 +93,6 @@ class GetKmersOp(Operation):
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         spacer_str: str = '',
-        mark_changes: Optional[bool] = None,
         style: Optional[str] = None,
         case: Literal['lower', 'upper'] = 'upper',
         seq_name_prefix: Optional[str] = None,
@@ -121,10 +119,6 @@ class GetKmersOp(Operation):
         if length < 1:
             raise ValueError(f"length must be >= 1, got {length}")
         
-        # Resolve mark_changes from party defaults if not explicitly set
-        if mark_changes is None:
-            mark_changes = party.get_default('mark_changes', False)
-        self.mark_changes = mark_changes
         self._style = style
         
         self.length = length
@@ -213,9 +207,6 @@ class GetKmersOp(Operation):
         # Apply case transformation
         if self.case == 'lower':
             kmer = kmer.lower()
-        # Apply mark_changes swapcase only when inserting into a region
-        if self.mark_changes and self._region is not None:
-            kmer = kmer.swapcase()
         
         # Apply style to all positions if specified
         output_styles: StyleList = []
@@ -238,7 +229,6 @@ class GetKmersOp(Operation):
             'region': self._region,
             'remove_marker': self._remove_marker,
             'spacer_str': self._spacer_str,
-            'mark_changes': self.mark_changes,
             'style': self._style,
             'case': self.case,
             'seq_name_prefix': self.name_prefix,

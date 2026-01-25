@@ -99,92 +99,6 @@ class TestFromIupacRandomMode:
         df2 = pool2.generate_library(num_seqs=10, seed=42)
         
         assert list(df1['seq']) == list(df2['seq'])
-
-
-class TestFromIupacMarkChanges:
-    """Test mark_changes parameter."""
-    
-    def test_mark_changes_false_by_default(self):
-        """Default mark_changes is False."""
-        with pp.Party() as party:
-            pool = from_iupac('ACGT')
-            assert pool.operation.mark_changes is False
-    
-    def test_mark_changes_true_no_effect_without_region(self):
-        """mark_changes=True has no effect without region."""
-        with pp.Party() as party:
-            # A and T are fixed, N is degenerate (4 options)
-            pool = from_iupac('ANT', mark_changes=True, mode='random').named('iupac')
-        
-        df = pool.generate_library(num_seqs=10, seed=42)
-        for seq in df['seq']:
-            # Without region, mark_changes has no effect - all uppercase
-            assert seq == seq.upper()
-    
-    def test_mark_changes_false_preserves_uppercase(self):
-        """mark_changes=False preserves uppercase input."""
-        with pp.Party() as party:
-            pool = from_iupac('ANT', mark_changes=False, mode='random').named('iupac')
-        
-        df = pool.generate_library(num_seqs=10, seed=42)
-        for seq in df['seq']:
-            assert seq == seq.upper()
-    
-    def test_mark_changes_false_preserves_lowercase(self):
-        """mark_changes=False preserves lowercase input."""
-        with pp.Party() as party:
-            pool = from_iupac('ant', mark_changes=False, mode='random').named('iupac')
-        
-        df = pool.generate_library(num_seqs=10, seed=42)
-        for seq in df['seq']:
-            assert seq == seq.lower()
-    
-    def test_mark_changes_false_preserves_mixed_case(self):
-        """mark_changes=False preserves mixed case input."""
-        with pp.Party() as party:
-            pool = from_iupac('AnT', mark_changes=False, mode='random').named('iupac')
-        
-        df = pool.generate_library(num_seqs=10, seed=42)
-        for seq in df['seq']:
-            assert seq[0] == 'A'
-            assert seq[1].islower()
-            assert seq[2] == 'T'
-    
-    def test_mark_changes_no_effect_without_region(self):
-        """mark_changes has no effect when region is not specified."""
-        with pp.Party() as party:
-            # R = A|G (degenerate), Y = C|T (degenerate)
-            pool = from_iupac('ARYT', mark_changes=True, mode='sequential').named('iupac')
-        
-        df = pool.generate_library(num_cycles=1)
-        for seq in df['seq']:
-            # Without region, mark_changes has no effect - sequence stays uppercase
-            assert seq == seq.upper()
-    
-    def test_mark_changes_with_region(self):
-        """mark_changes swaps entire sequence when region is specified."""
-        with pp.Party() as party:
-            bg = 'AAA<region>XXX</region>TTT'
-            pool = from_iupac('NN', bg_pool=bg, region='region',
-                                     mark_changes=True, mode='random').named('iupac')
-        
-        df = pool.generate_library(num_seqs=5, seed=42)
-        for seq in df['seq']:
-            # With region and mark_changes, the generated insert should be lowercase
-            # The result format is: AAA + lowercase_insert + TTT
-            assert seq.startswith('AAA')
-            assert seq.endswith('TTT')
-            insert = seq[3:5]  # The 2-char insert
-            assert insert == insert.lower()
-    
-    def test_mark_changes_in_copy_params(self):
-        """mark_changes is included in _get_copy_params."""
-        with pp.Party() as party:
-            pool = from_iupac('ACGT', mark_changes=True)
-            params = pool.operation._get_copy_params()
-        assert params['mark_changes'] is True
-
-
 class TestFromIupacCustomName:
     """Test name parameters."""
     
@@ -277,11 +191,10 @@ class TestFromIupacIgnoreChars:
     def test_ignore_chars_not_degenerate(self):
         """Ignore characters are not treated as degenerate."""
         with pp.Party() as party:
-            pool = from_iupac('A.N', mark_changes=True, mode='random').named('iupac')
+            pool = from_iupac('A.N', mode='random').named('iupac')
         
         df = pool.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
-            # Without region, mark_changes has no effect - all stay uppercase
             assert seq[0] == 'A'
             assert seq[1] == '.'
             assert seq[2].isupper()
@@ -336,16 +249,15 @@ class TestFromIupacIgnoreCharsExtended:
             assert seq[1] == '.'
             assert seq[3] == '.'
     
-    def test_mark_changes_no_effect_on_separators_without_region(self):
-        """mark_changes has no effect without region, separators preserved."""
+    def test_separators_preserved(self):
+        """Separators preserved in output."""
         with pp.Party() as party:
-            pool = from_iupac('A.N.T', mark_changes=True, mode='random').named('iupac')
+            pool = from_iupac('A.N.T', mode='random').named('iupac')
         
         df = pool.generate_library(num_seqs=10, seed=42)
         for seq in df['seq']:
             # Separators should remain unchanged
             assert seq[1] == '.'
             assert seq[3] == '.'
-            # Without region, mark_changes has no effect - stays uppercase
             assert seq[0] == 'A'
             assert seq[4] == 'T'

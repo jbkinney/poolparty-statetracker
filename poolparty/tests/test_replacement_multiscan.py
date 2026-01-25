@@ -275,40 +275,6 @@ class TestReplacementMultiscanSpacerStr:
             assert '.G.' in seq
 
 
-class TestReplacementMultiscanMarkChanges:
-    """Test mark_changes parameter."""
-
-    def test_mark_changes_true(self):
-        """Test that mark_changes applies swapcase."""
-        with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])  # 18 chars
-            ins = pp.from_seq('GGG')  # uppercase
-            result = replacement_multiscan(
-                bg, num_replacements=2, replacement_pools=ins, mark_changes=True
-            ).named('result')
-
-        df = result.generate_library(num_seqs=5, seed=42)
-        for seq in df['seq']:
-            # G should be swapcased to g
-            assert seq.count('g') == 6
-            assert seq.count('G') == 0
-
-    def test_mark_changes_false(self):
-        """Test that mark_changes=False keeps original case."""
-        with pp.Party() as party:
-            bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])  # 18 chars
-            ins = pp.from_seq('GGG')  # uppercase
-            result = replacement_multiscan(
-                bg, num_replacements=2, replacement_pools=ins, mark_changes=False
-            ).named('result')
-
-        df = result.generate_library(num_seqs=5, seed=42)
-        for seq in df['seq']:
-            # G should remain uppercase
-            assert seq.count('G') == 6
-            assert seq.count('g') == 0
-
-
 class TestReplacementMultiscanNaming:
     """Test naming parameters."""
 

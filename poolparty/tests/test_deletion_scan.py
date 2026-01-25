@@ -222,7 +222,7 @@ class TestDeletionScanSpacerStr:
         
         df = result.generate_library(num_seqs=3)
         for seq in df['seq']:
-            # spacer_str is ignored when mark_changes=False; segment is simply removed
+            # spacer_str is ignored when deletion_marker=None; segment is simply removed
             assert '.' not in seq
             assert len(seq) == 7  # 10 - 3
 

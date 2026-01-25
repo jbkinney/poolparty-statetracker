@@ -13,7 +13,6 @@ def insertion_multiscan(
     insertion_pools: Union[Pool, Sequence[Pool]],
     positions: PositionsType = None,
     spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
     insertion_mode: Literal['ordered', 'unordered'] = 'ordered',
     seq_name_prefix: Optional[str] = None,
     mode: str = 'random',
@@ -44,9 +43,6 @@ def insertion_multiscan(
         positions are used (0 to bg_length inclusive).
     spacer_str : str, default=''
         String to insert as a spacer around insertion sites.
-    mark_changes : Optional[bool], default=None
-        If True, apply swapcase() to insertion sequences. If None, uses
-        party default.
     insertion_mode : Literal['ordered', 'unordered'], default='ordered'
         How to assign insertion pools to positions:
         - 'ordered': pools[i] goes to the i-th selected position (left to right)
@@ -70,9 +66,7 @@ def insertion_multiscan(
         A Pool yielding sequences with multiple insertions made simultaneously.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..fixed_ops.swapcase import swapcase
     from ..marker_ops import marker_multiscan, replace_marker_content
-    from ..party import get_active_party
 
     # Validate mode
     if mode != 'random':
@@ -114,11 +108,6 @@ def insertion_multiscan(
                 f"insertion_pools[{i}] must have a defined seq_length"
             )
 
-    # Resolve mark_changes from party defaults if not explicitly set
-    party = get_active_party()
-    if mark_changes is None:
-        mark_changes = party.get_default('mark_changes', False) if party else False
-
     # Generate auto-indexed marker names
     markers = [f'_ins_{i}' for i in range(num_insertions)]
     # Zero-length markers for insertions
@@ -148,8 +137,7 @@ def insertion_multiscan(
     # spacer_str is handled by replace_marker_content
     result = marked
     for marker_name, ins_pool in zip(markers, pools_list):
-        # Apply swapcase if mark_changes
-        content = swapcase(ins_pool) if mark_changes else ins_pool
+        content = ins_pool
 
         # Replace marker with content
         result = replace_marker_content(

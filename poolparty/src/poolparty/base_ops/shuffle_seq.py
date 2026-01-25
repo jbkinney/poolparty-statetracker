@@ -12,7 +12,6 @@ def shuffle_seq(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
@@ -35,8 +34,6 @@ def shuffle_seq(
     remove_marker : Optional[bool], default=None
         If True and region is a marker name, remove the marker tags from output.
         If None, uses Party default ('remove_marker').
-    mark_changes : Optional[bool], default=None
-        If True, swapcase() is applied to the shuffled region. If None, uses party default.
     mode : ModeType, default='random'
         Shuffle mode: 'random'. Sequential is not supported.
     num_states : Optional[int], default=None
@@ -62,7 +59,6 @@ def shuffle_seq(
         region=region,
         remove_marker=remove_marker,
         spacer_str=spacer_str,
-        mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_states=num_states,
@@ -86,7 +82,6 @@ class SeqShuffleOp(Operation):
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         spacer_str: str = '',
-        mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
@@ -103,12 +98,6 @@ class SeqShuffleOp(Operation):
         # Set factory_name if provided
         if _factory_name is not None:
             self.factory_name = _factory_name
-        
-        # Resolve mark_changes from party defaults if not explicitly set
-        party = get_active_party()
-        if mark_changes is None:
-            mark_changes = party.get_default('mark_changes', False) if party else False
-        self.mark_changes = mark_changes
         
         # Determine num_states
         if mode == 'random':
@@ -172,10 +161,6 @@ class SeqShuffleOp(Operation):
                 dest = permutation[i]
                 shuffled_molecular[dest] = ch
             
-            # Apply swapcase to shuffled molecular chars if mark_changes is True
-            if self.mark_changes:
-                shuffled_molecular = [ch.swapcase() for ch in shuffled_molecular]
-            
             # Place shuffled molecular chars back at their original positions
             seq_list = list(seq)
             for i, pos in enumerate(molecular_positions):
@@ -196,7 +181,6 @@ class SeqShuffleOp(Operation):
             'region': self._region,
             'remove_marker': self._remove_marker,
             'spacer_str': self._spacer_str,
-            'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,

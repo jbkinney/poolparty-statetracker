@@ -18,7 +18,6 @@ def mutagenize(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
     swapcase: bool = False,
     style_mutations: Optional[str] = None,
     style_background: Optional[str] = None,
@@ -52,8 +51,6 @@ def mutagenize(
     remove_marker : Optional[bool], default=None
         If True and region is a marker name, remove the marker tags from output.
         If None, uses Party default ('remove_marker').
-    mark_changes : Optional[bool], default=None
-        If True, apply swapcase() to mutated positions. If None, uses party default.
     swapcase : bool, default=False
         If True, swap case of entire sequence after mutations are applied.
         Preserves XML marker tags unchanged.
@@ -86,7 +83,6 @@ def mutagenize(
         region=region,
         remove_marker=remove_marker,
         spacer_str=spacer_str,
-        mark_changes=mark_changes,
         swapcase=swapcase,
         style_mutations=style_mutations,
         style_background=style_background,
@@ -124,7 +120,6 @@ class MutagenizeOp(Operation):
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         spacer_str: str = '',
-        mark_changes: Optional[bool] = None,
         swapcase: bool = False,
         style_mutations: Optional[str] = None,
         style_background: Optional[str] = None,
@@ -167,10 +162,6 @@ class MutagenizeOp(Operation):
         self.num_mutations = num_mutations
         self.mutation_rate = mutation_rate
         self.allowed_chars = allowed_chars
-        # Resolve mark_changes from party defaults if not explicitly set
-        if mark_changes is None:
-            mark_changes = party.get_default('mark_changes', False)
-        self.mark_changes = mark_changes
         self.swapcase = swapcase
         self._style_mutations = style_mutations
         self._style_background = style_background
@@ -464,11 +455,6 @@ class MutagenizeOp(Operation):
             wt_chars = tuple(wt_chars)
             mut_chars = tuple(mut_chars)
         
-        # Apply case swap to mut_chars if mark_changes is True
-        # This ensures design card reflects what appears in the sequence
-        if self.mark_changes:
-            mut_chars = tuple(c.swapcase() for c in mut_chars)
-        
         # Apply mutations to sequence
         seq_list = list(seq)
         for logical_pos, mut in zip(positions, mut_chars):
@@ -515,7 +501,6 @@ class MutagenizeOp(Operation):
             'region': self._region,
             'remove_marker': self._remove_marker,
             'spacer_str': self._spacer_str,
-            'mark_changes': self.mark_changes,
             'swapcase': self.swapcase,
             'style_mutations': self._style_mutations,
             'style_background': self._style_background,

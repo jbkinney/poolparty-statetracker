@@ -13,7 +13,6 @@ def deletion_scan(
     deletion_marker: Optional[str] = '-',
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
-    mark_changes: Optional[bool] = None,
     spacer_str: str = '',
     positions: PositionsType = None,
     min_spacing: Optional[Integral] = None,
@@ -82,12 +81,8 @@ def deletion_scan(
             f"del_length ({deletion_length}) must be < pool.seq_length ({bg_length})"
         )
 
-    # Resolve mark_changes from deletion_marker presence
-    party = get_active_party()
-    if mark_changes is None:
-        mark_changes = deletion_marker is not None
-
     # Resolve remove_marker from party defaults (for user's outer region)
+    party = get_active_party()
     if remove_marker is None:
         remove_marker = party.get_default('remove_marker', True) if party else True
 
@@ -113,7 +108,7 @@ def deletion_scan(
     )
 
     # 2. Build deletion content pool (gap characters)
-    content_str = del_char * marker_length if mark_changes else ''
+    content_str = del_char * marker_length if deletion_marker is not None else ''
     content_pool = from_seq(content_str)
 
     # 3. Replace _del marker with gap content using replace_marker_content
@@ -123,15 +118,15 @@ def deletion_scan(
         bg_pool=marked,
         content_pool=content_pool,
         marker_name=marker_name,
-        spacer_str=spacer_str if mark_changes else '',
+        spacer_str=spacer_str if deletion_marker is not None else '',
         name=name,
         op_name=op_name,
         iter_order=iter_order,
         op_iter_order=op_iter_order,
         _factory_name='deletion_scan(replace_marker_content)',
         # Pass style parameters - replace_marker_content handles position tracking
-        # Only apply style_deletion when mark_changes is True (i.e., gap chars exist)
-        _style_insertion=style_deletion if mark_changes else None,
+        # Only apply style_deletion when deletion_marker is set (i.e., gap chars exist)
+        _style_insertion=style_deletion if deletion_marker is not None else None,
         _style_background=style_background,  # Style non-deletion positions
         _outer_region=region,  # Restrict style_background to the outer region
     )

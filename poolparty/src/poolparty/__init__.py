@@ -66,8 +66,8 @@ from .marker_ops import (
     apply_at_marker,
     remove_marker,
 )
-# Import highlighting utilities
-from .highlighter import Highlighter, apply_highlights, add_highlight, clear_highlights, set_highlights, print_named_colors
+# Import styling utilities
+from .style import print_named_colors
 # Import from multiscan_ops module
 from .multiscan_ops import (
     deletion_multiscan,
@@ -124,12 +124,7 @@ __all__ = [
     'deletion_multiscan',
     'insertion_multiscan',
     'replacement_multiscan',
-    # Highlighting utilities
-    'Highlighter',
-    'apply_highlights',
-    'add_highlight',
-    'clear_highlights',
-    'set_highlights',
+    # Styling utilities
     'print_named_colors',
 ]
 

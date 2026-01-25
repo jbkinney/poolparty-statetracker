@@ -14,7 +14,6 @@ def insertion_scan(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     replace: bool = False,
-    mark_changes: Optional[bool] = None,
     style_insertion: Optional[str] = None,
     style_background: Optional[str] = None,
     seq_name_prefix: Optional[str] = None,
@@ -47,8 +46,6 @@ def insertion_scan(
     replace : bool, default=False
         If False, insert at position (output length = bg + ins).
         If True, replace content at position (output length = bg).
-    mark_changes : Optional[bool], default=None
-        If True, apply swapcase() to the inserted content.
     seq_name_prefix : Optional[str], default=None
         Prefix for cartesian product index (e.g., 'ins_' produces 'ins_0', 'ins_1', ...).
     seq_name_pos_prefix : Optional[str], default=None
@@ -83,19 +80,13 @@ def insertion_scan(
 
     # Resolve defaults from party
     party = get_active_party()
-    if mark_changes is None:
-        mark_changes = party.get_default('mark_changes', False) if party else False
     if remove_marker is None:
         remove_marker = party.get_default('remove_marker', True) if party else True
 
-    # Capture site pool state BEFORE swapcase transformation
+    # Capture site pool state
     # (Pool.state is valid even when wrapped with stylize/swapcase, unlike operation.state)
     original_ins_pool_state = ins_pool.state
     original_ins_pool_num_states = ins_pool.num_states
-
-    # Apply swapcase to insert if mark_changes
-    if mark_changes:
-        ins_pool = swapcase(ins_pool, _factory_name=f'{_factory_name}(swapcase)')
 
     # Determine marker configuration based on replace mode
     # replace=False: marker_length=0 (insert without removing background)
@@ -132,11 +123,8 @@ def insertion_scan(
     if has_naming:
         # Block naming on marker_scan operation
         marked.operation._block_seq_names = True
-        # Block naming on original ins_pool operation (before swapcase)
+        # Block naming on original ins_pool operation
         ins_pool.operation._block_seq_names = True
-        # Also block on swapcase operation if it was applied
-        if mark_changes:
-            ins_pool.operation._block_seq_names = True
         # Capture state references for naming (Pool.state is valid even when wrapped)
         pos_state = marked.state
         site_state = original_ins_pool_state
@@ -173,7 +161,6 @@ def replacement_scan(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
     style_insertion: Optional[str] = None,
     style_background: Optional[str] = None,
     seq_name_prefix: Optional[str] = None,
@@ -198,7 +185,6 @@ def replacement_scan(
         region=region,
         remove_marker=remove_marker,
         replace=True,
-        mark_changes=mark_changes,
         style_insertion=style_insertion,
         style_background=style_background,
         seq_name_prefix=seq_name_prefix,

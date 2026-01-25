@@ -16,7 +16,6 @@ def from_motif(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
     seq_name_prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
@@ -78,7 +77,6 @@ def from_motif(
         region=region,
         remove_marker=remove_marker,
         spacer_str=spacer_str,
-        mark_changes=mark_changes,
         seq_name_prefix=seq_name_prefix,
         mode=mode,
         num_states=num_states,
@@ -102,7 +100,6 @@ class FromMotifOp(Operation):
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         spacer_str: str = '',
-        mark_changes: Optional[bool] = None,
         seq_name_prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
@@ -125,11 +122,6 @@ class FromMotifOp(Operation):
                 "region is required when bg_pool is provided. "
                 "Specify which region of bg_pool to replace with the generated sequence."
             )
-        
-        # Resolve mark_changes from party defaults if not explicitly set
-        if mark_changes is None:
-            mark_changes = party.get_default('mark_changes', False)
-        self.mark_changes = mark_changes
 
         # Validate and store probability matrix
         self.prob_df = _validate_prob_df(prob_df)
@@ -170,9 +162,6 @@ class FromMotifOp(Operation):
         indices = (random_vals[:, np.newaxis] < self._cumprobs).argmax(axis=1)
         indices_list = indices.tolist()
         seq = ''.join(dna.BASES[i] for i in indices_list)
-        # Apply mark_changes swapcase only when inserting into a region
-        if self.mark_changes and self._region is not None:
-            seq = seq.swapcase()
         return {
             'prob_state': indices_list,
             'seq_0': seq,
@@ -187,7 +176,6 @@ class FromMotifOp(Operation):
             'region': self._region,
             'remove_marker': self._remove_marker,
             'spacer_str': self._spacer_str,
-            'mark_changes': self.mark_changes,
             'seq_name_prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,

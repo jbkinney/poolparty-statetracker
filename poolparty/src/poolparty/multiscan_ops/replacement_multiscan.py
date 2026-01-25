@@ -13,7 +13,6 @@ def replacement_multiscan(
     replacement_pools: Union[Pool, Sequence[Pool]],
     positions: PositionsType = None,
     spacer_str: str = '',
-    mark_changes: Optional[bool] = None,
     insertion_mode: Literal['ordered', 'unordered'] = 'ordered',
     seq_name_prefix: Optional[str] = None,
     mode: str = 'random',
@@ -44,9 +43,6 @@ def replacement_multiscan(
         positions are used.
     spacer_str : str, default=''
         String to insert as a spacer around replacement sites.
-    mark_changes : Optional[bool], default=None
-        If True, apply swapcase() to replacement sequences. If None, uses
-        party default.
     insertion_mode : Literal['ordered', 'unordered'], default='ordered'
         How to assign replacement pools to positions:
         - 'ordered': pools[i] goes to the i-th selected position (left to right)
@@ -70,9 +66,7 @@ def replacement_multiscan(
         A Pool yielding sequences with multiple segments replaced simultaneously.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..fixed_ops.swapcase import swapcase
     from ..marker_ops import marker_multiscan, replace_marker_content
-    from ..party import get_active_party
 
     # Validate mode
     if mode != 'random':
@@ -131,11 +125,6 @@ def replacement_multiscan(
             f"{replacement_length} in sequence of length {bg_length}"
         )
 
-    # Resolve mark_changes from party defaults if not explicitly set
-    party = get_active_party()
-    if mark_changes is None:
-        mark_changes = party.get_default('mark_changes', False) if party else False
-
     # Generate auto-indexed marker names
     markers = [f'_rep_{i}' for i in range(num_replacements)]
     marker_length = int(replacement_length)
@@ -163,8 +152,7 @@ def replacement_multiscan(
     # spacer_str is handled by replace_marker_content
     result = marked
     for marker_name, rep_pool in zip(markers, pools_list):
-        # Apply swapcase if mark_changes
-        content = swapcase(rep_pool) if mark_changes else rep_pool
+        content = rep_pool
 
         # Replace marker with content
         result = replace_marker_content(
