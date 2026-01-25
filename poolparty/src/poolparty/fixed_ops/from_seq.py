@@ -82,7 +82,7 @@ def from_seq(
     
     # Apply style if specified
     if style is not None:
-        from .stylize import stylize
+        from .style import stylize
         result_pool = stylize(result_pool, style=style)
     
     return result_pool

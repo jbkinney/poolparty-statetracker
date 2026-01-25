@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import poolparty as pp
-from poolparty.fixed_ops.stylize import stylize, StylizeOp
+from poolparty.fixed_ops.style import stylize, StylizeOp
 
 
 class TestStylizeBasic:

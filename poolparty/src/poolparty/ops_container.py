@@ -54,7 +54,7 @@ class OpsContainer:
         **kwargs,
     ) -> Pool_type:
         from .base_ops.get_kmers import get_kmers
-        from .fixed_ops.stylize import stylize
+        from .fixed_ops.style import stylize
         
         # Map style_kmers to style parameter for get_kmers
         if style_kmers is not None:
@@ -96,7 +96,7 @@ class OpsContainer:
         return clear_annotation(pool=self.pool, region=region, **kwargs)
     
     def stylize(self, region=None, *, style: str, **kwargs) -> Pool_type:
-        from .fixed_ops.stylize import stylize
+        from .fixed_ops.style import stylize
         return stylize(pool=self.pool, region=region, style=style, **kwargs)
     
     #########################################################################
