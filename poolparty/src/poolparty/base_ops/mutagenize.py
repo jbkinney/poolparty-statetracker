@@ -12,21 +12,15 @@ import numpy as np
 @beartype
 def mutagenize(
     pool: Union[Pool, str],
+    region: RegionType = None,
     num_mutations: Optional[Integral] = None,
     mutation_rate: Optional[Real] = None,
     allowed_chars: Optional[str] = None,
-    region: RegionType = None,
-    remove_marker: Optional[bool] = None,
-    swapcase: bool = False,
     style_mutations: Optional[str] = None,
-    style_background: Optional[str] = None,
-    seq_name_prefix: Optional[str] = None,
+    prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = 'mutagenize',
 ) -> Pool:
     """
@@ -36,6 +30,9 @@ def mutagenize(
     ----------
     pool : Union[Pool, str]
         Parent pool or sequence string to mutate.
+    region : Union[str, Sequence[Integral], None], default=None
+        Region to mutagenize. Can be a marker name (str), explicit interval [start, stop],
+        or None to mutagenize entire sequence. Positions are region-relative.
     num_mutations : Optional[Integral], default=None
         Fixed number of mutations to apply (mutually exclusive with mutation_rate).
     mutation_rate : Optional[Real], default=None
@@ -44,26 +41,15 @@ def mutagenize(
         IUPAC string of same length as sequence, specifying allowed bases at each position.
         Each character is an IUPAC code (A, C, G, T, R, Y, S, W, K, M, B, D, H, V, N).
         Positions where only the wild-type is allowed are treated as non-mutable.
-    region : Union[str, Sequence[Integral], None], default=None
-        Region to mutagenize. Can be a marker name (str), explicit interval [start, stop],
-        or None to mutagenize entire sequence. Positions are region-relative.
-    remove_marker : Optional[bool], default=None
-        If True and region is a marker name, remove the marker tags from output.
-        If None, uses Party default ('remove_marker').
-    swapcase : bool, default=False
-        If True, swap case of entire sequence after mutations are applied.
-        Preserves XML marker tags unchanged.
+    style_mutations : Optional[str], default=None
+        Style to apply to mutated positions.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
         Selection mode: 'random' or 'sequential'. Sequential only available with num_mutations.
     num_states : Optional[int], default=None
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
     iter_order : Optional[Real], default=None
-        Iteration order for the Pool.
-    op_iter_order : Optional[Real], default=None
         Iteration order for the Operation.
 
     Returns
@@ -80,18 +66,14 @@ def mutagenize(
         mutation_rate=mutation_rate,
         allowed_chars=allowed_chars,
         region=region,
-        remove_marker=remove_marker,
-        swapcase=swapcase,
         style_mutations=style_mutations,
-        style_background=style_background,
-        seq_name_prefix=seq_name_prefix,
+        prefix=prefix,
         mode=mode,
         num_states=num_states,
-        name=op_name,
-        iter_order=op_iter_order,
+        iter_order=iter_order,
         _factory_name=_factory_name,
     )
-    pool = Pool(operation=op, name=name, iter_order=iter_order)
+    pool = Pool(operation=op)
     return pool
 
 
@@ -116,11 +98,8 @@ class MutagenizeOp(Operation):
         mutation_rate: Optional[Real] = None,
         allowed_chars: Optional[str] = None,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
-        swapcase: bool = False,
         style_mutations: Optional[str] = None,
-        style_background: Optional[str] = None,
-        seq_name_prefix: Optional[str] = None,
+        prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -159,9 +138,7 @@ class MutagenizeOp(Operation):
         self.num_mutations = num_mutations
         self.mutation_rate = mutation_rate
         self.allowed_chars = allowed_chars
-        self.swapcase = swapcase
         self._style_mutations = style_mutations
-        self._style_background = style_background
         self.alpha_size = len(dna.BASES)
         self._mode = mode
         
@@ -246,9 +223,8 @@ class MutagenizeOp(Operation):
             seq_length=self._seq_length,
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=seq_name_prefix,
+            seq_name_prefix=prefix,
             region=region,
-            remove_marker=remove_marker,
         )
     
     def _build_caches(self, num_positions: int, mutation_counts: Optional[list[int]] = None) -> int:
@@ -399,8 +375,6 @@ class MutagenizeOp(Operation):
         Note: Region handling is done by base class wrapper methods.
         parent_seqs[0] is the region content when region is specified.
         """
-        from ..marker_ops.parsing import transform_nonmarker_chars
-        
         seq = parent_seqs[0]
         valid_char_positions = self._get_molecular_positions(seq)
         
@@ -458,9 +432,6 @@ class MutagenizeOp(Operation):
             seq_list[raw_pos] = mut
         result_seq = ''.join(seq_list)
         
-        if self.swapcase:
-            result_seq = transform_nonmarker_chars(result_seq, str.swapcase)
-        
         # Build output styles: pass through parent styles (mutagenize preserves length)
         # and add mutation style if _style_mutations is set
         output_styles: StyleList = []
@@ -471,13 +442,6 @@ class MutagenizeOp(Operation):
             # Convert logical positions to raw positions for styling
             raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
             output_styles.append((self._style_mutations, raw_positions))
-        
-        if self._style_background is not None:
-            # Style all positions except mutated ones
-            mutated_raw = set(valid_char_positions[p] for p in positions)
-            bg_positions = np.array([p for p in valid_char_positions if p not in mutated_raw], dtype=np.int64)
-            if len(bg_positions) > 0:
-                output_styles.append((self._style_background, bg_positions))
         
         return {
             'positions': positions,
@@ -495,13 +459,9 @@ class MutagenizeOp(Operation):
             'mutation_rate': self.mutation_rate,
             'allowed_chars': self.allowed_chars,
             'region': self._region,
-            'remove_marker': self._remove_marker,
-            'swapcase': self.swapcase,
             'style_mutations': self._style_mutations,
-            'style_background': self._style_background,
-            'seq_name_prefix': self.name_prefix,
+            'prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
-            'name': None,
             'iter_order': self.iter_order,
         }

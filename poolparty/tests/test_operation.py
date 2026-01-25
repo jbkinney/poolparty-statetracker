@@ -463,10 +463,10 @@ class TestOperationDeepCopy:
         """Test that deepcopy() uses self.name + '.copy' as default name."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'])
-            mutants = pp.mutagenize(seq, num_mutations=1, op_name='my_mutants')
+            mutants = pp.mutagenize(seq, num_mutations=1)
             copied_op = mutants.operation.deepcopy()
             
-            assert copied_op.name == 'my_mutants.copy'
+            assert copied_op.name == f'{mutants.operation.name}.copy'
     
     def test_deepcopy_preserves_parameters(self):
         """Test that deepcopy() preserves operation parameters."""

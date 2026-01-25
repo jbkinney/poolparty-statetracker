@@ -174,13 +174,14 @@ class TestDesignCards:
     def test_mutagenize_metadata(self):
         """Test that mutation scan includes position and char metadata."""
         with pp.Party() as party:
-            mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
+            mutants = pp.mutagenize('ACGT', num_mutations=1, mode='sequential').named('mutant')
         
+        op_name = mutants.operation.name
         df = mutants.generate_library(num_seqs=3, report_design_cards=True)
         
-        assert 'mutate.key.positions' in df.columns
-        assert 'mutate.key.wt_chars' in df.columns
-        assert 'mutate.key.mut_chars' in df.columns
+        assert f'{op_name}.key.positions' in df.columns
+        assert f'{op_name}.key.wt_chars' in df.columns
+        assert f'{op_name}.key.mut_chars' in df.columns
     
     def test_from_seqs_metadata(self):
         """Test that from_seqs includes name and index metadata."""
@@ -476,7 +477,7 @@ class TestPrintGraph:
         """Test print_graph() with a chain of pools."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], name='seq', mode='sequential')
-            mutants = pp.mutagenize(seq, num_mutations=1, mode='sequential', name='mutants')
+            mutants = pp.mutagenize(seq, num_mutations=1, mode='sequential').named('mutants')
         
         party.print_graph()
         captured = capsys.readouterr()
@@ -521,7 +522,7 @@ class TestPrintGraph:
         """Test print_graph() shows operation mode."""
         with pp.Party() as party:
             seq_pool = pp.from_seqs(['ACGT'], name='seq', mode='sequential')
-            mutants = pp.mutagenize(seq_pool, num_mutations=1, mode='sequential', name='mutants')
+            mutants = pp.mutagenize(seq_pool, num_mutations=1, mode='sequential').named('mutants')
         
         party.print_graph()
         captured = capsys.readouterr()

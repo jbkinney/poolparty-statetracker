@@ -135,7 +135,7 @@ class TestPoolCopy:
         """Test copying a mutagenize pool."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], mode='sequential')
-            mutants = pp.mutagenize(seq, num_mutations=1, name='mutants', mode='sequential')
+            mutants = pp.mutagenize(seq, num_mutations=1, mode='sequential').named('mutants')
             copied = mutants.copy(name='copied')
         
         df_mutants = mutants.generate_library(num_seqs=5, seed=42, init_state=0, report_design_cards=True)
@@ -261,7 +261,7 @@ class TestPoolDeepCopy:
         """Test that deepcopy creates a fully independent DAG."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], name='seq', mode='sequential')
-            mutants = pp.mutagenize(seq, num_mutations=1, name='mutants', mode='sequential')
+            mutants = pp.mutagenize(seq, num_mutations=1, mode='sequential').named('mutants')
             copied = mutants.deepcopy(name='copied')
             
             # Verify the copied pool's parent is different from original
@@ -275,8 +275,8 @@ class TestPoolDeepCopy:
         """Test deepcopy on a chain of pools."""
         with pp.Party() as party:
             a = pp.from_seqs(['ACGT'], name='a', mode='sequential')
-            b = pp.mutagenize(a, num_mutations=1, name='b', mode='sequential')
-            c = pp.mutagenize(b, num_mutations=1, name='c', mode='sequential')
+            b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('b')
+            c = pp.mutagenize(b, num_mutations=1, mode='sequential').named('c')
             copied = c.deepcopy(name='copied')
         
         # Verify the entire chain is copied
@@ -304,7 +304,7 @@ class TestPoolDeepCopy:
         """Test deepcopy of mutagenize produces same sequences."""
         with pp.Party() as party:
             seq = pp.from_seqs(['ACGT'], mode='sequential')
-            mutants = pp.mutagenize(seq, num_mutations=1, name='mutants', mode='sequential')
+            mutants = pp.mutagenize(seq, num_mutations=1, mode='sequential').named('mutants')
             copied = mutants.deepcopy(name='copied')
         
         df_mutants = mutants.generate_library(num_seqs=5, seed=42, init_state=0, report_design_cards=True)
@@ -608,7 +608,7 @@ class TestPoolGenerate:
         """Test generate() with aux_pools."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', mode='sequential')
-            b = pp.mutagenize(a, num_mutations=1, name='B', mode='sequential')
+            b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('B')
         
         df = b.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a])
         assert 'B.seq' in df.columns
@@ -673,7 +673,7 @@ class TestPoolGenerate:
         """Test that 'seq' column appears first, then pool's .seq column."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA'], name='A')
-            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1).named('B')
         
         df = mutants.generate_library(num_seqs=3, report_design_cards=True)
         assert df.columns[0] == 'seq'
@@ -764,7 +764,7 @@ class TestPoolGenerateRecordStates:
         """Test that counter columns appear after output cols, before design cards."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
-            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1).named('B')
         
         df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_pool_states=True)
         
@@ -823,7 +823,7 @@ class TestPoolGenerateRecordKeys:
         """Test that report_op_keys=True (default) includes design card columns."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
-            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1).named('B')
         
         df = mutants.generate_library(num_seqs=5, report_design_cards=True)
         # Should have design card columns (contain '.key.')
@@ -834,7 +834,7 @@ class TestPoolGenerateRecordKeys:
         """Test that report_op_keys=False excludes design card columns."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
-            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1).named('B')
         
         df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_op_keys=False)
         # Should NOT have design card columns
@@ -845,7 +845,7 @@ class TestPoolGenerateRecordKeys:
         """Test that report_op_keys=False still includes sequence columns."""
         with pp.Party() as party:
             pool = pp.from_seqs(['AAA', 'TTT'], name='A')
-            mutants = pp.mutagenize(pool, num_mutations=1, name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1).named('B')
         
         df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_op_keys=False)
         assert 'B.seq' in df.columns
@@ -855,7 +855,7 @@ class TestPoolGenerateRecordKeys:
         with pp.Party() as party:
             # Use sequential mode to ensure pool has state
             pool = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A')
-            mutants = pp.mutagenize(pool, num_mutations=1, mode='sequential', name='B')
+            mutants = pp.mutagenize(pool, num_mutations=1, mode='sequential').named('B')
         
         df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_op_keys=False, report_pool_states=True)
         
@@ -879,7 +879,7 @@ class TestPoolGeneratePoolsToRecord:
         with pp.Party() as party:
             # Use sequential mode to ensure pools have state
             a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A', op_name='op_A')
-            b = pp.mutagenize(a, num_mutations=1, mode='sequential', name='B', op_name='op_B')
+            b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True)
         
@@ -891,14 +891,14 @@ class TestPoolGeneratePoolsToRecord:
         # Should have key columns from both A and B operations
         key_cols = [c for c in df.columns if '.key.' in c]
         assert any('op_A' in col for col in key_cols)
-        assert any('op_B' in col for col in key_cols)
+        assert any(b.operation.name in col for col in key_cols)
     
     def test_pools_to_report_self(self):
         """Test that pools_to_report='self' only includes self pool's info."""
         with pp.Party() as party:
             # Use sequential mode to ensure pools have state
             a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A', op_name='op_A')
-            b = pp.mutagenize(a, num_mutations=1, mode='sequential', name='B', op_name='op_B')
+            b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self')
         
@@ -909,7 +909,7 @@ class TestPoolGeneratePoolsToRecord:
         
         # Should have key columns only from B's operation (self)
         key_cols = [c for c in df.columns if '.key.' in c]
-        assert any('op_B' in col for col in key_cols)
+        assert any(b.operation.name in col for col in key_cols)
         assert not any('op_A.key.' in col for col in key_cols)
     
     def test_pools_to_report_explicit_list(self):
@@ -917,7 +917,7 @@ class TestPoolGeneratePoolsToRecord:
         with pp.Party() as party:
             # Use sequential mode to ensure pools have state
             a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A', op_name='op_A')
-            b = pp.mutagenize(a, num_mutations=1, mode='sequential', name='B', op_name='op_B')
+            b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('B')
         
         # Record only A's info
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report=[a])
@@ -930,13 +930,13 @@ class TestPoolGeneratePoolsToRecord:
         # Should have key columns only from A's operation
         key_cols = [c for c in df.columns if '.key.' in c]
         assert any('op_A' in col for col in key_cols)
-        assert not any('op_B.key.' in col for col in key_cols)
+        assert not any(b.operation.name + '.key.' in col for col in key_cols)
     
     def test_pools_to_report_with_report_pool_states_false(self):
         """Test that pools_to_report respects report_pool_states=False and report_op_states=False."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
-            b = pp.mutagenize(a, num_mutations=1, name='B', op_name='op_B')
+            b = pp.mutagenize(a, num_mutations=1).named('B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self', report_pool_states=False, report_op_states=False)
         
@@ -946,14 +946,14 @@ class TestPoolGeneratePoolsToRecord:
         
         # Should still have key columns from B's operation
         key_cols = [c for c in df.columns if '.key.' in c]
-        assert any('op_B' in col for col in key_cols)
+        assert any(b.operation.name in col for col in key_cols)
     
     def test_pools_to_report_with_report_op_keys_false(self):
         """Test that pools_to_report respects report_op_keys=False."""
         with pp.Party() as party:
             # Use sequential mode to ensure pools have state
             a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A')
-            b = pp.mutagenize(a, num_mutations=1, mode='sequential', name='B')
+            b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self', report_op_keys=False)
         
@@ -969,7 +969,7 @@ class TestPoolGeneratePoolsToRecord:
         """Test that pools_to_report='self' still includes sequence columns."""
         with pp.Party() as party:
             a = pp.from_seqs(['AAA', 'TTT'], name='A')
-            b = pp.mutagenize(a, num_mutations=1, name='B')
+            b = pp.mutagenize(a, num_mutations=1).named('B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self')
         assert 'B.seq' in df.columns
@@ -1017,7 +1017,7 @@ class TestPoolStateMinusOneReturnsNone:
             a = pp.from_seqs(['AAAAA', 'TTTTT'], name='A', mode='sequential')
             b = pp.from_seqs(['CCCCC'], name='B', mode='sequential')
             c = (a + b).named('C')
-            d = pp.mutagenize(c, num_mutations=1, name='D', mode='sequential')
+            d = pp.mutagenize(c, num_mutations=1, mode='sequential').named('D')
         
         df = d.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b, c])
         
@@ -1126,7 +1126,7 @@ class TestPoolStateMinusOneReturnsNone:
             a = pp.from_seqs(['AAAAA'], name='A', op_name='op_A', mode='sequential')
             b = pp.from_seqs(['CCCCC'], name='B', op_name='op_B', mode='sequential')
             c = (a + b).named('C')
-            d = pp.mutagenize(c, num_mutations=1, name='D', op_name='op_D', mode='sequential')
+            d = pp.mutagenize(c, num_mutations=1, mode='sequential').named('D')
         
         df = d.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b, c])
         

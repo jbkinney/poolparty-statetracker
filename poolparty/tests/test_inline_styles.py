@@ -250,7 +250,7 @@ class TestPositionAdjustmentWithMarkers:
             # Mutagenize first position of region, with remove_marker=True
             mutated = bg.mutagenize(
                 'test', num_mutations=1, style_mutations='red',
-                mode='sequential', remove_marker=True
+                mode='sequential'
             ).named('mutated')
         
         df = mutated.generate_library(num_seqs=1, report_design_cards=True)
@@ -271,30 +271,31 @@ class TestPositionAdjustmentWithMarkers:
             assert all(2 <= pos < 6 for pos in positions)
     
     def test_mutagenize_region_remove_marker_false(self):
-        """Positions correct when marker is kept."""
+        """Positions correct when marker is removed (default behavior)."""
         with pp.Party() as party:
             # 'AA' prefix, marker with content 'CCCC', 'GG' suffix
             bg = pp.from_seq('AA<test>CCCC</test>GG').named('bg')
             mutated = bg.mutagenize(
                 'test', num_mutations=1, style_mutations='red',
-                mode='sequential', remove_marker=False
+                mode='sequential'
             ).named('mutated')
         
         df = mutated.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
         styles = df['_inline_styles'].iloc[0]
         
-        # Sequence should have marker tags
-        assert '<test>' in seq
-        assert '</test>' in seq
+        # Sequence should not have marker tags (default behavior removes markers)
+        assert '<test>' not in seq
+        assert '</test>' not in seq
+        assert seq.startswith('AA')
+        assert seq.endswith('GG')
         
-        # Style positions should account for prefix + opening tag
-        # 'AA' (2) + '<test>' (6) = 8 chars before region content
+        # Style positions should point to correct characters in clean sequence
         if styles:
             spec, positions = styles[0]
-            # Positions should be in the range of the region content
-            # which starts at 2 (AA) + 6 (<test>) = 8
-            assert all(8 <= pos < 12 for pos in positions)
+            # The first mutation is at position 0 within the region
+            # With marker removed, position 0 in region = position 2 in final seq
+            assert all(2 <= pos < 6 for pos in positions)
     
     def test_mutagenize_region_marker_with_minus_strand(self):
         """Minus strand marker handled correctly with position offset."""
@@ -303,22 +304,24 @@ class TestPositionAdjustmentWithMarkers:
             bg = pp.from_seq('AA<test strand="-">CCCC</test>GG').named('bg')
             mutated = bg.mutagenize(
                 'test', num_mutations=1, style_mutations='red',
-                mode='sequential', remove_marker=False
+                mode='sequential'
             ).named('mutated')
         
         df = mutated.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
         styles = df['_inline_styles'].iloc[0]
         
-        # Verify marker is preserved with strand (quotes may vary)
-        assert 'strand=' in seq and '-' in seq
+        # Marker is removed by default
+        assert '<test' not in seq
+        assert seq.startswith('AA')
+        assert seq.endswith('GG')
         
         if styles:
             spec, positions = styles[0]
-            # Find where the region content actually starts
-            # The opening tag is <test strand='-'> which is 17 chars
-            # 'AA' (2) + opening tag (17) = 19 chars before content
-            assert all(19 <= pos < 23 for pos in positions)
+            # Style positions should point to correct characters in clean sequence
+            # The first mutation is at position 0 within the region
+            # With marker removed, position 0 in region = position 2 in final seq
+            assert all(2 <= pos < 6 for pos in positions)
     
     def test_mutagenize_interval_region(self):
         """Positions correct for [start, stop] interval region."""
@@ -371,7 +374,7 @@ class TestPositionAdjustmentHelperUnit:
             bg = pp.from_seq('AA<test>CCCC</test>GG')
             pool = mutagenize(
                 bg, region='test', num_mutations=1, 
-                mode='sequential', remove_marker=True
+                mode='sequential'
             )
             op = pool.operation
         
@@ -382,19 +385,20 @@ class TestPositionAdjustmentHelperUnit:
         assert offset == 2
     
     def test_compute_offset_marker_region_remove_false(self):
-        """Correct offset for marker region with remove_marker=False."""
+        """Correct offset for marker region (markers removed by default)."""
         with pp.Party() as party:
             bg = pp.from_seq('AA<test>CCCC</test>GG')
             pool = mutagenize(
                 bg, region='test', num_mutations=1, 
-                mode='sequential', remove_marker=False
+                mode='sequential'
             )
             op = pool.operation
         
-        # Prefix is 'AA' (2 chars) + opening tag '<test>' (6 chars) = 8
+        # Prefix is 'AA' (2 chars), marker tags removed by default
+        # So offset = just the prefix length = 2
         parent_seq = 'AA<test>CCCC</test>GG'
         offset = op._compute_style_position_offset(parent_seq, 'AA<test>')
-        assert offset == 8
+        assert offset == 2
     
     def test_compute_offset_marker_with_strand_remove_false(self):
         """Correct offset for marker with strand attribute, remove_marker=False."""
@@ -402,14 +406,15 @@ class TestPositionAdjustmentHelperUnit:
             bg = pp.from_seq("AA<test strand='-'>CCCC</test>GG")
             pool = mutagenize(
                 bg, region='test', num_mutations=1, 
-                mode='sequential', remove_marker=False
+                mode='sequential'
             )
             op = pool.operation
         
-        # Prefix is 'AA' (2 chars) + opening tag '<test strand='-'>' (17 chars) = 19
+        # Prefix is 'AA' (2 chars), marker tags removed by default
+        # So offset = just the prefix length = 2
         parent_seq = "AA<test strand='-'>CCCC</test>GG"
         offset = op._compute_style_position_offset(parent_seq, "AA<test strand='-'>")
-        assert offset == 19
+        assert offset == 2
     
 
 class TestCaseTransformInlineStyles:
@@ -1122,76 +1127,6 @@ class TestGetKmersStyle:
             pool = pp.get_kmers(length=3, style='magenta')
             params = pool.operation._get_copy_params()
         assert params['style'] == 'magenta'
-
-
-class TestMutagenizeStyleBackground:
-    """Test style_background parameter on mutagenize."""
-    
-    def test_style_background_applies_to_non_mutated(self):
-        """style_background styles non-mutated positions."""
-        with pp.Party() as party:
-            pool = pp.mutagenize('ACGT', num_mutations=1, mode='sequential',
-                                  style_background='blue').named('result')
-        
-        pool.operation.state._value = 0
-        df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
-        
-        # Should have style_background for 3 positions (one is mutated)
-        blue_styles = [(spec, pos) for spec, pos in styles if spec == 'blue']
-        assert len(blue_styles) == 1
-        _, positions = blue_styles[0]
-        assert len(positions) == 3  # 4 total - 1 mutated = 3 background
-    
-    def test_style_background_with_style_mutations(self):
-        """style_background and style_mutations can be combined."""
-        with pp.Party() as party:
-            pool = pp.mutagenize('ACGT', num_mutations=1, mode='sequential',
-                                  style_mutations='red', style_background='blue').named('result')
-        
-        df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        styles = df['_inline_styles'].iloc[0]
-        
-        style_specs = [spec for spec, _ in styles]
-        assert 'red' in style_specs
-        assert 'blue' in style_specs
-    
-    def test_style_background_in_copy_params(self):
-        """style_background is included in _get_copy_params."""
-        with pp.Party() as party:
-            pool = pp.mutagenize('ACGT', num_mutations=1, style_background='cyan')
-            params = pool.operation._get_copy_params()
-        assert params['style_background'] == 'cyan'
-    
-    def test_style_background_region_restricted(self):
-        """style_background only applies within the specified region, not outside."""
-        with pp.Party() as party:
-            bg = pp.from_seq('TTTT<cre>ACGTACGT</cre>GGGG')
-            pool = pp.mutagenize(bg, region='cre', num_mutations=1, mode='sequential',
-                                  style_background='blue').named('result')
-        
-        df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        seq = df['seq'].iloc[0]
-        styles = df['_inline_styles'].iloc[0]
-        
-        # Sequence should have TTTT prefix and GGGG suffix
-        assert seq.startswith('TTTT')
-        assert 'GGGG' in seq
-        
-        # Collect all blue-styled positions
-        blue_positions = []
-        for spec, pos in styles:
-            if spec == 'blue':
-                blue_positions.extend(pos.tolist())
-        
-        # Blue should only appear within the <cre> region
-        # NOT on TTTT (positions 0-3) or GGGG (positions at end)
-        # The cre content is 8 chars, minus 1 mutated = 7 background positions
-        assert len(blue_positions) == 7
-        
-        # Positions 0-3 (TTTT) should NOT be styled
-        for i in range(4):
-            assert i not in blue_positions, f"Position {i} (outside region) should not be styled"
 
 
 class TestInsertionScanStyleBackground:
