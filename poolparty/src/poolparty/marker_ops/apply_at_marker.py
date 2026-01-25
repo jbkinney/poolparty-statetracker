@@ -1,7 +1,7 @@
 """Apply a transformation to content at a marked region."""
 from numbers import Real
 from poolparty.types import Optional, Callable
-from .. import dna
+from .. import dna_utils
 
 
 def apply_at_marker(
@@ -115,7 +115,7 @@ def _replace_keeping_marker(
         
         # If strand='-', reverse complement the content before insertion
         if marker.strand == '-':
-            content_seq = dna.reverse_complement(content_seq)
+            content_seq = dna_utils.reverse_complement(content_seq)
         
         # Build wrapped content with marker tags
         wrapped = build_marker_tag(

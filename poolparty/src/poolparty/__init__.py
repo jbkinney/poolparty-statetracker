@@ -9,7 +9,7 @@ from .pool import Pool
 from .operation import Operation
 from .marker import Marker
 from .generate_library import generate_library
-from .dna import BASES, COMPLEMENT, IUPAC_TO_DNA, IGNORE_CHARS, VALID_CHARS
+from .dna_utils import BASES, COMPLEMENT, IUPAC_TO_DNA, IGNORE_CHARS, VALID_CHARS
 # Import fixed operations from fixed_ops module
 from .fixed_ops import (
     fixed_operation, FixedOp,

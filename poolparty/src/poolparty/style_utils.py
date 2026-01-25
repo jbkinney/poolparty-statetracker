@@ -70,7 +70,7 @@ CSS_COLORS = {
 # Regex to match ANSI escape sequences
 ANSI_ESCAPE_PATTERN = re.compile(r'\033\[[0-9;]*m')
 
-# Default gap characters - subset of dna.IGNORE_CHARS commonly used as gaps
+# Default gap characters - subset of dna_utils.IGNORE_CHARS commonly used as gaps
 DEFAULT_GAP_CHARS = '-. '
 
 # Basic ANSI foreground color codes (mutually exclusive)

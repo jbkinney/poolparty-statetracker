@@ -3,7 +3,7 @@ from numbers import Real
 from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
 from ..operation import Operation
 from ..pool import Pool
-from .. import dna
+from .. import dna_utils
 from ..party import get_active_party
 import numpy as np
 import pandas as pd
@@ -145,7 +145,7 @@ class FromMotifOp(Operation):
         random_vals = rng.random(length)
         indices = (random_vals[:, np.newaxis] < self._cumprobs).argmax(axis=1)
         indices_list = indices.tolist()
-        seq = ''.join(dna.BASES[i] for i in indices_list)
+        seq = ''.join(dna_utils.BASES[i] for i in indices_list)
         return {
             'prob_state': indices_list,
             'seq': seq,
@@ -174,7 +174,7 @@ def _validate_prob_df(prob_df: pd.DataFrame) -> pd.DataFrame:
             Missing columns are filled with zeros.
 
     Returns:
-        Normalized DataFrame with rows summing to 1 and columns ordered by dna.BASES.
+        Normalized DataFrame with rows summing to 1 and columns ordered by dna_utils.BASES.
 
     Raises:
         ValueError: If prob_df is empty, has columns not in BASES, contains NaN,
@@ -184,12 +184,12 @@ def _validate_prob_df(prob_df: pd.DataFrame) -> pd.DataFrame:
         raise ValueError("prob_df must be a non-empty DataFrame")
 
     # Validate columns are a subset of DNA bases
-    expected_cols = set(dna.BASES)
+    expected_cols = set(dna_utils.BASES)
     actual_cols = set(prob_df.columns)
     extra = actual_cols - expected_cols
     if extra:
         raise ValueError(
-            f"prob_df columns must be DNA bases ({dna.BASES}). "
+            f"prob_df columns must be DNA bases ({dna_utils.BASES}). "
             f"Extra columns: {sorted(extra)}."
         )
 
@@ -201,15 +201,15 @@ def _validate_prob_df(prob_df: pd.DataFrame) -> pd.DataFrame:
 
     # Add missing columns with zeros
     result_df = prob_df.copy()
-    for col in dna.BASES:
+    for col in dna_utils.BASES:
         if col not in result_df.columns:
             result_df[col] = 0.0
 
     # Normalize rows to sum to 1
-    prob_matrix = result_df[dna.BASES].values.astype(np.float64).copy()
+    prob_matrix = result_df[dna_utils.BASES].values.astype(np.float64).copy()
     row_sums = prob_matrix.sum(axis=1, keepdims=True)
     if np.any(row_sums == 0):
         raise ValueError("prob_df rows must not sum to zero")
     prob_matrix /= row_sums
 
-    return pd.DataFrame(prob_matrix, columns=dna.BASES)
+    return pd.DataFrame(prob_matrix, columns=dna_utils.BASES)

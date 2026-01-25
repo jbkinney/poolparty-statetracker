@@ -5,7 +5,7 @@ import numpy as np
 
 from .parsing import validate_single_marker
 from ..operation import Operation
-from .. import dna
+from .. import dna_utils
 
 
 def replace_marker_content(
@@ -164,7 +164,7 @@ class ReplaceMarkerContentOp(Operation):
         
         # If strand='-', reverse complement the content before insertion
         if marker.strand == '-':
-            content_seq = dna.reverse_complement(content_seq)
+            content_seq = dna_utils.reverse_complement(content_seq)
         
         # Build result: prefix + content + suffix
         prefix = bg_seq[:marker.start]

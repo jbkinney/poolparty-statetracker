@@ -3,7 +3,7 @@ from numbers import Real
 from ..types import Pool_type, Union, Optional, RegionType, beartype
 from ..pool import Pool
 from ..marker_ops.parsing import reverse_complement_with_markers
-from .. import dna
+from .. import dna_utils
 
 
 @beartype
@@ -45,7 +45,7 @@ def rc(
 
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         seq = seqs[0]
-        return reverse_complement_with_markers(seq, dna.complement)
+        return reverse_complement_with_markers(seq, dna_utils.complement)
 
     return fixed_operation(
         parent_pools=[pool],

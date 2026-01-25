@@ -2,7 +2,7 @@
 from numbers import Real
 from ..types import Pool_type, Union, Optional, RegionType, beartype
 from ..pool import Pool
-from .. import dna
+from .. import dna_utils
 
 
 @beartype
@@ -54,7 +54,7 @@ def from_seq(
     
     # Validate and register any markers in the sequence
     markers = _validate_markers(seq)
-    seq_length = dna.get_length_without_markers(seq)
+    seq_length = dna_utils.get_length_without_markers(seq)
     
     # If bg_pool and region provided, replace region content with seq
     if (pool is not None) and (region is None):

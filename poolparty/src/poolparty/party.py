@@ -7,7 +7,7 @@ else:
 import statetracker as st
 from .types import Pool_type, Operation_type, Optional, beartype, Union, Any
 from .codon_table import CodonTable
-from . import dna
+from . import dna_utils
 from .marker import Marker
 
 _active_party: Optional["Party"] = None
@@ -131,15 +131,15 @@ class Party:
     
     def get_effective_seq_length(self, seq: str) -> int:
         """Get effective sequence length (DNA characters only, excluding markers)."""
-        return dna.get_seq_length(seq)
+        return dna_utils.get_seq_length(seq)
     
     def get_length_without_markers(self, seq: str) -> int:
         """Get sequence length excluding only marker tags (includes all chars)."""
-        return dna.get_length_without_markers(seq)
+        return dna_utils.get_length_without_markers(seq)
     
     def get_molecular_positions(self, seq: str) -> list[int]:
         """Get raw string positions of valid DNA characters, excluding marker interiors."""
-        return dna.get_molecular_positions(seq)
+        return dna_utils.get_molecular_positions(seq)
     
     def __enter__(self) -> "Party":
         """Enter the Party context, saving any previous active party."""

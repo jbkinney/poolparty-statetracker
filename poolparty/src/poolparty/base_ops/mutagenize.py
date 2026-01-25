@@ -5,7 +5,7 @@ from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionT
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
-from .. import dna
+from .. import dna_utils
 import numpy as np
 
 
@@ -139,7 +139,7 @@ class MutagenizeOp(Operation):
         self.mutation_rate = mutation_rate
         self.allowed_chars = allowed_chars
         self._style_mutations = style_mutations
-        self.alpha_size = len(dna.BASES)
+        self.alpha_size = len(dna_utils.BASES)
         self._mode = mode
         
         # Validate and process allowed_chars if provided
@@ -150,27 +150,27 @@ class MutagenizeOp(Operation):
             allowed_bases_per_pos = []
             mutation_counts = []
             for char in allowed_chars.upper():
-                if char in dna.IGNORE_CHARS:
+                if char in dna_utils.IGNORE_CHARS:
                     continue  # Skip ignore chars (gaps, separators)
-                if char not in dna.IUPAC_TO_DNA:
+                if char not in dna_utils.IUPAC_TO_DNA:
                     invalid_chars.add(char)
                 else:
-                    bases = set(dna.IUPAC_TO_DNA[char])
+                    bases = set(dna_utils.IUPAC_TO_DNA[char])
                     allowed_bases_per_pos.append(bases)
                     mutation_counts.append(len(bases) - 1)  # -1 for the wt
             if invalid_chars:
                 raise ValueError(
                     f"allowed_chars contains invalid IUPAC character(s): {sorted(invalid_chars)}. "
-                    f"Valid IUPAC characters are: {sorted(set(dna.IUPAC_TO_DNA.keys()) - set('acgtryswkmbdhvn'))} "
-                    f"(plus ignore characters: {sorted(dna.IGNORE_CHARS)})"
+                    f"Valid IUPAC characters are: {sorted(set(dna_utils.IUPAC_TO_DNA.keys()) - set('acgtryswkmbdhvn'))} "
+                    f"(plus ignore characters: {sorted(dna_utils.IGNORE_CHARS)})"
                 )
             self._allowed_bases_per_pos = allowed_bases_per_pos
             self._mutation_counts_from_allowed = mutation_counts
         
         # Build mutation map: (wt_char, index) -> mut_char
         self._mutation_map = {}
-        for wt in dna.VALID_CHARS:
-            for i, mut in enumerate(dna.get_mutations(wt)):
+        for wt in dna_utils.VALID_CHARS:
+            for i, mut in enumerate(dna_utils.get_mutations(wt)):
                 self._mutation_map[(wt, i)] = mut
         
         self._seq_length = pool.seq_length
@@ -317,7 +317,7 @@ class MutagenizeOp(Operation):
                     valid_muts = [b for b in sorted(allowed_bases_upper) if b != wt_upper]
             else:
                 # No restriction: all non-wt bases are valid
-                valid_muts = dna.get_mutations(wt)
+                valid_muts = dna_utils.get_mutations(wt)
             
             if valid_muts:
                 mutable_positions.append(logical_pos)

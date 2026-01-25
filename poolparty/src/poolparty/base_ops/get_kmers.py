@@ -4,7 +4,7 @@ from ..types import Pool_type, ModeType, Optional, Literal, Union, RegionType, I
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
-from .. import dna
+from .. import dna_utils
 import numpy as np
 
 
@@ -110,7 +110,7 @@ class GetKmersOp(Operation):
         
         self.length = length
         self.case = case
-        self.alpha_size = len(dna.BASES)
+        self.alpha_size = len(dna_utils.BASES)
         total_kmers = self.alpha_size ** length
         if mode == 'sequential':
             num_states = self.validate_num_values(total_kmers, mode)
@@ -161,14 +161,14 @@ class GetKmersOp(Operation):
         result = []
         remaining = value
         for _ in range(self.length):
-            result.append(dna.BASES[remaining % self.alpha_size])
+            result.append(dna_utils.BASES[remaining % self.alpha_size])
             remaining //= self.alpha_size
         return ''.join(reversed(result))
     
     def _random_kmer(self, rng: np.random.Generator) -> str:
         """Generate a random k-mer."""
         indices = rng.integers(0, self.alpha_size, size=self.length)
-        return ''.join(dna.BASES[i] for i in indices)
+        return ''.join(dna_utils.BASES[i] for i in indices)
     
     def compute(
         self,

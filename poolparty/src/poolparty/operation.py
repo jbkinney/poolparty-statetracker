@@ -2,7 +2,7 @@
 from numbers import Real
 import statetracker as st
 from .types import Pool_type, Sequence, ModeType, Optional, RegionType, beartype, StyleList
-from . import dna
+from . import dna_utils
 import numpy as np
 
 
@@ -129,19 +129,19 @@ class Operation:
     
     def _get_effective_seq_length(self, seq: str) -> int:
         """Get effective sequence length (DNA characters only, excluding markers)."""
-        return dna.get_seq_length(seq)
+        return dna_utils.get_seq_length(seq)
     
     def _get_length_without_markers(self, seq: str) -> int:
         """Get sequence length excluding only marker tags (includes all other chars)."""
-        return dna.get_length_without_markers(seq)
+        return dna_utils.get_length_without_markers(seq)
     
     def _get_nonmarker_positions(self, seq: str) -> list[int]:
         """Get raw string positions of all chars excluding marker interiors."""
-        return dna.get_nonmarker_positions(seq)
+        return dna_utils.get_nonmarker_positions(seq)
     
     def _get_molecular_positions(self, seq: str) -> list[int]:
         """Get raw string positions of valid DNA characters, excluding marker interiors."""
-        return dna.get_molecular_positions(seq)
+        return dna_utils.get_molecular_positions(seq)
     
     def _resolve_region(self, seq: str, region: RegionType) -> tuple[int, int] | None:
         """Resolve region to (start, stop) interval, or None if no region specified.

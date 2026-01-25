@@ -104,7 +104,7 @@ class TestGetKmersRandomMode:
 
 
 class TestGetKmersDNA:
-    """Test GetKmers with DNA."""
+    """Test GetKmers with dna_utils."""
     
     def test_dna_kmers(self):
         """Test DNA k-mers."""
@@ -120,7 +120,7 @@ class TestGetKmersStateToKmer:
     """Test the _state_to_kmer conversion method."""
     
     def test_state_to_kmer_dna(self):
-        """Test state to k-mer conversion for DNA."""
+        """Test state to k-mer conversion for dna_utils."""
         with pp.Party() as party:
             pool = get_kmers(length=2, mode='sequential')
             op = pool.operation
