@@ -344,21 +344,21 @@ class Pool:
     # Base operations
     #########################################################################
     
-    def mutagenize(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def mutagenize(self, **kwargs) -> Pool_type:
         from .base_ops.mutagenize import mutagenize
-        return mutagenize(pool=self, region=region, **kwargs)
+        return mutagenize(pool=self, **kwargs)
     
-    def shuffle_seq(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def shuffle_seq(self, **kwargs) -> Pool_type:
         from .base_ops.shuffle_seq import shuffle_seq
-        return shuffle_seq(pool=self, region=region, **kwargs)
+        return shuffle_seq(pool=self, **kwargs)
     
-    def insert_from_iupac(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def insert_from_iupac(self, **kwargs) -> Pool_type:
         from .base_ops.from_iupac import from_iupac
-        return from_iupac(pool=self, region=region, **kwargs)
+        return from_iupac(pool=self, **kwargs)
     
-    def insert_from_motif(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def insert_from_motif(self, **kwargs) -> Pool_type:
         from .base_ops.from_motif import from_motif
-        return from_motif(pool=self, region=region, **kwargs)
+        return from_motif(pool=self, **kwargs)
     
     def insert_kmers(
         self,
@@ -385,53 +385,53 @@ class Pool:
     # Scan operations
     #########################################################################
     
-    def mutagenize_scan(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def mutagenize_scan(self, **kwargs) -> Pool_type:
         from .scan_ops.mutagenize_scan import mutagenize_scan
-        return mutagenize_scan(pool=self, region=region, **kwargs)
+        return mutagenize_scan(pool=self, **kwargs)
     
-    def deletion_scan(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def deletion_scan(self, **kwargs) -> Pool_type:
         from .scan_ops.deletion_scan import deletion_scan
-        return deletion_scan(pool=self, region=region, **kwargs)
+        return deletion_scan(pool=self, **kwargs)
     
-    def insertion_scan(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def insertion_scan(self, **kwargs) -> Pool_type:
         from .scan_ops.insertion_scan import insertion_scan
-        return insertion_scan(pool=self, region=region, **kwargs)
+        return insertion_scan(pool=self, **kwargs)
     
-    def replacement_scan(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def replacement_scan(self, **kwargs) -> Pool_type:
         from .scan_ops.insertion_scan import replacement_scan
-        return replacement_scan(pool=self, region=region, **kwargs)
+        return replacement_scan(pool=self, **kwargs)
     
-    def shuffle_scan(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def shuffle_scan(self, **kwargs) -> Pool_type:
         from .scan_ops.shuffle_scan import shuffle_scan
-        return shuffle_scan(pool=self, region=region, **kwargs)
+        return shuffle_scan(pool=self, **kwargs)
     
     #########################################################################
     # Fixed operations
     #########################################################################
     
-    def rc(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def rc(self, **kwargs) -> Pool_type:
         from .fixed_ops.rc import rc
-        return rc(pool=self, region=region, **kwargs)
+        return rc(pool=self, **kwargs)
     
-    def swapcase(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def swapcase(self, **kwargs) -> Pool_type:
         from .fixed_ops.swapcase import swapcase
-        return swapcase(pool=self, region=region, **kwargs)
+        return swapcase(pool=self, **kwargs)
     
-    def upper(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def upper(self, **kwargs) -> Pool_type:
         from .fixed_ops.upper import upper
-        return upper(pool=self, region=region, **kwargs)
+        return upper(pool=self, **kwargs)
     
-    def lower(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def lower(self, **kwargs) -> Pool_type:
         from .fixed_ops.lower import lower
-        return lower(pool=self, region=region, **kwargs)
+        return lower(pool=self, **kwargs)
     
-    def clear_gaps(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def clear_gaps(self, **kwargs) -> Pool_type:
         from .fixed_ops.clear_gaps import clear_gaps
-        return clear_gaps(pool=self, region=region, **kwargs)
+        return clear_gaps(pool=self, **kwargs)
     
-    def clear_annotation(self, region: Optional[str] = None, **kwargs) -> Pool_type:
+    def clear_annotation(self, **kwargs) -> Pool_type:
         from .fixed_ops.clear_annotation import clear_annotation
-        return clear_annotation(pool=self, region=region, **kwargs)
+        return clear_annotation(pool=self, **kwargs)
     
     def stylize(self, region=None, *, style: str, **kwargs) -> Pool_type:
         from .fixed_ops.style import stylize

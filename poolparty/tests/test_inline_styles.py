@@ -171,7 +171,7 @@ class TestInlineStylesPositionAdjustment:
             # Create a sequence with a marker
             bg = pp.from_seq('AA<test>CCCC</test>GG').named('bg')
             # Mutagenize within the region
-            mutated = bg.mutagenize('test', num_mutations=1, style_mutations='red', mode='sequential').named('mutated')
+            mutated = bg.mutagenize(region='test', num_mutations=1, style_mutations='red', mode='sequential').named('mutated')
         
         df = mutated.generate_library(num_seqs=1, report_design_cards=True)
         
@@ -249,7 +249,7 @@ class TestPositionAdjustmentWithMarkers:
             bg = pp.from_seq('AA<test>CCCC</test>GG').named('bg')
             # Mutagenize first position of region, with remove_marker=True
             mutated = bg.mutagenize(
-                'test', num_mutations=1, style_mutations='red',
+                region='test', num_mutations=1, style_mutations='red',
                 mode='sequential'
             ).named('mutated')
         
@@ -276,7 +276,7 @@ class TestPositionAdjustmentWithMarkers:
             # 'AA' prefix, marker with content 'CCCC', 'GG' suffix
             bg = pp.from_seq('AA<test>CCCC</test>GG').named('bg')
             mutated = bg.mutagenize(
-                'test', num_mutations=1, style_mutations='red',
+                region='test', num_mutations=1, style_mutations='red',
                 mode='sequential'
             ).named('mutated')
         
@@ -303,7 +303,7 @@ class TestPositionAdjustmentWithMarkers:
             # Marker with minus strand
             bg = pp.from_seq('AA<test strand="-">CCCC</test>GG').named('bg')
             mutated = bg.mutagenize(
-                'test', num_mutations=1, style_mutations='red',
+                region='test', num_mutations=1, style_mutations='red',
                 mode='sequential'
             ).named('mutated')
         
@@ -510,7 +510,7 @@ class TestDeletionScanStylePropagation:
                 .stylize(region=[0, 4], style='red')\
                 .named('bg')
             # Apply deletion scan
-            deleted = bg.deletion_scan('test', deletion_length=2, mode='sequential').named('deleted')
+            deleted = bg.deletion_scan(region='test', deletion_length=2, mode='sequential').named('deleted')
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
         styles = df['_inline_styles'].iloc[0]
@@ -527,7 +527,7 @@ class TestDeletionScanStylePropagation:
             bg = pp.from_seq('AAAA<test>CCCCGGGG</test>TTTT')\
                 .stylize(region=[0, 4], style='blue')\
                 .named('bg')
-            deleted = bg.deletion_scan('test', deletion_length=2, mode='sequential').named('deleted')
+            deleted = bg.deletion_scan(region='test', deletion_length=2, mode='sequential').named('deleted')
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
@@ -545,7 +545,7 @@ class TestDeletionScanStylePropagation:
             bg = pp.from_seq('AAA<test>CCCC</test>TTT')\
                 .stylize('test', style='red')\
                 .named('bg')
-            deleted = bg.deletion_scan('test', deletion_length=2, mode='sequential').named('deleted')
+            deleted = bg.deletion_scan(region='test', deletion_length=2, mode='sequential').named('deleted')
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
         seq = df['seq'].iloc[0]
@@ -564,7 +564,7 @@ class TestDeletionScanStylePropagation:
         """style_deletion parameter applies style to gap characters."""
         with pp.Party() as party:
             bg = pp.from_seq('AAA<test>CCCC</test>TTT').named('bg')
-            deleted = bg.deletion_scan('test', deletion_length=2, mode='sequential', 
+            deleted = bg.deletion_scan(region='test', deletion_length=2, mode='sequential', 
                                         style_deletion='cyan').named('deleted')
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
@@ -590,7 +590,7 @@ class TestDeletionScanStylePropagation:
             bg = pp.from_seq('AAA<test>CCCC</test>TTT')\
                 .stylize('test', style='red')\
                 .named('bg')
-            deleted = bg.deletion_scan('test', deletion_length=2, mode='sequential',
+            deleted = bg.deletion_scan(region='test', deletion_length=2, mode='sequential',
                                         style_deletion='cyan').named('deleted')
         
         df = deleted.generate_library(num_seqs=1, report_design_cards=True)
@@ -614,7 +614,7 @@ class TestDeletionScanStylePropagation:
         """style_deletion is ignored when deletion_marker=None."""
         with pp.Party() as party:
             bg = pp.from_seq('AAA<test>CCCC</test>TTT').named('bg')
-            deleted = bg.deletion_scan('test', deletion_length=2, 
+            deleted = bg.deletion_scan(region='test', deletion_length=2, 
                                         deletion_marker=None,
                                         style_deletion='cyan',
                                         mode='sequential').named('deleted')
@@ -641,7 +641,7 @@ class TestInsertionScanStylePropagation:
             # Create insert pool (same length as region for replace)
             inserts = pp.from_seqs(['XXXXXXXX'], mode='sequential').named('inserts')
             # Apply insertion scan with replace
-            inserted = bg.insertion_scan('test', ins_pool=inserts, positions=[0], 
+            inserted = bg.insertion_scan(region='test', ins_pool=inserts, positions=[0], 
                                           replace=True, mode='sequential').named('inserted')
         
         df = inserted.generate_library(num_seqs=1, report_design_cards=True)
@@ -660,7 +660,7 @@ class TestInsertionScanStylePropagation:
                 .named('bg')
             # Insert replaces with same-length content
             inserts = pp.from_seqs(['GGGG'], mode='sequential').named('inserts')
-            inserted = bg.insertion_scan('ins', ins_pool=inserts, positions=[0], 
+            inserted = bg.insertion_scan(region='ins', ins_pool=inserts, positions=[0], 
                                           replace=True, mode='sequential').named('inserted')
         
         df = inserted.generate_library(num_seqs=1, report_design_cards=True)
@@ -681,7 +681,7 @@ class TestInsertionScanStylePropagation:
             inserts = pp.from_seqs(['GGGG'], mode='sequential')\
                 .stylize(style='magenta')\
                 .named('inserts')
-            inserted = bg.insertion_scan('ins', ins_pool=inserts, positions=[0], 
+            inserted = bg.insertion_scan(region='ins', ins_pool=inserts, positions=[0], 
                                           replace=True, mode='sequential').named('inserted')
         
         df = inserted.generate_library(num_seqs=1, report_design_cards=True)
@@ -703,7 +703,7 @@ class TestInsertionScanStylePropagation:
             inserts = pp.from_seqs(['GG', 'CC'], mode='sequential')\
                 .stylize(style='cyan')\
                 .named('inserts')
-            inserted = bg.insertion_scan('ins', ins_pool=inserts, positions=[0], 
+            inserted = bg.insertion_scan(region='ins', ins_pool=inserts, positions=[0], 
                                           replace=True, mode='sequential').named('inserted')
         
         df = inserted.generate_library(num_seqs=2, report_design_cards=True)
@@ -726,7 +726,7 @@ class TestInsertionScanStylePropagation:
             inserts = pp.from_seqs(['AC'], mode='sequential')\
                 .stylize(style='yellow')\
                 .named('inserts')
-            inserted = bg.insertion_scan('ins', ins_pool=inserts, positions=[0], 
+            inserted = bg.insertion_scan(region='ins', ins_pool=inserts, positions=[0], 
                                           replace=True, mode='sequential').named('inserted')
         
         df = inserted.generate_library(num_seqs=1, report_design_cards=True)
@@ -1024,7 +1024,7 @@ class TestCompositeOperationsStyleChain:
         """Styles propagate through mutagenize and stack operations."""
         with pp.Party() as party:
             bg = pp.from_seq('AA<cre>CCCCGGGG</cre>TT').stylize('cre', style='red').named('bg')
-            mutated = bg.mutagenize('cre', num_mutations=1, style_mutations='yellow', 
+            mutated = bg.mutagenize(region='cre', num_mutations=1, style_mutations='yellow', 
                                     mode='sequential').named('mutated')
             stacked = pp.stack([mutated]).named('stacked')
         
