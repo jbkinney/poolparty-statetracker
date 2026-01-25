@@ -11,6 +11,7 @@ def swapcase(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     iter_order: Optional[Real] = None,
+    style: Optional[str] = None,
     _factory_name: Optional[str] = None,
 ) -> Pool:
     """
@@ -29,6 +30,8 @@ def swapcase(
         If True and region is a marker name, remove marker tags from output.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    style : Optional[str], default=None
+        Style to apply to the resulting sequences (e.g., 'red', 'blue bold').
     _factory_name: Optional[str], default=None
         Sets default name of the resulting operation
     Returns
@@ -38,7 +41,7 @@ def swapcase(
     """
     from .fixed import fixed_operation
 
-    return fixed_operation(
+    result_pool = fixed_operation(
         parent_pools=[pool],
         seq_from_seqs_fn=lambda seqs: transform_nonmarker_chars(seqs[0], str.swapcase),
         seq_length_from_pool_lengths_fn=lambda lengths: lengths[0],
@@ -47,3 +50,10 @@ def swapcase(
         iter_order=iter_order,
         _factory_name=_factory_name if _factory_name is not None else 'swapcase',
     )
+    
+    # Apply style if specified
+    if style is not None:
+        from .style import stylize
+        result_pool = stylize(result_pool, style=style)
+    
+    return result_pool

@@ -67,16 +67,16 @@ class TestShuffleScanMarkerRemoval:
 
 
 class TestShuffleScanStyling:
-    """Test style_shuffle parameter."""
+    """Test style parameter."""
     
-    def test_style_shuffle_parameter_accepted(self):
-        """Test that style_shuffle parameter is accepted."""
+    def test_style_parameter_accepted(self):
+        """Test that style parameter is accepted."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
             result = shuffle_scan(
                 bg, 
                 shuffle_length=3, 
-                style_shuffle='purple',
+                style='purple',
                 mode='sequential'
             ).named('result')
         
@@ -84,14 +84,14 @@ class TestShuffleScanStyling:
         # Should work without errors
         assert len(df) > 0
     
-    def test_style_shuffle_none(self):
-        """Test that style_shuffle=None (default) works."""
+    def test_style_none(self):
+        """Test that style=None (default) works."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'], mode='sequential')
             result = shuffle_scan(
                 bg, 
                 shuffle_length=3, 
-                style_shuffle=None,
+                style=None,
                 mode='sequential'
             ).named('result')
         

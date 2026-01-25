@@ -9,6 +9,7 @@ def slice_seq(
     pool: Pool,
     key: Union[Integral, slice],
     iter_order: Optional[Real] = None,
+    style: Optional[str] = None,
 ) -> Pool:
     """
     Create a Pool containing sequences that are slices of the input pool according to the specified key.
@@ -21,6 +22,8 @@ def slice_seq(
         Integer index or slice specifying the subsequence to extract from each sequence.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    style : Optional[str], default=None
+        Style to apply to the resulting sliced sequences (e.g., 'red', 'blue bold').
 
     Returns
     -------
@@ -42,10 +45,17 @@ def slice_seq(
         start, stop, step = key.indices(parent_len)
         return max(0, (stop - start + (step - 1 if step > 0 else step + 1)) // step)
 
-    return fixed_operation(
+    result_pool = fixed_operation(
         parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         iter_order=iter_order,
         _factory_name='slice_seq',
     )
+    
+    # Apply style if specified
+    if style is not None:
+        from .style import stylize
+        result_pool = stylize(result_pool, style=style)
+    
+    return result_pool

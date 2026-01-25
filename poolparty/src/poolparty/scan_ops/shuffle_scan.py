@@ -18,7 +18,7 @@ def shuffle_scan(
     prefix_shuffle: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
-    style_shuffle: Optional[str] = None,
+    style: Optional[str] = None,
     iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = 'shuffle_scan',
 ) -> Pool:
@@ -45,7 +45,7 @@ def shuffle_scan(
         Prefix for shuffle variant index (e.g., 'var' produces 'var_0', 'var_1', ...).
     mode : ModeType, default='random'
         Selection mode: 'random', 'sequential', or 'hybrid'.
-    style_shuffle : Optional[str], default=None
+    style : Optional[str], default=None
         Style to apply to shuffled characters (e.g., 'purple', 'red bold').
 
     Returns
@@ -111,7 +111,7 @@ def shuffle_scan(
         marked,
         region=marker_name,
         _remove_marker=True,  # Remove _shuf marker tags
-        style_shuffle=style_shuffle,
+        style=style,
         mode='random',
         num_states=shuffles_per_position,
         iter_order=-1,

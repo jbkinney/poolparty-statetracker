@@ -18,6 +18,7 @@ def from_motif(
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
+    style: Optional[str] = None,
 ) -> Pool_type:
     """
     Create a Pool that samples sequences from a position probability matrix.
@@ -42,6 +43,8 @@ def from_motif(
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    style : Optional[str], default=None
+        Style to apply to generated sequences (e.g., 'red', 'blue bold').
 
     Returns
     -------
@@ -69,6 +72,7 @@ def from_motif(
         num_states=num_states,
         name=None,
         iter_order=iter_order,
+        style=style,
     )
     pool = Pool(operation=op)
     return pool
@@ -91,6 +95,7 @@ class FromMotifOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        style: Optional[str] = None,
     ) -> None:
         """Initialize FromMotifOp."""
 
@@ -112,6 +117,7 @@ class FromMotifOp(Operation):
         # Validate and store probability matrix
         self.prob_df = _validate_prob_df(prob_df)
         self._cumprobs = np.cumsum(self.prob_df.values, axis=1)
+        self._style = style
 
         match mode:
             case 'random':
@@ -146,10 +152,19 @@ class FromMotifOp(Operation):
         indices = (random_vals[:, np.newaxis] < self._cumprobs).argmax(axis=1)
         indices_list = indices.tolist()
         seq = ''.join(dna_utils.BASES[i] for i in indices_list)
+        
+        # Apply styling if requested
+        from ..types import StyleList
+        output_styles: StyleList = []
+        if self._style:
+            # Style all positions of the generated sequence
+            positions = np.arange(len(seq), dtype=np.int64)
+            output_styles = [(self._style, positions)]
+        
         return {
             'prob_state': indices_list,
             'seq': seq,
-            'style': [],  # Source operation - start with empty styles
+            'style': output_styles,
         }
 
     def _get_copy_params(self) -> dict:
@@ -163,6 +178,7 @@ class FromMotifOp(Operation):
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
+            'style': self._style,
         }
 
 

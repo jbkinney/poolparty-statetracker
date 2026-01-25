@@ -12,6 +12,7 @@ def rc(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     iter_order: Optional[Real] = None,
+    style: Optional[str] = None,
 ) -> Pool:
     """
     Create a Pool containing the reverse complement of sequences from the input pool.
@@ -27,14 +28,10 @@ def rc(
         Region to apply transformation to. Can be marker name (str), [start, stop], or None.
     remove_marker : Optional[bool], default=None
         If True and region is a marker name, remove marker tags from output.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+        Iteration order priority for the Operation.
+    style : Optional[str], default=None
+        Style to apply to the resulting sequences (e.g., 'red', 'blue bold').
 
     Returns
     -------
@@ -47,7 +44,7 @@ def rc(
         seq = seqs[0]
         return reverse_complement_with_markers(seq, dna_utils.complement)
 
-    return fixed_operation(
+    result_pool = fixed_operation(
         parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: lengths[0],
@@ -56,3 +53,10 @@ def rc(
         iter_order=iter_order,
         _factory_name='rc',
     )
+    
+    # Apply style if specified
+    if style is not None:
+        from .style import stylize
+        result_pool = stylize(result_pool, style=style)
+    
+    return result_pool

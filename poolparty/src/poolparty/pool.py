@@ -405,7 +405,7 @@ class Pool:
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
         iter_order: Optional[Real] = None,
-        style_shuffle: Optional[str] = None,
+        style: Optional[str] = None,
     ) -> Pool_type:
         from .base_ops.shuffle_seq import shuffle_seq
         return shuffle_seq(
@@ -415,7 +415,7 @@ class Pool:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
-            style_shuffle=style_shuffle,
+            style=style,
         )
     
     def insert_from_iupac(
@@ -426,6 +426,7 @@ class Pool:
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
         iter_order: Optional[Real] = None,
+        style: Optional[str] = None,
     ) -> Pool_type:
         from .base_ops.from_iupac import from_iupac
         return from_iupac(
@@ -436,6 +437,7 @@ class Pool:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
+            style=style,
         )
     
     def insert_from_motif(
@@ -446,6 +448,7 @@ class Pool:
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
         iter_order: Optional[Real] = None,
+        style: Optional[str] = None,
     ) -> Pool_type:
         from .base_ops.from_motif import from_motif
         return from_motif(
@@ -456,6 +459,7 @@ class Pool:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
+            style=style,
         )
     
     def insert_kmers(
@@ -635,6 +639,7 @@ class Pool:
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         iter_order: Optional[Real] = None,
+        style: Optional[str] = None,
     ) -> Pool_type:
         from .fixed_ops.rc import rc
         return rc(
@@ -642,6 +647,7 @@ class Pool:
             region=region,
             remove_marker=remove_marker,
             iter_order=iter_order,
+            style=style,
         )
     
     def swapcase(
@@ -649,6 +655,7 @@ class Pool:
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         iter_order: Optional[Real] = None,
+        style: Optional[str] = None,
     ) -> Pool_type:
         from .fixed_ops.swapcase import swapcase
         return swapcase(
@@ -656,6 +663,7 @@ class Pool:
             region=region,
             remove_marker=remove_marker,
             iter_order=iter_order,
+            style=style,
         )
     
     def upper(
@@ -663,6 +671,7 @@ class Pool:
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         iter_order: Optional[Real] = None,
+        style: Optional[str] = None,
     ) -> Pool_type:
         from .fixed_ops.upper import upper
         return upper(
@@ -670,6 +679,7 @@ class Pool:
             region=region,
             remove_marker=remove_marker,
             iter_order=iter_order,
+            style=style,
         )
     
     def lower(
@@ -677,6 +687,7 @@ class Pool:
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
         iter_order: Optional[Real] = None,
+        style: Optional[str] = None,
     ) -> Pool_type:
         from .fixed_ops.lower import lower
         return lower(
@@ -684,6 +695,7 @@ class Pool:
             region=region,
             remove_marker=remove_marker,
             iter_order=iter_order,
+            style=style,
         )
     
     def clear_gaps(

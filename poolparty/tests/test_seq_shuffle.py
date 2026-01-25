@@ -133,23 +133,23 @@ class TestSeqShuffleWithMarker:
 
 
 class TestSeqShuffleStyling:
-    """Tests for style_shuffle parameter."""
+    """Tests for style parameter."""
     
     def test_style_shuffle_applied(self):
-        """Test that style_shuffle applies styling to shuffled characters."""
+        """Test that style applies styling to shuffled characters."""
         with pp.Party():
-            pool = shuffle_seq('ACGT', region=[1, 3], style_shuffle='purple').named('shuf')
+            pool = shuffle_seq('ACGT', region=[1, 3], style='purple').named('shuf')
         df = pool.generate_library(num_seqs=3, seed=42)
         # Check that styles are present in the output
         for _, row in df.iterrows():
-            assert 'style' in row or hasattr(pool.operation, '_style_shuffle')
+            assert 'style' in row or hasattr(pool.operation, '_style')
             # The actual style application is tested via visual inspection or style checking
             # Here we just verify the parameter is accepted
     
     def test_style_shuffle_none(self):
-        """Test that style_shuffle=None (default) doesn't apply styling."""
+        """Test that style=None (default) doesn't apply styling."""
         with pp.Party():
-            pool = shuffle_seq('ACGT', region=[1, 3], style_shuffle=None).named('shuf')
+            pool = shuffle_seq('ACGT', region=[1, 3], style=None).named('shuf')
         df = pool.generate_library(num_seqs=3, seed=42)
         # Should work without errors
         assert len(df) == 3

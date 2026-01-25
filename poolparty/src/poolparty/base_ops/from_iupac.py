@@ -16,6 +16,7 @@ def from_iupac(
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
+    style: Optional[str] = None,
 ) -> Pool_type:
     """
     Create a Pool that generates DNA sequences from IUPAC notation.
@@ -39,6 +40,8 @@ def from_iupac(
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    style : Optional[str], default=None
+        Style to apply to generated sequences (e.g., 'red', 'blue bold').
 
     Returns
     -------
@@ -61,6 +64,7 @@ def from_iupac(
         num_states=num_states,
         name=None,
         iter_order=iter_order,
+        style=style,
     )
     pool = Pool(operation=op)
     return pool
@@ -82,6 +86,7 @@ class FromIupacOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        style: Optional[str] = None,
     ) -> None:
         """Initialize FromIupacOp."""
         from ..party import get_active_party
@@ -126,6 +131,7 @@ class FromIupacOp(Operation):
 
         self.iupac_seq = iupac_seq
         self.position_options = position_options
+        self._style = style
 
         # Compute total states as product of possibilities at each position
         total_states = 1
@@ -181,10 +187,18 @@ class FromIupacOp(Operation):
         result = list(reversed(result))
         seq = ''.join(result)
         
+        # Apply styling if requested
+        from ..types import StyleList
+        output_styles: StyleList = []
+        if self._style:
+            # Style all positions of the generated sequence
+            positions = np.arange(len(seq), dtype=np.int64)
+            output_styles = [(self._style, positions)]
+        
         return {
             'iupac_state': state,
             'seq': seq,
-            'style': [],  # Source operation - start with empty styles
+            'style': output_styles,
         }
 
     def _get_copy_params(self) -> dict:
@@ -198,4 +212,5 @@ class FromIupacOp(Operation):
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
+            'style': self._style,
         }
