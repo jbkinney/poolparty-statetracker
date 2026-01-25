@@ -22,8 +22,6 @@ def replace_marker_content(
     _site_state=None,  # State object for site naming
     _num_sites: Optional[int] = None,
     _style_insertion: Optional[str] = None,
-    _style_background: Optional[str] = None,
-    _outer_region: Optional[str] = None,  # Outer region for style_background targeting
 ):
     """
     Replace a marker region with content from another Pool.
@@ -87,8 +85,6 @@ def replace_marker_content(
         _site_state=_site_state,
         _num_sites=_num_sites,
         _style_insertion=_style_insertion,
-        _style_background=_style_background,
-        _outer_region=_outer_region,
     )
     result_pool = Pool(operation=op)
     
@@ -120,8 +116,6 @@ class ReplaceMarkerContentOp(Operation):
         _site_state=None,  # State object for site naming
         _num_sites: Optional[int] = None,
         _style_insertion: Optional[str] = None,
-        _style_background: Optional[str] = None,
-        _outer_region: Optional[str] = None,  # Outer region for style_background targeting
     ) -> None:
         self.marker_name = marker_name
         
@@ -138,8 +132,6 @@ class ReplaceMarkerContentOp(Operation):
         self._num_sites = _num_sites
         self._insertion_naming = any([_seq_name_prefix, _seq_name_pos_prefix, _seq_name_site_prefix])
         self._style_insertion = _style_insertion
-        self._style_background = _style_background
-        self._outer_region = _outer_region
         
         # The operation itself has num_values=1 because it doesn't add its own states.
         # The total number of output states comes from the product of parent pool counters.
@@ -228,24 +220,6 @@ class ReplaceMarkerContentOp(Operation):
             ins_positions = np.arange(ins_start, ins_end, dtype=np.int64)
             output_styles.append((self._style_insertion, ins_positions))
         
-        # Apply style_background to non-inserted positions within outer region only
-        if self._style_background is not None:
-            if self._outer_region is not None and isinstance(self._outer_region, str):
-                # Find outer region bounds in result_seq and only style within those bounds
-                outer_marker = validate_single_marker(result_seq, self._outer_region)
-                region_start = outer_marker.content_start
-                region_end = outer_marker.content_end
-            else:
-                # No outer region specified - style entire sequence (excluding inserted)
-                region_start = 0
-                region_end = len(result_seq)
-            
-            inserted_positions = set(range(ins_start, ins_end))
-            bg_positions = np.array([p for p in range(region_start, region_end) 
-                                     if p not in inserted_positions], dtype=np.int64)
-            if len(bg_positions) > 0:
-                output_styles.append((self._style_background, bg_positions))
-        
         return {'seq': result_seq, 'style': output_styles}
     
     def compute_seq_names(
@@ -288,6 +262,4 @@ class ReplaceMarkerContentOp(Operation):
             '_site_state': self._site_state,
             '_num_sites': self._num_sites,
             '_style_insertion': self._style_insertion,
-            '_style_background': self._style_background,
-            '_outer_region': self._outer_region,
         }

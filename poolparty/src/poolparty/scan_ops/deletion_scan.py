@@ -19,7 +19,6 @@ def deletion_scan(
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
     style_deletion: Optional[str] = None,
-    style_background: Optional[str] = None,
     iter_order: Optional[Real] = None,
 ) -> Pool:
     """
@@ -45,8 +44,6 @@ def deletion_scan(
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
     style_deletion : Optional[str], default=None
         Style to apply to deletion gap characters (e.g., 'gray', 'red bold').
-    style_background : Optional[str], default=None
-        Style to apply to non-deletion positions.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
 
@@ -106,7 +103,7 @@ def deletion_scan(
     content_pool = from_seq(content_str)
 
     # 3. Replace _del marker with gap content using replace_marker_content
-    # This allows proper position tracking for style_deletion and style_background
+    # This allows proper position tracking for style_deletion
     from ..marker_ops.replace_marker_content import replace_marker_content
     result = replace_marker_content(
         bg_pool=marked,
@@ -117,8 +114,6 @@ def deletion_scan(
         # Pass style parameters - replace_marker_content handles position tracking
         # Only apply style_deletion when deletion_marker is set (i.e., gap chars exist)
         _style_insertion=style_deletion if deletion_marker is not None else None,
-        _style_background=style_background,  # Style non-deletion positions
-        _outer_region=region,  # Restrict style_background to the outer region
     )
     
     return result

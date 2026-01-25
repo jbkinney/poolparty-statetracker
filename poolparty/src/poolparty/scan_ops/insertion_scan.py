@@ -14,10 +14,9 @@ def insertion_scan(
     region: RegionType = None,
     replace: bool = False,
     style_insertion: Optional[str] = None,
-    style_background: Optional[str] = None,
     prefix: Optional[str] = None,
     prefix_position: Optional[str] = None,
-    prefix_site: Optional[str] = None,
+    prefix_insert: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
@@ -41,14 +40,12 @@ def insertion_scan(
         If True, replace content at position (output length = bg).
     style_insertion : Optional[str], default=None
         Style to apply to inserted content.
-    style_background : Optional[str], default=None
-        Style to apply to non-inserted positions.
     prefix : Optional[str], default=None
         Prefix for cartesian product index (e.g., 'ins_' produces 'ins_0', 'ins_1', ...).
     prefix_position : Optional[str], default=None
         Prefix for position index (e.g., 'pos_' produces 'pos_0', 'pos_1', ...).
-    prefix_site : Optional[str], default=None
-        Prefix for site index (e.g., 'site_' produces 'site_0', 'site_1', ...).
+    prefix_insert : Optional[str], default=None
+        Prefix for insert index (e.g., 'ins_' produces 'ins_0', 'ins_1', ...).
     mode : ModeType, default='random'
         Selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
@@ -92,7 +89,7 @@ def insertion_scan(
     marker_length = ins_length if replace else 0
 
     # Check if any naming prefix is provided
-    has_naming = any([prefix, prefix_position, prefix_site])
+    has_naming = any([prefix, prefix_position, prefix_insert])
 
     # 1. Insert marker at scanning positions
     # Don't pass prefix to marker_scan - naming is handled by replace_marker_content
@@ -135,13 +132,11 @@ def insertion_scan(
         _factory_name=f'{_factory_name}(replace_marker_content)',
         _seq_name_prefix=prefix,
         _seq_name_pos_prefix=prefix_position,
-        _seq_name_site_prefix=prefix_site,
+        _seq_name_site_prefix=prefix_insert,
         _pos_state=pos_state,
         _site_state=site_state,
         _num_sites=num_sites,
         _style_insertion=style_insertion,
-        _style_background=style_background,
-        _outer_region=region,  # Pass outer region for style_background targeting
     )
 
 
@@ -152,10 +147,9 @@ def replacement_scan(
     positions: PositionsType = None,
     region: RegionType = None,
     style_insertion: Optional[str] = None,
-    style_background: Optional[str] = None,
     prefix: Optional[str] = None,
     prefix_position: Optional[str] = None,
-    prefix_site: Optional[str] = None,
+    prefix_insert: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
@@ -172,10 +166,9 @@ def replacement_scan(
         region=region,
         replace=True,
         style_insertion=style_insertion,
-        style_background=style_background,
         prefix=prefix,
         prefix_position=prefix_position,
-        prefix_site=prefix_site,
+        prefix_insert=prefix_insert,
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
