@@ -12,10 +12,7 @@ def fixed_operation(
     seq_length_from_pool_lengths_fn: Callable[[Sequence[Union[int, None]]], Union[int, None]],
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
     _pass_through_styles: bool = True,
 ) -> Pool:
@@ -37,14 +34,8 @@ def fixed_operation(
     remove_marker : Optional[bool], default=None
         If True and region is a marker name, remove the marker tags from output.
         If None, uses Party default ('remove_marker').
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+        Iteration order priority for the Operation.
     _factory_name: Optional[str], default=None
         Overrides FactoryOp.factory_name in setting the default operation name.
 
@@ -59,12 +50,12 @@ def fixed_operation(
         seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         region=region,
         remove_marker=remove_marker,
-        name=op_name,
-        iter_order=op_iter_order,
+        name=None,
+        iter_order=iter_order,
         _factory_name=_factory_name,
         _pass_through_styles=_pass_through_styles,
     )
-    pool = Pool(operation=op, name=name, iter_order=iter_order)
+    pool = Pool(operation=op)
     return pool
 
 

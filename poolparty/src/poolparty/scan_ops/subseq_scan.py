@@ -13,15 +13,11 @@ def subseq_scan(
     seq_length: Integral,
     positions: PositionsType = None,
     region: RegionType = None,
-    remove_marker: Optional[bool] = None,
     strand: Literal['+', '-', 'both'] = '+',
-    seq_name_prefix: Optional[str] = None,
+    prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Extract subsequences of a specified length at scanning positions.
@@ -41,25 +37,18 @@ def subseq_scan(
     region : RegionType, default=None
         Region to constrain the scan to. Can be a marker name (str) or [start, stop].
         If specified, positions are relative to the region start.
-    remove_marker : Optional[bool], default=None
-        If True and region is a marker name, remove marker tags from the region
-        before scanning. If None, uses Party default.
     strand : Literal['+', '-', 'both'], default='+'
         Strand for extraction: '+', '-', or 'both'.
         If '-', content is reverse-complemented.
         If 'both', creates 2x states scanning both strands.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
         Position selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -72,11 +61,6 @@ def subseq_scan(
     # Convert string input to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
 
-    # Resolve remove_marker from party defaults if not explicitly set
-    party = get_active_party()
-    if remove_marker is None:
-        remove_marker = party.get_default('remove_marker', True) if party else True
-
     # If region is specified, extract subsequences only from that region
     if region is not None:
         if isinstance(region, str):
@@ -88,13 +72,10 @@ def subseq_scan(
                 seq_length=seq_length,
                 positions=positions,
                 strand=strand,
-                seq_name_prefix=seq_name_prefix,
+                prefix=prefix,
                 mode=mode,
                 num_states=num_states,
-                name=name,
-                op_name=op_name,
                 iter_order=iter_order,
-                op_iter_order=op_iter_order,
             )
         else:
             # Region is [start, stop] - insert temporary marker, extract, then scan
@@ -111,13 +92,10 @@ def subseq_scan(
                 seq_length=seq_length,
                 positions=positions,
                 strand=strand,
-                seq_name_prefix=seq_name_prefix,
+                prefix=prefix,
                 mode=mode,
                 num_states=num_states,
-                name=name,
-                op_name=op_name,
                 iter_order=iter_order,
-                op_iter_order=op_iter_order,
             )
 
     # No region specified - apply to entire pool
@@ -126,13 +104,10 @@ def subseq_scan(
         seq_length=seq_length,
         positions=positions,
         strand=strand,
-        seq_name_prefix=seq_name_prefix,
+        prefix=prefix,
         mode=mode,
         num_states=num_states,
-        name=name,
-        op_name=op_name,
         iter_order=iter_order,
-        op_iter_order=op_iter_order,
     )
 
 
@@ -141,13 +116,10 @@ def _subseq_scan_impl(
     seq_length: Integral,
     positions: PositionsType,
     strand: Literal['+', '-', 'both'],
-    seq_name_prefix: Optional[str],
+    prefix: Optional[str],
     mode: ModeType,
     num_states: Optional[Integral],
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """Core subseq scan implementation without region handling."""
     from ..marker_ops import marker_scan, extract_marker_content
@@ -180,21 +152,17 @@ def _subseq_scan_impl(
         marker_length=marker_length,
         positions=validated_positions,
         strand=strand,
-        seq_name_prefix=seq_name_prefix,
+        prefix=prefix,
         mode=mode,
         num_states=num_states,
-        op_name=op_name,
-        op_iter_order=op_iter_order,
+        iter_order=iter_order,
     )
 
     # 2. Extract marker content as the result
     result = extract_marker_content(
         marked,
         marker_name,
-        name=name,
-        op_name=op_name,
         iter_order=iter_order,
-        op_iter_order=op_iter_order,
     )
 
     return result

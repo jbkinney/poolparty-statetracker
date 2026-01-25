@@ -9,10 +9,7 @@ from .. import dna
 def extract_marker_content(
     pool,
     marker_name: str,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ):
     """
     Extract content from a named marker as a new Pool.
@@ -27,14 +24,8 @@ def extract_marker_content(
         Input Pool or sequence string containing the marker.
     marker_name : str
         Name of the marker to extract content from.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -86,10 +77,7 @@ def extract_marker_content(
         parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: marker_seq_length,  # Use registered marker's seq_length
-        name=name,
-        op_name=op_name,
         iter_order=iter_order,
-        op_iter_order=op_iter_order,
     )
     
     # The extracted content does not contain any markers

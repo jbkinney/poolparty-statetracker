@@ -78,8 +78,8 @@ class TestOperationAttributes:
     def test_name_attribute(self):
         """Test name attribute."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], op_name='my_seqs')
-            assert pool.operation.name == 'my_seqs'
+            pool = pp.from_seqs(['AAA']).named('my_seqs')
+            assert pool.name == 'my_seqs'
     
     def test_default_name(self):
         """Test default name includes factory name."""
@@ -195,13 +195,14 @@ class TestOperationRepr:
     def test_repr_format(self):
         """Test repr format."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], op_name='test_op', mode='sequential')
+            pool = pp.from_seqs(['AAA'], mode='sequential').named('test_op')
             repr_str = repr(pool.operation)
             
             assert 'FromSeqsOp' in repr_str
             assert 'id=0' in repr_str
             assert "mode='sequential'" in repr_str
-            assert "name='test_op'" in repr_str
+            # Operation name is auto-generated when op_name is removed
+            assert "name=" in repr_str
     
     def test_repr_different_modes(self):
         """Test repr shows different modes correctly."""
@@ -412,10 +413,11 @@ class TestOperationCopy:
     def test_copy_default_name_uses_suffix(self):
         """Test that copy() uses self.name + '.copy' as default name."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], op_name='my_op')
+            pool = pp.from_seqs(['AAA']).named('my_op')
             copied_op = pool.operation.copy()
             
-            assert copied_op.name == 'my_op.copy'
+            # Operation name is auto-generated when op_name is removed
+        assert copied_op.name.endswith('.copy')
 
 
 class TestOperationDeepCopy:

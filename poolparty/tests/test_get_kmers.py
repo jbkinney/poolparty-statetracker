@@ -138,11 +138,13 @@ class TestGetKmersDesignCards:
     def test_kmer_index_in_output(self):
         """Test kmer_index is in output."""
         with pp.Party() as party:
-            pool = get_kmers(length=2, mode='sequential', op_name='kmers').named('mypool')
+            pool = get_kmers(length=2, mode='sequential').named('mypool')
         
         df = pool.generate_library(num_seqs=4, report_design_cards=True)
-        assert 'kmers.key.kmer_index' in df.columns
-        assert list(df['kmers.key.kmer_index']) == [0, 1, 2, 3]
+        # Find kmer_index column (operation name is auto-generated)
+        kmer_index_cols = [c for c in df.columns if 'kmer_index' in c]
+        assert len(kmer_index_cols) > 0
+        assert list(df[kmer_index_cols[0]]) == [0, 1, 2, 3]
     
     def test_design_card_keys_defined(self):
         """Test design_card_keys is defined correctly."""
@@ -237,13 +239,17 @@ class TestGetKmersCustomName:
     def test_custom_operation_name(self):
         """Test custom operation name."""
         with pp.Party() as party:
-            pool = get_kmers(length=4, op_name='barcode')
-            assert pool.operation.name == 'barcode'
+            pool = get_kmers(length=4).named('barcode')
+            assert pool.name == 'barcode'
     
     def test_custom_name_in_design_card(self):
-        """Test custom name appears in design card columns with .key."""
+        """Test design card columns are present (operation name is auto-generated)."""
         with pp.Party() as party:
-            pool = get_kmers(length=4, op_name='my_barcode').named('mypool')
+            pool = get_kmers(length=4).named('mypool')
         
         df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
-        assert 'my_barcode.key.kmer_index' in df.columns
+        # Find kmer_index and kmer columns (operation name is auto-generated)
+        kmer_index_cols = [c for c in df.columns if 'kmer_index' in c]
+        kmer_cols = [c for c in df.columns if 'kmer' in c and 'kmer_index' not in c]
+        assert len(kmer_index_cols) > 0
+        assert len(kmer_cols) > 0

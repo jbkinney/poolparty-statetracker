@@ -20,10 +20,7 @@ def stylize(
     style: str,
     which: WhichType = 'contents',
     regex: Optional[str] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Apply inline styling to sequences without modifying them.
@@ -44,14 +41,8 @@ def stylize(
         Pattern selector: 'all', 'upper', 'lower', 'gap', 'tags', 'contents'.
     regex : Optional[str], default=None
         Custom regex pattern. If specified, overrides `which`.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -67,10 +58,10 @@ def stylize(
         region=region,
         which=which,
         regex=regex,
-        name=op_name,
-        iter_order=op_iter_order,
+        name=None,
+        iter_order=iter_order,
     )
-    return Pool(operation=op, name=name, iter_order=iter_order)
+    return Pool(operation=op)
 
 
 @beartype

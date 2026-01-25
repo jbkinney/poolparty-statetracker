@@ -255,8 +255,8 @@ class TestReplacementMultiscanNaming:
             bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])
             ins = pp.from_seq('GGG')
             result = replacement_multiscan(
-                bg, num_replacements=2, replacement_pools=ins, name='my_result'
-            )
+                bg, num_replacements=2, replacement_pools=ins
+            ).named('my_result')
 
         assert result.name == 'my_result'
 

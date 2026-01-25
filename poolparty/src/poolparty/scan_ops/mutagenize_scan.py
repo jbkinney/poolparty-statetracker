@@ -14,14 +14,10 @@ def mutagenize_scan(
     mutation_rate: Optional[Real] = None,
     positions: PositionsType = None,
     region: RegionType = None,
-    remove_marker: Optional[bool] = None,
-    seq_name_prefix: Optional[Union[str, Sequence[str]]] = None,
+    prefix: Optional[Union[str, Sequence[str]]] = None,
     mode: Union[ModeType, Tuple[ModeType, ModeType]] = 'random',
     num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
-    iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Union[Real, Sequence[Real]]] = None,
+    iter_order: Optional[Union[Real, Sequence[Real]]] = None,
     _factory_name: Optional[str] = 'mutagenize_scan',
 ) -> Pool:
     """
@@ -43,12 +39,7 @@ def mutagenize_scan(
     region : RegionType, default=None
         Region to constrain the scan to. Can be a marker name (str) or [start, stop].
         If specified, positions are relative to the region start.
-    remove_marker : Optional[bool], default=None
-        If True and region is a marker name, remove marker tags from output.
-        If None, uses Party default.
-    spacer_str : str, default=''
-        String to insert as a spacer around the mutagenized region.
-    seq_name_prefix : Optional[Union[str, Sequence[str]]], default=None
+    prefix : Optional[Union[str, Sequence[str]]], default=None
         Prefix for sequence names. 
         If sequence, first element is for scanning positions, second element is for mutagenization.
     mode : Union[ModeType, Sequence[ModeType]], default='random'
@@ -57,14 +48,8 @@ def mutagenize_scan(
     num_states : Optional[Union[Integral, Sequence[Integral]]], default=None
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
         If sequence, first element is for scanning positions, second element is for mutagenization.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
-    iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Union[Real, Sequence[Real]]], default=None
-        Iteration order priority for the underlying Operation.
+    iter_order : Optional[Union[Real, Sequence[Real]]], default=None
+        Iteration order priority for the Operation.
         If sequence, first element is for scanning positions, second element is for mutagenization.
     _factory_name: Optional[str], default=None
         Sets default name of the resulting operation
@@ -88,15 +73,7 @@ def mutagenize_scan(
     if num_mutations is not None and mutation_rate is not None:
         raise ValueError("Only one of num_mutations or mutation_rate can be provided, not both")
 
-    # Resolve remove_marker from party defaults if not explicitly set
-    party = get_active_party()
-    if remove_marker is None:
-        remove_marker = party.get_default('remove_marker', True) if party else True
-
-    # Determine marker configuration based on replace mode
-    # replace=False: marker_length=0 (insert without removing background)
-    # replace=True: marker_length=ins_length (replace background content)
-    # Use different marker names to avoid conflicts when both are used in same Party
+    # Determine marker configuration
     marker_name = '_mut'
     marker_length = mutagenize_length
 
@@ -108,28 +85,27 @@ def mutagenize_scan(
         raise ValueError("mode must be a sequence of length 2")
     mode_scan, mode_mut = mode[0], mode[1]
 
-    # Resolve num_hybrid_states - expand single value to tuple of two
-    if num_hybrid_states is None or isinstance(num_hybrid_states, Integral):
-        num_hybrid_states = (num_hybrid_states, num_hybrid_states)
-    elif isinstance(num_hybrid_states, Sequence) and len(num_hybrid_states) != 2:
-        raise ValueError("num_hybrid_states must be a sequence of length 2")
-    num_hybrid_states_scan, num_hybrid_states_mut = num_hybrid_states[0], num_hybrid_states[1]
+    # Resolve num_states - expand single value to tuple of two
+    if num_states is None or isinstance(num_states, Integral):
+        num_states = (num_states, num_states)
+    elif isinstance(num_states, Sequence) and len(num_states) != 2:
+        raise ValueError("num_states must be a sequence of length 2")
+    num_states_scan, num_states_mut = num_states[0], num_states[1]
 
-    # Resolve seq_name_prefix - expand single value to tuple of two
+    # Resolve prefix - expand single value to tuple of two
     # Note: str is a Sequence, so check for str first
-    if seq_name_prefix is None or isinstance(seq_name_prefix, str):
-        seq_name_prefix = (seq_name_prefix, seq_name_prefix)
-    elif isinstance(seq_name_prefix, Sequence) and len(seq_name_prefix) != 2:
-        raise ValueError("seq_name_prefix must be a sequence of length 2")
-    seq_name_prefix_scan, seq_name_prefix_mut = seq_name_prefix[0], seq_name_prefix[1]
+    if prefix is None or isinstance(prefix, str):
+        prefix = (prefix, prefix)
+    elif isinstance(prefix, Sequence) and len(prefix) != 2:
+        raise ValueError("prefix must be a sequence of length 2")
+    prefix_scan, prefix_mut = prefix[0], prefix[1]
 
-    # Resolve op_iter_order - expand single value to tuple of two
-    if op_iter_order is None or isinstance(op_iter_order, Real):
-        op_iter_order = (op_iter_order, op_iter_order)
-    elif isinstance(op_iter_order, Sequence) and len(op_iter_order) != 2:
-        raise ValueError("op_iter_order must be a sequence of length 2")
-    op_iter_order_scan, op_iter_order_mut = op_iter_order[0], op_iter_order[1]
-
+    # Resolve iter_order - expand single value to tuple of two
+    if iter_order is None or isinstance(iter_order, Real):
+        iter_order = (iter_order, iter_order)
+    elif isinstance(iter_order, Sequence) and len(iter_order) != 2:
+        raise ValueError("iter_order must be a sequence of length 2")
+    iter_order_scan, iter_order_mut = iter_order[0], iter_order[1]
 
     # 1. Insert marker at scanning positions
     marked = marker_scan(
@@ -139,11 +115,10 @@ def mutagenize_scan(
         positions=positions,
         region=region,
         remove_marker=False,  # Keep outer region marker for now
-        seq_name_prefix=seq_name_prefix_scan,
+        prefix=prefix_scan,
         mode=mode_scan,
-        num_hybrid_states=num_hybrid_states_scan,
-        op_name=op_name,
-        op_iter_order=op_iter_order_scan,
+        num_states=num_states_scan,
+        iter_order=iter_order_scan,
         _factory_name=f'{_factory_name}(marker_scan)',
     )
 
@@ -153,15 +128,10 @@ def mutagenize_scan(
         num_mutations=num_mutations,
         mutation_rate=mutation_rate,
         region='_mut',
-        remove_marker=True,
-        swapcase=False,
-        seq_name_prefix=seq_name_prefix_mut,
+        prefix=prefix_mut,
         mode=mode_mut,
         num_states=num_states_mut,
-        name=name,
-        op_name=op_name,
-        iter_order=iter_order,
-        op_iter_order=op_iter_order_mut,
+        iter_order=iter_order_mut,
         _factory_name=f'{_factory_name}(mutagenize)',
     )
     

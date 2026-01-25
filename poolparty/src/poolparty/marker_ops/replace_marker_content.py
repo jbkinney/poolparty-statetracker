@@ -12,10 +12,7 @@ def replace_marker_content(
     bg_pool,
     content_pool,
     marker_name: str,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
     # Internal parameters for insertion_scan composite naming
     _seq_name_prefix: Optional[str] = None,
@@ -43,14 +40,8 @@ def replace_marker_content(
         Pool or sequence string to insert at the marker position.
     marker_name : str
         Name of the marker to replace.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+        Iteration order priority for the Operation.
     _factory_name: Optional[str], default=None
         Sets default name of the resulting operation
 
@@ -86,8 +77,8 @@ def replace_marker_content(
         bg_pool=bg_pool,
         content_pool=content_pool,
         marker_name=marker_name,
-        name=op_name,
-        iter_order=op_iter_order,
+        name=None,
+        iter_order=iter_order,
         _factory_name=_factory_name,
         _seq_name_prefix=_seq_name_prefix,
         _seq_name_pos_prefix=_seq_name_pos_prefix,
@@ -99,7 +90,7 @@ def replace_marker_content(
         _style_background=_style_background,
         _outer_region=_outer_region,
     )
-    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
+    result_pool = Pool(operation=op)
     
     # The marker is replaced, so remove it from the pool's marker set
     result_pool._untrack_marker(marker_name)

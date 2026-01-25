@@ -155,12 +155,12 @@ class TestDeletionMultiscanNaming:
     """Test naming parameters."""
 
     def test_pool_name(self):
-        """Test name parameter."""
+        """Test pool naming via .named()."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])
             result = deletion_multiscan(
-                bg, deletion_length=3, num_deletions=2, name='my_result'
-            )
+                bg, deletion_length=3, num_deletions=2
+            ).named('my_result')
 
         assert result.name == 'my_result'
 

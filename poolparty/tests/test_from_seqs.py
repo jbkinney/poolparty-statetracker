@@ -25,10 +25,13 @@ class TestFromSeqsFactory:
     def test_with_names(self):
         """Test from_seqs with custom names."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA', 'TTT'], seq_names=['seq_a', 'seq_b'], op_name='seqs', mode='sequential').named('mypool')
+            pool = from_seqs(['AAA', 'TTT'], seq_names=['seq_a', 'seq_b'], mode='sequential').named('mypool')
         
         df = pool.generate_library(num_seqs=2, report_design_cards=True)
-        assert list(df['seqs.key.seq_name']) == ['seq_a', 'seq_b']
+        # Find seq_name column (operation name is auto-generated)
+        seq_name_cols = [c for c in df.columns if 'seq_name' in c]
+        assert len(seq_name_cols) > 0
+        assert list(df[seq_name_cols[0]]) == ['seq_a', 'seq_b']
 
 
 class TestFromSeqsSequentialMode:
@@ -118,18 +121,24 @@ class TestFromSeqsNames:
     def test_default_names(self):
         """Test default names are seq_0, seq_1, etc."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA', 'TTT', 'GGG'], op_name='seqs', mode='sequential').named('mypool')
+            pool = from_seqs(['AAA', 'TTT', 'GGG'], mode='sequential').named('mypool')
         
         df = pool.generate_library(num_seqs=3, report_design_cards=True)
-        assert list(df['seqs.key.seq_name']) == ['seq_0', 'seq_1', 'seq_2']
+        # Find seq_name column (operation name is auto-generated)
+        seq_name_cols = [c for c in df.columns if 'seq_name' in c]
+        assert len(seq_name_cols) > 0
+        assert list(df[seq_name_cols[0]]) == ['seq_0', 'seq_1', 'seq_2']
     
     def test_custom_names(self):
         """Test custom names."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA', 'TTT'], seq_names=['first', 'second'], op_name='seqs', mode='sequential').named('mypool')
+            pool = from_seqs(['AAA', 'TTT'], seq_names=['first', 'second'], mode='sequential').named('mypool')
         
         df = pool.generate_library(num_seqs=2, report_design_cards=True)
-        assert list(df['seqs.key.seq_name']) == ['first', 'second']
+        # Find seq_name column (operation name is auto-generated)
+        seq_name_cols = [c for c in df.columns if 'seq_name' in c]
+        assert len(seq_name_cols) > 0
+        assert list(df[seq_name_cols[0]]) == ['first', 'second']
 
 
 class TestFromSeqsDesignCards:
@@ -138,20 +147,24 @@ class TestFromSeqsDesignCards:
     def test_seq_name_in_output(self):
         """Test seq_name is in output."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA'], seq_names=['test'], op_name='seqs').named('mypool')
+            pool = from_seqs(['AAA'], seq_names=['test']).named('mypool')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        assert 'seqs.key.seq_name' in df.columns
-        assert df['seqs.key.seq_name'].iloc[0] == 'test'
+        # Find seq_name column (operation name is auto-generated)
+        seq_name_cols = [c for c in df.columns if 'seq_name' in c]
+        assert len(seq_name_cols) > 0
+        assert df[seq_name_cols[0]].iloc[0] == 'test'
     
     def test_seq_index_in_output(self):
         """Test seq_index is in output."""
         with pp.Party() as party:
-            pool = from_seqs(['A', 'B', 'C'], op_name='seqs', mode='sequential').named('mypool')
+            pool = from_seqs(['A', 'B', 'C'], mode='sequential').named('mypool')
         
         df = pool.generate_library(num_seqs=3, report_design_cards=True)
-        assert 'seqs.key.seq_index' in df.columns
-        assert list(df['seqs.key.seq_index']) == [0, 1, 2]
+        # Find seq_index column (operation name is auto-generated)
+        seq_index_cols = [c for c in df.columns if 'seq_index' in c]
+        assert len(seq_index_cols) > 0
+        assert list(df[seq_index_cols[0]]) == [0, 1, 2]
     
     def test_design_card_keys_defined(self):
         """Test design_card_keys is defined correctly."""
@@ -221,20 +234,23 @@ class TestFromSeqsCustomName:
     def test_custom_operation_name(self):
         """Test custom operation name."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA'], op_name='my_sequences')
-            assert pool.operation.name == 'my_sequences'
+            pool = from_seqs(['AAA']).named('my_sequences')
+            assert pool.name == 'my_sequences'
     
     def test_custom_pool_name(self):
         """Test custom pool name."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA'], name='my_pool')
+            pool = from_seqs(['AAA']).named('my_pool')
             assert pool.name == 'my_pool'
     
     def test_custom_name_in_design_card(self):
         """Test custom op name appears in design card columns."""
         with pp.Party() as party:
-            pool = from_seqs(['AAA'], op_name='my_seqs').named('mypool')
+            pool = from_seqs(['AAA']).named('mypool')
         
         df = pool.generate_library(num_seqs=1, report_design_cards=True)
-        assert 'my_seqs.key.seq_name' in df.columns
-        assert 'my_seqs.key.seq_index' in df.columns
+        # Find seq_name and seq_index columns (operation name is auto-generated)
+        seq_name_cols = [c for c in df.columns if 'seq_name' in c]
+        seq_index_cols = [c for c in df.columns if 'seq_index' in c]
+        assert len(seq_name_cols) > 0
+        assert len(seq_index_cols) > 0

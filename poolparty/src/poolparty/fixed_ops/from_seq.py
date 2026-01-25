@@ -12,10 +12,7 @@ def from_seq(
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
     style: Optional[str] = None,
-    op_name: Optional[str] = None,
-    name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
 ) -> Pool_type:
     """
@@ -34,6 +31,10 @@ def from_seq(
         Region to replace in pool. Can be marker name (str) or [start, stop].
     remove_marker : Optional[bool], default=None
         If True and region is a marker name, remove marker tags from output.
+    style : Optional[str], default=None
+        Style to apply to the sequence.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -70,10 +71,7 @@ def from_seq(
         seq_length_from_pool_lengths_fn=lambda _: seq_length,
         region=region,
         remove_marker=remove_marker,
-        name=name,
-        op_name=op_name,
         iter_order=iter_order,
-        op_iter_order=op_iter_order,
         _factory_name=_factory_name if _factory_name is not None else 'from_seq',
         _pass_through_styles=not is_replacement,
     )
@@ -85,6 +83,6 @@ def from_seq(
     # Apply style if specified
     if style is not None:
         from .stylize import stylize
-        result_pool = stylize(result_pool, style=style, name=name, iter_order=iter_order)
+        result_pool = stylize(result_pool, style=style)
     
     return result_pool

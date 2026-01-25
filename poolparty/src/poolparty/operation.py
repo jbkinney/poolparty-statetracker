@@ -38,7 +38,7 @@ class Operation:
         seq_length: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
-        seq_name_prefix: Optional[str] = None,
+        prefix: Optional[str] = None,
         region: RegionType = None,
         remove_marker: Optional[bool] = None,
     ) -> None:
@@ -91,7 +91,7 @@ class Operation:
         self.rng: np.random.Generator | None = None
         self.num_values = validated_num_values
         # Sequence naming attributes
-        self.name_prefix: Optional[str] = seq_name_prefix
+        self.name_prefix: Optional[str] = prefix
         self.clear_parent_names: bool = False
         self._block_seq_names: bool = False
         

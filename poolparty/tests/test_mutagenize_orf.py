@@ -268,14 +268,17 @@ class TestMutagenizeOrfMutationTypes:
     def test_missense_only_first_type(self):
         """Test missense_only_first mutation type (default)."""
         with pp.Party() as party:
-            pool = mutagenize_orf('ATGAAA', num_mutations=1, mode='sequential', op_name='mutate').named('mutant')
+            pool = mutagenize_orf('ATGAAA', num_mutations=1, mode='sequential').named('mutant')
         
         df = pool.generate_library(num_cycles=1, report_design_cards=True)
         ct = CodonTable('standard')
         
+        # Find design card columns (operation name is auto-generated)
+        wt_aas_col = [c for c in df.columns if 'wt_aas' in c][0]
+        mut_aas_col = [c for c in df.columns if 'mut_aas' in c][0]
         for _, row in df.iterrows():
-            wt_aas = row['mutate.key.wt_aas']
-            mut_aas = row['mutate.key.mut_aas']
+            wt_aas = row[wt_aas_col]
+            mut_aas = row[mut_aas_col]
             for wt_aa, mut_aa in zip(wt_aas, mut_aas):
                 # Should be different AA
                 assert wt_aa != mut_aa
@@ -286,13 +289,15 @@ class TestMutagenizeOrfMutationTypes:
         """Test nonsense mutation type."""
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'ATGAAA', num_mutations=1, mutation_type='nonsense', mode='sequential', op_name='mutate'
+                'ATGAAA', num_mutations=1, mutation_type='nonsense', mode='sequential'
             ).named('mutant')
         
         df = pool.generate_library(num_cycles=1, report_design_cards=True)
         
+        # Find design card columns (operation name is auto-generated)
+        mut_aas_col = [c for c in df.columns if 'mut_aas' in c][0]
         for _, row in df.iterrows():
-            mut_aas = row['mutate.key.mut_aas']
+            mut_aas = row[mut_aas_col]
             for mut_aa in mut_aas:
                 # All mutations should be stops
                 assert mut_aa == '*'
@@ -302,15 +307,18 @@ class TestMutagenizeOrfMutationTypes:
         # Use a codon with synonymous options (Leucine CTG has 5 alternatives)
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'CTGCTG', num_mutations=1, mutation_type='synonymous', mode='random', op_name='mutate'
+                'CTGCTG', num_mutations=1, mutation_type='synonymous', mode='random'
             ).named('mutant')
         
         df = pool.generate_library(num_seqs=20, seed=42, report_design_cards=True)
         ct = CodonTable('standard')
         
+        # Find design card columns (operation name is auto-generated)
+        wt_aas_col = [c for c in df.columns if 'wt_aas' in c][0]
+        mut_aas_col = [c for c in df.columns if 'mut_aas' in c][0]
         for _, row in df.iterrows():
-            wt_aas = row['mutate.key.wt_aas']
-            mut_aas = row['mutate.key.mut_aas']
+            wt_aas = row[wt_aas_col]
+            mut_aas = row[mut_aas_col]
             for wt_aa, mut_aa in zip(wt_aas, mut_aas):
                 # AA should be the same (synonymous)
                 assert wt_aa == mut_aa
@@ -347,16 +355,20 @@ class TestMutagenizeOrfSequentialMode:
         """Test that sequential mutations are applied correctly."""
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'ATGAAATTT', num_mutations=1, mode='sequential', op_name='mutate'
+                'ATGAAATTT', num_mutations=1, mode='sequential'
             ).named('mutant')
         
         df = pool.generate_library(num_cycles=1, report_design_cards=True)
         
+        # Find design card columns (operation name is auto-generated)
+        positions_col = [c for c in df.columns if 'codon_positions' in c][0]
+        wt_codons_col = [c for c in df.columns if 'wt_codons' in c][0]
+        mut_codons_col = [c for c in df.columns if 'mut_codons' in c][0]
         for _, row in df.iterrows():
             mutant = row['seq']
-            positions = row['mutate.key.codon_positions']
-            wt_codons = row['mutate.key.wt_codons']
-            mut_codons = row['mutate.key.mut_codons']
+            positions = row[positions_col]
+            wt_codons = row[wt_codons_col]
+            mut_codons = row[mut_codons_col]
             
             # Verify mutations are applied
             for pos, wt, mut in zip(positions, wt_codons, mut_codons):
@@ -374,13 +386,15 @@ class TestMutagenizeOrfRandomMode:
         """Test random mode with fixed num_mutations."""
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'ATGAAATTTGGG', num_mutations=2, mode='random', op_name='mutate'
+                'ATGAAATTTGGG', num_mutations=2, mode='random'
             ).named('mutant')
         
         df = pool.generate_library(num_seqs=50, seed=42, report_design_cards=True)
         
+        # Find design card columns (operation name is auto-generated)
+        positions_col = [c for c in df.columns if 'codon_positions' in c][0]
         for _, row in df.iterrows():
-            positions = row['mutate.key.codon_positions']
+            positions = row[positions_col]
             # Should have exactly 2 mutations
             assert len(positions) == 2
     
@@ -389,13 +403,15 @@ class TestMutagenizeOrfRandomMode:
         with pp.Party() as party:
             # Use explicit num_states to get varied outputs
             pool = mutagenize_orf(
-                'ATGAAATTTGGGCCCAAA', mutation_rate=0.5, mode='random', num_states=100, op_name='mutate'
+                'ATGAAATTTGGGCCCAAA', mutation_rate=0.5, mode='random', num_states=100
             ).named('mutant')
         
         df = pool.generate_library(num_cycles=1, seed=42, report_design_cards=True)
         
+        # Find design card columns (operation name is auto-generated)
+        positions_col = [c for c in df.columns if 'codon_positions' in c][0]
         # Should have variable number of mutations
-        num_mutations_list = [len(row['mutate.key.codon_positions']) for _, row in df.iterrows()]
+        num_mutations_list = [len(row[positions_col]) for _, row in df.iterrows()]
         # With 6 codons and 50% rate, should see some variation
         assert len(set(num_mutations_list)) > 1
     
@@ -441,34 +457,41 @@ class TestMutagenizeOrfDesignCards:
         """Design card contains expected columns."""
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'ATGAAATTT', num_mutations=1, mode='sequential', op_name='mutate'
+                'ATGAAATTT', num_mutations=1, mode='sequential'
             ).named('mutant')
         
         df = pool.generate_library(num_seqs=4, report_design_cards=True)
         
-        assert 'mutate.key.codon_positions' in df.columns
-        assert 'mutate.key.wt_codons' in df.columns
-        assert 'mutate.key.mut_codons' in df.columns
-        assert 'mutate.key.wt_aas' in df.columns
-        assert 'mutate.key.mut_aas' in df.columns
+        # Find design card columns (operation name is auto-generated)
+        assert len([c for c in df.columns if 'codon_positions' in c]) > 0
+        assert len([c for c in df.columns if 'wt_codons' in c]) > 0
+        assert len([c for c in df.columns if 'mut_codons' in c]) > 0
+        assert len([c for c in df.columns if 'wt_aas' in c]) > 0
+        assert len([c for c in df.columns if 'mut_aas' in c]) > 0
     
     def test_design_card_consistency(self):
         """Design card values match actual mutations."""
         with pp.Party() as party:
             pool = mutagenize_orf(
-                'ATGAAATTT', num_mutations=1, mode='sequential', op_name='mutate'
+                'ATGAAATTT', num_mutations=1, mode='sequential'
             ).named('mutant')
         
         df = pool.generate_library(num_seqs=20, report_design_cards=True)
         ct = CodonTable('standard')
         
+        # Find design card columns (operation name is auto-generated)
+        positions_col = [c for c in df.columns if 'codon_positions' in c][0]
+        wt_codons_col = [c for c in df.columns if 'wt_codons' in c][0]
+        mut_codons_col = [c for c in df.columns if 'mut_codons' in c][0]
+        wt_aas_col = [c for c in df.columns if 'wt_aas' in c][0]
+        mut_aas_col = [c for c in df.columns if 'mut_aas' in c][0]
         for _, row in df.iterrows():
             mutant = row['seq']
-            positions = row['mutate.key.codon_positions']
-            wt_codons = row['mutate.key.wt_codons']
-            mut_codons = row['mutate.key.mut_codons']
-            wt_aas = row['mutate.key.wt_aas']
-            mut_aas = row['mutate.key.mut_aas']
+            positions = row[positions_col]
+            wt_codons = row[wt_codons_col]
+            mut_codons = row[mut_codons_col]
+            wt_aas = row[wt_aas_col]
+            mut_aas = row[mut_aas_col]
             
             for pos, wt_c, mut_c, wt_aa, mut_aa in zip(
                 positions, wt_codons, mut_codons, wt_aas, mut_aas
@@ -521,5 +544,5 @@ class TestMutagenizeOrfCustomName:
     def test_custom_name(self):
         """Test custom operation name."""
         with pp.Party() as party:
-            pool = mutagenize_orf('ATGAAATTT', num_mutations=1, op_name='my_orf_mutations')
-            assert pool.operation.name == 'my_orf_mutations'
+            pool = mutagenize_orf('ATGAAATTT', num_mutations=1).named('my_orf_mutations')
+            assert pool.name == 'my_orf_mutations'

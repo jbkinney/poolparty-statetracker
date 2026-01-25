@@ -101,7 +101,7 @@ class TestFromFastaOperationName:
     
     def test_custom_pool_name(self, test_fasta):
         """Test custom pool name."""
-        pool = from_fasta(test_fasta, 'chr1', 0, 8, name='my_pool')
+        pool = from_fasta(test_fasta, 'chr1', 0, 8).named('my_pool')
         assert pool.name == 'my_pool'
 
 

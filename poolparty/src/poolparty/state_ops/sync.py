@@ -6,8 +6,7 @@ from ..pool import Pool
 
 @beartype
 def sync(
-    pools: Sequence[Pool], 
-    name: Optional[str] = None,
+    pools: Sequence[Pool],
 ) -> Pool:
     """
     Create a Pool that synchronizes multiple input Pools to iterate in lockstep.
@@ -16,8 +15,6 @@ def sync(
     ----------
     pools : Sequence[Pool]
         Sequence of Pool objects to synchronize. All pools must have the same number of states.
-    name : Optional[str], default=None
-        Name for the resulting synchronized Pool.
 
     Returns
     -------
@@ -37,6 +34,6 @@ def sync(
         raise ValueError(f"Cannot sync pools with different num_values: {sizes=}")
 
     states = [p.state for p in pools]
-    shared_state = st.sync(states, name=name)
+    shared_state = st.sync(states)
     for pool in pools:
         pool.state = shared_state

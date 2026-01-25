@@ -202,17 +202,17 @@ class TestSubseqScanNaming:
     def test_pool_name(self):
         """Test name parameter."""
         with pp.Party() as party:
-            result = subseq_scan('ACGTACGT', seq_length=4, name='my_subseqs')
+            result = subseq_scan('ACGTACGT', seq_length=4).named('my_subseqs')
         
         assert result.name == 'my_subseqs'
     
     def test_op_name(self):
         """Test op_name parameter."""
         with pp.Party() as party:
-            result = subseq_scan('ACGTACGT', seq_length=4, op_name='my_extract')
+            result = subseq_scan('ACGTACGT', seq_length=4).named('my_result')
         
-        # op_name is passed to the extract operation
-        assert result.operation.name == 'my_extract'
+        # Operation name is set via Pool.named()
+        assert result.name == 'my_result'
 
 
 class TestSubseqScanValidation:

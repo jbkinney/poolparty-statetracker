@@ -13,13 +13,10 @@ def deletion_multiscan(
     num_deletions: Integral,
     deletion_marker: Optional[str] = '-',
     positions: PositionsType = None,
-    seq_name_prefix: Optional[str] = None,
+    prefix: Optional[str] = None,
     mode: str = 'random',
     num_states: Optional[Integral] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Delete segments at multiple positions simultaneously.
@@ -43,18 +40,14 @@ def deletion_multiscan(
     positions : PositionsType, default=None
         Valid positions for deletion starts (0-based). If None, all valid
         positions are used.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     mode : str, default='random'
         Position selection mode: 'random'.
     num_states : Optional[Integral], default=None
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operations.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operations.
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -116,11 +109,10 @@ def deletion_multiscan(
         positions=validated_positions,
         marker_length=marker_length,
         insertion_mode='ordered',
-        seq_name_prefix=seq_name_prefix,
+        prefix=prefix,
         mode=mode,
         num_states=num_states,
-        op_name=op_name,
-        op_iter_order=op_iter_order,
+        iter_order=iter_order,
     )
 
     # 2. Build replacement content based on deletion_marker
@@ -139,16 +131,7 @@ def deletion_multiscan(
             result,
             content,
             marker_name,
-            name=None,  # Only set name on final result
-            op_name=op_name,
-            iter_order=None,  # Only set iter_order on final result
-            op_iter_order=op_iter_order,
+            iter_order=iter_order,
         )
-
-    # Set name and iter_order on final result if provided
-    if name is not None:
-        result._name = name
-    if iter_order is not None:
-        result._iter_order = iter_order
 
     return result

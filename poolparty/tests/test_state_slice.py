@@ -90,8 +90,8 @@ class TestStateSliceCustomName:
         """Test custom operation name."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
-            sliced = state_slice(pool, slice(0, 2), op_name='my_state_slice')
-            assert sliced.operation.name == 'my_state_slice'
+            sliced = state_slice(pool, slice(0, 2)).named('my_state_slice')
+            assert sliced.name == 'my_state_slice'
 
 
 # =============================================================================

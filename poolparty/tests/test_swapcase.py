@@ -77,7 +77,7 @@ class TestSwapCaseNaming:
     def test_pool_name(self):
         """Test name parameter."""
         with pp.Party() as party:
-            result = swapcase('ACGT', name='my_pool')
+            result = swapcase('ACGT').named('my_pool')
         
         assert result.name == 'my_pool'
     

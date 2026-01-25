@@ -223,7 +223,7 @@ class MutagenizeOp(Operation):
             seq_length=self._seq_length,
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=prefix,
+            prefix=prefix,
             region=region,
         )
     

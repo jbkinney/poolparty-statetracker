@@ -16,10 +16,7 @@ def from_fasta(
     pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     remove_marker: Optional[bool] = None,
-    op_name: Optional[str] = None,
-    name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ) -> Pool_type:
     """
     Extract a genomic region from a FASTA file and create a Pool.
@@ -52,9 +49,6 @@ def from_fasta(
         pool=pool,
         region=region,
         remove_marker=remove_marker,
-        op_name=op_name,
-        name=name,
         iter_order=iter_order,
-        op_iter_order=op_iter_order,
         _factory_name='from_fasta',
     )

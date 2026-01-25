@@ -187,7 +187,7 @@ class TestReplacementScanNaming:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             ins = pp.from_seqs(['TTT'])
-            result = replacement_scan(bg, ins, name='my_result')
+            result = replacement_scan(bg, ins).named('my_result')
         
         assert result.name == 'my_result'
     
@@ -196,10 +196,10 @@ class TestReplacementScanNaming:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
             ins = pp.from_seqs(['TTT'])
-            result = replacement_scan(bg, ins, op_name='my_join')
+            result = replacement_scan(bg, ins).named('my_result')
         
-        # op_name is passed to the join operation
-        assert result.operation.name == 'my_join'
+        # Operation name is set via Pool.named()
+        assert result.name == 'my_result'
 
 
 class TestReplacementScanValidation:

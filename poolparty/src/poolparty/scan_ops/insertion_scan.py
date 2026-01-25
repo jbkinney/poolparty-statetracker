@@ -12,19 +12,15 @@ def insertion_scan(
     ins_pool: Union[Pool, str],
     positions: PositionsType = None,
     region: RegionType = None,
-    remove_marker: Optional[bool] = None,
     replace: bool = False,
     style_insertion: Optional[str] = None,
     style_background: Optional[str] = None,
-    seq_name_prefix: Optional[str] = None,
-    seq_name_pos_prefix: Optional[str] = None,
-    seq_name_site_prefix: Optional[str] = None,
+    prefix: Optional[str] = None,
+    prefix_position: Optional[str] = None,
+    prefix_site: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = 'insertion_scan',
 ) -> Pool:
     """
@@ -40,19 +36,25 @@ def insertion_scan(
         Positions for insertion/replacement (0-based). If None, all valid positions.
     region : RegionType, default=None
         Region to constrain the scan to. Can be a marker name (str) or [start, stop].
-    remove_marker : Optional[bool], default=None
-        If True and region is a marker name, remove marker tags from output.
     replace : bool, default=False
         If False, insert at position (output length = bg + ins).
         If True, replace content at position (output length = bg).
-    seq_name_prefix : Optional[str], default=None
+    style_insertion : Optional[str], default=None
+        Style to apply to inserted content.
+    style_background : Optional[str], default=None
+        Style to apply to non-inserted positions.
+    prefix : Optional[str], default=None
         Prefix for cartesian product index (e.g., 'ins_' produces 'ins_0', 'ins_1', ...).
-    seq_name_pos_prefix : Optional[str], default=None
+    prefix_position : Optional[str], default=None
         Prefix for position index (e.g., 'pos_' produces 'pos_0', 'pos_1', ...).
-    seq_name_site_prefix : Optional[str], default=None
+    prefix_site : Optional[str], default=None
         Prefix for site index (e.g., 'site_' produces 'site_0', 'site_1', ...).
     mode : ModeType, default='random'
         Selection mode: 'random' or 'sequential'.
+    num_states : Optional[Integral], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -77,11 +79,6 @@ def insertion_scan(
     if bg_length is None and region is None:
         raise ValueError("pool must have a defined seq_length")
 
-    # Resolve defaults from party
-    party = get_active_party()
-    if remove_marker is None:
-        remove_marker = party.get_default('remove_marker', True) if party else True
-
     # Capture site pool state
     # (Pool.state is valid even when wrapped with stylize/swapcase, unlike operation.state)
     original_ins_pool_state = ins_pool.state
@@ -95,10 +92,10 @@ def insertion_scan(
     marker_length = ins_length if replace else 0
 
     # Check if any naming prefix is provided
-    has_naming = any([seq_name_prefix, seq_name_pos_prefix, seq_name_site_prefix])
+    has_naming = any([prefix, prefix_position, prefix_site])
 
     # 1. Insert marker at scanning positions
-    # Don't pass seq_name_prefix to marker_scan - naming is handled by replace_marker_content
+    # Don't pass prefix to marker_scan - naming is handled by replace_marker_content
     marked = marker_scan(
         pool,
         marker=marker_name,
@@ -108,8 +105,7 @@ def insertion_scan(
         remove_marker=False,  # Keep outer region marker for now
         mode=mode,
         num_states=num_states,
-        op_name=op_name,
-        op_iter_order=op_iter_order,
+        iter_order=iter_order,
         _factory_name=f'{_factory_name}(marker_scan)',
     )
     marked = marked.named(f'{marked.name}:{_factory_name}(intermediate)')
@@ -124,8 +120,9 @@ def insertion_scan(
         marked.operation._block_seq_names = True
         # Block naming on original ins_pool operation
         ins_pool.operation._block_seq_names = True
-        # Capture state references for naming (Pool.state is valid even when wrapped)
-        pos_state = marked.state
+        # Capture state references for naming
+        # Use operation.state to get the actual position state, not the product state
+        pos_state = marked.operation.state
         site_state = original_ins_pool_state
         num_sites = original_ins_pool_num_states
 
@@ -134,14 +131,11 @@ def insertion_scan(
         marked,
         ins_pool,
         marker_name,
-        name=name,
-        op_name=op_name,
         iter_order=iter_order,
-        op_iter_order=op_iter_order,
         _factory_name=f'{_factory_name}(replace_marker_content)',
-        _seq_name_prefix=seq_name_prefix,
-        _seq_name_pos_prefix=seq_name_pos_prefix,
-        _seq_name_site_prefix=seq_name_site_prefix,
+        _seq_name_prefix=prefix,
+        _seq_name_pos_prefix=prefix_position,
+        _seq_name_site_prefix=prefix_site,
         _pos_state=pos_state,
         _site_state=site_state,
         _num_sites=num_sites,
@@ -157,18 +151,14 @@ def replacement_scan(
     ins_pool: Union[Pool, str],
     positions: PositionsType = None,
     region: RegionType = None,
-    remove_marker: Optional[bool] = None,
     style_insertion: Optional[str] = None,
     style_background: Optional[str] = None,
-    seq_name_prefix: Optional[str] = None,
-    seq_name_pos_prefix: Optional[str] = None,
-    seq_name_site_prefix: Optional[str] = None,
+    prefix: Optional[str] = None,
+    prefix_position: Optional[str] = None,
+    prefix_site: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = 'replacement_scan',
 ) -> Pool:
     """Replace a segment with insert at specified scanning positions.
@@ -180,18 +170,14 @@ def replacement_scan(
         ins_pool=ins_pool,
         positions=positions,
         region=region,
-        remove_marker=remove_marker,
         replace=True,
         style_insertion=style_insertion,
         style_background=style_background,
-        seq_name_prefix=seq_name_prefix,
-        seq_name_pos_prefix=seq_name_pos_prefix,
-        seq_name_site_prefix=seq_name_site_prefix,
+        prefix=prefix,
+        prefix_position=prefix_position,
+        prefix_site=prefix_site,
         mode=mode,
         num_states=num_states,
-        name=name,
-        op_name=op_name,
         iter_order=iter_order,
-        op_iter_order=op_iter_order,
         _factory_name=_factory_name if _factory_name is not None else 'replacement_scan',
     )

@@ -9,10 +9,7 @@ def remove_marker(
     pool,
     marker_name: str,
     keep_content: bool = True,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ):
     """
     Remove a marker from sequences.
@@ -26,14 +23,8 @@ def remove_marker(
     keep_content : bool, default=True
         If True, keep the content inside the marker (just remove tags).
         If False, remove both the marker tags and their content.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -75,10 +66,7 @@ def remove_marker(
         parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: None,  # Length changes when removing markers
-        name=name,
-        op_name=op_name,
         iter_order=iter_order,
-        op_iter_order=op_iter_order,
         _factory_name='remove_marker',
     )
     

@@ -137,8 +137,7 @@ class OpsContainer:
     ) -> Pool_type:
         """Insert an XML-style marker at a fixed position in sequences."""
         from .marker_ops.insert_marker import insert_marker
-        iter_order = kwargs.pop('iter_order', None)
-        return insert_marker(self.pool, marker_name, start, stop, strand, op_iter_order=iter_order, **kwargs)
+        return insert_marker(self.pool, marker_name, start, stop, strand, **kwargs)
     
     def remove_marker(
         self,
@@ -148,8 +147,7 @@ class OpsContainer:
     ) -> Pool_type:
         """Remove a marker from sequences."""
         from .marker_ops.remove_marker import remove_marker
-        iter_order = kwargs.pop('iter_order', None)
-        return remove_marker(self.pool, marker_name, keep_content, op_iter_order=iter_order, **kwargs)
+        return remove_marker(self.pool, marker_name, keep_content, **kwargs)
     
     def replace_marker_content(
         self,
@@ -159,20 +157,17 @@ class OpsContainer:
     ) -> Pool_type:
         """Replace a marker region with content from another Pool."""
         from .marker_ops.replace_marker_content import replace_marker_content
-        iter_order = kwargs.pop('iter_order', None)
-        return replace_marker_content(self.pool, content_pool, marker_name, op_iter_order=iter_order, **kwargs)
+        return replace_marker_content(self.pool, content_pool, marker_name, **kwargs)
     
     def clear_markers(self, **kwargs) -> Pool_type:
         """Remove all marker tags from sequences, keeping content."""
         from .fixed_ops.fixed import fixed_operation
         from .marker_ops.parsing import strip_all_markers
         
-        iter_order = kwargs.pop('iter_order', None)
         result = fixed_operation(
             parent_pools=[self.pool],
             seq_from_seqs_fn=lambda seqs: strip_all_markers(seqs[0]),
             seq_length_from_pool_lengths_fn=lambda lengths: None,
-            op_iter_order=iter_order,
             **kwargs,
         )
         result._markers = set()

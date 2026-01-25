@@ -20,13 +20,10 @@ def marker_scan(
     remove_marker: Optional[bool] = None,
     strand: str = '+',
     marker_length: int = 0,
-    seq_name_prefix: Optional[str] = None,
+    prefix: Optional[str] = None,
     mode: str = 'random',
     num_states: Optional[int] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
 ):
     """
@@ -82,14 +79,14 @@ def marker_scan(
         remove_marker=remove_marker,
         strand=strand,
         marker_length=int(marker_length),
-        seq_name_prefix=seq_name_prefix,
+        prefix=prefix,
         mode=mode,
         num_states=num_states,
-        name=op_name,
-        iter_order=op_iter_order,
+        name=None,
+        iter_order=iter_order,
         _factory_name=_factory_name,
     )
-    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
+    result_pool = Pool(operation=op)
     
     # Add the marker to the pool's marker set
     result_pool.add_marker(registered_marker)
@@ -132,7 +129,7 @@ class MarkerScanOp(Operation):
         spacer_str: str = '',
         strand: str = '+',
         marker_length: int = 0,
-        seq_name_prefix: Optional[str] = None,
+        prefix: Optional[str] = None,
         mode: str = 'random',
         num_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -194,7 +191,7 @@ class MarkerScanOp(Operation):
             seq_length=None,  # Variable due to marker tags
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=seq_name_prefix,
+            prefix=prefix,
             region=region,
             remove_marker=remove_marker,
         )
@@ -419,7 +416,7 @@ class MarkerScanOp(Operation):
             'remove_marker': self._remove_marker,
             'strand': self._strand,
             'marker_length': self._marker_length,
-            'seq_name_prefix': self.name_prefix,
+            'prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,

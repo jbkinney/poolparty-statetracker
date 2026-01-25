@@ -9,7 +9,6 @@ def apply_at_marker(
     marker_name: str,
     transform_fn: Callable,
     remove_marker: bool = True,
-    name: Optional[str] = None,
     iter_order: Optional[Real] = None,
 ):
     """
@@ -32,10 +31,8 @@ def apply_at_marker(
     remove_marker : bool, default=True
         If True, marker tags are removed from the result.
         If False, marker tags are preserved around the transformed content.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -85,7 +82,6 @@ def apply_at_marker(
             pool,
             transformed_pool,
             marker_name,
-            name=name,
             iter_order=iter_order,
         )
     else:
@@ -94,7 +90,6 @@ def apply_at_marker(
             pool,
             transformed_pool,
             marker_name,
-            name=name,
             iter_order=iter_order,
         )
     
@@ -105,7 +100,6 @@ def _replace_keeping_marker(
     bg_pool,
     content_pool,
     marker_name: str,
-    name: Optional[str] = None,
     iter_order: Optional[Real] = None,
 ):
     """Replace marker content while preserving marker tags."""
@@ -139,7 +133,6 @@ def _replace_keeping_marker(
         parent_pools=[bg_pool, content_pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: None,  # Variable length
-        name=name,
         iter_order=iter_order,
     )
     

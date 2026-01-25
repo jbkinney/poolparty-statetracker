@@ -12,16 +12,12 @@ def from_seqs(
     seqs: Sequence[str],
     bg_pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
-    remove_marker: Optional[bool] = None,
     style: Optional[str] = None,
     seq_names: Optional[Sequence[str]] = None,
-    seq_name_prefix: Optional[str] = None,
+    prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
 ) -> Pool_type:
     """
@@ -37,25 +33,17 @@ def from_seqs(
     region : RegionType, default=None
         Region to replace in bg_pool. Can be a marker name or [start, stop] interval.
         Required if bg_pool is provided.
-    remove_marker : Optional[bool], default=None
-        If True and region is a marker name, remove marker tags from output.
     seq_names : Optional[Sequence[str]], default=None
         Explicit names for each sequence. If provided, these are used directly.
-    seq_name_prefix : Optional[str], default=None
+    prefix : Optional[str], default=None
         Prefix for auto-generated names (e.g., 'seq_' produces 'seq_0', 'seq_1', ...).
         Cannot be used together with seq_names.
     mode : ModeType, default='random'
         Sequence selection mode: 'sequential' or 'random'.
     num_states : Optional[int], default=None
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
-    iter_order : Real, default=0
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -70,13 +58,12 @@ def from_seqs(
     from ..fixed_ops.from_seq import from_seq
     bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     op = FromSeqsOp(seqs, bg_pool=bg_pool_obj, region=region,
-                    remove_marker=remove_marker,
                     style=style,
-                    seq_names=seq_names, seq_name_prefix=seq_name_prefix,
+                    seq_names=seq_names, prefix=prefix,
                     mode=mode, num_states=num_states,
-                    name=op_name, iter_order=op_iter_order,
+                    name=None, iter_order=iter_order,
                     _factory_name=_factory_name)
-    pool = Pool(operation=op, name=name, iter_order=iter_order)
+    pool = Pool(operation=op)
     return pool
 
 
@@ -91,11 +78,10 @@ class FromSeqsOp(Operation):
         seqs: Sequence[str],
         bg_pool: Optional[Pool] = None,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
         spacer_str: str = '',
         style: Optional[str] = None,
         seq_names: Optional[Sequence[str]] = None,
-        seq_name_prefix: Optional[str] = None,
+        prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -128,8 +114,8 @@ class FromSeqsOp(Operation):
             raise ValueError("seqs must not be empty")
         if mode == 'fixed' and len(seqs) != 1:
             raise ValueError("mode='fixed' requires exactly 1 sequence")
-        if seq_names is not None and seq_name_prefix is not None:
-            raise ValueError("Cannot specify both seq_names and seq_name_prefix")
+        if seq_names is not None and prefix is not None:
+            raise ValueError("Cannot specify both seq_names and prefix")
         self.seqs = list(seqs)
         # Track whether explicit seq_names were provided (for compute_seq_names)
         self._seq_names_explicit = seq_names is not None
@@ -156,9 +142,8 @@ class FromSeqsOp(Operation):
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=seq_name_prefix,
+            prefix=prefix,
             region=region,
-            remove_marker=remove_marker,
         )
     
     def compute(
@@ -222,10 +207,9 @@ class FromSeqsOp(Operation):
             'seqs': self.seqs,
             'bg_pool': self.parent_pools[0] if self.parent_pools else None,
             'region': self._region,
-            'remove_marker': self._remove_marker,
             'style': self._style,
             'seq_names': self.seq_names if self._seq_names_explicit else None,
-            'seq_name_prefix': self.name_prefix,
+            'prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,

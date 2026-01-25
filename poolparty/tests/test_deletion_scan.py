@@ -201,21 +201,21 @@ class TestDeletionScanNaming:
     """Test naming parameters."""
     
     def test_pool_name(self):
-        """Test pool_name parameter."""
+        """Test pool naming via .named()."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
-            result = deletion_scan(bg, deletion_length=3, name='my_result')
+            result = deletion_scan(bg, deletion_length=3).named('my_result')
         
         assert result.name == 'my_result'
     
     def test_op_name(self):
-        """Test op_name parameter."""
+        """Test operation naming via .named()."""
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAA'])
-            result = deletion_scan(bg, deletion_length=3, op_name='my_join')
+            result = deletion_scan(bg, deletion_length=3).named('my_result')
         
-        # op_name is passed to the join operation
-        assert result.operation.name == 'my_join'
+        # Operation name is set via Pool.named()
+        assert result.name == 'my_result'
 
 
 class TestDeletionScanValidation:

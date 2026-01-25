@@ -10,11 +10,8 @@ import numpy as np
 @beartype
 def stack(
     pools: Sequence[Pool],
-    seq_name_prefix: Optional[str] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
+    prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Create a Pool by stacking multiple input Pools state-wise.
@@ -23,14 +20,10 @@ def stack(
     ----------
     pools : Sequence[Pool]
         Sequence of Pool objects to stack into a single Pool.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Stack operation.
-    iter_order : Real, default=0
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Real, default=0
-        Iteration order priority for the underlying Stack operation.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -51,8 +44,8 @@ def stack(
                 f"Pools with mode='random' and num_states=None have no state to stack. "
                 f"Use num_states=N to create a pool with explicit states."
             )
-    op = StackOp(pools, seq_name_prefix=seq_name_prefix, name=op_name, iter_order=op_iter_order)
-    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
+    op = StackOp(pools, prefix=prefix, name=None, iter_order=iter_order)
+    result_pool = Pool(operation=op)
     return result_pool
 
 
@@ -65,7 +58,7 @@ class StackOp(Operation):
     def __init__(
         self,
         parent_pools: Sequence[Pool],
-        seq_name_prefix: Optional[str] = None,
+        prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -83,7 +76,7 @@ class StackOp(Operation):
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=seq_name_prefix,
+            prefix=prefix,
         )
     
     def build_pool_counter(
@@ -149,7 +142,7 @@ class StackOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'parent_pools': self.parent_pools,
-            'seq_name_prefix': self.name_prefix,
+            'prefix': self.name_prefix,
             'name': None,
             'iter_order': self.iter_order,
         }

@@ -109,7 +109,7 @@ class TestPoolCopy:
     def test_copy_produces_same_sequences(self):
         """Test that copied pool produces the same sequences."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], name='original', mode='sequential')
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential').named('original')
             copied = pool.copy(name='copied')
         
         df_original = pool.generate_library(num_cycles=1, seed=0, init_state=0, report_design_cards=True)
@@ -120,7 +120,7 @@ class TestPoolCopy:
     def test_copy_independent_generation(self):
         """Test that copied pools can generate independently."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D'], name='original', mode='sequential')
+            pool = pp.from_seqs(['A', 'B', 'C', 'D'], mode='sequential').named('original')
             copied = pool.copy(name='copied')
         
         # Generate from original
@@ -184,7 +184,7 @@ class TestPoolCopy:
     def test_copy_default_name_uses_suffix(self):
         """Test that copy() uses self.name + '.copy' as default name."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], name='my_pool')
+            pool = pp.from_seqs(['AAA']).named('my_pool')
             copied = pool.copy()
             
             assert copied.name == 'my_pool.copy'
@@ -241,7 +241,7 @@ class TestPoolDeepCopy:
     def test_deepcopy_default_name_uses_suffix(self):
         """Test that deepcopy() uses self.name + '.copy' as default name."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], name='my_pool')
+            pool = pp.from_seqs(['AAA']).named('my_pool')
             copied = pool.deepcopy()
             
             assert copied.name == 'my_pool.copy'
@@ -249,7 +249,7 @@ class TestPoolDeepCopy:
     def test_deepcopy_produces_same_sequences(self):
         """Test that deepcopied pool produces the same sequences."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], name='original', mode='sequential')
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential').named('original')
             copied = pool.deepcopy(name='copied')
         
         df_original = pool.generate_library(num_cycles=1, seed=0, init_state=0, report_design_cards=True)
@@ -260,7 +260,7 @@ class TestPoolDeepCopy:
     def test_deepcopy_independent_dag(self):
         """Test that deepcopy creates a fully independent DAG."""
         with pp.Party() as party:
-            seq = pp.from_seqs(['ACGT'], name='seq', mode='sequential')
+            seq = pp.from_seqs(['ACGT']).named('seq')
             mutants = pp.mutagenize(seq, num_mutations=1, mode='sequential').named('mutants')
             copied = mutants.deepcopy(name='copied')
             
@@ -274,7 +274,7 @@ class TestPoolDeepCopy:
     def test_deepcopy_chain(self):
         """Test deepcopy on a chain of pools."""
         with pp.Party() as party:
-            a = pp.from_seqs(['ACGT'], name='a', mode='sequential')
+            a = pp.from_seqs(['ACGT']).named('a')
             b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('b')
             c = pp.mutagenize(b, num_mutations=1, mode='sequential').named('c')
             copied = c.deepcopy(name='copied')
@@ -286,8 +286,8 @@ class TestPoolDeepCopy:
     def test_deepcopy_stacked_pool(self):
         """Test deepcopy on a stacked pool."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A', 'B'], name='a', mode='sequential')
-            b = pp.from_seqs(['X', 'Y'], name='b', mode='sequential')
+            a = pp.from_seqs(['A', 'B'], mode='sequential').named('a')
+            b = pp.from_seqs(['X', 'Y'], mode='sequential').named('b')
             stacked = (a + b).named('stacked')
             copied = stacked.deepcopy(name='copied')
         
@@ -319,7 +319,7 @@ class TestPoolRepr:
     def test_repr_basic(self):
         """Test basic repr output."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], name='test_pool')
+            pool = pp.from_seqs(['AAA']).named('test_pool')
             repr_str = repr(pool)
             assert 'Pool' in repr_str
             # The repr uses the operation's name attribute
@@ -588,7 +588,7 @@ class TestPoolGenerate:
     def test_generate_basic(self):
         """Test basic generate() call with num_seqs."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], name='X', mode='sequential')
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential').named('X')
         
         df = pool.generate_library(num_seqs=3, report_design_cards=True)
         assert len(df) == 3
@@ -598,7 +598,7 @@ class TestPoolGenerate:
     def test_generate_num_cycles(self):
         """Test generate() with num_cycles."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B'], name='X', mode='sequential')
+            pool = pp.from_seqs(['A', 'B'], mode='sequential').named('X')
         
         df = pool.generate_library(num_cycles=2, report_design_cards=True)
         assert len(df) == 4
@@ -607,7 +607,7 @@ class TestPoolGenerate:
     def test_generate_with_aux_pools(self):
         """Test generate() with aux_pools."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], name='A', mode='sequential')
+            a = pp.from_seqs(['AAA', 'TTT']).named('A')
             b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('B')
         
         df = b.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a])
@@ -619,8 +619,8 @@ class TestPoolGenerate:
     def test_generate_multiple_aux_pools(self):
         """Test generate() with multiple aux_pools."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A', 'B'], name='A', mode='sequential')
-            b = pp.from_seqs(['X', 'Y'], name='B', mode='sequential')
+            a = pp.from_seqs(['A', 'B'], mode='sequential').named('A')
+            b = pp.from_seqs(['X', 'Y'], mode='sequential').named('B')
             stacked = a + b
         
         df = stacked.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b])
@@ -633,7 +633,7 @@ class TestPoolGenerate:
     def test_generate_with_seed(self):
         """Test generate() with seed for reproducibility."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], name='X', mode='sequential')
+            pool = pp.from_seqs(['A', 'B', 'C']).named('X')
         
         df1 = pool.generate_library(num_seqs=3, seed=42, report_design_cards=True)
         df2 = pool.generate_library(num_seqs=3, seed=42, init_state=0, report_design_cards=True)
@@ -642,7 +642,7 @@ class TestPoolGenerate:
     def test_generate_with_init_state(self):
         """Test generate() with init_state."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], name='X', mode='sequential')
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential').named('X')
         
         df = pool.generate_library(num_seqs=2, init_state=1, report_design_cards=True)
         assert list(df['X.seq']) == ['B', 'C']
@@ -650,7 +650,7 @@ class TestPoolGenerate:
     def test_generate_state_continuation(self):
         """Test that generate() continues from last state."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C', 'D'], name='X', mode='sequential')
+            pool = pp.from_seqs(['A', 'B', 'C', 'D'], mode='sequential').named('X')
         
         df1 = pool.generate_library(num_seqs=2, init_state=0, report_design_cards=True)
         df2 = pool.generate_library(num_seqs=2, report_design_cards=True)  # Should continue from state 2
@@ -672,7 +672,7 @@ class TestPoolGenerate:
     def test_generate_seq_column_first(self):
         """Test that 'seq' column appears first, then pool's .seq column."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA'], name='A')
+            pool = pp.from_seqs(['AAA']).named('A')
             mutants = pp.mutagenize(pool, num_mutations=1).named('B')
         
         df = mutants.generate_library(num_seqs=3, report_design_cards=True)
@@ -683,9 +683,9 @@ class TestPoolGenerate:
         """Test that seq columns are sorted by reverse topological order."""
         with pp.Party() as party:
             # Use sequential mode to ensure pools have state (required for stacking)
-            a = pp.from_seqs(['A'], mode='sequential', name='A')
-            b = pp.from_seqs(['B'], mode='sequential', name='B')
-            c = pp.from_seqs(['C'], mode='sequential', name='C')
+            a = pp.from_seqs(['A'], mode='sequential').named('A')
+            b = pp.from_seqs(['B'], mode='sequential').named('B')
+            c = pp.from_seqs(['C'], mode='sequential').named('C')
             combined = (a + b + c)
         
         df = combined.generate_library(num_seqs=3, report_design_cards=True, aux_pools=[a, b])
@@ -712,7 +712,7 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_false_no_columns(self):
         """Test that report_pool_states=False produces no pool state columns."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], name='X')
+            pool = pp.from_seqs(['A', 'B', 'C']).named('X')
         
         df = pool.generate_library(num_seqs=3, report_design_cards=True, report_pool_states=False, report_op_states=False)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -722,7 +722,7 @@ class TestPoolGenerateRecordStates:
         """Test that report_pool_states=True adds counter state columns."""
         with pp.Party() as party:
             # Use sequential mode to ensure pool has state
-            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential', name='X')
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential').named('X')
         
         df = pool.generate_library(num_seqs=3, report_design_cards=True, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -731,7 +731,7 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_column_format(self):
         """Test counter column naming format."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], name='X')
+            pool = pp.from_seqs(['A', 'B', 'C']).named('X')
         
         df = pool.generate_library(num_seqs=3, report_design_cards=True, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -745,7 +745,7 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_state_values(self):
         """Test that counter states are recorded correctly."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['A', 'B', 'C'], name='X', mode='sequential')
+            pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential').named('X')
         
         df = pool.generate_library(num_cycles=1, report_design_cards=True, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -763,7 +763,7 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_column_order(self):
         """Test that counter columns appear after output cols, before design cards."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'], name='A')
+            pool = pp.from_seqs(['AAA', 'TTT']).named('A')
             mutants = pp.mutagenize(pool, num_mutations=1).named('B')
         
         df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_pool_states=True)
@@ -785,7 +785,7 @@ class TestPoolGenerateRecordStates:
     def test_report_pool_states_with_aux_pools(self):
         """Test report_pool_states works with aux_pools."""
         with pp.Party() as party:
-            a = pp.from_seqs(['A', 'B'], name='A', mode='sequential')
+            a = pp.from_seqs(['A', 'B'], mode='sequential').named('A')
             b = a + a  # Stack creates a sum counter
         
         df = b.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a], report_pool_states=True)
@@ -801,7 +801,7 @@ class TestPoolGenerateRecordStates:
         """Test that named counters use their name in column."""
         with pp.Party() as party:
             # Use sequential mode to ensure pool has state
-            pool = pp.from_seqs(['A', 'B'], mode='sequential', name='my_pool')
+            pool = pp.from_seqs(['A', 'B'], mode='sequential').named('my_pool')
         
         df = pool.generate_library(num_seqs=2, report_design_cards=True, report_pool_states=True)
         counter_cols = [c for c in df.columns if c.endswith('.state')]
@@ -822,7 +822,7 @@ class TestPoolGenerateRecordKeys:
     def test_report_op_keys_default_true(self):
         """Test that report_op_keys=True (default) includes design card columns."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'], name='A')
+            pool = pp.from_seqs(['AAA', 'TTT']).named('A')
             mutants = pp.mutagenize(pool, num_mutations=1).named('B')
         
         df = mutants.generate_library(num_seqs=5, report_design_cards=True)
@@ -833,7 +833,7 @@ class TestPoolGenerateRecordKeys:
     def test_report_op_keys_false_excludes_columns(self):
         """Test that report_op_keys=False excludes design card columns."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'], name='A')
+            pool = pp.from_seqs(['AAA', 'TTT']).named('A')
             mutants = pp.mutagenize(pool, num_mutations=1).named('B')
         
         df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_op_keys=False)
@@ -844,7 +844,7 @@ class TestPoolGenerateRecordKeys:
     def test_report_op_keys_false_still_has_seq(self):
         """Test that report_op_keys=False still includes sequence columns."""
         with pp.Party() as party:
-            pool = pp.from_seqs(['AAA', 'TTT'], name='A')
+            pool = pp.from_seqs(['AAA', 'TTT']).named('A')
             mutants = pp.mutagenize(pool, num_mutations=1).named('B')
         
         df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_op_keys=False)
@@ -854,7 +854,7 @@ class TestPoolGenerateRecordKeys:
         """Test that report_op_keys=False works with report_pool_states=True."""
         with pp.Party() as party:
             # Use sequential mode to ensure pool has state
-            pool = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A')
+            pool = pp.from_seqs(['AAA', 'TTT'], mode='sequential').named('A')
             mutants = pp.mutagenize(pool, num_mutations=1, mode='sequential').named('B')
         
         df = mutants.generate_library(num_seqs=5, report_design_cards=True, report_op_keys=False, report_pool_states=True)
@@ -878,7 +878,7 @@ class TestPoolGeneratePoolsToRecord:
         """Test that pools_to_report='all' (default) includes all pools' info."""
         with pp.Party() as party:
             # Use sequential mode to ensure pools have state
-            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A', op_name='op_A')
+            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential').named('A')
             b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True)
@@ -888,16 +888,17 @@ class TestPoolGeneratePoolsToRecord:
         assert any('A' in col for col in state_cols)
         assert any('B' in col for col in state_cols)
         
-        # Should have key columns from both A and B operations
+        # Should have key columns from both A and B operations (auto-generated names)
         key_cols = [c for c in df.columns if '.key.' in c]
-        assert any('op_A' in col for col in key_cols)
-        assert any(b.operation.name in col for col in key_cols)
+        # Check that we have key columns for both operations
+        assert any('from_seqs' in col or 'seq_' in col for col in key_cols)
+        assert any('mutagenize' in col or 'mut_pos' in col for col in key_cols)
     
     def test_pools_to_report_self(self):
         """Test that pools_to_report='self' only includes self pool's info."""
         with pp.Party() as party:
             # Use sequential mode to ensure pools have state
-            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A', op_name='op_A')
+            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential').named('A')
             b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self')
@@ -910,13 +911,13 @@ class TestPoolGeneratePoolsToRecord:
         # Should have key columns only from B's operation (self)
         key_cols = [c for c in df.columns if '.key.' in c]
         assert any(b.operation.name in col for col in key_cols)
-        assert not any('op_A.key.' in col for col in key_cols)
+        assert not any(a.operation.name + '.key.' in col for col in key_cols)
     
     def test_pools_to_report_explicit_list(self):
         """Test that pools_to_report=[pool] filters to those pools."""
         with pp.Party() as party:
             # Use sequential mode to ensure pools have state
-            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A', op_name='op_A')
+            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential').named('A')
             b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('B')
         
         # Record only A's info
@@ -925,17 +926,25 @@ class TestPoolGeneratePoolsToRecord:
         # Should have state columns only from A
         state_cols = [c for c in df.columns if c.endswith('.state')]
         assert any('A' in col for col in state_cols)
+        
+        # Should have key columns from A's operation (from_seqs keys)
+        key_cols = [c for c in df.columns if '.key.' in c]
+        assert any('seq_' in col or 'from_seqs' in col for col in key_cols)
+        
+        # Should have state columns only from A
+        state_cols = [c for c in df.columns if c.endswith('.state')]
+        assert any('A' in col for col in state_cols)
         assert not any('B.state' in col for col in state_cols)
         
         # Should have key columns only from A's operation
         key_cols = [c for c in df.columns if '.key.' in c]
-        assert any('op_A' in col for col in key_cols)
+        assert any(a.operation.name in col for col in key_cols)
         assert not any(b.operation.name + '.key.' in col for col in key_cols)
     
     def test_pools_to_report_with_report_pool_states_false(self):
         """Test that pools_to_report respects report_pool_states=False and report_op_states=False."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A')
+            a = pp.from_seqs(['AAA', 'TTT']).named('A')
             b = pp.mutagenize(a, num_mutations=1).named('B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self', report_pool_states=False, report_op_states=False)
@@ -952,7 +961,7 @@ class TestPoolGeneratePoolsToRecord:
         """Test that pools_to_report respects report_op_keys=False."""
         with pp.Party() as party:
             # Use sequential mode to ensure pools have state
-            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential', name='A')
+            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential').named('A')
             b = pp.mutagenize(a, num_mutations=1, mode='sequential').named('B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self', report_op_keys=False)
@@ -968,7 +977,7 @@ class TestPoolGeneratePoolsToRecord:
     def test_pools_to_report_self_still_has_seq(self):
         """Test that pools_to_report='self' still includes sequence columns."""
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], name='A')
+            a = pp.from_seqs(['AAA', 'TTT']).named('A')
             b = pp.mutagenize(a, num_mutations=1).named('B')
         
         df = b.generate_library(num_seqs=5, report_design_cards=True, pools_to_report='self')
@@ -986,8 +995,8 @@ class TestPoolStateMinusOneReturnsNone:
         """Test that stacked pool with state=None has None sequence."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAAAA', 'TTTTT'], name='A', mode='sequential')
-            b = pp.from_seqs(['CCCCC'], name='B', mode='sequential')
+            a = pp.from_seqs(['AAAAA', 'TTTTT'], mode='sequential').named('A')
+            b = pp.from_seqs(['CCCCC'], mode='sequential').named('B')
             c = (a + b).named('C')
         
         df = c.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b])
@@ -1014,8 +1023,8 @@ class TestPoolStateMinusOneReturnsNone:
         """Test inactive pool returns None with downstream mutagenize."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAAAA', 'TTTTT'], name='A', mode='sequential')
-            b = pp.from_seqs(['CCCCC'], name='B', mode='sequential')
+            a = pp.from_seqs(['AAAAA', 'TTTTT'], mode='sequential').named('A')
+            b = pp.from_seqs(['CCCCC'], mode='sequential').named('B')
             c = (a + b).named('C')
             d = pp.mutagenize(c, num_mutations=1, mode='sequential').named('D')
         
@@ -1035,8 +1044,8 @@ class TestPoolStateMinusOneReturnsNone:
         """Test that active pools (state != None) have valid sequences."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], name='A', mode='sequential')
-            b = pp.from_seqs(['CCC'], name='B', mode='sequential')
+            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential').named('A')
+            b = pp.from_seqs(['CCC'], mode='sequential').named('B')
             c = (a + b).named('C')
         
         df = c.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b])
@@ -1055,9 +1064,9 @@ class TestPoolStateMinusOneReturnsNone:
         """Test state=None behavior with three stacked pools."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['A'], name='A', mode='sequential')
-            b = pp.from_seqs(['B'], name='B', mode='sequential')
-            c = pp.from_seqs(['C'], name='C', mode='sequential')
+            a = pp.from_seqs(['A'], mode='sequential').named('A')
+            b = pp.from_seqs(['B'], mode='sequential').named('B')
+            c = pp.from_seqs(['C'], mode='sequential').named('C')
             stacked = (a + b + c).named('stacked')
         
         df = stacked.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b, c])
@@ -1084,90 +1093,106 @@ class TestPoolStateMinusOneReturnsNone:
         """Test that operation design card keys are None when op.state.value=None."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAAAA', 'TTTTT'], name='A', op_name='op_A', mode='sequential')
-            b = pp.from_seqs(['CCCCC'], name='B', op_name='op_B', mode='sequential')
+            a = pp.from_seqs(['AAAAA', 'TTTTT'], mode='sequential').named('A')
+            b = pp.from_seqs(['CCCCC'], mode='sequential').named('B')
             c = (a + b).named('C')
         
         df = c.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b])
         
         # from_seqs has design_card_keys: ['seq_name', 'seq_index']
-        # When op_A.state is None, op_A.key.seq_name and op_A.key.seq_index should be None
-        # When op_B.state is None, op_B.key.seq_name and op_B.key.seq_index should be None
+        # Find key columns using actual operation names (auto-generated)
+        op_a_name = a.operation.name
+        op_b_name = b.operation.name
         
-        # Find key columns
-        op_a_key_cols = [c for c in df.columns if c.startswith('op_A.key.')]
-        op_b_key_cols = [c for c in df.columns if c.startswith('op_B.key.')]
+        op_a_key_cols = [col for col in df.columns if f'{op_a_name}.key.' in col]
+        op_b_key_cols = [col for col in df.columns if f'{op_b_name}.key.' in col]
         
-        assert len(op_a_key_cols) > 0, "Should have op_A key columns"
-        assert len(op_b_key_cols) > 0, "Should have op_B key columns"
+        assert len(op_a_key_cols) > 0, f"Should have {op_a_name} key columns"
+        assert len(op_b_key_cols) > 0, f"Should have {op_b_name} key columns"
+        
+        # Find state columns
+        op_a_state_col = f'{op_a_name}.state'
+        op_b_state_col = f'{op_b_name}.state'
         
         # Check that when op_A.state is None/NaN, its keys are None/NaN
         for i, row in df.iterrows():
-            if pd.isna(row['op_A.state']):
+            if pd.isna(row[op_a_state_col]):
                 for col in op_a_key_cols:
-                    assert pd.isna(row[col]), f"Row {i}: {col} should be None when op_A.state=None"
+                    assert pd.isna(row[col]), f"Row {i}: {col} should be None when {op_a_state_col}=None"
             else:
                 for col in op_a_key_cols:
-                    assert pd.notna(row[col]), f"Row {i}: {col} should not be None when op_A is active"
+                    assert pd.notna(row[col]), f"Row {i}: {col} should not be None when {op_a_name} is active"
         
         # Check that when op_B.state is None/NaN, its keys are None/NaN
         for i, row in df.iterrows():
-            if pd.isna(row['op_B.state']):
+            if pd.isna(row[op_b_state_col]):
                 for col in op_b_key_cols:
-                    assert pd.isna(row[col]), f"Row {i}: {col} should be None when op_B.state=None"
+                    assert pd.isna(row[col]), f"Row {i}: {col} should be None when {op_b_state_col}=None"
             else:
                 for col in op_b_key_cols:
-                    assert pd.notna(row[col]), f"Row {i}: {col} should not be None when op_B is active"
+                    assert pd.notna(row[col]), f"Row {i}: {col} should not be None when {op_b_name} is active"
     
     def test_inactive_mutagenize_keys_are_none(self):
         """Test that mutagenize design card keys are None when parent is inactive."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAAAA'], name='A', op_name='op_A', mode='sequential')
-            b = pp.from_seqs(['CCCCC'], name='B', op_name='op_B', mode='sequential')
+            a = pp.from_seqs(['AAAAA'], mode='sequential').named('A')
+            b = pp.from_seqs(['CCCCC'], mode='sequential').named('B')
             c = (a + b).named('C')
             d = pp.mutagenize(c, num_mutations=1, mode='sequential').named('D')
         
         df = d.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b, c])
         
-        # op_A and op_B are from_seqs with design_card_keys: ['seq_name', 'seq_index']
-        # When op_A is inactive (state=None), its keys should be None
-        op_a_key_cols = [c for c in df.columns if c.startswith('op_A.key.')]
-        op_b_key_cols = [c for c in df.columns if c.startswith('op_B.key.')]
+        # Find key columns using actual operation names (auto-generated)
+        op_a_name = a.operation.name
+        op_b_name = b.operation.name
+        
+        op_a_key_cols = [col for col in df.columns if f'{op_a_name}.key.' in col]
+        op_b_key_cols = [col for col in df.columns if f'{op_b_name}.key.' in col]
+        
+        op_a_state_col = f'{op_a_name}.state'
+        op_b_state_col = f'{op_b_name}.state'
         
         # Check op_A keys
         for i, row in df.iterrows():
-            if pd.isna(row['op_A.state']):
+            if pd.isna(row[op_a_state_col]):
                 for col in op_a_key_cols:
-                    assert pd.isna(row[col]), f"Row {i}: {col} should be None when op_A.state=None"
+                    assert pd.isna(row[col]), f"Row {i}: {col} should be None when {op_a_state_col}=None"
         
         # Check op_B keys
         for i, row in df.iterrows():
-            if pd.isna(row['op_B.state']):
+            if pd.isna(row[op_b_state_col]):
                 for col in op_b_key_cols:
-                    assert pd.isna(row[col]), f"Row {i}: {col} should be None when op_B.state=None"
+                    assert pd.isna(row[col]), f"Row {i}: {col} should be None when {op_b_state_col}=None"
     
     def test_active_operation_keys_are_not_none(self):
         """Test that active operation design card keys are not None."""
         import pandas as pd
         with pp.Party() as party:
-            a = pp.from_seqs(['AAA', 'TTT'], name='A', op_name='op_A', mode='sequential')
-            b = pp.from_seqs(['CCC'], name='B', op_name='op_B', mode='sequential')
+            a = pp.from_seqs(['AAA', 'TTT'], mode='sequential').named('A')
+            b = pp.from_seqs(['CCC'], mode='sequential').named('B')
             c = (a + b).named('C')
         
         df = c.generate_library(num_cycles=1, report_design_cards=True, aux_pools=[a, b])
         
-        op_a_key_cols = [c for c in df.columns if c.startswith('op_A.key.')]
-        op_b_key_cols = [c for c in df.columns if c.startswith('op_B.key.')]
+        # Find key columns using actual operation names (auto-generated)
+        op_a_name = a.operation.name
+        op_b_name = b.operation.name
+        
+        op_a_key_cols = [col for col in df.columns if f'{op_a_name}.key.' in col]
+        op_b_key_cols = [col for col in df.columns if f'{op_b_name}.key.' in col]
+        
+        op_a_state_col = f'{op_a_name}.state'
+        op_b_state_col = f'{op_b_name}.state'
         
         # Check op_A keys are not None when active
         for i, row in df.iterrows():
-            if pd.notna(row['op_A.state']):
+            if pd.notna(row[op_a_state_col]):
                 for col in op_a_key_cols:
-                    assert pd.notna(row[col]), f"Row {i}: {col} should not be None when op_A is active"
+                    assert pd.notna(row[col]), f"Row {i}: {col} should not be None when {op_a_name} is active"
         
         # Check op_B keys are not None when active
         for i, row in df.iterrows():
-            if pd.notna(row['op_B.state']):
+            if pd.notna(row[op_b_state_col]):
                 for col in op_b_key_cols:
-                    assert pd.notna(row[col]), f"Row {i}: {col} should not be None when op_B is active"
+                    assert pd.notna(row[col]), f"Row {i}: {col} should not be None when {op_b_name} is active"

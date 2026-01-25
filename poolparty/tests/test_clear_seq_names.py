@@ -27,11 +27,11 @@ class TestClearSeqNamesBasic:
         assert 'name' not in df.columns or df['name'].isna().all()
     
     def test_clear_seq_names_blocks_prefix(self):
-        """Test that clear_seq_names() blocks seq_name_prefix."""
+        """Test that clear_seq_names() blocks prefix."""
         with pp.Party() as party:
             pool = pp.from_seqs(
                 ['AAA', 'TTT'],
-                seq_name_prefix='seq_',
+                prefix='seq_',
                 mode='sequential',
             ).named('pool').clear_seq_names()
         

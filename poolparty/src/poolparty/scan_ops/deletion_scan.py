@@ -12,19 +12,15 @@ def deletion_scan(
     deletion_length: Integral,
     deletion_marker: Optional[str] = '-',
     region: RegionType = None,
-    remove_marker: Optional[bool] = None,
     positions: PositionsType = None,
     min_spacing: Optional[Integral] = None,
     max_spacing: Optional[Integral] = None,
-    seq_name_prefix: Optional[str] = None,
+    prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
     style_deletion: Optional[str] = None,
     style_background: Optional[str] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Scan a pool for all possible single deletions of a fixed length.
@@ -39,14 +35,20 @@ def deletion_scan(
         Character to insert at the deletion site. If None, segment is removed.
     region : RegionType, default=None
         Region to constrain the scan to. Can be a marker name (str) or [start, stop].
-    remove_marker : Optional[bool], default=None
-        If True and region is a marker name, remove marker tags from output.
     positions : PositionsType, default=None
         Positions to consider for the start of the deletion (0-based, relative to region).
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
         Deletion mode: 'random' or 'sequential'.
+    num_states : Optional[Integral], default=None
+        Number of states for random mode. If None, defaults to 1 (pure random sampling).
     style_deletion : Optional[str], default=None
         Style to apply to deletion gap characters (e.g., 'gray', 'red bold').
+    style_background : Optional[str], default=None
+        Style to apply to non-deletion positions.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -79,11 +81,6 @@ def deletion_scan(
             f"del_length ({deletion_length}) must be < pool.seq_length ({bg_length})"
         )
 
-    # Resolve remove_marker from party defaults (for user's outer region)
-    party = get_active_party()
-    if remove_marker is None:
-        remove_marker = party.get_default('remove_marker', True) if party else True
-
     del_char = deletion_marker if deletion_marker else '-'
     marker_name = '_del'
     marker_length = int(deletion_length)
@@ -97,11 +94,10 @@ def deletion_scan(
         positions=positions,  # Let marker_scan validate positions relative to region
         region=region,
         remove_marker=False,  # Keep outer region marker for now
-        seq_name_prefix=seq_name_prefix,
+        prefix=prefix,
         mode=mode,
         num_states=num_states,
-        op_name=op_name,
-        op_iter_order=op_iter_order,
+        iter_order=iter_order,
         _factory_name='deletion_scan(marker_scan)',
     )
 
@@ -116,10 +112,7 @@ def deletion_scan(
         bg_pool=marked,
         content_pool=content_pool,
         marker_name=marker_name,
-        name=name,
-        op_name=op_name,
         iter_order=iter_order,
-        op_iter_order=op_iter_order,
         _factory_name='deletion_scan(replace_marker_content)',
         # Pass style parameters - replace_marker_content handles position tracking
         # Only apply style_deletion when deletion_marker is set (i.e., gap chars exist)

@@ -29,10 +29,12 @@ class TestFromMotifFactory:
         """Test from_motif with custom names."""
         prob_df = pd.DataFrame({'A': [1.0], 'C': [0.0], 'G': [0.0], 'T': [0.0]})
         with pp.Party() as party:
-            pool = from_motif(prob_df, op_name='motif', name='mypool')
+            pool = from_motif(prob_df).named('mypool')
         
         df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
-        assert 'motif.key.prob_state' in df.columns
+        # Check for prob_state in design card columns (operation name is auto-generated)
+        prob_cols = [c for c in df.columns if 'prob_state' in c]
+        assert len(prob_cols) > 0
 
 
 class TestFromMotifRandomMode:
@@ -216,20 +218,25 @@ class TestFromMotifDesignCards:
         """Test prob_state is in output."""
         prob_df = pd.DataFrame({'A': [1.0], 'C': [0.0], 'G': [0.0], 'T': [0.0]})
         with pp.Party() as party:
-            pool = from_motif(prob_df, op_name='motif').named('mypool')
+            pool = from_motif(prob_df).named('mypool')
         
         df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
-        assert 'motif.key.prob_state' in df.columns
+        # Check for prob_state in design card columns (operation name is auto-generated)
+        prob_cols = [c for c in df.columns if 'prob_state' in c]
+        assert len(prob_cols) > 0
     
     def test_prob_state_is_indices(self):
         """Test that prob_state contains indices."""
         # 100% A, so index should always be 0
         prob_df = pd.DataFrame({'A': [1.0, 1.0]})
         with pp.Party() as party:
-            pool = from_motif(prob_df, op_name='motif').named('mypool')
+            pool = from_motif(prob_df).named('mypool')
         
         df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
-        prob_state = df['motif.key.prob_state'].iloc[0]
+        # Find prob_state column (operation name is auto-generated)
+        prob_cols = [c for c in df.columns if 'prob_state' in c]
+        assert len(prob_cols) > 0
+        prob_state = df[prob_cols[0]].iloc[0]
         assert prob_state == [0, 0]
     
     def test_design_card_keys_defined(self):
@@ -292,14 +299,14 @@ class TestFromMotifCustomName:
         """Test custom operation name."""
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
-            pool = from_motif(prob_df, op_name='my_motif')
-            assert pool.operation.name == 'my_motif'
+            pool = from_motif(prob_df).named('my_motif')
+            assert pool.name == 'my_motif'
     
     def test_custom_pool_name(self):
         """Test custom pool name."""
         prob_df = pd.DataFrame({'A': [0.5], 'T': [0.5]})
         with pp.Party() as party:
-            pool = from_motif(prob_df, name='my_pool')
+            pool = from_motif(prob_df).named('my_pool')
             assert pool.name == 'my_pool'
 
 

@@ -38,13 +38,10 @@ def marker_multiscan(
     strand: str = '+',
     marker_length: int = 0,
     insertion_mode: Literal['ordered', 'unordered'] = 'ordered',
-    seq_name_prefix: Optional[str] = None,
+    prefix: Optional[str] = None,
     mode: str = 'random',
     num_states: Optional[int] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ):
     """
     Insert multiple XML-style markers into a sequence.
@@ -67,18 +64,14 @@ def marker_multiscan(
         How to assign markers to positions:
         - 'ordered': markers[i] goes to the i-th selected position
         - 'unordered': randomly assign markers to positions
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
         Position selection mode: 'random'.
     num_states : Optional[Integral], default=None
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -107,13 +100,13 @@ def marker_multiscan(
         strand=strand,
         marker_length=int(marker_length),
         insertion_mode=insertion_mode,
-        seq_name_prefix=seq_name_prefix,
+        prefix=prefix,
         mode=mode,
         num_states=num_states,
-        name=op_name,
-        iter_order=op_iter_order,
+        name=None,
+        iter_order=iter_order,
     )
-    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
+    result_pool = Pool(operation=op)
     
     # Add all registered markers to the pool
     for registered_marker in registered_markers:
@@ -137,7 +130,7 @@ class MarkerMultiScanOp(Operation):
         strand: str = '+',
         marker_length: int = 0,
         insertion_mode: str = 'ordered',
-        seq_name_prefix: Optional[str] = None,
+        prefix: Optional[str] = None,
         mode: str = 'random',
         num_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -168,7 +161,7 @@ class MarkerMultiScanOp(Operation):
             seq_length=None,
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=seq_name_prefix,
+            prefix=prefix,
         )
 
     def _coerce_markers(
@@ -398,7 +391,7 @@ class MarkerMultiScanOp(Operation):
             'strand': self._strand,
             'marker_length': self._marker_length,
             'insertion_mode': self.insertion_mode,
-            'seq_name_prefix': self.name_prefix,
+            'prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,

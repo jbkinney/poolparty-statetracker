@@ -130,8 +130,8 @@ class TestStateShuffleCustomName:
         """Test custom operation name."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
-            shuffled = state_shuffle(pool, seed=42, op_name='my_shuffle')
-            assert shuffled.operation.name == 'my_shuffle'
+            shuffled = state_shuffle(pool, seed=42).named('my_shuffle')
+            assert shuffled.name == 'my_shuffle'
 
 
 class TestStateShuffleCompute:

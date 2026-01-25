@@ -12,11 +12,8 @@ def state_shuffle(
     pool: Pool,
     seed: Optional[Integral] = None,
     permutation: Optional[Sequence[Integral]] = None,
-    seq_name_prefix: Optional[str] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
+    prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Create a Pool with randomly permuted states from the input Pool.
@@ -29,22 +26,18 @@ def state_shuffle(
         Random seed for deterministic shuffling. If None, a random seed is generated.
     permutation : Optional[Sequence[Integral]], default=None
         Custom permutation to use. If provided, seed must not be specified.
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying state shuffle Operation.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+        Iteration order priority for the Operation.
 
     Returns
     -------
     Pool
         A Pool containing the same states as the input but in a randomly permuted order.
     """
-    op = StateShuffleOp(pool, seed=seed, permutation=permutation, seq_name_prefix=seq_name_prefix, name=op_name, iter_order=op_iter_order)
-    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
+    op = StateShuffleOp(pool, seed=seed, permutation=permutation, prefix=prefix, name=None, iter_order=iter_order)
+    result_pool = Pool(operation=op)
     return result_pool
 
 
@@ -59,7 +52,7 @@ class StateShuffleOp(Operation):
         parent_pool: Pool,
         seed: Optional[Integral] = None,
         permutation: Optional[Sequence[Integral]] = None,
-        seq_name_prefix: Optional[str] = None,
+        prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -71,7 +64,7 @@ class StateShuffleOp(Operation):
             num_values=1,
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=seq_name_prefix,
+            prefix=prefix,
         )
     
     def build_pool_counter(
@@ -101,7 +94,7 @@ class StateShuffleOp(Operation):
             'parent_pool': self.parent_pools[0],
             'seed': self.seed,
             'permutation': self.permutation,
-            'seq_name_prefix': self.name_prefix,
+            'prefix': self.name_prefix,
             'name': None,
             'iter_order': self.iter_order,
         }

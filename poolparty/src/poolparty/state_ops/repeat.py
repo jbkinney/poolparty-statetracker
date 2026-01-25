@@ -10,11 +10,8 @@ import numpy as np
 def repeat(
     pool: Pool_type,
     times: int,
-    seq_name_prefix: Optional[str] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
+    prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ) -> Pool_type:
     """
     Repeat the states of a pool a specified number of times, producing a new pool with
@@ -26,22 +23,18 @@ def repeat(
         The Pool whose state(s) are to be repeated.
     times : int
         The number of times to repeat the pool's state(s).
-    name : Optional[str], default=None
-        Name to assign to the resulting Pool.
-    op_name : Optional[str], default=None
-        Name to assign to the internal RepeatOp operation.
-    iter_order : Real, default=0
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Real, default=0
-        Iteration order priority for the internal RepeatOp operation (typically unused).
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the Operation.
 
     Returns
     -------
     Pool_type
         A new Pool with `times` as many states as the input pool has.
     """
-    op = RepeatOp(pool, times=times, seq_name_prefix=seq_name_prefix, name=op_name, iter_order=op_iter_order)
-    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
+    op = RepeatOp(pool, times=times, prefix=prefix, name=None, iter_order=iter_order)
+    result_pool = Pool(operation=op)
     return result_pool
 
 
@@ -55,7 +48,7 @@ class RepeatOp(Operation):
         self,
         pool: Pool_type,
         times: int,
-        seq_name_prefix: Optional[str] = None,
+        prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -70,7 +63,7 @@ class RepeatOp(Operation):
             seq_length=pool.seq_length,
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=seq_name_prefix,
+            prefix=prefix,
         )
     
     def compute(
@@ -91,7 +84,7 @@ class RepeatOp(Operation):
         return {
             'pool': self.parent_pools[0],
             'times': self.times,
-            'seq_name_prefix': self.name_prefix,
+            'prefix': self.name_prefix,
             'name': None,
             'iter_order': self.iter_order,
         }

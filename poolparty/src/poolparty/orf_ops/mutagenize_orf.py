@@ -23,10 +23,7 @@ def mutagenize_orf(
     codon_positions: Union[Sequence[Integral], slice, None] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Apply codon-level mutations to an ORF sequence. Requires active Party context.
@@ -50,14 +47,8 @@ def mutagenize_orf(
         Selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
     iter_order : Optional[Real], default=None
-        Iteration order for the Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order for the Operation.
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -75,10 +66,10 @@ def mutagenize_orf(
         codon_positions=codon_positions,
         mode=mode,
         num_states=num_states,
-        name=op_name,
-        iter_order=op_iter_order,
+        name=None,
+        iter_order=iter_order,
     )
-    return Pool(operation=op, name=name, iter_order=iter_order)
+    return Pool(operation=op)
 
 
 @beartype

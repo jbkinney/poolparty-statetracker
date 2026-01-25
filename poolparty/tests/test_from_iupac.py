@@ -112,13 +112,13 @@ class TestFromIupacCustomName:
     def test_custom_operation_name(self):
         """Custom operation name."""
         with pp.Party() as party:
-            pool = from_iupac('ACGT', op_name='my_motif')
-            assert pool.operation.name == 'my_motif'
+            pool = from_iupac('ACGT').named('my_motif')
+            assert pool.name == 'my_motif'
     
     def test_custom_pool_name(self):
         """Custom pool name."""
         with pp.Party() as party:
-            pool = from_iupac('ACGT', name='my_pool')
+            pool = from_iupac('ACGT').named('my_pool')
             assert pool.name == 'my_pool'
 
 
@@ -128,10 +128,12 @@ class TestFromIupacDesignCards:
     def test_iupac_state_in_output(self):
         """Design card contains iupac_state."""
         with pp.Party() as party:
-            pool = from_iupac('ACGT', op_name='motif').named('mypool')
+            pool = from_iupac('ACGT').named('mypool')
         
         df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
-        assert 'motif.key.iupac_state' in df.columns
+        # Check for iupac_state in design card columns (operation name is auto-generated)
+        iupac_cols = [c for c in df.columns if 'iupac_state' in c]
+        assert len(iupac_cols) > 0
     
     def test_design_card_keys_defined(self):
         """design_card_keys is defined correctly."""

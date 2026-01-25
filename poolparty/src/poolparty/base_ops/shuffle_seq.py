@@ -10,14 +10,10 @@ import numpy as np
 def shuffle_seq(
     pool: Union[Pool_type, str],
     region: RegionType = None,
-    remove_marker: Optional[bool] = None,
-    seq_name_prefix: Optional[str] = None,
+    prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
 ) -> Pool:
     """
@@ -56,15 +52,14 @@ def shuffle_seq(
     op = SeqShuffleOp(
         parent_pool=pool_obj,
         region=region,
-        remove_marker=remove_marker,
-        seq_name_prefix=seq_name_prefix,
+        prefix=prefix,
         mode=mode,
         num_states=num_states,
-        name=op_name,
-        iter_order=op_iter_order,
+        name=None,
+        iter_order=iter_order,
         _factory_name=_factory_name,
     )
-    result_pool = Pool(operation=op, name=name, iter_order=iter_order)
+    result_pool = Pool(operation=op)
     return result_pool
 
 
@@ -78,9 +73,8 @@ class SeqShuffleOp(Operation):
         self,
         parent_pool: Pool,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
         spacer_str: str = '',
-        seq_name_prefix: Optional[str] = None,
+        prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -110,9 +104,8 @@ class SeqShuffleOp(Operation):
             seq_length=parent_pool.seq_length,
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=seq_name_prefix,
+            prefix=prefix,
             region=region,
-            remove_marker=remove_marker,
         )
     
     def compute(
@@ -176,8 +169,7 @@ class SeqShuffleOp(Operation):
         return {
             'parent_pool': self.parent_pools[0],
             'region': self._region,
-            'remove_marker': self._remove_marker,
-            'seq_name_prefix': self.name_prefix,
+            'prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,

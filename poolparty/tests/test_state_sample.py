@@ -148,8 +148,8 @@ class TestStateSampleCustomName:
         """Test custom operation name."""
         with pp.Party() as party:
             pool = pp.from_seqs(['A', 'B', 'C'], mode='sequential')
-            sampled = state_sample(pool, num_values=2, seed=42, op_name='my_sample')
-            assert sampled.operation.name == 'my_sample'
+            sampled = state_sample(pool, num_values=2, seed=42).named('my_sample')
+            assert sampled.name == 'my_sample'
 
 
 class TestStateSampleCompute:

@@ -12,14 +12,10 @@ def from_iupac(
     iupac_seq: str,
     bg_pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
-    remove_marker: Optional[bool] = None,
-    seq_name_prefix: Optional[str] = None,
+    prefix: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
-    name: Optional[str] = None,
-    op_name: Optional[str] = None,
     iter_order: Optional[Real] = None,
-    op_iter_order: Optional[Real] = None,
 ) -> Pool_type:
     """
     Create a Pool that generates DNA sequences from IUPAC notation.
@@ -35,20 +31,14 @@ def from_iupac(
     region : RegionType, default=None
         Region to replace in bg_pool. Can be a marker name or [start, stop] interval.
         Required if bg_pool is provided.
-    remove_marker : Optional[bool], default=None
-        If True and region is a marker name, remove marker tags from output.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
         Sequence selection mode: 'sequential' or 'random'.
     num_states : Optional[int], default=None
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
-    iter_order : Real, default=0
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -66,14 +56,13 @@ def from_iupac(
         iupac_seq=iupac_seq,
         bg_pool=bg_pool_obj,
         region=region,
-        remove_marker=remove_marker,
-        seq_name_prefix=seq_name_prefix,
+        prefix=prefix,
         mode=mode,
         num_states=num_states,
-        name=op_name,
-        iter_order=op_iter_order,
+        name=None,
+        iter_order=iter_order,
     )
-    pool = Pool(operation=op, name=name, iter_order=iter_order)
+    pool = Pool(operation=op)
     return pool
 
 
@@ -88,8 +77,7 @@ class FromIupacOp(Operation):
         iupac_seq: str,
         bg_pool: Optional[Pool] = None,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
-        seq_name_prefix: Optional[str] = None,
+        prefix: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[int] = None,
         name: Optional[str] = None,
@@ -165,9 +153,8 @@ class FromIupacOp(Operation):
             seq_length=seq_length,
             name=name,
             iter_order=iter_order,
-            seq_name_prefix=seq_name_prefix,
+            prefix=prefix,
             region=region,
-            remove_marker=remove_marker,
         )
 
     def compute(
@@ -206,8 +193,7 @@ class FromIupacOp(Operation):
             'iupac_seq': self.iupac_seq,
             'bg_pool': self.parent_pools[0] if self.parent_pools else None,
             'region': self._region,
-            'remove_marker': self._remove_marker,
-            'seq_name_prefix': self.name_prefix,
+            'prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,
