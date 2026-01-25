@@ -375,7 +375,7 @@ class Operation:
         5. Adjusts output style positions to account for prefix
         6. Removes marker tags if remove_marker=True and region is a marker name
         """
-        from .style import split_styles_by_region, reassemble_styles
+        from .style_utils import split_styles_by_region, reassemble_styles
         
         if self._region is None:
             return self.compute(parent_seqs, rng, parent_styles)
@@ -495,7 +495,7 @@ class Operation:
                 result_styles.extend(prefix_styles)
                 
                 # Shift region styles by region_prefix_len
-                from .style import shift_style_positions
+                from .style_utils import shift_style_positions
                 shifted_region = shift_style_positions(region_styles, region_prefix_len)
                 result_styles.extend(shifted_region)
                 

@@ -7,7 +7,7 @@ from ..operation import Operation
 from ..pool import Pool
 
 # Reuse constants from style
-from ..style import DEFAULT_GAP_CHARS
+from ..style_utils import DEFAULT_GAP_CHARS
 
 WhichType = Literal['all', 'upper', 'lower', 'gap', 'tags', 'contents']
 

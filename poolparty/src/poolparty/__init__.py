@@ -66,7 +66,7 @@ from .marker_ops import (
     remove_marker,
 )
 # Import styling utilities
-from .style import print_named_colors
+from .style_utils import print_named_colors
 # Import from multiscan_ops module
 from .multiscan_ops import (
     deletion_multiscan,
