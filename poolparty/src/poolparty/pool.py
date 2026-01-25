@@ -611,7 +611,7 @@ class Pool:
         prefix_shuffle: Optional[str] = None,
         mode: ModeType = 'random',
         num_states: Optional[Integral] = None,
-        style_shuffle: Optional[str] = None,
+        style: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from .scan_ops.shuffle_scan import shuffle_scan
@@ -626,7 +626,7 @@ class Pool:
             prefix_shuffle=prefix_shuffle,
             mode=mode,
             num_states=num_states,
-            style_shuffle=style_shuffle,
+            style=style,
             iter_order=iter_order,
         )
     
