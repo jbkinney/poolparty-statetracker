@@ -1,5 +1,5 @@
 """DataFrame formatting utilities for poolparty."""
-from poolparty.types import Literal
+from ..types import Literal
 import statetracker as st
 import pandas as pd
 

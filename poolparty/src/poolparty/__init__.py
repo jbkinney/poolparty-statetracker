@@ -9,7 +9,7 @@ from .pool import Pool
 from .operation import Operation
 from .marker import Marker
 from .generate_library import generate_library
-from .dna_utils import BASES, COMPLEMENT, IUPAC_TO_DNA, IGNORE_CHARS, VALID_CHARS
+from .utils.dna_utils import BASES, COMPLEMENT, IUPAC_TO_DNA, IGNORE_CHARS, VALID_CHARS
 # Import fixed operations from fixed_ops module
 from .fixed_ops import (
     fixed_operation, FixedOp,
@@ -66,7 +66,7 @@ from .marker_ops import (
     remove_marker,
 )
 # Import styling utilities
-from .style_utils import print_named_colors
+from .utils.style_utils import print_named_colors
 # Import from multiscan_ops module
 from .multiscan_ops import (
     deletion_multiscan,

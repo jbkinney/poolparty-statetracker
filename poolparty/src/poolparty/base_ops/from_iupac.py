@@ -3,7 +3,7 @@ from numbers import Real
 from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype
 from ..operation import Operation
 from ..pool import Pool
-from .. import dna_utils
+from ..utils import dna_utils
 import numpy as np
 
 

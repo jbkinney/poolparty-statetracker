@@ -1,5 +1,5 @@
 """DNA sequence constants and utilities for poolparty."""
-from .types import beartype
+from ..types import beartype
 
 # Canonical DNA bases
 BASES: list[str] = ['A', 'C', 'G', 'T']
@@ -80,14 +80,14 @@ def get_mutations(char: str) -> list[str]:
 @beartype
 def get_nonmarker_positions(seq: str) -> list[int]:
     """Get raw string positions of all chars excluding marker tag interiors."""
-    from .marker_ops.parsing import get_nonmarker_positions as _get_nonmarker_positions
+    from ..marker_ops.parsing import get_nonmarker_positions as _get_nonmarker_positions
     return _get_nonmarker_positions(seq)
 
 
 @beartype
 def get_length_without_markers(seq: str) -> int:
     """Get sequence length excluding marker tags (includes all other chars)."""
-    from .marker_ops.parsing import get_length_without_markers as _get_length_without_markers
+    from ..marker_ops.parsing import get_length_without_markers as _get_length_without_markers
     return _get_length_without_markers(seq)
 
 

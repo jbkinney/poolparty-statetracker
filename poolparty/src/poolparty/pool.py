@@ -324,7 +324,7 @@ class Pool:
                     row_parts.append(f"{row['name']}")
             if show_seq:
                 seq = row['seq']
-                from .style_utils import apply_inline_styles
+                from .utils.style_utils import apply_inline_styles
                 # Get per-sequence inline styles (from operation style_mutations parameters)
                 inline_styles = row.get('_inline_styles', [])
                 # Apply inline styles

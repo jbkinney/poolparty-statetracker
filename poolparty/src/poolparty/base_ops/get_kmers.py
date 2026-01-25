@@ -4,7 +4,7 @@ from ..types import Pool_type, ModeType, Optional, Literal, Union, RegionType, I
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
-from .. import dna_utils
+from ..utils import dna_utils
 import numpy as np
 
 

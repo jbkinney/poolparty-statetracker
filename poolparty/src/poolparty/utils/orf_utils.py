@@ -1,6 +1,6 @@
 """Utility functions for ORF handling."""
 from numbers import Integral
-from .types import Optional, Sequence, beartype
+from ..types import Optional, Sequence, beartype
 
 
 @beartype

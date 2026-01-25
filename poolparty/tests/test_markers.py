@@ -391,7 +391,7 @@ class TestDNAWithXMLMarkers:
     
     def test_get_seq_length_with_markers(self):
         """Test get_seq_length excludes marker tags but includes content."""
-        from poolparty import dna_utils
+        from poolparty.utils import dna_utils
         
         # Without marker
         assert dna_utils.get_seq_length('ACGT') == 4
@@ -403,14 +403,14 @@ class TestDNAWithXMLMarkers:
     
     def test_get_length_without_markers(self):
         """Test get_length_without_markers from dna module."""
-        from poolparty import dna_utils
+        from poolparty.utils import dna_utils
         
         assert dna_utils.get_length_without_markers('ACGT') == 4
         assert dna_utils.get_length_without_markers('AC<region>TG</region>GT') == 6
     
     def test_get_nonmarker_positions(self):
         """Test get_nonmarker_positions from dna module."""
-        from poolparty import dna_utils
+        from poolparty.utils import dna_utils
         
         # Without marker
         assert dna_utils.get_nonmarker_positions('ACGT') == [0, 1, 2, 3]

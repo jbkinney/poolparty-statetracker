@@ -3,7 +3,7 @@
 import pytest
 import pandas as pd
 import poolparty as pp
-from poolparty.df_utils import (
+from poolparty.utils.df_utils import (
     counter_col_name,
     get_pools_reverse_topo,
     organize_columns,

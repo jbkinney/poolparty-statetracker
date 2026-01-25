@@ -7,7 +7,7 @@ else:
 import statetracker as st
 from .types import Pool_type, Operation_type, Optional, beartype, Union, Any
 from .codon_table import CodonTable
-from . import dna_utils
+from .utils import dna_utils
 from .marker import Marker
 
 _active_party: Optional["Party"] = None

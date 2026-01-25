@@ -1,6 +1,6 @@
 """Inline sequence styling with ANSI colors."""
 import re
-from .types import Literal, Optional, beartype, StyleList
+from ..types import Literal, Optional, beartype, StyleList
 import numpy as np
 
 # ANSI escape codes for styling

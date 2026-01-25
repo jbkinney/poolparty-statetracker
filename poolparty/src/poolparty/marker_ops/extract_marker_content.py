@@ -3,7 +3,7 @@ from numbers import Real
 from poolparty.types import Union, Optional
 
 from .parsing import validate_single_marker
-from .. import dna_utils
+from ..utils import dna_utils
 
 
 def extract_marker_content(

@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import poolparty as pp
 from poolparty.base_ops.mutagenize import MutagenizeOp, mutagenize
-from poolparty.style_utils import (
+from poolparty.utils.style_utils import (
     apply_inline_styles,
     validate_style_positions,
     reset,

@@ -2,7 +2,7 @@
 
 import pytest
 import poolparty as pp
-from poolparty.dna_utils import (
+from poolparty.utils.dna_utils import (
     BASES, COMPLEMENT, IUPAC_TO_DNA, IGNORE_CHARS, VALID_CHARS, IUPAC_CHARS,
     complement, reverse_complement, get_mutations,
     get_molecular_positions, get_nonmarker_positions, get_seq_length,

@@ -1,7 +1,7 @@
 """Apply a transformation to content at a marked region."""
 from numbers import Real
 from poolparty.types import Optional, Callable
-from .. import dna_utils
+from ..utils import dna_utils
 
 
 def apply_at_marker(

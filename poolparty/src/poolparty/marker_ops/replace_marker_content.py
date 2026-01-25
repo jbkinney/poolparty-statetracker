@@ -5,7 +5,7 @@ import numpy as np
 
 from .parsing import validate_single_marker
 from ..operation import Operation
-from .. import dna_utils
+from ..utils import dna_utils
 
 
 def replace_marker_content(

@@ -5,7 +5,7 @@ from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionT
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
-from .. import dna_utils
+from ..utils import dna_utils
 import numpy as np
 
 

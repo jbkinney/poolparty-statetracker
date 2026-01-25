@@ -3,7 +3,7 @@ from numbers import Real
 from pyfaidx import Fasta
 from ..types import Pool_type, Union, Optional, RegionType, beartype, Literal
 from ..pool import Pool
-from .. import dna_utils
+from ..utils import dna_utils
 
 
 @beartype
