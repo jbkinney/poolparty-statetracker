@@ -473,8 +473,9 @@ class Operation:
                 # Calculate old and new region lengths accounting for marker tag changes
                 if isinstance(self._region, str):
                     if self._remove_marker:
-                        # When removing marker: compare new content length vs old content length
-                        old_region_len = marker_info.content_end - marker_info.content_start
+                        # When removing marker: compare new content length vs old marker span
+                        # (suffix positions need to shift by the removed tag length)
+                        old_region_len = marker_info.end - marker_info.start
                         new_region_len = len(output_seq)
                     else:
                         # When keeping marker: compare new marker span vs old marker span

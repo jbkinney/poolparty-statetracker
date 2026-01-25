@@ -14,8 +14,11 @@ def shuffle_scan(
     region: RegionType = None,
     shuffles_per_position: Integral = 1,
     prefix: Optional[str] = None,
+    prefix_position: Optional[str] = None,
+    prefix_shuffle: Optional[str] = None,
     mode: ModeType = 'random',
     num_states: Optional[Integral] = None,
+    style_shuffle: Optional[str] = None,
     iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = 'shuffle_scan',
 ) -> Pool:
@@ -34,8 +37,16 @@ def shuffle_scan(
         Region to constrain the scan to. Can be a marker name (str) or [start, stop].
     shuffles_per_position : Integral, default=1
         Number of shuffles to perform at each position.
+    prefix : Optional[str], default=None
+        Prefix for cartesian product index (e.g., 'shuf' produces 'shuf_0', 'shuf_1', ...).
+    prefix_position : Optional[str], default=None
+        Prefix for position index (e.g., 'pos' produces 'pos_0', 'pos_1', ...).
+    prefix_shuffle : Optional[str], default=None
+        Prefix for shuffle variant index (e.g., 'var' produces 'var_0', 'var_1', ...).
     mode : ModeType, default='random'
         Selection mode: 'random', 'sequential', or 'hybrid'.
+    style_shuffle : Optional[str], default=None
+        Style to apply to shuffled characters (e.g., 'purple', 'red bold').
 
     Returns
     -------
@@ -66,7 +77,11 @@ def shuffle_scan(
     marker_name = '_shuf'
     marker_length = int(shuffle_length)
 
+    # Check if any naming prefix is provided
+    has_naming = any([prefix, prefix_position, prefix_shuffle])
+
     # 1. Insert marker at scanning positions
+    # Don't pass prefix to marker_scan if we're doing composite naming
     marked = marker_scan(
         pool,
         marker=marker_name,
@@ -74,19 +89,36 @@ def shuffle_scan(
         positions=positions,
         region=region,
         remove_marker=False,  # Keep outer region marker for now
-        prefix=prefix,
+        prefix=None if has_naming else prefix,  # Only pass prefix if not doing composite naming
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
         _factory_name=f'{_factory_name}(marker_scan)',
     )
 
+    # If naming is enabled, block naming on marker_scan operation
+    # and capture state reference for composite naming in shuffle_seq
+    pos_state = None
+    num_shuffles = int(shuffles_per_position) if shuffles_per_position else 1
+    if has_naming:
+        # Block naming on marker_scan operation
+        marked.operation._block_seq_names = True
+        # Capture position state reference for naming
+        pos_state = marked.operation.state
+
     # 2. Shuffle the marked region directly using shuffle_seq with region='_shuf'
     return shuffle_seq(
         marked,
         region=marker_name,
+        _remove_marker=True,  # Remove _shuf marker tags
+        style_shuffle=style_shuffle,
         mode='random',
         num_states=shuffles_per_position,
         iter_order=-1,
         _factory_name=f'{_factory_name}(shuffle_seq)',
+        _seq_name_prefix=prefix,
+        _seq_name_pos_prefix=prefix_position,
+        _seq_name_shuffle_prefix=prefix_shuffle,
+        _pos_state=pos_state,
+        _num_shuffles=num_shuffles,
     )

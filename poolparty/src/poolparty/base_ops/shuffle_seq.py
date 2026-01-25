@@ -14,7 +14,15 @@ def shuffle_seq(
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
+    _remove_marker: bool = False,
+    style_shuffle: Optional[str] = None,
     _factory_name: Optional[str] = None,
+    # Internal parameters for shuffle_scan composite naming
+    _seq_name_prefix: Optional[str] = None,
+    _seq_name_pos_prefix: Optional[str] = None,
+    _seq_name_shuffle_prefix: Optional[str] = None,
+    _pos_state=None,
+    _num_shuffles: Optional[int] = None,
 ) -> Pool:
     """
     Create a Pool that shuffles characters within a specified region.
@@ -26,21 +34,16 @@ def shuffle_seq(
     region : RegionType, default=None
         Region to shuffle. Can be a marker name (str), explicit interval [start, stop],
         or None to shuffle entire sequence.
-    remove_marker : Optional[bool], default=None
-        If True and region is a marker name, remove the marker tags from output.
-        If None, uses Party default ('remove_marker').
     mode : ModeType, default='random'
         Shuffle mode: 'random'. Sequential is not supported.
     num_states : Optional[int], default=None
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operation.
     iter_order : Optional[Real], default=None
         Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operation.
+    _remove_marker : bool, default=False
+        If True and region is a marker name, remove the marker tags from output.
+    style_shuffle : Optional[str], default=None
+        Style to apply to shuffled characters (e.g., 'purple', 'red bold').
     
     Returns
     -------
@@ -57,7 +60,14 @@ def shuffle_seq(
         num_states=num_states,
         name=None,
         iter_order=iter_order,
+        _remove_marker=_remove_marker,
+        style_shuffle=style_shuffle,
         _factory_name=_factory_name,
+        _seq_name_prefix=_seq_name_prefix,
+        _seq_name_pos_prefix=_seq_name_pos_prefix,
+        _seq_name_shuffle_prefix=_seq_name_shuffle_prefix,
+        _pos_state=_pos_state,
+        _num_shuffles=_num_shuffles,
     )
     result_pool = Pool(operation=op)
     return result_pool
@@ -79,7 +89,15 @@ class SeqShuffleOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        _remove_marker: bool = False,
+        style_shuffle: Optional[str] = None,
         _factory_name: Optional[str] = None,
+        # Internal parameters for shuffle_scan composite naming
+        _seq_name_prefix: Optional[str] = None,
+        _seq_name_pos_prefix: Optional[str] = None,
+        _seq_name_shuffle_prefix: Optional[str] = None,
+        _pos_state=None,
+        _num_shuffles: Optional[int] = None,
     ) -> None:
         """Initialize SeqShuffleOp."""
         from ..party import get_active_party
@@ -90,6 +108,17 @@ class SeqShuffleOp(Operation):
         # Set factory_name if provided
         if _factory_name is not None:
             self.factory_name = _factory_name
+        
+        # Store styling parameter
+        self._style_shuffle = style_shuffle
+        
+        # Store naming parameters for shuffle_scan composite naming
+        self._seq_name_prefix = _seq_name_prefix
+        self._seq_name_pos_prefix = _seq_name_pos_prefix
+        self._seq_name_shuffle_prefix = _seq_name_shuffle_prefix
+        self._pos_state = _pos_state
+        self._num_shuffles = _num_shuffles
+        self._shuffle_naming = any([_seq_name_prefix, _seq_name_pos_prefix, _seq_name_shuffle_prefix])
         
         # Determine num_states
         if mode == 'random':
@@ -106,6 +135,7 @@ class SeqShuffleOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
             region=region,
+            remove_marker=_remove_marker,
         )
     
     def compute(
@@ -151,18 +181,51 @@ class SeqShuffleOp(Operation):
                 dest = permutation[i]
                 shuffled_molecular[dest] = ch
             
-            # Place shuffled molecular chars back at their original positions
-            seq_list = list(seq)
-            for i, pos in enumerate(molecular_positions):
-                seq_list[pos] = shuffled_molecular[i]
-            shuffled_seq = ''.join(seq_list)
+        # Place shuffled molecular chars back at their original positions
+        seq_list = list(seq)
+        for i, pos in enumerate(molecular_positions):
+            seq_list[pos] = shuffled_molecular[i]
+        shuffled_seq = ''.join(seq_list)
         
-        # Note: Shuffle changes character positions, so parent styles not meaningful
+        # Apply styling to shuffled characters if requested
+        from ..types import StyleList
+        output_styles: StyleList = []
+        if self._style_shuffle and molecular_positions:
+            output_styles = [
+                (self._style_shuffle, np.array(molecular_positions, dtype=np.int64))
+            ]
+        
         return {
             'permutation': permutation,
             'seq': shuffled_seq,
-            'style': [],
+            'style': output_styles,
         }
+    
+    def compute_seq_names(
+        self,
+        parent_names: list[Optional[str]],
+        card: dict,
+    ) -> Optional[str]:
+        """Compute output sequence names with optional shuffle_scan composite naming."""
+        if not self._shuffle_naming:
+            return super().compute_seq_names(parent_names, card)
+        
+        # Get position index from the position state object
+        pos_idx = self._pos_state.value if self._pos_state is not None and self._pos_state.value is not None else 0
+        # Get shuffle index from this operation's own state
+        shuffle_idx = self.state.value if self.state is not None and self.state.value is not None else 0
+        
+        # Build name parts in order: product index, position index, shuffle index
+        name_parts = []
+        if self._seq_name_prefix:
+            w = pos_idx * self._num_shuffles + shuffle_idx
+            name_parts.append(f'{self._seq_name_prefix}_{w}')
+        if self._seq_name_pos_prefix:
+            name_parts.append(f'{self._seq_name_pos_prefix}_{pos_idx}')
+        if self._seq_name_shuffle_prefix:
+            name_parts.append(f'{self._seq_name_shuffle_prefix}_{shuffle_idx}')
+        
+        return '.'.join(name_parts) if name_parts else None
     
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
@@ -174,5 +237,12 @@ class SeqShuffleOp(Operation):
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
+            '_remove_marker': self._remove_marker,
+            'style_shuffle': self._style_shuffle,
+            '_seq_name_prefix': self._seq_name_prefix,
+            '_seq_name_pos_prefix': self._seq_name_pos_prefix,
+            '_seq_name_shuffle_prefix': self._seq_name_shuffle_prefix,
+            '_pos_state': self._pos_state,
+            '_num_shuffles': self._num_shuffles,
         }
 
