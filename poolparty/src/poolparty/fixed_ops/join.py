@@ -5,7 +5,7 @@ from ..types import Pool_type, Union, Optional, Sequence, beartype
 
 @beartype
 def join(
-    segment_pools: Sequence[Union[Pool_type, str]],
+    pools: Sequence[Union[Pool_type, str]],
     spacer_str: str = '',
     iter_order: Optional[Real] = None,
     style: Optional[str] = None,
@@ -16,7 +16,7 @@ def join(
 
     Parameters
     ----------
-    segment_pools : Sequence[Union[Pool_type, str]]
+    pools : Sequence[Union[Pool_type, str]]
         List of Pool objects and/or strings to be joined in order.
         Any provided string is automatically converted to a constant Pool.
     spacer_str : str, default=''
@@ -41,7 +41,7 @@ def join(
         return None
 
     result_pool = fixed_operation(
-        parent_pools=segment_pools,
+        parent_pools=pools,
         seq_from_seqs_fn=lambda seqs: spacer_str.join(seqs),
         seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         iter_order=iter_order,

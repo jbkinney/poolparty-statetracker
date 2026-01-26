@@ -192,10 +192,10 @@ class TestDeletionMultiscanValidation:
         with pp.Party() as party:
             bg = pp.from_seqs(['AAAAAAAAAAAAAAAAAA'])  # 18 chars
 
-            with pytest.raises(ValueError, match="deletion_length .* must be < bg_pool.seq_length"):
+            with pytest.raises(ValueError, match="deletion_length .* must be < pool.seq_length"):
                 deletion_multiscan(bg, deletion_length=18, num_deletions=1)
 
-            with pytest.raises(ValueError, match="deletion_length .* must be < bg_pool.seq_length"):
+            with pytest.raises(ValueError, match="deletion_length .* must be < pool.seq_length"):
                 deletion_multiscan(bg, deletion_length=20, num_deletions=1)
 
     def test_num_deletions_must_be_positive(self):

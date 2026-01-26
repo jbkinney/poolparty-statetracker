@@ -8,7 +8,7 @@ from ..pool import Pool
 
 @beartype
 def replacement_multiscan(
-    bg_pool: Union[Pool, str],
+    pool: Union[Pool, str],
     num_replacements: Integral,
     replacement_pools: Union[Pool, Sequence[Pool]],
     positions: PositionsType = None,
@@ -26,7 +26,7 @@ def replacement_multiscan(
 
     Parameters
     ----------
-    bg_pool : Pool or str
+    pool : Pool or str
         Source pool or sequence string to replace segments in.
     num_replacements : Integral
         Number of simultaneous replacements to make.
@@ -75,12 +75,12 @@ def replacement_multiscan(
         raise ValueError(f"num_replacements must be >= 1, got {num_replacements}")
 
     # Convert string inputs to pools if needed
-    bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+    pool_obj = from_seq(pool) if isinstance(pool, str) else pool
 
-    # Validate bg_pool has defined seq_length
-    bg_length = bg_pool.seq_length
+    # Validate pool has defined seq_length
+    bg_length = pool_obj.seq_length
     if bg_length is None:
-        raise ValueError("bg_pool must have a defined seq_length")
+        raise ValueError("pool must have a defined seq_length")
 
     # Handle replacement_pools: single Pool vs Sequence of Pools
     if isinstance(replacement_pools, Pool):
@@ -131,7 +131,7 @@ def replacement_multiscan(
 
     # 1. Insert markers at multiple positions using region_multiscan
     marked = region_multiscan(
-        bg_pool,
+        pool_obj,
         regions=markers,
         num_insertions=int(num_replacements),
         positions=validated_positions,

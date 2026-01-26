@@ -8,7 +8,7 @@ from ..pool import Pool
 
 @beartype
 def deletion_multiscan(
-    bg_pool: Union[Pool, str],
+    pool: Union[Pool, str],
     deletion_length: Integral,
     num_deletions: Integral,
     deletion_marker: Optional[str] = '-',
@@ -26,7 +26,7 @@ def deletion_multiscan(
 
     Parameters
     ----------
-    bg_pool : Pool or str
+    pool : Pool or str
         Source pool or sequence string to delete from.
     deletion_length : Integral
         Number of characters to delete at each position.
@@ -68,19 +68,19 @@ def deletion_multiscan(
         raise ValueError(f"num_deletions must be >= 1, got {num_deletions}")
 
     # Convert string inputs to pools if needed
-    bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+    pool_obj = from_seq(pool) if isinstance(pool, str) else pool
 
-    # Validate bg_pool has defined seq_length
-    bg_length = bg_pool.seq_length
+    # Validate pool has defined seq_length
+    bg_length = pool_obj.seq_length
     if bg_length is None:
-        raise ValueError("bg_pool must have a defined seq_length")
+        raise ValueError("pool must have a defined seq_length")
 
     # Validate deletion_length
     if deletion_length <= 0:
         raise ValueError(f"deletion_length must be > 0, got {deletion_length}")
     if deletion_length >= bg_length:
         raise ValueError(
-            f"deletion_length ({deletion_length}) must be < bg_pool.seq_length ({bg_length})"
+            f"deletion_length ({deletion_length}) must be < pool.seq_length ({bg_length})"
         )
 
     # Check if there's room for num_deletions non-overlapping regions
@@ -103,7 +103,7 @@ def deletion_multiscan(
 
     # 1. Insert tags at multiple positions using region_multiscan
     marked = region_multiscan(
-        bg_pool,
+        pool_obj,
         regions=markers,
         num_insertions=int(num_deletions),
         positions=validated_positions,

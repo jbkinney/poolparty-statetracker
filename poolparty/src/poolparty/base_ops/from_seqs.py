@@ -10,7 +10,7 @@ import numpy as np
 @beartype
 def from_seqs(
     seqs: Sequence[str],
-    bg_pool: Optional[Union[Pool, str]] = None,
+    pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     style: Optional[str] = None,
     seq_names: Optional[Sequence[str]] = None,
@@ -27,12 +27,12 @@ def from_seqs(
     ----------
     seqs : Sequence[str]
         Sequence of string sequences to include in the pool.
-    bg_pool : Optional[Union[Pool, str]], default=None
+    pool : Optional[Union[Pool, str]], default=None
         Background pool or sequence. If provided with region, selected sequence
         replaces the region content.
     region : RegionType, default=None
-        Region to replace in bg_pool. Can be a marker name or [start, stop] interval.
-        Required if bg_pool is provided.
+        Region to replace in pool. Can be a marker name or [start, stop] interval.
+        Required if pool is provided.
     seq_names : Optional[Sequence[str]], default=None
         Explicit names for each sequence. If provided, these are used directly.
     prefix : Optional[str], default=None
@@ -53,18 +53,18 @@ def from_seqs(
     Raises
     ------
     ValueError
-        If bg_pool is provided without region.
+        If pool is provided without region.
     """
     from ..fixed_ops.from_seq import from_seq
-    bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
-    op = FromSeqsOp(seqs, bg_pool=bg_pool_obj, region=region,
+    pool_obj = from_seq(pool) if isinstance(pool, str) else pool
+    op = FromSeqsOp(seqs, parent_pool=pool_obj, region=region,
                     style=style,
                     seq_names=seq_names, prefix=prefix,
                     mode=mode, num_states=num_states,
                     name=None, iter_order=iter_order,
                     _factory_name=_factory_name)
-    pool = Pool(operation=op)
-    return pool
+    result_pool = Pool(operation=op)
+    return result_pool
 
 
 @beartype
@@ -76,7 +76,7 @@ class FromSeqsOp(Operation):
     def __init__(
         self,
         seqs: Sequence[str],
-        bg_pool: Optional[Pool] = None,
+        parent_pool: Optional[Pool] = None,
         region: RegionType = None,
         spacer_str: str = '',
         style: Optional[str] = None,
@@ -101,11 +101,11 @@ class FromSeqsOp(Operation):
         if _factory_name is not None:
             self.factory_name = _factory_name
  
-        # Validate bg_pool/region combination
-        if bg_pool is not None and region is None:
+        # Validate parent_pool/region combination
+        if parent_pool is not None and region is None:
             raise ValueError(
-                "region is required when bg_pool is provided. "
-                "Specify which region of bg_pool to replace with the selected sequence."
+                "region is required when parent_pool is provided. "
+                "Specify which region of parent_pool to replace with the selected sequence."
             )
         
         self._style = style
@@ -134,9 +134,9 @@ class FromSeqsOp(Operation):
         lengths = [dna_utils.get_length_without_tags(s) for s in self.seqs]
         seq_length = lengths[0] if all(L == lengths[0] for L in lengths) else None
         
-        parent_pools = [bg_pool] if bg_pool is not None else []
+        parent_pools_list = [parent_pool] if parent_pool is not None else []
         super().__init__(
-            parent_pools=parent_pools,
+            parent_pools=parent_pools_list,
             num_values=num_states,
             mode=mode,
             seq_length=seq_length,
@@ -205,7 +205,7 @@ class FromSeqsOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'seqs': self.seqs,
-            'bg_pool': self.parent_pools[0] if self.parent_pools else None,
+            'parent_pool': self.parent_pools[0] if self.parent_pools else None,
             'region': self._region,
             'style': self._style,
             'seq_names': self.seq_names if self._seq_names_explicit else None,

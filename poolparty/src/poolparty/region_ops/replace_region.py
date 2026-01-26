@@ -9,7 +9,7 @@ from ..utils import dna_utils
 
 
 def replace_region(
-    bg_pool,
+    pool,
     content_pool,
     region_name: str,
     iter_order: Optional[Real] = None,
@@ -32,7 +32,7 @@ def replace_region(
 
     Parameters
     ----------
-    bg_pool : Pool or str
+    pool : Pool or str
         Background Pool or sequence string containing the region.
     content_pool : Pool or str
         Pool or sequence string to insert at the region position.
@@ -46,7 +46,7 @@ def replace_region(
     Returns
     -------
     Pool
-        A Pool yielding bg_pool sequences with the region replaced by
+        A Pool yielding pool sequences with the region replaced by
         content_pool sequences.
 
     Examples
@@ -68,11 +68,11 @@ def replace_region(
     from ..pool import Pool
     
     # Convert strings to pools if needed
-    bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+    pool_obj = from_seq(pool) if isinstance(pool, str) else pool
     content_pool = from_seq(content_pool) if isinstance(content_pool, str) else content_pool
     
     op = ReplaceRegionOp(
-        bg_pool=bg_pool,
+        parent_pool=pool_obj,
         content_pool=content_pool,
         region_name=region_name,
         name=None,
@@ -102,7 +102,7 @@ class ReplaceRegionOp(Operation):
     
     def __init__(
         self,
-        bg_pool,
+        parent_pool,
         content_pool,
         region_name: str,
         name: Optional[str] = None,
@@ -138,7 +138,7 @@ class ReplaceRegionOp(Operation):
         # When content_pool has multiple states (e.g., from mutagenize), those states
         # are inherited via the parent counter product.
         super().__init__(
-            parent_pools=[bg_pool, content_pool],
+            parent_pools=[parent_pool, content_pool],
             num_values=1,  # Operation doesn't add states
             mode='fixed',  # Mode is determined by parent counters
             seq_length=None,  # Variable length
@@ -250,7 +250,7 @@ class ReplaceRegionOp(Operation):
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         return {
-            'bg_pool': self.parent_pools[0],
+            'parent_pool': self.parent_pools[0],
             'content_pool': self.parent_pools[1],
             'region_name': self.region_name,
             'name': None,

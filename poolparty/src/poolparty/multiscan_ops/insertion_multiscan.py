@@ -8,7 +8,7 @@ from ..pool import Pool
 
 @beartype
 def insertion_multiscan(
-    bg_pool: Union[Pool, str],
+    pool: Union[Pool, str],
     num_insertions: Integral,
     insertion_pools: Union[Pool, Sequence[Pool]],
     positions: PositionsType = None,
@@ -26,7 +26,7 @@ def insertion_multiscan(
 
     Parameters
     ----------
-    bg_pool : Pool or str
+    pool : Pool or str
         Source pool or sequence string to insert into.
     num_insertions : Integral
         Number of simultaneous insertions to make.
@@ -71,12 +71,12 @@ def insertion_multiscan(
         raise ValueError(f"num_insertions must be >= 1, got {num_insertions}")
 
     # Convert string inputs to pools if needed
-    bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+    pool_obj = from_seq(pool) if isinstance(pool, str) else pool
 
-    # Validate bg_pool has defined seq_length
-    bg_length = bg_pool.seq_length
+    # Validate pool has defined seq_length
+    bg_length = pool_obj.seq_length
     if bg_length is None:
-        raise ValueError("bg_pool must have a defined seq_length")
+        raise ValueError("pool must have a defined seq_length")
 
     # Handle insertion_pools: single Pool vs Sequence of Pools
     if isinstance(insertion_pools, Pool):
@@ -112,7 +112,7 @@ def insertion_multiscan(
 
     # 1. Insert zero-length markers at multiple positions using region_multiscan
     marked = region_multiscan(
-        bg_pool,
+        pool_obj,
         regions=markers,
         num_insertions=int(num_insertions),
         positions=validated_positions,

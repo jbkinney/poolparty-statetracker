@@ -97,7 +97,7 @@ def apply_at_region(
 
 
 def _replace_keeping_tags(
-    bg_pool,
+    pool,
     content_pool,
     region_name: str,
     iter_order: Optional[Real] = None,
@@ -130,13 +130,13 @@ def _replace_keeping_tags(
         return prefix + wrapped + suffix
     
     result_pool = fixed_operation(
-        parent_pools=[bg_pool, content_pool],
+        parent_pools=[pool, content_pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=lambda lengths: None,  # Variable length
         iter_order=iter_order,
     )
     
     # Region is preserved, so keep it in the pool's region set
-    # (it was inherited from bg_pool, so nothing to add)
+    # (it was inherited from pool, so nothing to add)
     
     return result_pool

@@ -10,7 +10,7 @@ import numpy as np
 @beartype
 def from_iupac(
     iupac_seq: str,
-    bg_pool: Optional[Union[Pool, str]] = None,
+    pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     prefix: Optional[str] = None,
     mode: ModeType = 'random',
@@ -26,12 +26,12 @@ def from_iupac(
     iupac_seq : str
         IUPAC sequence string (e.g., 'RN' for purine + any base).
         Valid characters: A, C, G, T, U, R, Y, S, W, K, M, B, D, H, V, N.
-    bg_pool : Optional[Union[Pool, str]], default=None
+    pool : Optional[Union[Pool, str]], default=None
         Background pool or sequence. If provided with region, generated sequence
         replaces the region content.
     region : RegionType, default=None
-        Region to replace in bg_pool. Can be a marker name or [start, stop] interval.
-        Required if bg_pool is provided.
+        Region to replace in pool. Can be a marker name or [start, stop] interval.
+        Required if pool is provided.
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
@@ -51,13 +51,13 @@ def from_iupac(
     Raises
     ------
     ValueError
-        If bg_pool is provided without region.
+        If pool is provided without region.
     """
     from ..fixed_ops.from_seq import from_seq
-    bg_pool_obj = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
+    pool_obj = from_seq(pool) if isinstance(pool, str) else pool
     op = FromIupacOp(
         iupac_seq=iupac_seq,
-        bg_pool=bg_pool_obj,
+        parent_pool=pool_obj,
         region=region,
         prefix=prefix,
         mode=mode,
@@ -66,8 +66,8 @@ def from_iupac(
         iter_order=iter_order,
         style=style,
     )
-    pool = Pool(operation=op)
-    return pool
+    result_pool = Pool(operation=op)
+    return result_pool
 
 
 @beartype
@@ -79,7 +79,7 @@ class FromIupacOp(Operation):
     def __init__(
         self,
         iupac_seq: str,
-        bg_pool: Optional[Pool] = None,
+        parent_pool: Optional[Pool] = None,
         region: RegionType = None,
         prefix: Optional[str] = None,
         mode: ModeType = 'random',
@@ -97,11 +97,11 @@ class FromIupacOp(Operation):
                 "Use 'with pp.Party() as party:' to create one."
             )
         
-        # Validate bg_pool/region combination
-        if bg_pool is not None and region is None:
+        # Validate parent_pool/region combination
+        if parent_pool is not None and region is None:
             raise ValueError(
-                "region is required when bg_pool is provided. "
-                "Specify which region of bg_pool to replace with the generated sequence."
+                "region is required when parent_pool is provided. "
+                "Specify which region of parent_pool to replace with the generated sequence."
             )
         
         if not iupac_seq:
@@ -151,9 +151,9 @@ class FromIupacOp(Operation):
         # Use length without markers for consistency
         seq_length = dna_utils.get_length_without_tags(iupac_seq)
         
-        parent_pools = [bg_pool] if bg_pool is not None else []
+        parent_pools_list = [parent_pool] if parent_pool is not None else []
         super().__init__(
-            parent_pools=parent_pools,
+            parent_pools=parent_pools_list,
             num_values=num_states,
             mode=mode,
             seq_length=seq_length,
@@ -205,7 +205,7 @@ class FromIupacOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'iupac_seq': self.iupac_seq,
-            'bg_pool': self.parent_pools[0] if self.parent_pools else None,
+            'parent_pool': self.parent_pools[0] if self.parent_pools else None,
             'region': self._region,
             'prefix': self.name_prefix,
             'mode': self.mode,
