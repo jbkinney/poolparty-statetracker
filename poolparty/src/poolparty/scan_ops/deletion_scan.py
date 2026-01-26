@@ -6,7 +6,7 @@ from ..types import Union, ModeType, Optional, PositionsType, RegionType, StyleL
 from ..party import get_active_party
 from ..pool import Pool
 from ..operation import Operation
-from ..marker_ops.parsing import get_nonmarker_positions
+from ..region_ops.parsing import get_nontag_positions
 
 
 def _validate_positions(positions: PositionsType, max_position: int, min_position: int = 0) -> list[int]:
@@ -152,7 +152,7 @@ class DeletionScanOp(Operation):
         if isinstance(region, str):
             party = get_active_party()
             try:
-                region_marker = party.get_marker_by_name(region)
+                region_marker = party.get_region_by_name(region)
                 self._seq_length = region_marker.seq_length
             except (ValueError, KeyError):
                 # Marker not yet registered, fall back to parent seq_length
@@ -219,15 +219,15 @@ class DeletionScanOp(Operation):
     def _get_valid_deletion_positions(self, seq: str) -> tuple[list[int], list[int]]:
         """Get valid deletion positions, excluding marker interiors.
         
-        Returns tuple of (valid_nonmarker_indices, nonmarker_positions) where:
-        - valid_nonmarker_indices: indices into nonmarker_positions that are valid start positions
-        - nonmarker_positions: literal positions of all non-marker characters
+        Returns tuple of (valid_nontag_indices, nontag_positions) where:
+        - valid_nontag_indices: indices into nontag_positions that are valid start positions
+        - nontag_positions: literal positions of all non-tag characters
         """
-        # Get positions not inside existing markers
-        nonmarker_positions = get_nonmarker_positions(seq)
+        # Get positions not inside existing tags
+        nontag_positions = get_nontag_positions(seq)
         
-        # For deletions, ensure there's room for deletion_length consecutive non-marker chars
-        max_valid_idx = len(nonmarker_positions) - self._deletion_length
+        # For deletions, ensure there's room for deletion_length consecutive non-tag chars
+        max_valid_idx = len(nontag_positions) - self._deletion_length
         if max_valid_idx < 0:
             all_valid_indices = []
         else:
@@ -241,9 +241,9 @@ class DeletionScanOp(Operation):
                 min_position=0,
             )
             filtered_indices = [all_valid_indices[i] for i in indices]
-            return filtered_indices, nonmarker_positions
+            return filtered_indices, nontag_positions
         
-        return all_valid_indices, nonmarker_positions
+        return all_valid_indices, nontag_positions
     
     def compute(
         self,
@@ -260,7 +260,7 @@ class DeletionScanOp(Operation):
         seq = parent_seqs[0]
         
         # Get valid positions in the sequence
-        valid_indices, nonmarker_positions = self._get_valid_deletion_positions(seq)
+        valid_indices, nontag_positions = self._get_valid_deletion_positions(seq)
         if len(valid_indices) == 0:
             raise ValueError("No valid positions for deletion")
         
@@ -276,13 +276,13 @@ class DeletionScanOp(Operation):
         
         # Calculate literal start/end positions
         start_idx = valid_indices[position_index]
-        start_literal = nonmarker_positions[start_idx]
-        end_nonmarker_idx = start_idx + self._deletion_length
-        if end_nonmarker_idx < len(nonmarker_positions):
-            end_literal = nonmarker_positions[end_nonmarker_idx]
+        start_literal = nontag_positions[start_idx]
+        end_nontag_idx = start_idx + self._deletion_length
+        if end_nontag_idx < len(nontag_positions):
+            end_literal = nontag_positions[end_nontag_idx]
         else:
-            # One past the last non-marker character
-            end_literal = nonmarker_positions[-1] + 1 if nonmarker_positions else len(seq)
+            # One past the last non-tag character
+            end_literal = nontag_positions[-1] + 1 if nontag_positions else len(seq)
         
         # Extract deleted content for design card
         deleted_content = seq[start_literal:end_literal]

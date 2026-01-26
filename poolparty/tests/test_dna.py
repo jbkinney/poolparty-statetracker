@@ -5,8 +5,8 @@ import poolparty as pp
 from poolparty.utils.dna_utils import (
     BASES, COMPLEMENT, IUPAC_TO_DNA, IGNORE_CHARS, VALID_CHARS, IUPAC_CHARS,
     complement, reverse_complement, get_mutations,
-    get_molecular_positions, get_nonmarker_positions, get_seq_length,
-    get_length_without_markers,
+    get_molecular_positions, get_nontag_positions, get_seq_length,
+    get_length_without_tags,
 )
 
 
@@ -246,16 +246,16 @@ class TestSeqLength:
 
 
 class TestLengthWithoutMarkers:
-    """Test get_length_without_markers function."""
+    """Test get_length_without_tags function."""
     
     def test_simple_sequence(self):
         """Test length of simple sequence."""
-        assert get_length_without_markers('ACGT') == 4
+        assert get_length_without_tags('ACGT') == 4
     
     def test_with_markers(self):
         """Test length excludes marker tags."""
-        assert get_length_without_markers('AC<region>TG</region>AA') == 6
-        assert get_length_without_markers('AC<ins/>GT') == 4
+        assert get_length_without_tags('AC<region>TG</region>AA') == 6
+        assert get_length_without_tags('AC<ins/>GT') == 4
 
 
 class TestModuleExports:

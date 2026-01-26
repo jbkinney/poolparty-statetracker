@@ -11,7 +11,7 @@ def fixed_operation(
     seq_from_seqs_fn: Callable[[list[str]], str],
     seq_length_from_pool_lengths_fn: Callable[[Sequence[Union[int, None]]], Union[int, None]],
     region: RegionType = None,
-    remove_marker: Optional[bool] = None,
+    remove_tags: Optional[bool] = None,
     iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
     _pass_through_styles: bool = True,
@@ -31,9 +31,9 @@ def fixed_operation(
         First element is region length (if region specified) or first pool's seq_length.
     region : RegionType, default=None
         Region to apply transformation to. Can be marker name (str), [start, stop], or None.
-    remove_marker : Optional[bool], default=None
+    remove_tags : Optional[bool], default=None
         If True and region is a marker name, remove the marker tags from output.
-        If None, uses Party default ('remove_marker').
+        If None, uses Party default ('remove_tags').
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
     _factory_name: Optional[str], default=None
@@ -49,7 +49,7 @@ def fixed_operation(
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         region=region,
-        remove_marker=remove_marker,
+        remove_tags=remove_tags,
         name=None,
         iter_order=iter_order,
         _factory_name=_factory_name,
@@ -71,7 +71,7 @@ class FixedOp(Operation):
         seq_from_seqs_fn: Callable[[list[str]], str],
         seq_length_from_pool_lengths_fn: Callable[[Sequence[Union[int, None]]], Union[int, None]],
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
+        remove_tags: Optional[bool] = None,
         spacer_str: str = '',
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -92,9 +92,9 @@ class FixedOp(Operation):
         party = get_active_party()
         if region is not None:
             if isinstance(region, str):
-                # Marker name - look up registered marker's seq_length
-                marker = party.get_marker(region)
-                region_length = marker.seq_length
+                # Region name - look up registered region's seq_length
+                region_obj = party.get_region(region)
+                region_length = region_obj.seq_length
             else:
                 # Explicit [start, stop] interval
                 region_length = int(region[1]) - int(region[0])
@@ -114,7 +114,7 @@ class FixedOp(Operation):
             name=name,
             iter_order=iter_order,
             region=region,
-            remove_marker=remove_marker,
+            remove_tags=remove_tags,
         )
 
     def compute(
@@ -144,7 +144,7 @@ class FixedOp(Operation):
             'seq_from_seqs_fn': self.seq_from_seqs_fn,
             'seq_length_from_pool_lengths_fn': self._seq_length_from_pool_lengths_fn,
             'region': self._region,
-            'remove_marker': self._remove_marker,
+            'remove_tags': self._remove_tags,
             'name': None,
             'iter_order': self.iter_order,
             '_pass_through_styles': self._pass_through_styles,

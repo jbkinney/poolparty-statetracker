@@ -8,7 +8,7 @@ from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
 from ..utils.orf_utils import validate_orf_extent
-from ..marker_ops.parsing import TAG_PATTERN, strip_all_markers, find_all_markers
+from ..region_ops.parsing import TAG_PATTERN, strip_all_tags, find_all_regions
 import numpy as np
 from ..codon_table import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
 
@@ -120,7 +120,7 @@ class MutagenizeOrfOp(Operation):
         self._mode = mode
         self.codon_table = party.codon_table
         
-        # Use effective seq_length (excluding markers)
+        # Use effective seq_length (excluding tags)
         parent_seq_length = parent_pool.seq_length
         if parent_seq_length is None:
             raise ValueError("parent_pool must have a defined seq_length")
@@ -187,59 +187,59 @@ class MutagenizeOrfOp(Operation):
         self._sequential_cache = cache
         return num_combinations * num_mut_patterns
     
-    def _strip_markers(self, seq: str) -> tuple[str, list[tuple[int, int, str, str]]]:
-        """Strip markers from sequence and record their positions.
+    def _strip_tags(self, seq: str) -> tuple[str, list[tuple[int, int, str, str]]]:
+        """Strip tags from sequence and record their positions.
         
         Returns:
-            (clean_seq, markers_info) where markers_info is a list of
+            (clean_seq, tags_info) where tags_info is a list of
             (clean_content_start, content_length, opening_tag, closing_tag) tuples.
-            For self-closing markers, content_length is 0 and closing_tag is empty.
+            For self-closing tags, content_length is 0 and closing_tag is empty.
         """
-        markers_info = []
-        found_markers = find_all_markers(seq)
+        tags_info = []
+        found_regions = find_all_regions(seq)
         
         # Calculate clean position for each marker
         tag_offset = 0  # Cumulative length of tags removed before this marker
         
-        for marker in found_markers:
-            # In clean sequence, content starts at marker.content_start - tag_offset
-            clean_content_start = marker.content_start - tag_offset
-            content_length = marker.content_end - marker.content_start
+        for region in found_regions:
+            # In clean sequence, content starts at region.content_start - tag_offset
+            clean_content_start = region.content_start - tag_offset
+            content_length = region.content_end - region.content_start
             
             # Extract opening and closing tags
-            opening_tag = seq[marker.start:marker.content_start]
-            closing_tag = seq[marker.content_end:marker.end]
+            opening_tag = seq[region.start:region.content_start]
+            closing_tag = seq[region.content_end:region.end]
             
-            markers_info.append((clean_content_start, content_length, opening_tag, closing_tag))
+            tags_info.append((clean_content_start, content_length, opening_tag, closing_tag))
             
             # Update offset: tags removed = opening_tag_len + closing_tag_len
             tag_offset += len(opening_tag) + len(closing_tag)
         
-        # Remove all marker tags but keep content
-        clean_seq = strip_all_markers(seq)
-        return clean_seq, markers_info
+        # Remove all tags but keep content
+        clean_seq = strip_all_tags(seq)
+        return clean_seq, tags_info
     
-    def _restore_markers(self, seq: str, markers_info: list[tuple[int, int, str, str]]) -> str:
-        """Restore markers to their original positions in the sequence.
+    def _restore_tags(self, seq: str, tags_info: list[tuple[int, int, str, str]]) -> str:
+        """Restore tags to their original positions in the sequence.
         
         Args:
-            seq: The clean (mutated) sequence with marker content but no tags.
-            markers_info: List of (clean_content_start, content_length, opening_tag, closing_tag).
+            seq: The clean (mutated) sequence with region content but no tags.
+            tags_info: List of (clean_content_start, content_length, opening_tag, closing_tag).
         
         Returns:
-            Sequence with marker tags restored around their content.
+            Sequence with tags restored around their content.
         """
-        if not markers_info:
+        if not tags_info:
             return seq
         
         # Sort by clean position (should already be sorted, but ensure it)
-        sorted_markers = sorted(markers_info, key=lambda x: x[0])
+        sorted_tags = sorted(tags_info, key=lambda x: x[0])
         
         # Build result by inserting tags, working from start to end
         result = seq
         offset = 0  # Track how much we've added
         
-        for clean_content_start, content_length, opening_tag, closing_tag in sorted_markers:
+        for clean_content_start, content_length, opening_tag, closing_tag in sorted_tags:
             # Insert opening tag before content
             insert_pos = clean_content_start + offset
             result = result[:insert_pos] + opening_tag + result[insert_pos:]
@@ -302,8 +302,8 @@ class MutagenizeOrfOp(Operation):
     ) -> dict:
         """Return design card and mutated sequence together."""
         seq = parent_seqs[0]
-        # Strip markers and record their positions
-        clean_seq, markers = self._strip_markers(seq)
+        # Strip tags and record their positions
+        clean_seq, tags = self._strip_tags(seq)
         _, codons, _ = self._extract_codons(clean_seq)
         
         if self.mode in ('random', 'hybrid'):
@@ -336,8 +336,8 @@ class MutagenizeOrfOp(Operation):
             mutated_codons[pos] = mut
         mutated_clean_seq = upstream + ''.join(mutated_codons) + downstream
         
-        # Restore markers at original positions
-        result_seq = self._restore_markers(mutated_clean_seq, markers)
+        # Restore tags at original positions
+        result_seq = self._restore_tags(mutated_clean_seq, tags)
         
         # Pass through parent styles (mutagenize_orf preserves sequence length)
         output_styles = parent_styles[0] if parent_styles and len(parent_styles) > 0 else []

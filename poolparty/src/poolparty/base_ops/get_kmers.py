@@ -129,10 +129,10 @@ class GetKmersOp(Operation):
             parent_seq_length = pool.seq_length
             # Determine region length
             if isinstance(region, str):
-                # Marker name - get length from registered marker
+                # Region name - get length from registered region
                 try:
-                    marker = party.get_marker_by_name(region)
-                    region_length = marker.seq_length
+                    region_obj = party.get_region_by_name(region)
+                    region_length = region_obj.seq_length
                 except (ValueError, KeyError):
                     region_length = None
             else:

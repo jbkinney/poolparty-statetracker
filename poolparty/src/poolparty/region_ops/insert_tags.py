@@ -1,31 +1,31 @@
-"""Insert a marker at a fixed position in sequences."""
+"""Insert region tags at a fixed position in sequences."""
 from numbers import Real
 from poolparty.types import Union, Optional
 
-from .parsing import build_marker_tag, get_nonmarker_positions, nonmarker_pos_to_literal_pos
+from .parsing import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos
 
 
-def insert_marker(
+def insert_tags(
     pool,
-    marker_name: str,
+    region_name: str,
     start: int,
     stop: Optional[int] = None,
     strand: str = '+',
     iter_order: Optional[Real] = None,
 ):
     """
-    Insert an XML-style marker at a fixed position in sequences.
+    Insert XML-style region tags at a fixed position in sequences.
 
     Parameters
     ----------
     pool : Pool or str
-        Input Pool or sequence string to add marker to.
-    marker_name : str
-        Name for the marker (e.g., 'region', 'orf', 'insert').
+        Input Pool or sequence string to add tags to.
+    region_name : str
+        Name for the region (e.g., 'region', 'orf', 'insert').
     start : int
-        Start position (0-based) for the marker.
+        Start position (0-based) for the region.
     stop : Optional[int], default=None
-        End position (exclusive). If None, creates a zero-length marker at start.
+        End position (exclusive). If None, creates a zero-length region at start.
     strand : str, default='+'
         Strand annotation ('+' or '-').
     iter_order : Optional[Real], default=None
@@ -34,18 +34,18 @@ def insert_marker(
     Returns
     -------
     Pool
-        A Pool yielding sequences with the marker inserted.
+        A Pool yielding sequences with the region tags inserted.
 
     Examples
     --------
     >>> with pp.Party():
     ...     bg = pp.from_seq('ACGTACGT')
-    ...     # Region marker encompassing positions 2-5
-    ...     marked = pp.insert_marker(bg, 'region', start=2, stop=5)
+    ...     # Region tags encompassing positions 2-5
+    ...     marked = pp.insert_tags(bg, 'region', start=2, stop=5)
     ...     # Result: 'AC<region>GTA</region>CGT'
     ...
-    ...     # Zero-length marker at position 4
-    ...     marked = pp.insert_marker(bg, 'ins', start=4)
+    ...     # Zero-length region at position 4
+    ...     marked = pp.insert_tags(bg, 'ins', start=4)
     ...     # Result: 'ACGT<ins/>ACGT'
     """
     from ..fixed_ops.from_seq import from_seq
@@ -65,38 +65,38 @@ def insert_marker(
     if stop is not None and stop < start:
         raise ValueError(f"stop ({stop}) must be >= start ({start})")
     
-    # Calculate marker seq_length and register with Party
-    marker_seq_length = (stop - start) if stop is not None else 0
+    # Calculate region seq_length and register with Party
+    region_seq_length = (stop - start) if stop is not None else 0
     party = get_active_party()
-    marker = party.register_marker(marker_name, marker_seq_length)
+    region = party.register_region(region_name, region_seq_length)
     
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         seq = seqs[0]
-        seq_len = len(get_nonmarker_positions(seq))
+        seq_len = len(get_nontag_positions(seq))
         
-        # Validate against non-marker length
+        # Validate against non-tag length
         if start > seq_len:
             raise ValueError(f"start ({start}) exceeds sequence length ({seq_len})")
         actual_stop = stop if stop is not None else start
-        marker_length = actual_stop - start
+        region_length = actual_stop - start
         if actual_stop > seq_len:
             raise ValueError(f"stop ({actual_stop}) exceeds sequence length ({seq_len})")
         
-        # Convert to literal positions and build marker
-        literal_start = nonmarker_pos_to_literal_pos(seq, start)
-        literal_stop = nonmarker_pos_to_literal_pos(seq, actual_stop)
-        content = seq[literal_start:literal_stop] if marker_length > 0 else ''
-        marker_tag = build_marker_tag(marker_name, content, strand)
-        return seq[:literal_start] + marker_tag + seq[literal_stop:]
+        # Convert to literal positions and build tags
+        literal_start = nontag_pos_to_literal_pos(seq, start)
+        literal_stop = nontag_pos_to_literal_pos(seq, actual_stop)
+        content = seq[literal_start:literal_stop] if region_length > 0 else ''
+        region_tag = build_region_tags(region_name, content, strand)
+        return seq[:literal_start] + region_tag + seq[literal_stop:]
     
     result_pool = fixed_operation(
         parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
-        seq_length_from_pool_lengths_fn=lambda lengths: None,  # Length changes due to marker tags
+        seq_length_from_pool_lengths_fn=lambda lengths: None,  # Length changes due to region tags
         iter_order=iter_order,
     )
     
-    # Add the new marker to the pool's marker set
-    result_pool.add_marker(marker)
+    # Add the new region to the pool's region set
+    result_pool.add_region(region)
     
     return result_pool

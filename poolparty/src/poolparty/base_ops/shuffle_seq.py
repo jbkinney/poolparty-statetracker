@@ -14,7 +14,7 @@ def shuffle_seq(
     mode: ModeType = 'random',
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
-    _remove_marker: bool = False,
+    _remove_tags: bool = False,
     style: Optional[str] = None,
     _factory_name: Optional[str] = None,
     # Internal parameters for shuffle_scan composite naming
@@ -40,7 +40,7 @@ def shuffle_seq(
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
         Iteration order priority for the resulting Pool.
-    _remove_marker : bool, default=False
+    _remove_tags : bool, default=False
         If True and region is a marker name, remove the marker tags from output.
     style : Optional[str], default=None
         Style to apply to shuffled characters (e.g., 'purple', 'red bold').
@@ -60,7 +60,7 @@ def shuffle_seq(
         num_states=num_states,
         name=None,
         iter_order=iter_order,
-        _remove_marker=_remove_marker,
+        _remove_tags=_remove_tags,
         style=style,
         _factory_name=_factory_name,
         _seq_name_prefix=_seq_name_prefix,
@@ -89,7 +89,7 @@ class SeqShuffleOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
-        _remove_marker: bool = False,
+        _remove_tags: bool = False,
         style: Optional[str] = None,
         _factory_name: Optional[str] = None,
         # Internal parameters for shuffle_scan composite naming
@@ -135,7 +135,7 @@ class SeqShuffleOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
             region=region,
-            remove_marker=_remove_marker,
+            remove_tags=_remove_tags,
         )
     
     def compute(
@@ -237,7 +237,7 @@ class SeqShuffleOp(Operation):
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,
             'name': None,
             'iter_order': self.iter_order,
-            '_remove_marker': self._remove_marker,
+            '_remove_tags': self._remove_tags,
             'style': self._style,
             '_seq_name_prefix': self._seq_name_prefix,
             '_seq_name_pos_prefix': self._seq_name_pos_prefix,

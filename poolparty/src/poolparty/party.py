@@ -8,7 +8,7 @@ import statetracker as st
 from .types import Pool_type, Operation_type, Optional, beartype, Union, Any
 from .codon_table import CodonTable
 from .utils import dna_utils
-from .marker import Marker
+from .region import Region
 
 _active_party: Optional["Party"] = None
 _default_party: Optional["Party"] = None
@@ -24,7 +24,7 @@ def get_active_party() -> Optional["Party"]:
 def init(
     genetic_code: Union[str, dict] = 'standard',
 ) -> "Party":
-    """Initialize (or reset) the default Party, clearing all registered pools/operations/markers."""
+    """Initialize (or reset) the default Party, clearing all registered pools/operations/regions."""
     global _active_party, _default_party
     # Exit current default party if active
     if _default_party is not None and _default_party._is_active:
@@ -36,7 +36,7 @@ def init(
     _default_party._is_active = True
     _active_party = _default_party
     # Set default parameter values
-    _default_party.set_default('remove_marker', False)
+    _default_party.set_default('remove_tags', False)
     return _default_party
 
 
@@ -49,7 +49,7 @@ def _init_default_party() -> None:
 
 @beartype
 def clear_pools() -> None:
-    """Clear all pools, operations, and markers from the active Party without resetting highlights."""
+    """Clear all pools, operations, and regions from the active Party without resetting highlights."""
     party = get_active_party()
     if party is None:
         raise RuntimeError("No active Party context.")
@@ -70,15 +70,15 @@ class Party:
         self._counter_manager: st.Manager = st.Manager()
         self._next_pool_id: int = 0
         self._next_op_id: int = 0
-        self._next_marker_id: int = 0
+        self._next_region_id: int = 0
         # Track pools and operations by ID (list) and name (dict)
         self._pools_by_id: list[Pool_type] = []
         self._ops_by_id: list[Operation_type] = []
         self._pools_by_name: dict[str, Pool_type] = {}
         self._ops_by_name: dict[str, Operation_type] = {}
-        # Track markers by ID (list) and name (dict)
-        self._markers_by_id: list[Marker] = []
-        self._markers_by_name: dict[str, Marker] = {}
+        # Track regions by ID (list) and name (dict)
+        self._regions_by_id: list[Region] = []
+        self._regions_by_name: dict[str, Region] = {}
         # Build codon table for ORF operations
         self._codon_table: CodonTable = CodonTable(genetic_code)
         # Default parameter values for operations
@@ -133,9 +133,9 @@ class Party:
         """Get effective sequence length (DNA characters only, excluding markers)."""
         return dna_utils.get_seq_length(seq)
     
-    def get_length_without_markers(self, seq: str) -> int:
-        """Get sequence length excluding only marker tags (includes all chars)."""
-        return dna_utils.get_length_without_markers(seq)
+    def get_length_without_tags(self, seq: str) -> int:
+        """Get sequence length excluding only region tags (includes all chars)."""
+        return dna_utils.get_length_without_tags(seq)
     
     def get_molecular_positions(self, seq: str) -> list[int]:
         """Get raw string positions of valid DNA characters, excluding marker interiors."""
@@ -214,38 +214,38 @@ class Party:
         """Get an operation by its name."""
         return self._ops_by_name[name]
     
-    def _get_next_marker_id(self) -> int:
-        """Get the next unique marker ID."""
-        id_ = self._next_marker_id
-        self._next_marker_id += 1
+    def _get_next_region_id(self) -> int:
+        """Get the next unique region ID."""
+        id_ = self._next_region_id
+        self._next_region_id += 1
         return id_
     
-    def register_marker(self, name: str, seq_length: Optional[int]) -> Marker:
+    def register_region(self, name: str, seq_length: Optional[int]) -> Region:
         """
-        Register a marker with this party.
+        Register a region with this party.
         
-        If a marker with the same name already exists:
-        - If it has the same seq_length, return the existing marker
+        If a region with the same name already exists:
+        - If it has the same seq_length, return the existing region
         - If it has a different seq_length, raise ValueError
         
         Parameters
         ----------
         name : str
-            The marker name.
+            The region name.
         seq_length : Optional[int]
             The expected content length (None for variable, 0 for zero-length).
         
         Returns
         -------
-        Marker
-            The registered marker (existing or newly created).
+        Region
+            The registered region (existing or newly created).
         
         Raises
         ------
         ValueError
-            If a marker with the same name but different seq_length exists.
+            If a region with the same name but different seq_length exists.
         """
-        existing = self._markers_by_name.get(name)
+        existing = self._regions_by_name.get(name)
         if existing is not None:
             if existing.seq_length == seq_length:
                 return existing
@@ -254,44 +254,44 @@ class Party:
                 existing_len = 'variable' if existing.seq_length is None else str(existing.seq_length)
                 new_len = 'variable' if seq_length is None else str(seq_length)
                 raise ValueError(
-                    f"Marker '{name}' already registered with seq_length={existing_len}, "
+                    f"Region '{name}' already registered with seq_length={existing_len}, "
                     f"cannot re-register with seq_length={new_len}. "
-                    f"Marker lengths must be consistent within a Party."
+                    f"Region lengths must be consistent within a Party."
                 )
         
-        # Create and register new marker
-        marker = Marker(name=name, seq_length=seq_length, _id=self._get_next_marker_id())
-        self._markers_by_id.append(marker)
-        self._markers_by_name[name] = marker
-        return marker
+        # Create and register new region
+        region = Region(name=name, seq_length=seq_length, _id=self._get_next_region_id())
+        self._regions_by_id.append(region)
+        self._regions_by_name[name] = region
+        return region
     
-    def get_marker_by_id(self, id_: int) -> Marker:
-        """Get a marker by its ID."""
-        if id_ < 0 or id_ >= len(self._markers_by_id):
-            raise ValueError(f"No marker with ID {id_}")
-        return self._markers_by_id[id_]
+    def get_region_by_id(self, id_: int) -> Region:
+        """Get a region by its ID."""
+        if id_ < 0 or id_ >= len(self._regions_by_id):
+            raise ValueError(f"No region with ID {id_}")
+        return self._regions_by_id[id_]
     
-    def get_marker_by_name(self, name: str) -> Marker:
-        """Get a marker by its name."""
-        marker = self._markers_by_name.get(name)
-        if marker is None:
-            available = list(self._markers_by_name.keys())
+    def get_region_by_name(self, name: str) -> Region:
+        """Get a region by its name."""
+        region = self._regions_by_name.get(name)
+        if region is None:
+            available = list(self._regions_by_name.keys())
             if available:
-                raise ValueError(f"Marker '{name}' not found. Available: {available}")
+                raise ValueError(f"Region '{name}' not found. Available: {available}")
             else:
-                raise ValueError(f"Marker '{name}' not found. No markers registered.")
-        return marker
+                raise ValueError(f"Region '{name}' not found. No regions registered.")
+        return region
     
-    def get_marker(self, name: str) -> Marker:
-        """Get a registered marker by name. Alias for get_marker_by_name."""
-        return self.get_marker_by_name(name)
+    def get_region(self, name: str) -> Region:
+        """Get a registered region by name. Alias for get_region_by_name."""
+        return self.get_region_by_name(name)
     
-    def has_marker(self, name: str) -> bool:
-        """Check if a marker with the given name is registered."""
-        return name in self._markers_by_name
+    def has_region(self, name: str) -> bool:
+        """Check if a region with the given name is registered."""
+        return name in self._regions_by_name
     
     def clear_pools(self) -> None:
-        """Clear all pools, operations, and markers without resetting highlights.
+        """Clear all pools, operations, and regions without resetting highlights.
         
         Unlike init(), this preserves:
         - Genetic code settings (_codon_table)
@@ -304,13 +304,13 @@ class Party:
         self._operations.clear()
         self._ops_by_id.clear()
         self._ops_by_name.clear()
-        # Clear marker tracking
-        self._markers_by_id.clear()
-        self._markers_by_name.clear()
+        # Clear region tracking
+        self._regions_by_id.clear()
+        self._regions_by_name.clear()
         # Reset ID counters
         self._next_pool_id = 0
         self._next_op_id = 0
-        self._next_marker_id = 0
+        self._next_region_id = 0
         # Clear outputs
         self._outputs.clear()
         # Reset counter manager to clear counter state

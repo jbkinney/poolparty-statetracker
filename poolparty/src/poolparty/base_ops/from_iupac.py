@@ -149,7 +149,7 @@ class FromIupacOp(Operation):
 
         self._total_states = total_states
         # Use length without markers for consistency
-        seq_length = dna_utils.get_length_without_markers(iupac_seq)
+        seq_length = dna_utils.get_length_without_tags(iupac_seq)
         
         parent_pools = [bg_pool] if bg_pool is not None else []
         super().__init__(

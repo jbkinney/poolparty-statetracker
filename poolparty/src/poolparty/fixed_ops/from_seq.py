@@ -10,7 +10,7 @@ def from_seq(
     seq: str,
     pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
-    remove_marker: Optional[bool] = None,
+    remove_tags: Optional[bool] = None,
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
@@ -29,7 +29,7 @@ def from_seq(
         Pool or sequence. If provided with region, seq replaces the region.
     region : RegionType, default=None
         Region to replace in pool. Can be marker name (str) or [start, stop].
-    remove_marker : Optional[bool], default=None
+    remove_tags : Optional[bool], default=None
         If True and region is a marker name, remove marker tags from output.
     style : Optional[str], default=None
         Style to apply to the sequence.
@@ -42,7 +42,7 @@ def from_seq(
         A Pool object yielding the provided sequence (or bg_pool with region replaced).
     """
     from ..party import get_active_party
-    from ..marker_ops.parsing import _validate_markers
+    from ..region_ops.parsing import _validate_regions
     from .fixed import fixed_operation
     
     party = get_active_party()
@@ -52,9 +52,9 @@ def from_seq(
             "Use 'with pp.Party() as party:' to create one."
         )
     
-    # Validate and register any markers in the sequence
-    markers = _validate_markers(seq)
-    seq_length = dna_utils.get_length_without_markers(seq)
+    # Validate and register any regions in the sequence
+    regions = _validate_regions(seq)
+    seq_length = dna_utils.get_length_without_tags(seq)
     
     # If bg_pool and region provided, replace region content with seq
     if (pool is not None) and (region is None):
@@ -70,15 +70,15 @@ def from_seq(
         seq_from_seqs_fn=lambda _: seq,
         seq_length_from_pool_lengths_fn=lambda _: seq_length,
         region=region,
-        remove_marker=remove_marker,
+        remove_tags=remove_tags,
         iter_order=iter_order,
         _factory_name=_factory_name if _factory_name is not None else 'from_seq',
         _pass_through_styles=not is_replacement,
     )
     
-    # Add validated markers to the pool
-    for marker in markers:
-        result_pool.add_marker(marker)
+    # Add validated regions to the pool
+    for region in regions:
+        result_pool.add_region(region)
     
     # Apply style if specified
     if style is not None:

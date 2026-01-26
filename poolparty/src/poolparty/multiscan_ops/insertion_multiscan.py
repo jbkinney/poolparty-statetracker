@@ -21,7 +21,7 @@ def insertion_multiscan(
     """
     Insert sequences at multiple positions simultaneously.
 
-    Uses marker_multiscan() to insert zero-length markers at multiple positions,
+    Uses region_multiscan() to insert zero-length markers at multiple positions,
     then replaces each marker's content with sequences from insertion pools.
 
     Parameters
@@ -58,7 +58,7 @@ def insertion_multiscan(
         A Pool yielding sequences with multiple insertions made simultaneously.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..marker_ops import marker_multiscan, replace_marker_content
+    from ..region_ops import region_multiscan, replace_region
 
     # Validate mode
     if mode != 'random':
@@ -110,13 +110,13 @@ def insertion_multiscan(
     # Validate positions
     validated_positions = validate_positions(positions, max_position, min_position=0)
 
-    # 1. Insert zero-length markers at multiple positions using marker_multiscan
-    marked = marker_multiscan(
+    # 1. Insert zero-length markers at multiple positions using region_multiscan
+    marked = region_multiscan(
         bg_pool,
-        markers=markers,
+        regions=markers,
         num_insertions=int(num_insertions),
         positions=validated_positions,
-        marker_length=marker_length,
+        region_length=marker_length,
         insertion_mode=insertion_mode,
         prefix=prefix,
         mode=mode,
@@ -126,14 +126,14 @@ def insertion_multiscan(
 
     # 2. Build insertion content for each pool
     result = marked
-    for marker_name, ins_pool in zip(markers, pools_list):
+    for region_name, ins_pool in zip(markers, pools_list):
         content = ins_pool
 
         # Replace marker with content
-        result = replace_marker_content(
+        result = replace_region(
             result,
             content,
-            marker_name,
+            region_name,
             iter_order=iter_order,
         )
 

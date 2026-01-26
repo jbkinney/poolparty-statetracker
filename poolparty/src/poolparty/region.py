@@ -1,52 +1,52 @@
-"""Marker class for poolparty - represents a registered marker with its properties."""
+"""Region class for poolparty - represents a registered region with its properties."""
 from dataclasses import dataclass, field
 from poolparty.types import Optional
 
 
 @dataclass
-class Marker:
+class Region:
     """
-    Represents a registered marker in a poolparty Party.
+    Represents a registered region in a poolparty Party.
     
-    Markers identify regions of sequences for later modification. Each marker
+    Regions identify sections of sequences for later modification. Each region
     has a name and a seq_length that specifies the expected length of content
-    within the marker tags.
+    within the region tags.
     
     Attributes
     ----------
     name : str
-        The marker name (used in XML tags like <name>...</name>).
+        The region name (used in XML tags like <name>...</name>).
     seq_length : Optional[int]
-        The expected length of content within the marker:
-        - None: Variable-length marker (content length not fixed)
-        - 0: Zero-length marker (insertion point, <name/>)
-        - >0: Fixed-length marker (content must be this length)
+        The expected length of content within the region:
+        - None: Variable-length region (content length not fixed)
+        - 0: Zero-length region (insertion point, <name/>)
+        - >0: Fixed-length region (content must be this length)
     _id : int
         Unique identifier assigned by the Party upon registration.
     
     Examples
     --------
-    Markers are typically created through marker operations, not directly:
+    Regions are typically created through region operations, not directly:
     
     >>> with pp.Party() as party:
-    ...     # insert_marker registers a marker with the party
-    ...     pool = pp.insert_marker(bg, 'orf', start=10, stop=100)
+    ...     # insert_tags registers a region with the party
+    ...     pool = pp.insert_tags(bg, 'orf', start=10, stop=100)
     ...     
-    ...     # Retrieve the registered marker
-    ...     marker = party.get_marker_by_name('orf')
-    ...     print(marker.seq_length)  # 90
+    ...     # Retrieve the registered region
+    ...     region = party.get_region_by_name('orf')
+    ...     print(region.seq_length)  # 90
     """
     name: str
     seq_length: Optional[int]  # None for variable-length, 0 for zero-length, >0 for fixed
     _id: int = field(default=-1, repr=False)
     
     def __post_init__(self):
-        """Validate marker attributes."""
+        """Validate region attributes."""
         if not self.name:
-            raise ValueError("Marker name cannot be empty")
+            raise ValueError("Region name cannot be empty")
         if not self.name.isidentifier():
             raise ValueError(
-                f"Marker name '{self.name}' is not a valid identifier. "
+                f"Region name '{self.name}' is not a valid identifier. "
                 "Use only letters, numbers, and underscores, starting with a letter."
             )
         if self.seq_length is not None and self.seq_length < 0:
@@ -54,20 +54,20 @@ class Marker:
     
     @property
     def is_variable_length(self) -> bool:
-        """True if this marker has variable length (seq_length is None)."""
+        """True if this region has variable length (seq_length is None)."""
         return self.seq_length is None
     
     @property
     def is_zero_length(self) -> bool:
-        """True if this marker is a zero-length insertion point."""
+        """True if this region is a zero-length insertion point."""
         return self.seq_length == 0
     
     def __hash__(self):
-        """Hash based on name (markers with same name should be the same)."""
+        """Hash based on name (regions with same name should be the same)."""
         return hash(self.name)
     
     def __eq__(self, other):
         """Equality based on name."""
-        if isinstance(other, Marker):
+        if isinstance(other, Region):
             return self.name == other.name
         return False

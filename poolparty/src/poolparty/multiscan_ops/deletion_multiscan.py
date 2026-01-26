@@ -21,8 +21,8 @@ def deletion_multiscan(
     """
     Delete segments at multiple positions simultaneously.
 
-    Uses marker_multiscan() to insert markers at multiple positions, then
-    replaces each marker's content with deletion characters (or removes it).
+    Uses region_multiscan() to insert tags at multiple positions, then
+    replaces each region's content with deletion characters (or removes it).
 
     Parameters
     ----------
@@ -55,7 +55,7 @@ def deletion_multiscan(
         A Pool yielding sequences with multiple segments deleted simultaneously.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..marker_ops import marker_multiscan, replace_marker_content
+    from ..region_ops import region_multiscan, replace_region
 
     # Validate mode
     if mode != 'random':
@@ -101,13 +101,13 @@ def deletion_multiscan(
     # Validate positions
     validated_positions = validate_positions(positions, max_position, min_position=0)
 
-    # 1. Insert markers at multiple positions using marker_multiscan
-    marked = marker_multiscan(
+    # 1. Insert tags at multiple positions using region_multiscan
+    marked = region_multiscan(
         bg_pool,
-        markers=markers,
+        regions=markers,
         num_insertions=int(num_deletions),
         positions=validated_positions,
-        marker_length=marker_length,
+        region_length=marker_length,
         insertion_mode='ordered',
         prefix=prefix,
         mode=mode,
@@ -124,13 +124,13 @@ def deletion_multiscan(
         # Simply remove the segment - use empty content
         content = from_seq('')
 
-    # 3. Replace each marker's content with deletion content
+    # 3. Replace each region's content with deletion content
     result = marked
-    for marker_name in markers:
-        result = replace_marker_content(
+    for region_name in markers:
+        result = replace_region(
             result,
             content,
-            marker_name,
+            region_name,
             iter_order=iter_order,
         )
 

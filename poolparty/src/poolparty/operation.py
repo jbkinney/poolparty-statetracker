@@ -40,7 +40,7 @@ class Operation:
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
+        remove_tags: Optional[bool] = None,
     ) -> None:
         """Initialize Operation."""
         from .party import get_active_party
@@ -100,11 +100,11 @@ class Operation:
         self._validate_region(region)
         if region is not None and len(self.parent_pools) == 0:
             raise ValueError("region requires at least one parent pool")
-        # Resolve remove_marker from party default if None
-        if remove_marker is None:
-            self._remove_marker = party.get_default('remove_marker', True)
+        # Resolve remove_tags from party default if None
+        if remove_tags is None:
+            self._remove_tags = party.get_default('remove_tags', True)
         else:
-            self._remove_marker = remove_marker
+            self._remove_tags = remove_tags
         
         # Register operation with party after name is set
         party._register_operation(self)
@@ -131,13 +131,13 @@ class Operation:
         """Get effective sequence length (DNA characters only, excluding markers)."""
         return dna_utils.get_seq_length(seq)
     
-    def _get_length_without_markers(self, seq: str) -> int:
-        """Get sequence length excluding only marker tags (includes all other chars)."""
-        return dna_utils.get_length_without_markers(seq)
+    def _get_length_without_tags(self, seq: str) -> int:
+        """Get sequence length excluding only region tags (includes all other chars)."""
+        return dna_utils.get_length_without_tags(seq)
     
-    def _get_nonmarker_positions(self, seq: str) -> list[int]:
-        """Get raw string positions of all chars excluding marker interiors."""
-        return dna_utils.get_nonmarker_positions(seq)
+    def _get_nontag_positions(self, seq: str) -> list[int]:
+        """Get raw string positions of all chars excluding tag interiors."""
+        return dna_utils.get_nontag_positions(seq)
     
     def _get_molecular_positions(self, seq: str) -> list[int]:
         """Get raw string positions of valid DNA characters, excluding marker interiors."""
@@ -149,9 +149,9 @@ class Operation:
         Parameters
         ----------
         seq : str
-            The sequence containing potential markers.
+            The sequence containing potential regions.
         region : RegionType
-            Region specification: marker name (str), [start, stop] interval, or None.
+            Region specification: region name (str), [start, stop] interval, or None.
         
         Returns
         -------
@@ -162,10 +162,10 @@ class Operation:
             return None
         
         if isinstance(region, str):
-            # Marker name - look up in sequence
-            from .marker_ops.parsing import validate_single_marker
-            marker = validate_single_marker(seq, region)
-            return (marker.content_start, marker.content_end)
+            # Region name - look up in sequence
+            from .region_ops.parsing import validate_single_region
+            region_obj = validate_single_region(seq, region)
+            return (region_obj.content_start, region_obj.content_end)
         else:
             # Explicit [start, stop] interval
             return (int(region[0]), int(region[1]))
@@ -178,7 +178,7 @@ class Operation:
         seq : str
             The sequence to split.
         region : RegionType
-            Region specification: marker name (str), [start, stop] interval, or None.
+            Region specification: region name (str), [start, stop] interval, or None.
         
         Returns
         -------
@@ -202,7 +202,7 @@ class Operation:
         This method calculates how many characters appear before the region
         content in the final output sequence. It handles:
         - Prefix length (characters before the region)
-        - Opening marker tag length (when region is a marker and remove_marker=False)
+        - Opening tag length (when region is a region name and remove_tags=False)
         
         Parameters
         ----------
@@ -220,16 +220,16 @@ class Operation:
             return 0
         
         if isinstance(self._region, str):
-            # Region is a marker name
-            from .marker_ops.parsing import parse_marker, build_marker_tag
-            clean_prefix, _, _, strand = parse_marker(parent_seq, self._region)
+            # Region is a region name
+            from .region_ops.parsing import parse_region, build_region_tags
+            clean_prefix, _, _, strand = parse_region(parent_seq, self._region)
             prefix_len = len(clean_prefix)
             
-            if not self._remove_marker:
-                # Account for opening tag if we're keeping the marker
-                # Build a marker tag with dummy content to get the opening tag format
+            if not self._remove_tags:
+                # Account for opening tag if we're keeping the tags
+                # Build a region tag with dummy content to get the opening tag format
                 # (empty content creates self-closing tags which have different format)
-                test_tag = build_marker_tag(self._region, 'X', strand=strand)
+                test_tag = build_region_tags(self._region, 'X', strand=strand)
                 # test_tag is like '<name>X</name>' - opening tag ends at first '>'
                 opening_tag_len = test_tag.index('>') + 1
                 prefix_len += opening_tag_len
@@ -365,7 +365,7 @@ class Operation:
         rng: np.random.Generator | None = None,
         parent_styles: list[StyleList] | None = None,
     ) -> dict:
-        """Compute with automatic region handling and marker removal.
+        """Compute with automatic region handling and tag removal.
         
         If region is specified:
         1. Extracts region content from parent_seqs[0]
@@ -373,7 +373,7 @@ class Operation:
         3. Calls compute with modified sequences and styles
         4. Reassembles prefix + result + suffix
         5. Adjusts output style positions to account for prefix
-        6. Removes marker tags if remove_marker=True and region is a marker name
+        6. Removes region tags if remove_tags=True and region is a region name
         """
         from .utils.style_utils import split_styles_by_region, reassemble_styles
         
@@ -414,10 +414,10 @@ class Operation:
         def is_style_output(key: str) -> bool:
             return key == 'style'
         
-        # Parse marker info for sequence reassembly (if region is a marker)
+        # Parse region info for sequence reassembly (if region is a region name)
         if isinstance(self._region, str):
-            from .marker_ops.parsing import parse_marker, build_marker_tag
-            clean_prefix, _, clean_suffix, strand = parse_marker(
+            from .region_ops.parsing import parse_region, build_region_tags
+            clean_prefix, _, clean_suffix, strand = parse_region(
                 parent_seqs[0], self._region
             )
         
@@ -428,12 +428,12 @@ class Operation:
                 seq = value
                 
                 if isinstance(self._region, str):
-                    if self._remove_marker:
-                        # Remove marker tags
+                    if self._remove_tags:
+                        # Remove tags
                         reassembled[key] = clean_prefix + seq + clean_suffix
                     else:
-                        # Keep marker - rebuild with new content
-                        wrapped = build_marker_tag(self._region, seq, strand=strand)
+                        # Keep tags - rebuild with new content
+                        wrapped = build_region_tags(self._region, seq, strand=strand)
                         reassembled[key] = clean_prefix + wrapped + clean_suffix
                 else:
                     # Region is [start, stop] interval - just reassemble
@@ -443,44 +443,44 @@ class Operation:
                 output_seq = result.get('seq', '')
                 
                 # Calculate prefix length for style reassembly
-                # For markers with remove_marker=False, region styles need prefix + opening tag
-                # For markers with remove_marker=True, region styles just need prefix
+                # For regions with remove_tags=False, region styles need prefix + opening tag
+                # For regions with remove_tags=True, region styles just need prefix
                 # For intervals, region styles just need prefix
-                # Suffix styles: for markers, use marker.end (where suffix starts in original)
+                # Suffix styles: for regions, use region.end (where suffix starts in original)
                 #                 for intervals, use region_end (where suffix starts)
                 if isinstance(self._region, str):
-                    from .marker_ops.parsing import validate_single_marker, build_marker_tag
-                    marker_info = validate_single_marker(parent_seqs[0], self._region)
+                    from .region_ops.parsing import validate_single_region, build_region_tags
+                    region_info = validate_single_region(parent_seqs[0], self._region)
                     clean_prefix_len = len(clean_prefix)
                     
-                    if self._remove_marker:
+                    if self._remove_tags:
                         # Region styles shifted by clean_prefix only
                         region_prefix_len = clean_prefix_len
-                        # Suffix styles: suffix starts at marker.content_end in original
-                        suffix_start_pos = marker_info.content_end
+                        # Suffix styles: suffix starts at region.content_end in original
+                        suffix_start_pos = region_info.content_end
                     else:
                         # Region styles shifted by clean_prefix + opening tag
-                        test_tag = build_marker_tag(self._region, 'X', strand=strand)
+                        test_tag = build_region_tags(self._region, 'X', strand=strand)
                         opening_tag_len = test_tag.index('>') + 1
                         region_prefix_len = clean_prefix_len + opening_tag_len
-                        # Suffix styles: suffix starts at marker.end in original
-                        suffix_start_pos = marker_info.end
+                        # Suffix styles: suffix starts at region.end in original
+                        suffix_start_pos = region_info.end
                 else:
                     # Region is [start, stop] interval
                     region_prefix_len = len(prefix)
                     suffix_start_pos = region_end
                 
-                # Calculate old and new region lengths accounting for marker tag changes
+                # Calculate old and new region lengths accounting for tag changes
                 if isinstance(self._region, str):
-                    if self._remove_marker:
-                        # When removing marker: compare new content length vs old marker span
+                    if self._remove_tags:
+                        # When removing tags: compare new content length vs old tag span
                         # (suffix positions need to shift by the removed tag length)
-                        old_region_len = marker_info.end - marker_info.start
+                        old_region_len = region_info.end - region_info.start
                         new_region_len = len(output_seq)
                     else:
-                        # When keeping marker: compare new marker span vs old marker span
-                        old_region_len = marker_info.end - marker_info.start
-                        new_wrapped = build_marker_tag(self._region, output_seq, strand=strand)
+                        # When keeping tags: compare new tag span vs old tag span
+                        old_region_len = region_info.end - region_info.start
+                        new_wrapped = build_region_tags(self._region, output_seq, strand=strand)
                         new_region_len = len(new_wrapped)
                 else:
                     # Region is [start, stop] interval
@@ -619,7 +619,7 @@ class Operation:
         if 'pool' in init_params and new_parent_pools:
             init_params['pool'] = new_parent_pools[0]
         
-        # Handle 'content_pool' parameter (used by ReplaceMarkerContentOp)
+        # Handle 'content_pool' parameter (used by ReplaceRegionOp)
         if 'content_pool' in init_params and len(new_parent_pools) > 1:
             init_params['content_pool'] = new_parent_pools[1]
         

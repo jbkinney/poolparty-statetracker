@@ -78,27 +78,27 @@ def get_mutations(char: str) -> list[str]:
 
 
 @beartype
-def get_nonmarker_positions(seq: str) -> list[int]:
-    """Get raw string positions of all chars excluding marker tag interiors."""
-    from ..marker_ops.parsing import get_nonmarker_positions as _get_nonmarker_positions
-    return _get_nonmarker_positions(seq)
+def get_nontag_positions(seq: str) -> list[int]:
+    """Get raw string positions of all chars excluding region tag interiors."""
+    from ..region_ops.parsing import get_nontag_positions as _get_nontag_positions
+    return _get_nontag_positions(seq)
 
 
 @beartype
-def get_length_without_markers(seq: str) -> int:
-    """Get sequence length excluding marker tags (includes all other chars)."""
-    from ..marker_ops.parsing import get_length_without_markers as _get_length_without_markers
-    return _get_length_without_markers(seq)
+def get_length_without_tags(seq: str) -> int:
+    """Get sequence length excluding region tags (includes all other chars)."""
+    from ..region_ops.parsing import get_length_without_tags as _get_length_without_tags
+    return _get_length_without_tags(seq)
 
 
 @beartype
 def get_molecular_positions(seq: str) -> list[int]:
-    """Get positions of valid DNA characters, excluding gaps and marker tags."""
-    nonmarker_positions = set(get_nonmarker_positions(seq))
-    return [i for i, c in enumerate(seq) if c in VALID_CHARS and i in nonmarker_positions]
+    """Get positions of valid DNA characters, excluding gaps and region tags."""
+    nontag_positions = set(get_nontag_positions(seq))
+    return [i for i, c in enumerate(seq) if c in VALID_CHARS and i in nontag_positions]
 
 
 @beartype
 def get_seq_length(seq: str) -> int:
-    """Get count of valid DNA characters (excludes gaps and marker tags)."""
+    """Get count of valid DNA characters (excludes gaps and region tags)."""
     return len(get_molecular_positions(seq))

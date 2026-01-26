@@ -2,7 +2,7 @@
 import statetracker as st
 from .types import Pool_type, Operation_type, Union, Optional, Real, Callable, Integral, Sequence, beartype, ModeType, RegionType, PositionsType
 from typing import Literal
-from .marker import Marker
+from .region import Region
 import pandas as pd
 
 
@@ -16,11 +16,11 @@ class Pool:
         name: Optional[str] = None,
         state: Optional[st.State] = None,
         iter_order: Optional[Real] = None,
-        markers: Optional[set[Marker]] = None,
+        regions: Optional[set[Region]] = None,
     ) -> None:
         """Initialize Pool and build its state."""
         from .party import get_active_party
-        from .marker import Marker
+        from .region import Region
         
         party = get_active_party()
         if party is None:
@@ -42,15 +42,15 @@ class Pool:
         self._name: str = ""
         self.name = name if name is not None else f'pool[{self._id}]'
         
-        # Track markers: inherit from parents if not explicitly provided
-        if markers is not None:
-            self._markers: set[Marker] = set(markers)
+        # Track regions: inherit from parents if not explicitly provided
+        if regions is not None:
+            self._regions: set[Region] = set(regions)
         else:
-            # Inherit markers from all parent pools
-            self._markers = set()
+            # Inherit regions from all parent pools
+            self._regions = set()
             for parent in operation.parent_pools:
-                if hasattr(parent, '_markers'):
-                    self._markers.update(parent._markers)
+                if hasattr(parent, '_regions'):
+                    self._regions.update(parent._regions)
         
         # Register pool with party after name is set
         party._register_pool(self)
@@ -126,21 +126,21 @@ class Pool:
         return self.operation.seq_length
     
     @property
-    def markers(self) -> set[Marker]:
-        """Set of Marker objects present in this pool's sequences."""
-        return self._markers
+    def regions(self) -> set[Region]:
+        """Set of Region objects present in this pool's sequences."""
+        return self._regions
     
-    def has_marker(self, name: str) -> bool:
-        """Check if a marker with the given name is present in this pool."""
-        return any(m.name == name for m in self._markers)
+    def has_region(self, name: str) -> bool:
+        """Check if a region with the given name is present in this pool."""
+        return any(r.name == name for r in self._regions)
     
-    def add_marker(self, marker: Marker) -> None:
-        """Add a marker to this pool's marker set."""
-        self._markers.add(marker)
+    def add_region(self, region: Region) -> None:
+        """Add a region to this pool's region set."""
+        self._regions.add(region)
     
-    def _untrack_marker(self, name: str) -> None:
-        """Remove a marker from this pool's marker set by name."""
-        self._markers = {m for m in self._markers if m.name != name}
+    def _untrack_region(self, name: str) -> None:
+        """Remove a region from this pool's region set by name."""
+        self._regions = {r for r in self._regions if r.name != name}
     
     #########################################################################
     # Counter-based operators
@@ -637,7 +637,7 @@ class Pool:
     def rc(
         self,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
+        remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
@@ -645,7 +645,7 @@ class Pool:
         return rc(
             pool=self,
             region=region,
-            remove_marker=remove_marker,
+            remove_tags=remove_tags,
             iter_order=iter_order,
             style=style,
         )
@@ -653,7 +653,7 @@ class Pool:
     def swapcase(
         self,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
+        remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
@@ -661,7 +661,7 @@ class Pool:
         return swapcase(
             pool=self,
             region=region,
-            remove_marker=remove_marker,
+            remove_tags=remove_tags,
             iter_order=iter_order,
             style=style,
         )
@@ -669,7 +669,7 @@ class Pool:
     def upper(
         self,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
+        remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
@@ -677,7 +677,7 @@ class Pool:
         return upper(
             pool=self,
             region=region,
-            remove_marker=remove_marker,
+            remove_tags=remove_tags,
             iter_order=iter_order,
             style=style,
         )
@@ -685,7 +685,7 @@ class Pool:
     def lower(
         self,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
+        remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
@@ -693,7 +693,7 @@ class Pool:
         return lower(
             pool=self,
             region=region,
-            remove_marker=remove_marker,
+            remove_tags=remove_tags,
             iter_order=iter_order,
             style=style,
         )
@@ -701,28 +701,28 @@ class Pool:
     def clear_gaps(
         self,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
+        remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from .fixed_ops.clear_gaps import clear_gaps
         return clear_gaps(
             pool=self,
             region=region,
-            remove_marker=remove_marker,
+            remove_tags=remove_tags,
             iter_order=iter_order,
         )
     
     def clear_annotation(
         self,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
+        remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from .fixed_ops.clear_annotation import clear_annotation
         return clear_annotation(
             pool=self,
             region=region,
-            remove_marker=remove_marker,
+            remove_tags=remove_tags,
             iter_order=iter_order,
         )
     
@@ -814,81 +814,81 @@ class Pool:
         )
     
     #########################################################################
-    # Marker operations
+    # Region operations
     #########################################################################
     
-    def apply_at_marker(
+    def apply_at_region(
         self,
-        marker_name: str,
+        region_name: str,
         transform_fn: Callable,
-        remove_marker: bool = True,
+        remove_tags: bool = True,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
-        from .marker_ops.apply_at_marker import apply_at_marker
-        return apply_at_marker(
+        from .region_ops.apply_at_region import apply_at_region
+        return apply_at_region(
             self,
-            marker_name,
+            region_name,
             transform_fn,
-            remove_marker=remove_marker,
+            remove_tags=remove_tags,
             iter_order=iter_order,
         )
     
-    def insert_marker(
+    def insert_tags(
         self,
-        marker_name: str,
+        region_name: str,
         start: int,
         stop: Optional[int] = None,
         strand: str = '+',
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
-        from .marker_ops.insert_marker import insert_marker
-        return insert_marker(
+        from .region_ops.insert_tags import insert_tags
+        return insert_tags(
             self,
-            marker_name,
+            region_name,
             start,
             stop,
             strand,
             iter_order=iter_order,
         )
     
-    def remove_marker(
+    def remove_tags(
         self,
-        marker_name: str,
+        region_name: str,
         keep_content: bool = True,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
-        from .marker_ops.remove_marker import remove_marker
-        return remove_marker(
+        from .region_ops.remove_tags import remove_tags
+        return remove_tags(
             self,
-            marker_name,
+            region_name,
             keep_content,
             iter_order=iter_order,
         )
     
-    def replace_marker_content(
+    def replace_region(
         self,
         content_pool: Union[Pool_type, str],
-        marker_name: str,
+        region_name: str,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
-        from .marker_ops.replace_marker_content import replace_marker_content
-        return replace_marker_content(
+        from .region_ops.replace_region import replace_region
+        return replace_region(
             self,
             content_pool,
-            marker_name,
+            region_name,
             iter_order=iter_order,
         )
     
-    def clear_markers(self, **kwargs) -> Pool_type:
-        """Remove all marker tags from sequences, keeping content."""
+    def clear_tags(self, **kwargs) -> Pool_type:
+        """Remove all region tags from sequences, keeping content."""
         from .fixed_ops.fixed import fixed_operation
-        from .marker_ops.parsing import strip_all_markers
+        from .region_ops.parsing import strip_all_tags
         
         result = fixed_operation(
             parent_pools=[self],
-            seq_from_seqs_fn=lambda seqs: strip_all_markers(seqs[0]),
+            seq_from_seqs_fn=lambda seqs: strip_all_tags(seqs[0]),
             seq_length_from_pool_lengths_fn=lambda lengths: None,
             **kwargs,
         )
-        result._markers = set()
+        result._regions = set()
         return result

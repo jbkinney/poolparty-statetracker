@@ -97,10 +97,10 @@ class TestSeqShuffleWithMarker:
             # After shuffle, the marker content is shuffled
             assert sorted(middle.replace('<r>', '').replace('</r>', '')) == sorted('BCDE')
     
-    def test_shuffle_marker_region_remove_marker(self):
-        """Test that _remove_marker=True removes marker tags."""
+    def test_shuffle_marker_region_remove_tags(self):
+        """Test that _remove_tags=True removes marker tags."""
         with pp.Party():
-            pool = shuffle_seq('AA<r>BCDE</r>FF', region='r', _remove_marker=True).named('shuf')
+            pool = shuffle_seq('AA<r>BCDE</r>FF', region='r', _remove_tags=True).named('shuf')
         df = pool.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
             # AA and FF should be preserved
@@ -114,9 +114,9 @@ class TestSeqShuffleWithMarker:
             assert sorted(middle) == sorted('BCDE')
     
     def test_shuffle_marker_region_keep_marker(self):
-        """Test that _remove_marker=False (default) keeps marker tags."""
+        """Test that _remove_tags=False (default) keeps marker tags."""
         with pp.Party():
-            pool = shuffle_seq('AA<r>BCDE</r>FF', region='r', _remove_marker=False).named('shuf')
+            pool = shuffle_seq('AA<r>BCDE</r>FF', region='r', _remove_tags=False).named('shuf')
         df = pool.generate_library(num_seqs=5, seed=42)
         for seq in df['seq']:
             # Marker tags should be present

@@ -242,7 +242,7 @@ class TestPositionValidation:
 class TestPositionAdjustmentWithMarkers:
     """Test position adjustment edge cases with markers and regions."""
     
-    def test_mutagenize_region_remove_marker_true(self):
+    def test_mutagenize_region_remove_tags_true(self):
         """Positions correct when marker is removed."""
         with pp.Party() as party:
             # 'AA' prefix (2 chars), marker content 'CCCC' (4 chars), 'GG' suffix
@@ -270,7 +270,7 @@ class TestPositionAdjustmentWithMarkers:
             # With marker removed, position 0 in region = position 2 in final seq
             assert all(2 <= pos < 6 for pos in positions)
     
-    def test_mutagenize_region_remove_marker_false(self):
+    def test_mutagenize_region_remove_tags_false(self):
         """Positions correct when marker is removed (default behavior)."""
         with pp.Party() as party:
             # 'AA' prefix, marker with content 'CCCC', 'GG' suffix
@@ -937,8 +937,8 @@ class TestInsertKmersStylePropagation:
         the length delta wasn't accounting for marker tag format changes.
         """
         with pp.Party() as party:
-            # Set remove_marker=False so marker tags are kept (like pp.init() does)
-            party.set_default('remove_marker', False)
+            # Set remove_tags=False so region tags are kept (like pp.init() does)
+            party.set_default('remove_tags', False)
             
             # Style the ENTIRE sequence (including suffix after marker)
             bg = pp.from_seq('AAAA<bc/>TTTT')\

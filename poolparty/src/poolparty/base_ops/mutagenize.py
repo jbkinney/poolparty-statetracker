@@ -184,10 +184,10 @@ class MutagenizeOp(Operation):
             # If seq_length is unknown but region is a marker, try to get marker's seq_length
             if effective_length is None and isinstance(region, str):
                 try:
-                    marker = party.get_marker_by_name(region)
-                    effective_length = marker.seq_length
+                    region_obj = party.get_region_by_name(region)
+                    effective_length = region_obj.seq_length
                 except ValueError:
-                    pass  # Marker not found, stay with None
+                    pass  # Region not found, stay with None
             
             # If allowed_chars is provided, use its length and pre-computed mutation counts
             if self._mutation_counts_from_allowed is not None:

@@ -22,7 +22,7 @@ def subseq_scan(
     """
     Extract subsequences of a specified length at scanning positions.
 
-    Scans a marker across the pool and extracts the marked content,
+    Scans a region across the pool and extracts the region content,
     returning subsequences at each valid position.
 
     Parameters
@@ -35,7 +35,7 @@ def subseq_scan(
         Positions to consider for the start of extraction (0-based).
         If None, all valid positions are used.
     region : RegionType, default=None
-        Region to constrain the scan to. Can be a marker name (str) or [start, stop].
+        Region to constrain the scan to. Can be a region name (str) or [start, stop].
         If specified, positions are relative to the region start.
     strand : Literal['+', '-', 'both'], default='+'
         Strand for extraction: '+', '-', or 'both'.
@@ -56,7 +56,7 @@ def subseq_scan(
         A Pool yielding subsequences extracted at each allowed position.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..marker_ops import marker_scan, extract_marker_content, insert_marker
+    from ..region_ops import region_scan, extract_region, insert_tags
 
     # Convert string input to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
@@ -64,8 +64,8 @@ def subseq_scan(
     # If region is specified, extract subsequences only from that region
     if region is not None:
         if isinstance(region, str):
-            # Region is a marker name - extract marker content first
-            region_content = extract_marker_content(pool, region)
+            # Region is a region name - extract region content first
+            region_content = extract_region(pool, region)
             # Apply subseq_scan to the region content
             return _subseq_scan_impl(
                 pool=region_content,
@@ -78,15 +78,15 @@ def subseq_scan(
                 iter_order=iter_order,
             )
         else:
-            # Region is [start, stop] - insert temporary marker, extract, then scan
-            temp_marker = '_subseq_scan_region'
-            marked_pool = insert_marker(
+            # Region is [start, stop] - insert temporary tags, extract, then scan
+            temp_region = '_subseq_scan_region'
+            marked_pool = insert_tags(
                 pool,
-                marker_name=temp_marker,
+                region_name=temp_region,
                 start=int(region[0]),
                 stop=int(region[1]),
             )
-            region_content = extract_marker_content(marked_pool, temp_marker)
+            region_content = extract_region(marked_pool, temp_region)
             return _subseq_scan_impl(
                 pool=region_content,
                 seq_length=seq_length,
@@ -122,7 +122,7 @@ def _subseq_scan_impl(
     iter_order: Optional[Real] = None,
 ) -> Pool:
     """Core subseq scan implementation without region handling."""
-    from ..marker_ops import marker_scan, extract_marker_content
+    from ..region_ops import region_scan, extract_region
 
     # Validate pool has defined seq_length
     pool_length = pool.seq_length
@@ -137,19 +137,19 @@ def _subseq_scan_impl(
             f"seq_length ({seq_length}) must be <= pool.seq_length ({pool_length})"
         )
 
-    # Calculate max position for marker placement
-    marker_name = '_subseq'
-    marker_length = int(seq_length)
+    # Calculate max position for region tag placement
+    region_name = '_subseq'
+    region_length = int(seq_length)
     max_position = pool_length - seq_length
 
     # Validate positions
     validated_positions = validate_positions(positions, max_position, min_position=0)
 
-    # 1. Scan marker across pool at specified positions
-    marked = marker_scan(
+    # 1. Scan region tags across pool at specified positions
+    marked = region_scan(
         pool,
-        marker=marker_name,
-        marker_length=marker_length,
+        region=region_name,
+        region_length=region_length,
         positions=validated_positions,
         strand=strand,
         prefix=prefix,
@@ -158,10 +158,10 @@ def _subseq_scan_impl(
         iter_order=iter_order,
     )
 
-    # 2. Extract marker content as the result
-    result = extract_marker_content(
+    # 2. Extract region content as the result
+    result = extract_region(
         marked,
-        marker_name,
+        region_name,
         iter_order=iter_order,
     )
 

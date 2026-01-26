@@ -12,7 +12,7 @@ from .orf_utils import validate_orf_extent
 from .dna_utils import (
     BASES, COMPLEMENT, IUPAC_TO_DNA, IGNORE_CHARS, VALID_CHARS, IUPAC_CHARS,
     complement, reverse_complement, get_mutations,
-    get_nonmarker_positions, get_length_without_markers,
+    get_nontag_positions, get_length_without_tags,
     get_molecular_positions, get_seq_length,
 )
 from .df_utils import (
@@ -34,7 +34,7 @@ __all__ = [
     # dna_utils
     'BASES', 'COMPLEMENT', 'IUPAC_TO_DNA', 'IGNORE_CHARS', 'VALID_CHARS', 'IUPAC_CHARS',
     'complement', 'reverse_complement', 'get_mutations',
-    'get_nonmarker_positions', 'get_length_without_markers',
+    'get_nontag_positions', 'get_length_without_tags',
     'get_molecular_positions', 'get_seq_length',
     # df_utils
     'counter_col_name', 'get_pools_reverse_topo',

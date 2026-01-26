@@ -1,9 +1,9 @@
-"""Insert multiple XML markers into a sequence."""
+"""Insert multiple XML region tags into a sequence."""
 from poolparty.types import Union, Optional, Sequence, Literal
 from numbers import Integral, Real
 import numpy as np
 
-from .parsing import build_marker_tag, get_nonmarker_positions, nonmarker_pos_to_literal_pos
+from .parsing import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos
 from ..operation import Operation
 
 # Type aliases
@@ -30,13 +30,13 @@ def _validate_positions(positions: PositionsType, max_position: int, min_positio
     return positions_list
 
 
-def marker_multiscan(
+def region_multiscan(
     pool,
-    markers,
+    regions,
     num_insertions: int,
     positions: PositionsType = None,
     strand: str = '+',
-    marker_length: int = 0,
+    region_length: int = 0,
     insertion_mode: Literal['ordered', 'unordered'] = 'ordered',
     prefix: Optional[str] = None,
     mode: str = 'random',
@@ -44,26 +44,26 @@ def marker_multiscan(
     iter_order: Optional[Real] = None,
 ):
     """
-    Insert multiple XML-style markers into a sequence.
+    Insert multiple XML-style region tags into a sequence.
 
     Parameters
     ----------
     pool : Pool or str
-        Input Pool or sequence string to insert markers into.
-    markers : Sequence[str] or str
-        Marker name(s) to insert. If a single string, used for all insertions.
+        Input Pool or sequence string to insert tags into.
+    regions : Sequence[str] or str
+        Region name(s) to insert. If a single string, used for all insertions.
     num_insertions : Integral
-        Number of markers to insert.
+        Number of region tags to insert.
     positions : PositionsType, default=None
         Valid insertion positions (0-based). If None, all positions are valid.
     strand : StrandType, default='+'
-        Strand for markers: '+', '-', or 'both'.
-    marker_length : Integral, default=0
-        Length of sequence to encompass per marker. 0 for zero-length markers.
+        Strand for regions: '+', '-', or 'both'.
+    region_length : Integral, default=0
+        Length of sequence to encompass per region. 0 for zero-length regions.
     insertion_mode : str, default='ordered'
-        How to assign markers to positions:
-        - 'ordered': markers[i] goes to the i-th selected position
-        - 'unordered': randomly assign markers to positions
+        How to assign regions to positions:
+        - 'ordered': regions[i] goes to the i-th selected position
+        - 'unordered': randomly assign regions to positions
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
@@ -76,7 +76,7 @@ def marker_multiscan(
     Returns
     -------
     Pool
-        A Pool yielding sequences with multiple markers inserted.
+        A Pool yielding sequences with multiple region tags inserted.
     """
     from ..fixed_ops.from_seq import from_seq
     from ..pool import Pool
@@ -84,21 +84,21 @@ def marker_multiscan(
 
     pool = from_seq(pool) if isinstance(pool, str) else pool
     
-    # Register all markers with the Party
+    # Register all regions with the Party
     party = get_active_party()
-    marker_names = [markers] if isinstance(markers, str) else list(markers)
-    registered_markers = []
-    for marker_name in marker_names:
-        registered_marker = party.register_marker(marker_name, marker_length)
-        registered_markers.append(registered_marker)
+    region_names = [regions] if isinstance(regions, str) else list(regions)
+    registered_regions = []
+    for region_name in region_names:
+        registered_region = party.register_region(region_name, region_length)
+        registered_regions.append(registered_region)
     
-    op = MarkerMultiScanOp(
+    op = RegionMultiScanOp(
         parent_pool=pool,
-        markers=markers,
+        regions=regions,
         num_insertions=int(num_insertions),
         positions=positions,
         strand=strand,
-        marker_length=int(marker_length),
+        region_length=int(region_length),
         insertion_mode=insertion_mode,
         prefix=prefix,
         mode=mode,
@@ -108,27 +108,27 @@ def marker_multiscan(
     )
     result_pool = Pool(operation=op)
     
-    # Add all registered markers to the pool
-    for registered_marker in registered_markers:
-        result_pool.add_marker(registered_marker)
+    # Add all registered regions to the pool
+    for registered_region in registered_regions:
+        result_pool.add_region(registered_region)
     
     return result_pool
 
 
-class MarkerMultiScanOp(Operation):
-    """Insert multiple XML markers at selected positions."""
+class RegionMultiScanOp(Operation):
+    """Insert multiple XML region tags at selected positions."""
 
-    factory_name = "marker_multiscan"
-    design_card_keys = ['indices', 'strands', 'marker_tags']
+    factory_name = "region_multiscan"
+    design_card_keys = ['indices', 'strands', 'region_tags']
 
     def __init__(
         self,
         parent_pool,
-        markers,
+        regions,
         num_insertions: int,
         positions: PositionsType = None,
         strand: str = '+',
-        marker_length: int = 0,
+        region_length: int = 0,
         insertion_mode: str = 'ordered',
         prefix: Optional[str] = None,
         mode: str = 'random',
@@ -139,19 +139,19 @@ class MarkerMultiScanOp(Operation):
         if num_insertions < 1:
             raise ValueError(f"num_insertions must be >= 1, got {num_insertions}")
         if mode != 'random':
-            raise ValueError("marker_multiscan supports only mode='random'")
-        if marker_length < 0:
-            raise ValueError(f"marker_length must be >= 0, got {marker_length}")
+            raise ValueError("region_multiscan supports only mode='random'")
+        if region_length < 0:
+            raise ValueError(f"region_length must be >= 0, got {region_length}")
 
         self._positions = positions
         self._mode = mode
         self._strand = strand
-        self._marker_length = marker_length
+        self._region_length = region_length
         self._seq_length = parent_pool.seq_length
         self.num_insertions = num_insertions
         self.insertion_mode = insertion_mode
-        self._marker_names = self._coerce_markers(markers)
-        self._validate_marker_counts()
+        self._region_names = self._coerce_regions(regions)
+        self._validate_region_counts()
 
         # num_states stays None for pure random mode
         super().__init__(
@@ -164,51 +164,51 @@ class MarkerMultiScanOp(Operation):
             prefix=prefix,
         )
 
-    def _coerce_markers(
-        self, markers: Union[Sequence[str], str]
+    def _coerce_regions(
+        self, regions: Union[Sequence[str], str]
     ) -> list[str]:
-        """Normalize markers input to a list of marker names."""
-        if isinstance(markers, str):
-            markers = [markers]
-        if not markers:
-            raise ValueError("markers must not be empty")
-        return list(markers)
+        """Normalize regions input to a list of region names."""
+        if isinstance(regions, str):
+            regions = [regions]
+        if not regions:
+            raise ValueError("regions must not be empty")
+        return list(regions)
 
-    def _validate_marker_counts(self) -> None:
-        """Validate marker counts against insertion_mode."""
+    def _validate_region_counts(self) -> None:
+        """Validate region counts against insertion_mode."""
         if self.insertion_mode not in ('ordered', 'unordered'):
             raise ValueError(
                 "insertion_mode must be one of 'ordered', 'unordered'"
             )
-        if self.insertion_mode == 'ordered' and len(self._marker_names) != self.num_insertions:
+        if self.insertion_mode == 'ordered' and len(self._region_names) != self.num_insertions:
             raise ValueError(
-                "insertion_mode='ordered' requires len(markers) == num_insertions"
+                "insertion_mode='ordered' requires len(regions) == num_insertions"
             )
-        if self.insertion_mode == 'unordered' and len(self._marker_names) < self.num_insertions:
+        if self.insertion_mode == 'unordered' and len(self._region_names) < self.num_insertions:
             raise ValueError(
-                "insertion_mode='unordered' requires len(markers) >= num_insertions"
+                "insertion_mode='unordered' requires len(regions) >= num_insertions"
             )
 
-    def _get_valid_marker_indices(self, seq: str) -> list[int]:
-        """Return valid nonmarker indices (0 to n-1) for marker insertion.
+    def _get_valid_region_indices(self, seq: str) -> list[int]:
+        """Return valid nontag indices (0 to n-1) for region tag insertion.
         
-        Returns logical indices into the non-marker character positions,
+        Returns logical indices into the non-tag character positions,
         not literal string positions. This allows proper handling of
-        multiple marker insertions without position corruption.
+        multiple tag insertions without position corruption.
         """
-        nonmarker_positions = get_nonmarker_positions(seq)
-        num_nonmarker = len(nonmarker_positions)
+        nontag_positions = get_nontag_positions(seq)
+        num_nontag = len(nontag_positions)
         
-        if self._marker_length > 0:
-            # For region markers, ensure room for content
-            # Valid indices are 0 to (num_nonmarker - marker_length)
-            max_valid_idx = num_nonmarker - self._marker_length
+        if self._region_length > 0:
+            # For region tags, ensure room for content
+            # Valid indices are 0 to (num_nontag - region_length)
+            max_valid_idx = num_nontag - self._region_length
             if max_valid_idx < 0:
                 return []
             all_valid = list(range(max_valid_idx + 1))
         else:
-            # For zero-length markers, can insert at any position including end
-            all_valid = list(range(num_nonmarker + 1))
+            # For zero-length regions, can insert at any position including end
+            all_valid = list(range(num_nontag + 1))
 
         if self._positions is not None:
             indices = _validate_positions(
@@ -223,10 +223,10 @@ class MarkerMultiScanOp(Operation):
     def _select_indices(
         self, valid_indices: list[int], rng: np.random.Generator
     ) -> list[int]:
-        """Select nonmarker indices for marker insertion.
+        """Select nontag indices for region tag insertion.
         
-        For region markers (marker_length > 0), ensures selected indices
-        are at least marker_length apart to prevent overlapping regions.
+        For region tags (region_length > 0), ensures selected indices
+        are at least region_length apart to prevent overlapping regions.
         """
         if len(valid_indices) < self.num_insertions:
             raise ValueError(
@@ -234,8 +234,8 @@ class MarkerMultiScanOp(Operation):
                 f"for {self.num_insertions} insertions"
             )
         
-        if self._marker_length > 0:
-            # For region markers, need non-overlapping selection
+        if self._region_length > 0:
+            # For region tags, need non-overlapping selection
             # Use greedy algorithm with random shuffling
             shuffled = list(valid_indices)
             rng.shuffle(shuffled)
@@ -245,7 +245,7 @@ class MarkerMultiScanOp(Operation):
                 # Check if this idx overlaps with any already chosen
                 overlaps = False
                 for c in chosen:
-                    if abs(idx - c) < self._marker_length:
+                    if abs(idx - c) < self._region_length:
                         overlaps = True
                         break
                 if not overlaps:
@@ -256,12 +256,12 @@ class MarkerMultiScanOp(Operation):
             if len(chosen) < self.num_insertions:
                 raise ValueError(
                     f"Cannot select {self.num_insertions} non-overlapping positions "
-                    f"with marker_length={self._marker_length} from "
+                    f"with region_length={self._region_length} from "
                     f"{len(valid_indices)} valid positions"
                 )
             return sorted(chosen)
         else:
-            # Zero-length markers don't overlap
+            # Zero-length regions don't overlap
             chosen = rng.choice(
                 valid_indices,
                 size=self.num_insertions,
@@ -276,40 +276,40 @@ class MarkerMultiScanOp(Operation):
         else:
             return [self._strand] * self.num_insertions
 
-    def _select_marker_tags(
+    def _select_region_tags(
         self, seq: str, indices: list[int], strands: list[str], rng: np.random.Generator
     ) -> list[str]:
-        """Build marker tags for each nonmarker index.
+        """Build region tags for each nontag index.
         
         Args:
             seq: The original sequence string.
-            indices: Nonmarker indices (logical positions, not literal).
-            strands: Strand for each marker.
+            indices: Nontag indices (logical positions, not literal).
+            strands: Strand for each region.
             rng: Random number generator.
         
         Returns:
-            List of marker tag strings.
+            List of region tag strings.
         """
         if self.insertion_mode == 'ordered':
-            names = self._marker_names
+            names = self._region_names
         else:
-            # unordered: randomly select from available markers
-            idxs = rng.choice(len(self._marker_names), size=self.num_insertions, replace=False)
-            names = [self._marker_names[int(i)] for i in idxs]
+            # unordered: randomly select from available regions
+            idxs = rng.choice(len(self._region_names), size=self.num_insertions, replace=False)
+            names = [self._region_names[int(i)] for i in idxs]
         
         tags = []
         for idx, strand, name in zip(indices, strands, names):
-            if self._marker_length > 0:
-                # Convert nonmarker index to literal positions for content extraction
-                literal_start = nonmarker_pos_to_literal_pos(seq, idx)
-                literal_end = nonmarker_pos_to_literal_pos(seq, idx + self._marker_length)
+            if self._region_length > 0:
+                # Convert nontag index to literal positions for content extraction
+                literal_start = nontag_pos_to_literal_pos(seq, idx)
+                literal_end = nontag_pos_to_literal_pos(seq, idx + self._region_length)
                 content = seq[literal_start:literal_end]
-                # Strip any existing marker tags from content (keep only actual characters)
-                from .parsing import strip_all_markers
-                content = strip_all_markers(content)
+                # Strip any existing tags from content (keep only actual characters)
+                from .parsing import strip_all_tags
+                content = strip_all_tags(content)
             else:
                 content = ''
-            tags.append(build_marker_tag(name, content, strand))
+            tags.append(build_region_tags(name, content, strand))
         return tags
 
     def compute(
@@ -318,66 +318,66 @@ class MarkerMultiScanOp(Operation):
         rng: Optional[np.random.Generator] = None,
         parent_styles: list | None = None,
     ) -> dict:
-        """Return design card and sequence with markers inserted together."""
+        """Return design card and sequence with region tags inserted together."""
         seq = parent_seqs[0]
         if rng is None:
             raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
 
-        valid_indices = self._get_valid_marker_indices(seq)
+        valid_indices = self._get_valid_region_indices(seq)
         indices = self._select_indices(valid_indices, rng)
         strands = self._select_strands(rng)
-        marker_tags = self._select_marker_tags(seq, indices, strands, rng)
+        region_tags = self._select_region_tags(seq, indices, strands, rng)
         
-        # Build result sequence with markers inserted at nonmarker indices
+        # Build result sequence with tags inserted at nontag indices
         # Uses single-pass construction to avoid position corruption issues
-        # when inserting multiple overlapping markers
+        # when inserting multiple overlapping tags
         indices_list = list(indices)
-        marker_tags_list = list(marker_tags)
+        region_tags_list = list(region_tags)
         
         # Sort by index ascending for left-to-right processing
-        inserts = sorted(zip(indices_list, marker_tags_list), key=lambda x: x[0])
+        inserts = sorted(zip(indices_list, region_tags_list), key=lambda x: x[0])
         
         # Build result string from left to right
         result_parts = []
-        prev_end_idx = 0  # Next nonmarker index to copy from
+        prev_end_idx = 0  # Next nontag index to copy from
         
-        for nm_idx, tag in inserts:
-            # Copy characters from prev_end_idx to nm_idx (exclusive)
-            if prev_end_idx < nm_idx:
-                start_literal = nonmarker_pos_to_literal_pos(seq, prev_end_idx)
-                end_literal = nonmarker_pos_to_literal_pos(seq, nm_idx)
+        for nt_idx, tag in inserts:
+            # Copy characters from prev_end_idx to nt_idx (exclusive)
+            if prev_end_idx < nt_idx:
+                start_literal = nontag_pos_to_literal_pos(seq, prev_end_idx)
+                end_literal = nontag_pos_to_literal_pos(seq, nt_idx)
                 result_parts.append(seq[start_literal:end_literal])
             
-            # Add the marker tag (which contains content for region markers)
+            # Add the region tag (which contains content for region tags)
             result_parts.append(tag)
             
-            # Update prev_end_idx based on marker type
-            if self._marker_length > 0:
-                # Region marker: skip the characters that are now inside the tag
-                prev_end_idx = nm_idx + self._marker_length
+            # Update prev_end_idx based on region type
+            if self._region_length > 0:
+                # Region tags: skip the characters that are now inside the tag
+                prev_end_idx = nt_idx + self._region_length
             else:
-                # Zero-length marker: don't skip any characters
-                prev_end_idx = nm_idx
+                # Zero-length region: don't skip any characters
+                prev_end_idx = nt_idx
         
-        # Add remaining characters after the last marker
-        nonmarker_positions = get_nonmarker_positions(seq)
-        if prev_end_idx < len(nonmarker_positions):
-            start_literal = nonmarker_pos_to_literal_pos(seq, prev_end_idx)
+        # Add remaining characters after the last tag
+        nontag_positions = get_nontag_positions(seq)
+        if prev_end_idx < len(nontag_positions):
+            start_literal = nontag_pos_to_literal_pos(seq, prev_end_idx)
             result_parts.append(seq[start_literal:])
-        elif prev_end_idx == len(nonmarker_positions):
-            # Edge case: last marker ends exactly at end of sequence
-            # There might be trailing marker tags to preserve
-            last_nonmarker_literal = nonmarker_positions[-1] if nonmarker_positions else 0
-            if last_nonmarker_literal + 1 < len(seq):
-                result_parts.append(seq[last_nonmarker_literal + 1:])
+        elif prev_end_idx == len(nontag_positions):
+            # Edge case: last tag ends exactly at end of sequence
+            # There might be trailing tags to preserve
+            last_nontag_literal = nontag_positions[-1] if nontag_positions else 0
+            if last_nontag_literal + 1 < len(seq):
+                result_parts.append(seq[last_nontag_literal + 1:])
         
         result_seq = ''.join(result_parts)
         
-        # Marker multiscan modifies sequence structure, so styles not meaningful
+        # Region multiscan modifies sequence structure, so styles not meaningful
         return {
-            'indices': indices_list,  # nonmarker indices, not literal positions
+            'indices': indices_list,  # nontag indices, not literal positions
             'strands': strands,
-            'marker_tags': marker_tags_list,
+            'region_tags': region_tags_list,
             'seq': result_seq,
             'style': [],
         }
@@ -385,11 +385,11 @@ class MarkerMultiScanOp(Operation):
     def _get_copy_params(self) -> dict:
         return {
             'parent_pool': self.parent_pools[0],
-            'markers': self._marker_names,
+            'regions': self._region_names,
             'num_insertions': self.num_insertions,
             'positions': self._positions,
             'strand': self._strand,
-            'marker_length': self._marker_length,
+            'region_length': self._region_length,
             'insertion_mode': self.insertion_mode,
             'prefix': self.name_prefix,
             'mode': self.mode,

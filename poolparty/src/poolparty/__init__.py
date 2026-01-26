@@ -7,7 +7,7 @@ import statetracker as st
 from .party import Party, get_active_party, init, clear_pools, _init_default_party
 from .pool import Pool
 from .operation import Operation
-from .marker import Marker
+from .region import Region
 from .generate_library import generate_library
 from .utils.dna_utils import BASES, COMPLEMENT, IUPAC_TO_DNA, IGNORE_CHARS, VALID_CHARS
 # Import fixed operations from fixed_ops module
@@ -56,15 +56,15 @@ from .scan_ops import (
     mutagenize_scan,
     subseq_scan,
 )
-# Import from marker_ops module
-from .marker_ops import (
-    insert_marker,
-    marker_scan,
-    marker_multiscan,
-    extract_marker_content,
-    replace_marker_content,
-    apply_at_marker,
-    remove_marker,
+# Import from region_ops module
+from .region_ops import (
+    insert_tags,
+    region_scan,
+    region_multiscan,
+    extract_region,
+    replace_region,
+    apply_at_region,
+    remove_tags,
 )
 # Import styling utilities
 from .utils.style_utils import print_named_colors
@@ -79,7 +79,7 @@ __all__ = [
     '__version__',
     'Party', 'get_active_party', 'init', 'clear_pools',
     'set_default', 'load_defaults',
-    'Pool', 'Operation', 'Marker', 'State', 'StateManager', 'generate_library',
+    'Pool', 'Operation', 'Region', 'State', 'StateManager', 'generate_library',
     'BASES', 'COMPLEMENT', 'IUPAC_TO_DNA', 'IGNORE_CHARS', 'VALID_CHARS',
     'fixed_operation', 'FixedOp',
     'from_seq',
@@ -111,14 +111,14 @@ __all__ = [
     'state_shuffle', 'StateShuffleOp',
     'state_sample', 'StateSampleOp',
     'sync',
-    # Marker operations
-    'insert_marker',
-    'marker_scan',
-    'marker_multiscan',
-    'extract_marker_content',
-    'replace_marker_content',
-    'apply_at_marker',
-    'remove_marker',
+    # Region operations
+    'insert_tags',
+    'region_scan',
+    'region_multiscan',
+    'extract_region',
+    'replace_region',
+    'apply_at_region',
+    'remove_tags',
     # Multiscan operations
     'deletion_multiscan',
     'insertion_multiscan',
@@ -187,11 +187,11 @@ _POOL_FACTORY_MAP = {
     'sample_states': state_sample,
     'shuffle_states': state_shuffle,
     'slice_states': state_slice,
-    # Marker ops
-    'apply_at_marker': apply_at_marker,
-    'insert_marker': insert_marker,
-    'remove_marker': remove_marker,
-    'replace_marker_content': replace_marker_content,
+    # Region ops
+    'apply_at_region': apply_at_region,
+    'insert_tags': insert_tags,
+    'remove_tags': remove_tags,
+    'replace_region': replace_region,
     # Generation
     'generate_library': generate_library,
 }

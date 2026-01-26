@@ -1,9 +1,9 @@
-"""MarkerScan operation - insert XML markers at scanning positions."""
+"""RegionScan operation - insert XML region tags at scanning positions."""
 from poolparty.types import Union, Optional, Literal, RegionType
 from numbers import Integral, Real
 import numpy as np
 
-from .parsing import build_marker_tag, TAG_PATTERN, get_nonmarker_positions
+from .parsing import build_region_tags, TAG_PATTERN, get_nontag_positions
 from ..operation import Operation
 
 # Type aliases
@@ -12,14 +12,14 @@ ModeType = Literal['random', 'sequential']
 StrandType = Literal['+', '-', 'both']
 
 
-def marker_scan(
+def region_scan(
     pool,
-    marker: str = 'marker',
+    region: str = 'region',
     positions: PositionsType = None,
-    region: RegionType = None,
-    remove_marker: Optional[bool] = None,
+    region_constraint: RegionType = None,
+    remove_tags: Optional[bool] = None,
     strand: str = '+',
-    marker_length: int = 0,
+    region_length: int = 0,
     prefix: Optional[str] = None,
     mode: str = 'random',
     num_states: Optional[int] = None,
@@ -27,25 +27,25 @@ def marker_scan(
     _factory_name: Optional[str] = None,
 ):
     """
-    Insert XML-style markers at scanning positions in a sequence.
+    Insert XML-style region tags at scanning positions in a sequence.
 
     Parameters
     ----------
     pool : Pool or str
-        Input Pool or sequence string to insert marker into.
-    marker : str, default='marker'
-        Name for the marker to insert.
+        Input Pool or sequence string to insert tags into.
+    region : str, default='region'
+        Name for the region to insert.
     positions : PositionsType, default=None
         Valid insertion positions (0-based). If None, all positions are valid.
-    region : RegionType, default=None
-        Region to constrain the scan to. Can be marker name (str) or [start, stop].
-    remove_marker : Optional[bool], default=None
-        If True and region is a marker name, remove marker tags from output.
+    region_constraint : RegionType, default=None
+        Region to constrain the scan to. Can be region name (str) or [start, stop].
+    remove_tags : Optional[bool], default=None
+        If True and region_constraint is a region name, remove tags from output.
     strand : StrandType, default='+'
-        Strand for the marker: '+', '-', or 'both'.
-    marker_length : Integral, default=0
-        Length of sequence to encompass. 0 creates zero-length markers (<name/>),
-        >0 creates region markers (<name>BASES</name>).
+        Strand for the region: '+', '-', or 'both'.
+    region_length : Integral, default=0
+        Length of sequence to encompass. 0 creates zero-length regions (<name/>),
+        >0 creates region tags (<name>BASES</name>).
     mode : ModeType, default='random'
         Position selection mode: 'random' or 'sequential'.
     _factory_name : Optional[str], default=None
@@ -54,7 +54,7 @@ def marker_scan(
     Returns
     -------
     Pool
-        A Pool yielding sequences with the marker inserted at selected positions.
+        A Pool yielding sequences with the region tags inserted at selected positions.
     """
     from ..fixed_ops.from_seq import from_seq
     from ..pool import Pool
@@ -63,22 +63,22 @@ def marker_scan(
     # Convert string input to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
     
-    # Validate marker_length
-    if marker_length < 0:
-        raise ValueError(f"marker_length must be >= 0, got {marker_length}")
+    # Validate region_length
+    if region_length < 0:
+        raise ValueError(f"region_length must be >= 0, got {region_length}")
     
-    # Register the marker with the Party
+    # Register the region with the Party
     party = get_active_party()
-    registered_marker = party.register_marker(marker, marker_length)
+    registered_region = party.register_region(region, region_length)
     
-    op = MarkerScanOp(
+    op = RegionScanOp(
         parent_pool=pool,
-        marker_name=marker,
+        region_name=region,
         positions=positions,
-        region=region,
-        remove_marker=remove_marker,
+        region=region_constraint,
+        remove_tags=remove_tags,
         strand=strand,
-        marker_length=int(marker_length),
+        region_length=int(region_length),
         prefix=prefix,
         mode=mode,
         num_states=num_states,
@@ -88,8 +88,8 @@ def marker_scan(
     )
     result_pool = Pool(operation=op)
     
-    # Add the marker to the pool's marker set
-    result_pool.add_marker(registered_marker)
+    # Add the region to the pool's region set
+    result_pool.add_region(registered_region)
     
     return result_pool
 
@@ -114,21 +114,21 @@ def _validate_positions(positions: PositionsType, max_position: int, min_positio
     return positions_list
 
 
-class MarkerScanOp(Operation):
-    """Insert XML markers at scanning positions."""
-    factory_name = "marker_scan"
+class RegionScanOp(Operation):
+    """Insert XML region tags at scanning positions."""
+    factory_name = "region_scan"
     design_card_keys = ['position_index', 'start', 'stop', 'length', 'region_name', 'region_content', 'strand', 'region_seq']
     
     def __init__(
         self,
         parent_pool,
-        marker_name: str,
+        region_name: str,
         positions: PositionsType = None,
         region: RegionType = None,
-        remove_marker: Optional[bool] = None,
+        remove_tags: Optional[bool] = None,
         spacer_str: str = '',
         strand: str = '+',
-        marker_length: int = 0,
+        region_length: int = 0,
         prefix: Optional[str] = None,
         mode: str = 'random',
         num_states: Optional[int] = None,
@@ -136,29 +136,29 @@ class MarkerScanOp(Operation):
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
     ) -> None:
-        """Initialize MarkerScanOp."""
+        """Initialize RegionScanOp."""
         from ..party import get_active_party
         
         
-        self.marker_name = marker_name
+        self.region_name = region_name
         self._positions = positions
         self._mode = mode
         self._strand = strand
-        self._marker_length = marker_length
+        self._region_length = region_length
         self._region = region  # Store early for logging
         self._valid_positions = None
         self._sequential_cache = None
         
         # Determine effective seq_length for cache building:
-        # If region is a marker name, use the marker's registered length
+        # If region is a region name, use the region's registered length
         # Otherwise, use the parent pool's seq_length
         if isinstance(region, str):
             party = get_active_party()
             try:
-                region_marker = party.get_marker_by_name(region)
-                self._seq_length = region_marker.seq_length
+                constraint_region = party.get_region_by_name(region)
+                self._seq_length = constraint_region.seq_length
             except (ValueError, KeyError):
-                # Marker not yet registered, fall back to parent seq_length
+                # Region not yet registered, fall back to parent seq_length
                 self._seq_length = parent_pool.seq_length
         else:
             self._seq_length = parent_pool.seq_length
@@ -188,12 +188,12 @@ class MarkerScanOp(Operation):
             parent_pools=[parent_pool],
             num_values=num_states,
             mode=mode,
-            seq_length=None,  # Variable due to marker tags
+            seq_length=None,  # Variable due to region tags
             name=name,
             iter_order=iter_order,
             prefix=prefix,
             region=region,
-            remove_marker=remove_marker,
+            remove_tags=remove_tags,
         )
     
     def _build_caches(self) -> int:
@@ -208,8 +208,8 @@ class MarkerScanOp(Operation):
                 return max(1, len(positions_list))
             return 1
         
-        # For region markers, we need room for marker_length bases
-        max_start = self._seq_length - self._marker_length
+        # For region tags, we need room for region_length bases
+        max_start = self._seq_length - self._region_length
         if max_start < 0:
             max_start = 0
         
@@ -225,30 +225,30 @@ class MarkerScanOp(Operation):
             num_states = num_all_positions
         
         if num_states == 0:
-            raise ValueError("No valid positions for marker insertion")
+            raise ValueError("No valid positions for region tag insertion")
         return num_states
     
-    def _get_valid_marker_positions(self, seq: str) -> tuple[list[int], list[int]]:
-        """Get valid marker insertion positions, excluding marker interiors.
+    def _get_valid_region_positions(self, seq: str) -> tuple[list[int], list[int]]:
+        """Get valid region tag insertion positions, excluding tag interiors.
         
-        Returns tuple of (valid_nonmarker_indices, nonmarker_positions) where:
-        - valid_nonmarker_indices: indices into nonmarker_positions that are valid start positions
-        - nonmarker_positions: literal positions of all non-marker characters
+        Returns tuple of (valid_nontag_indices, nontag_positions) where:
+        - valid_nontag_indices: indices into nontag_positions that are valid start positions
+        - nontag_positions: literal positions of all non-tag characters
         """
-        # Get positions not inside existing markers
-        nonmarker_positions = get_nonmarker_positions(seq)
+        # Get positions not inside existing tags
+        nontag_positions = get_nontag_positions(seq)
         
-        # For region markers, ensure there's room for marker_length bases
-        if self._marker_length > 0:
-            # Valid indices are those where we have room for marker_length consecutive non-marker chars
-            max_valid_idx = len(nonmarker_positions) - self._marker_length
+        # For region tags, ensure there's room for region_length bases
+        if self._region_length > 0:
+            # Valid indices are those where we have room for region_length consecutive non-tag chars
+            max_valid_idx = len(nontag_positions) - self._region_length
             if max_valid_idx < 0:
                 all_valid_indices = []
             else:
                 all_valid_indices = list(range(max_valid_idx + 1))
         else:
-            # For zero-length markers, all positions are valid plus end (len of seq)
-            all_valid_indices = list(range(len(nonmarker_positions) + 1))
+            # For zero-length regions, all positions are valid plus end (len of seq)
+            all_valid_indices = list(range(len(nontag_positions) + 1))
         
         # Apply user position filter
         if self._positions is not None:
@@ -258,9 +258,9 @@ class MarkerScanOp(Operation):
                 min_position=0,
             )
             filtered_indices = [all_valid_indices[i] for i in indices]
-            return filtered_indices, nonmarker_positions
+            return filtered_indices, nontag_positions
         
-        return all_valid_indices, nonmarker_positions
+        return all_valid_indices, nontag_positions
     
     def compute(
         self,
@@ -268,14 +268,14 @@ class MarkerScanOp(Operation):
         rng: Optional[np.random.Generator] = None,
         parent_styles: list | None = None,
     ) -> dict:
-        """Return design card and sequence with marker inserted together."""
+        """Return design card and sequence with region tags inserted together."""
         from ..types import StyleList
         
         seq = parent_seqs[0]
         
-        valid_indices, nonmarker_positions = self._get_valid_marker_positions(seq)
+        valid_indices, nontag_positions = self._get_valid_region_positions(seq)
         if len(valid_indices) == 0:
-            raise ValueError("No valid positions for marker insertion")
+            raise ValueError("No valid positions for region tag insertion")
         
         # Determine strand for this state
         if self._strand == 'both':
@@ -303,93 +303,93 @@ class MarkerScanOp(Operation):
                 state = 0 if state is None else state
                 position_index = state % len(valid_indices)
         
-        # Build marker tag - extract content using non-marker indices
-        nonmarker_idx = valid_indices[position_index]
+        # Build region tags - extract content using non-tag indices
+        nontag_idx = valid_indices[position_index]
         explicit_strand = (self._strand == 'both')
-        if self._marker_length > 0:
-            # Extract content from non-marker characters only
+        if self._region_length > 0:
+            # Extract content from non-tag characters only
             content = ''.join(
-                seq[nonmarker_positions[i]]
-                for i in range(nonmarker_idx, nonmarker_idx + self._marker_length)
+                seq[nontag_positions[i]]
+                for i in range(nontag_idx, nontag_idx + self._region_length)
             )
-            marker_tag = build_marker_tag(self.marker_name, content, strand, explicit_strand=explicit_strand)
-            start = nonmarker_idx
-            stop = nonmarker_idx + self._marker_length
-            # Get raw sequence from literal start to end (including markers/gaps, excluding new marker_tag)
-            start_literal = nonmarker_positions[nonmarker_idx]
-            end_nonmarker_idx = nonmarker_idx + self._marker_length
-            if end_nonmarker_idx < len(nonmarker_positions):
-                end_literal = nonmarker_positions[end_nonmarker_idx]
+            region_tag = build_region_tags(self.region_name, content, strand, explicit_strand=explicit_strand)
+            start = nontag_idx
+            stop = nontag_idx + self._region_length
+            # Get raw sequence from literal start to end (including tags/gaps, excluding new region_tag)
+            start_literal = nontag_positions[nontag_idx]
+            end_nontag_idx = nontag_idx + self._region_length
+            if end_nontag_idx < len(nontag_positions):
+                end_literal = nontag_positions[end_nontag_idx]
             else:
-                end_literal = nonmarker_positions[-1] + 1 if nonmarker_positions else len(seq)
+                end_literal = nontag_positions[-1] + 1 if nontag_positions else len(seq)
             marked_seq = seq[start_literal:end_literal]
         else:
-            marker_tag = build_marker_tag(self.marker_name, '', strand, explicit_strand=explicit_strand)
-            start = nonmarker_idx
-            stop = nonmarker_idx
+            region_tag = build_region_tags(self.region_name, '', strand, explicit_strand=explicit_strand)
+            start = nontag_idx
+            stop = nontag_idx
             marked_seq = ''
         
-        # Insert marker at position
-        if self._marker_length > 0:
-            # Region marker: replace content with marker
-            # Get literal start and end positions from non-marker indices
-            start_literal = nonmarker_positions[nonmarker_idx]
-            end_nonmarker_idx = nonmarker_idx + self._marker_length
+        # Insert tags at position
+        if self._region_length > 0:
+            # Region tags: replace content with tags
+            # Get literal start and end positions from non-tag indices
+            start_literal = nontag_positions[nontag_idx]
+            end_nontag_idx = nontag_idx + self._region_length
             # End position is the literal position of the first char AFTER the region
-            if end_nonmarker_idx < len(nonmarker_positions):
-                end_literal = nonmarker_positions[end_nonmarker_idx]
+            if end_nontag_idx < len(nontag_positions):
+                end_literal = nontag_positions[end_nontag_idx]
             else:
-                # One past the last non-marker character (preserves trailing marker tags)
-                end_literal = nonmarker_positions[-1] + 1 if nonmarker_positions else len(seq)
-            result_seq = seq[:start_literal] + marker_tag + seq[end_literal:]
+                # One past the last non-tag character (preserves trailing tags)
+                end_literal = nontag_positions[-1] + 1 if nontag_positions else len(seq)
+            result_seq = seq[:start_literal] + region_tag + seq[end_literal:]
             
-            # Adjust parent styles for region marker insertion
-            # Opening tag length is from start of marker_tag to first '>' + 1
-            opening_tag_end = marker_tag.index('>') + 1
+            # Adjust parent styles for region tag insertion
+            # Opening tag length is from start of region_tag to first '>' + 1
+            opening_tag_end = region_tag.index('>') + 1
             opening_tag_len = opening_tag_end
             # Closing tag length is the rest
-            closing_tag_len = len(marker_tag) - opening_tag_len - len(content)
+            closing_tag_len = len(region_tag) - opening_tag_len - len(content)
             total_tag_len = opening_tag_len + closing_tag_len
         else:
-            # Zero-length marker: insert at position
-            if nonmarker_idx < len(nonmarker_positions):
-                raw_position = nonmarker_positions[nonmarker_idx]
+            # Zero-length region: insert at position
+            if nontag_idx < len(nontag_positions):
+                raw_position = nontag_positions[nontag_idx]
             else:
                 raw_position = len(seq)  # Insert at end
-            result_seq = seq[:raw_position] + marker_tag + seq[raw_position:]
+            result_seq = seq[:raw_position] + region_tag + seq[raw_position:]
         
-        # Adjust parent styles to account for marker tag insertion
+        # Adjust parent styles to account for tag insertion
         output_styles: StyleList = []
         if parent_styles and len(parent_styles) > 0:
             input_styles = parent_styles[0]
             
-            if self._marker_length > 0:
-                # Region marker: positions shift based on where they fall
+            if self._region_length > 0:
+                # Region tags: positions shift based on where they fall
                 for spec, positions in input_styles:
                     adjusted_positions = []
                     for pos in positions:
                         if pos < start_literal:
-                            # Before marker: unchanged
+                            # Before tags: unchanged
                             adjusted_positions.append(pos)
                         elif pos < end_literal:
-                            # Inside marker region: shift by opening tag length
+                            # Inside region: shift by opening tag length
                             adjusted_positions.append(pos + opening_tag_len)
                         else:
-                            # After marker region: shift by total tag length minus replaced content
+                            # After region: shift by total tag length minus replaced content
                             shift = total_tag_len - (end_literal - start_literal) + len(content)
                             adjusted_positions.append(pos + shift)
                     if adjusted_positions:
                         output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
             else:
-                # Zero-length marker: positions >= insertion point shift by marker tag length
-                marker_tag_len = len(marker_tag)
+                # Zero-length region: positions >= insertion point shift by tag length
+                region_tag_len = len(region_tag)
                 for spec, positions in input_styles:
                     adjusted_positions = []
                     for pos in positions:
                         if pos < raw_position:
                             adjusted_positions.append(pos)
                         else:
-                            adjusted_positions.append(pos + marker_tag_len)
+                            adjusted_positions.append(pos + region_tag_len)
                     if adjusted_positions:
                         output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
         
@@ -397,11 +397,11 @@ class MarkerScanOp(Operation):
             'position_index': position_index,
             'start': start,
             'stop': stop,
-            'length': self._marker_length,
-            'region_name': self.marker_name,
+            'length': self._region_length,
+            'region_name': self.region_name,
             'region_content': marked_seq,
             'strand': strand,
-            'region_seq': marker_tag,
+            'region_seq': region_tag,
             'seq': result_seq,
             'style': output_styles,
         }
@@ -410,12 +410,12 @@ class MarkerScanOp(Operation):
         """Return parameters needed to create a copy of this operation."""
         return {
             'parent_pool': self.parent_pools[0],
-            'marker_name': self.marker_name,
+            'region_name': self.region_name,
             'positions': self._positions,
             'region': self._region,
-            'remove_marker': self._remove_marker,
+            'remove_tags': self._remove_tags,
             'strand': self._strand,
-            'marker_length': self._marker_length,
+            'region_length': self._region_length,
             'prefix': self.name_prefix,
             'mode': self.mode,
             'num_states': self.num_values if self.mode == 'random' and self.num_values is not None and self.num_values > 1 else None,

@@ -15,7 +15,7 @@ def from_fasta(
     strand: Literal['+', '-'] = '+',
     pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
-    remove_marker: Optional[bool] = None,
+    remove_tags: Optional[bool] = None,
     iter_order: Optional[Real] = None,
     style: Optional[str] = None,
 ) -> Pool_type:
@@ -49,7 +49,7 @@ def from_fasta(
         seq=seq,
         pool=pool,
         region=region,
-        remove_marker=remove_marker,
+        remove_tags=remove_tags,
         iter_order=iter_order,
         style=style,
         _factory_name='from_fasta',

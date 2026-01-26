@@ -21,7 +21,7 @@ def replacement_multiscan(
     """
     Replace segments at multiple positions simultaneously.
 
-    Uses marker_multiscan() to insert markers at multiple positions, then
+    Uses region_multiscan() to insert markers at multiple positions, then
     replaces each marker's content with sequences from replacement pools.
 
     Parameters
@@ -62,7 +62,7 @@ def replacement_multiscan(
         A Pool yielding sequences with multiple segments replaced simultaneously.
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..marker_ops import marker_multiscan, replace_marker_content
+    from ..region_ops import region_multiscan, replace_region
 
     # Validate mode
     if mode != 'random':
@@ -129,13 +129,13 @@ def replacement_multiscan(
     # Validate positions
     validated_positions = validate_positions(positions, max_position, min_position=0)
 
-    # 1. Insert markers at multiple positions using marker_multiscan
-    marked = marker_multiscan(
+    # 1. Insert markers at multiple positions using region_multiscan
+    marked = region_multiscan(
         bg_pool,
-        markers=markers,
+        regions=markers,
         num_insertions=int(num_replacements),
         positions=validated_positions,
-        marker_length=marker_length,
+        region_length=marker_length,
         insertion_mode=insertion_mode,
         prefix=prefix,
         mode=mode,
@@ -145,14 +145,14 @@ def replacement_multiscan(
 
     # 2. Build replacement content for each pool
     result = marked
-    for marker_name, rep_pool in zip(markers, pools_list):
+    for region_name, rep_pool in zip(markers, pools_list):
         content = rep_pool
 
         # Replace marker with content
-        result = replace_marker_content(
+        result = replace_region(
             result,
             content,
-            marker_name,
+            region_name,
             iter_order=iter_order,
         )
 

@@ -60,7 +60,7 @@ def insertion_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..fixed_ops.swapcase import swapcase
-    from ..marker_ops import marker_scan, replace_marker_content
+    from ..region_ops import region_scan, replace_region
 
     # Convert string inputs to pools
     pool = from_seq(pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
@@ -91,24 +91,24 @@ def insertion_scan(
     # Check if any naming prefix is provided
     has_naming = any([prefix, prefix_position, prefix_insert])
 
-    # 1. Insert marker at scanning positions
-    # Don't pass prefix to marker_scan - naming is handled by replace_marker_content
-    marked = marker_scan(
+    # 1. Insert tags at scanning positions
+    # Don't pass prefix to region_scan - naming is handled by replace_region
+    marked = region_scan(
         pool,
-        marker=marker_name,
-        marker_length=marker_length,
+        region=marker_name,
+        region_length=marker_length,
         positions=positions,
-        region=region,
-        remove_marker=False,  # Keep outer region marker for now
+        region_constraint=region,
+        remove_tags=False,  # Keep outer tags for now
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
-        _factory_name=f'{_factory_name}(marker_scan)',
+        _factory_name=f'{_factory_name}(region_scan)',
     )
     marked = marked.named(f'{marked.name}:{_factory_name}(intermediate)')
 
     # If naming is enabled, block naming on both parent operations
-    # and capture state references for composite naming in replace_marker_content
+    # and capture state references for composite naming in replace_region
     pos_state = None
     site_state = None
     num_sites = None
@@ -124,12 +124,12 @@ def insertion_scan(
         num_sites = original_ins_pool_num_states
 
     # 2. Replace marker with content
-    return replace_marker_content(
+    return replace_region(
         marked,
         ins_pool,
         marker_name,
         iter_order=iter_order,
-        _factory_name=f'{_factory_name}(replace_marker_content)',
+        _factory_name=f'{_factory_name}(replace_region)',
         _seq_name_prefix=prefix,
         _seq_name_pos_prefix=prefix_position,
         _seq_name_site_prefix=prefix_insert,

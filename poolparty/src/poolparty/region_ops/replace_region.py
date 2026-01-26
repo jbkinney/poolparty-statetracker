@@ -1,17 +1,17 @@
-"""Replace marker content with sequences from another Pool."""
+"""Replace region content with sequences from another Pool."""
 from numbers import Real
 from poolparty.types import Optional
 import numpy as np
 
-from .parsing import validate_single_marker
+from .parsing import validate_single_region
 from ..operation import Operation
 from ..utils import dna_utils
 
 
-def replace_marker_content(
+def replace_region(
     bg_pool,
     content_pool,
-    marker_name: str,
+    region_name: str,
     iter_order: Optional[Real] = None,
     _factory_name: Optional[str] = None,
     # Internal parameters for insertion_scan composite naming
@@ -24,20 +24,20 @@ def replace_marker_content(
     _style: Optional[str] = None,
 ):
     """
-    Replace a marker region with content from another Pool.
+    Replace a region with content from another Pool.
 
-    The marker (including its tags and any content) is replaced with
-    sequences from content_pool. If the marker has strand='-', the
+    The region (including its tags and any content) is replaced with
+    sequences from content_pool. If the region has strand='-', the
     content is reverse-complemented before insertion.
 
     Parameters
     ----------
     bg_pool : Pool or str
-        Background Pool or sequence string containing the marker.
+        Background Pool or sequence string containing the region.
     content_pool : Pool or str
-        Pool or sequence string to insert at the marker position.
-    marker_name : str
-        Name of the marker to replace.
+        Pool or sequence string to insert at the region position.
+    region_name : str
+        Name of the region to replace.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
     _factory_name: Optional[str], default=None
@@ -46,22 +46,22 @@ def replace_marker_content(
     Returns
     -------
     Pool
-        A Pool yielding bg_pool sequences with the marker replaced by
+        A Pool yielding bg_pool sequences with the region replaced by
         content_pool sequences.
 
     Examples
     --------
     >>> with pp.Party():
-    ...     # Replace marker with content from another pool
+    ...     # Replace region with content from another pool
     ...     bg = pp.from_seq('ACGT<insert/>TTTT')
     ...     inserts = pp.from_seqs(['AAA', 'GGG'], mode='sequential')
-    ...     result = pp.replace_marker_content(bg, inserts, 'insert')
+    ...     result = pp.replace_region(bg, inserts, 'insert')
     ...     # Result yields: 'ACGTAAATTTT', 'ACGTGGGTTTT'
     ...
     ...     # With strand='-', content is reverse-complemented
     ...     bg = pp.from_seq("ACGT<region strand='-'>XX</region>TTTT")
     ...     content = pp.from_seq('AAA')
-    ...     result = pp.replace_marker_content(bg, content, 'region')
+    ...     result = pp.replace_region(bg, content, 'region')
     ...     # Result: 'ACGTTTTTTTT' (TTT is reverse complement of AAA)
     """
     from ..fixed_ops.from_seq import from_seq
@@ -71,10 +71,10 @@ def replace_marker_content(
     bg_pool = from_seq(bg_pool) if isinstance(bg_pool, str) else bg_pool
     content_pool = from_seq(content_pool) if isinstance(content_pool, str) else content_pool
     
-    op = ReplaceMarkerContentOp(
+    op = ReplaceRegionOp(
         bg_pool=bg_pool,
         content_pool=content_pool,
-        marker_name=marker_name,
+        region_name=region_name,
         name=None,
         iter_order=iter_order,
         _factory_name=_factory_name,
@@ -88,23 +88,23 @@ def replace_marker_content(
     )
     result_pool = Pool(operation=op)
     
-    # The marker is replaced, so remove it from the pool's marker set
-    result_pool._untrack_marker(marker_name)
+    # The region is replaced, so remove it from the pool's region set
+    result_pool._untrack_region(region_name)
     
     return result_pool
 
 
-class ReplaceMarkerContentOp(Operation):
-    """Replace a marker region with content from another pool."""
+class ReplaceRegionOp(Operation):
+    """Replace a region with content from another pool."""
     
-    factory_name = "replace_marker_content"
+    factory_name = "replace_region"
     design_card_keys = []
     
     def __init__(
         self,
         bg_pool,
         content_pool,
-        marker_name: str,
+        region_name: str,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _factory_name: Optional[str] = None,
@@ -117,7 +117,7 @@ class ReplaceMarkerContentOp(Operation):
         _num_sites: Optional[int] = None,
         _style: Optional[str] = None,
     ) -> None:
-        self.marker_name = marker_name
+        self.region_name = region_name
         
         # Set factory name if provided
         if _factory_name is not None:
@@ -153,44 +153,44 @@ class ReplaceMarkerContentOp(Operation):
         rng: Optional[np.random.Generator] = None,
         parent_styles: list | None = None,
     ) -> dict:
-        """Replace marker in bg_seq with content_seq."""
+        """Replace region in bg_seq with content_seq."""
         from ..types import StyleList
         
         bg_seq = parent_seqs[0]
         content_seq = parent_seqs[1]
         
-        # Find and validate the marker
-        marker = validate_single_marker(bg_seq, self.marker_name)
+        # Find and validate the region
+        region = validate_single_region(bg_seq, self.region_name)
         
         # If strand='-', reverse complement the content before insertion
-        if marker.strand == '-':
+        if region.strand == '-':
             content_seq = dna_utils.reverse_complement(content_seq)
         
         # Build result: prefix + content + suffix
-        prefix = bg_seq[:marker.start]
-        suffix = bg_seq[marker.end:]
+        prefix = bg_seq[:region.start]
+        suffix = bg_seq[region.end:]
         result_seq = prefix + content_seq + suffix
         
         # Adjust styles from bg_pool (first parent) with position shifts
-        # Styles within the marker region are discarded, suffix styles are shifted
+        # Styles within the region are discarded, suffix styles are shifted
         output_styles: StyleList = []
         
         if parent_styles and len(parent_styles) > 0:
             bg_styles = parent_styles[0]
-            marker_region_len = marker.end - marker.start
+            region_len = region.end - region.start
             new_content_len = len(content_seq)
-            length_delta = new_content_len - marker_region_len
+            length_delta = new_content_len - region_len
             
             for spec, positions in bg_styles:
                 adjusted_positions = []
                 for pos in positions:
-                    if pos < marker.start:
-                        # Before marker: unchanged
+                    if pos < region.start:
+                        # Before region: unchanged
                         adjusted_positions.append(pos)
-                    elif pos >= marker.end:
-                        # After marker region: shift by length change
+                    elif pos >= region.end:
+                        # After region: shift by length change
                         adjusted_positions.append(pos + length_delta)
-                    # Positions inside the marker region are discarded
+                    # Positions inside the region are discarded
                 if adjusted_positions:
                     output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
         
@@ -202,18 +202,18 @@ class ReplaceMarkerContentOp(Operation):
             for spec, positions in content_styles:
                 adjusted_positions = []
                 for pos in positions:
-                    if marker.strand == '-':
+                    if region.strand == '-':
                         # Flip position for reverse complement
                         pos = original_content_len - 1 - pos
                     # Shift by prefix length
-                    new_pos = marker.start + pos
+                    new_pos = region.start + pos
                     adjusted_positions.append(new_pos)
                 if adjusted_positions:
                     output_styles.append((spec, np.array(adjusted_positions, dtype=np.int64)))
         
         # Apply style to all inserted content positions
         original_content_len = len(parent_seqs[1])
-        ins_start = marker.start
+        ins_start = region.start
         ins_end = ins_start + original_content_len
         
         if self._style is not None:
@@ -252,7 +252,7 @@ class ReplaceMarkerContentOp(Operation):
         return {
             'bg_pool': self.parent_pools[0],
             'content_pool': self.parent_pools[1],
-            'marker_name': self.marker_name,
+            'region_name': self.region_name,
             'name': None,
             'iter_order': self.iter_order,
             '_seq_name_prefix': self._seq_name_prefix,

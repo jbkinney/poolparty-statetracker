@@ -56,7 +56,7 @@ def shuffle_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..base_ops.shuffle_seq import shuffle_seq
-    from ..marker_ops import marker_scan
+    from ..region_ops import region_scan
 
     # Convert string inputs to pools
     pool = from_seq(pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
@@ -74,34 +74,34 @@ def shuffle_scan(
             f"shuffle_length ({shuffle_length}) must be < pool.seq_length ({bg_length})"
         )
 
-    marker_name = '_shuf'
-    marker_length = int(shuffle_length)
+    region_name = '_shuf'
+    region_length = int(shuffle_length)
 
     # Check if any naming prefix is provided
     has_naming = any([prefix, prefix_position, prefix_shuffle])
 
-    # 1. Insert marker at scanning positions
-    # Don't pass prefix to marker_scan if we're doing composite naming
-    marked = marker_scan(
+    # 1. Insert tags at scanning positions
+    # Don't pass prefix to region_scan if we're doing composite naming
+    marked = region_scan(
         pool,
-        marker=marker_name,
-        marker_length=marker_length,
+        region=region_name,
+        region_length=region_length,
         positions=positions,
-        region=region,
-        remove_marker=False,  # Keep outer region marker for now
+        region_constraint=region,
+        remove_tags=False,  # Keep outer tags for now
         prefix=None if has_naming else prefix,  # Only pass prefix if not doing composite naming
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
-        _factory_name=f'{_factory_name}(marker_scan)',
+        _factory_name=f'{_factory_name}(region_scan)',
     )
 
-    # If naming is enabled, block naming on marker_scan operation
+    # If naming is enabled, block naming on region_scan operation
     # and capture state reference for composite naming in shuffle_seq
     pos_state = None
     num_shuffles = int(shuffles_per_position) if shuffles_per_position else 1
     if has_naming:
-        # Block naming on marker_scan operation
+        # Block naming on region_scan operation
         marked.operation._block_seq_names = True
         # Capture position state reference for naming
         pos_state = marked.operation.state
@@ -109,8 +109,8 @@ def shuffle_scan(
     # 2. Shuffle the marked region directly using shuffle_seq with region='_shuf'
     return shuffle_seq(
         marked,
-        region=marker_name,
-        _remove_marker=True,  # Remove _shuf marker tags
+        region=region_name,
+        _remove_tags=True,  # Remove _shuf tags
         style=style,
         mode='random',
         num_states=shuffles_per_position,

@@ -62,7 +62,7 @@ def mutagenize_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..base_ops.mutagenize import mutagenize
-    from ..marker_ops import marker_scan
+    from ..region_ops import region_scan
 
     # Convert string inputs to pools if needed
     pool = from_seq(pool, _factory_name=f'{_factory_name}(from_seq)') if isinstance(pool, str) else pool
@@ -107,19 +107,19 @@ def mutagenize_scan(
         raise ValueError("iter_order must be a sequence of length 2")
     iter_order_scan, iter_order_mut = iter_order[0], iter_order[1]
 
-    # 1. Insert marker at scanning positions
-    marked = marker_scan(
+    # 1. Insert tags at scanning positions
+    marked = region_scan(
         pool,
-        marker=marker_name,
-        marker_length=marker_length,
+        region=marker_name,
+        region_length=marker_length,
         positions=positions,
-        region=region,
-        remove_marker=False,  # Keep outer region marker for now
+        region_constraint=region,
+        remove_tags=False,  # Keep outer tags for now
         prefix=prefix_scan,
         mode=mode_scan,
         num_states=num_states_scan,
         iter_order=iter_order_scan,
-        _factory_name=f'{_factory_name}(marker_scan)',
+        _factory_name=f'{_factory_name}(region_scan)',
     )
 
     # 2. Mutagenize marker with content 
