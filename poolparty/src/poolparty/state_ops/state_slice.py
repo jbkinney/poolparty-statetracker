@@ -111,7 +111,7 @@ class StateSliceOp(Operation):
     ) -> dict:
         """Return parent sequence (state mapping handled by counter)."""
         seq = parent_seqs[0]
-        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(seq))
+        output_style = SeqStyle.from_parent(parent_styles, 0, len(seq))
         return {'seq': seq, 'style': output_style}
     
     def _get_copy_params(self) -> dict:

@@ -170,8 +170,8 @@ class ReplaceRegionOp(Operation):
         result_seq = prefix + content_seq + suffix
         
         # Use SeqStyle for clean style assembly
-        bg_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(bg_seq))
-        content_style = parent_styles[1] if len(parent_styles) > 1 else SeqStyle.empty(len(parent_seqs[1]))
+        bg_style = SeqStyle.from_parent(parent_styles, 0, len(bg_seq))
+        content_style = SeqStyle.from_parent(parent_styles, 1, len(parent_seqs[1]))
         
         output_style = SeqStyle.join([
             bg_style[:region.start],                           # Prefix

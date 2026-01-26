@@ -168,6 +168,49 @@ class SeqStyle:
         """Create from existing StyleList."""
         return cls(style_list, length)
     
+    @classmethod
+    def from_parent(cls, parent_styles: list['SeqStyle'] | None, index: int, length: int) -> 'SeqStyle':
+        """Get style from parent_styles or create empty if not available.
+        
+        Parameters
+        ----------
+        parent_styles : list[SeqStyle] | None
+            List of parent styles, or None.
+        index : int
+            Index into parent_styles to retrieve.
+        length : int
+            Length for empty SeqStyle if parent not available.
+        
+        Returns
+        -------
+        SeqStyle
+            Parent style at index, or empty SeqStyle of given length.
+        """
+        if parent_styles and len(parent_styles) > index:
+            return parent_styles[index]
+        return cls.empty(length)
+    
+    @classmethod
+    def full(cls, length: int, style: str | None = None) -> 'SeqStyle':
+        """Create SeqStyle covering all positions with optional style.
+        
+        Parameters
+        ----------
+        length : int
+            Length of the sequence.
+        style : str | None, default=None
+            Style spec to apply to all positions. If None, returns empty SeqStyle.
+        
+        Returns
+        -------
+        SeqStyle
+            SeqStyle with style applied to all positions, or empty if style is None.
+        """
+        if style is None or length == 0:
+            return cls.empty(length)
+        positions = np.arange(length, dtype=np.int64)
+        return cls([(style, positions)], length)
+    
     def copy(self) -> 'SeqStyle':
         """Return self (SeqStyle is immutable, so no actual copy needed)."""
         return self
@@ -302,13 +345,6 @@ def validate_style_positions(seq_len: int, styles: StyleList) -> None:
             raise ValueError(
                 f"Style '{spec}' has position(s) >= seq_len={seq_len}: max={max_pos}"
             )
-
-
-# Deprecated functions - replaced by SeqStyle class
-# These are kept for reference but should not be used in new code:
-# - split_styles_by_region -> use SeqStyle.split()
-# - shift_style_positions -> internal to SeqStyle operations
-# - reassemble_styles -> use SeqStyle.join()
 
 
 @beartype

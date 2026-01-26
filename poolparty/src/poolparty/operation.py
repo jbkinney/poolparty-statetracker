@@ -192,53 +192,6 @@ class Operation:
         start, stop = bounds
         return (seq[:start], seq[start:stop], seq[stop:])
     
-    def _compute_style_position_offset(
-        self,
-        parent_seq: str,
-        prefix: str,
-    ) -> int:
-        """Compute the offset to add to style positions for reassembly.
-        
-        This method calculates how many characters appear before the region
-        content in the final output sequence. It handles:
-        - Prefix length (characters before the region)
-        - Opening tag length (when region is a region name and remove_tags=False)
-        
-        Parameters
-        ----------
-        parent_seq : str
-            The original parent sequence (before region extraction).
-        prefix : str
-            The prefix extracted from the parent sequence (seq[:region_start]).
-        
-        Returns
-        -------
-        int
-            The total offset to add to style positions.
-        """
-        if self._region is None:
-            return 0
-        
-        if isinstance(self._region, str):
-            # Region is a region name
-            from .utils.parsing_utils import parse_region, build_region_tags
-            clean_prefix, _, _, strand = parse_region(parent_seq, self._region)
-            prefix_len = len(clean_prefix)
-            
-            if not self._remove_tags:
-                # Account for opening tag if we're keeping the tags
-                # Build a region tag with dummy content to get the opening tag format
-                # (empty content creates self-closing tags which have different format)
-                test_tag = build_region_tags(self._region, 'X', strand=strand)
-                # test_tag is like '<name>X</name>' - opening tag ends at first '>'
-                opening_tag_len = test_tag.index('>') + 1
-                prefix_len += opening_tag_len
-        else:
-            # Region is [start, stop] interval
-            prefix_len = len(prefix)
-        
-        return prefix_len
-    
     @staticmethod
     def _validate_region(region: RegionType) -> None:
         """Validate region parameter format.
@@ -449,15 +402,22 @@ class Operation:
                 
                 # Calculate lengths for style reassembly
                 if isinstance(self._region, str):
-                    from .utils.parsing_utils import build_region_tags
+                    from .utils.parsing_utils import build_region_tags, validate_single_region
                     clean_prefix_len = len(clean_prefix)
                     clean_suffix_len = len(clean_suffix)
                     
                     if self._remove_tags:
                         # When tags removed: prefix + region + suffix
-                        # Rebuild prefix/suffix with clean lengths
-                        prefix_seq_style = SeqStyle.from_style_list(prefix_styles, clean_prefix_len)
-                        suffix_seq_style = SeqStyle.from_style_list(suffix_styles, clean_suffix_len)
+                        # Need to slice prefix/suffix SeqStyles to exclude tag positions
+                        region_obj = validate_single_region(parent_seqs[0], self._region)
+                        
+                        # Calculate tag lengths
+                        opening_tag_len = region_start - region_obj.start  # content_start - tag_start
+                        closing_tag_len = region_obj.end - region_end      # tag_end - content_end
+                        
+                        # Slice to exclude tag positions
+                        prefix_seq_style = temp_prefix[:region_obj.start]   # Exclude opening tag
+                        suffix_seq_style = temp_suffix[closing_tag_len:]    # Skip closing tag positions
                         
                         result_style = SeqStyle.join([
                             prefix_seq_style,

@@ -279,7 +279,7 @@ class DeletionScanOp(Operation):
         seq_len: int,
     ) -> SeqStyle:
         """Adjust style positions for deletion + optional gap insertion."""
-        input_style = parent_styles[0] if parent_styles else SeqStyle.empty(seq_len)
+        input_style = SeqStyle.from_parent(parent_styles, 0, seq_len)
         
         output_style = SeqStyle.join([
             input_style[:del_start],           # Prefix

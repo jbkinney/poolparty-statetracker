@@ -168,10 +168,7 @@ class FromSeqsOp(Operation):
         seq = self.seqs[idx]
         
         # Apply style to all positions if specified
-        output_style = SeqStyle.empty(len(seq))
-        if self._style is not None:
-            positions = np.arange(len(seq), dtype=np.int64)
-            output_style = output_style.add_style(self._style, positions)
+        output_style = SeqStyle.full(len(seq), self._style)
         
         return {
             'seq_name': self.seq_names[idx],

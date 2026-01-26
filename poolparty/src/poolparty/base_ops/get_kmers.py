@@ -194,10 +194,7 @@ class GetKmersOp(Operation):
             kmer = kmer.lower()
         
         # Apply style to all positions if specified
-        output_style = SeqStyle.empty(len(kmer))
-        if self._style is not None:
-            positions = np.arange(len(kmer), dtype=np.int64)
-            output_style = output_style.add_style(self._style, positions)
+        output_style = SeqStyle.full(len(kmer), self._style)
         
         return {
             'kmer_index': kmer_index,

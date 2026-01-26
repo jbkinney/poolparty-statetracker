@@ -132,8 +132,8 @@ class FixedOp(Operation):
         # Pass through parent styles only if _pass_through_styles is True
         # When doing content replacement (e.g., from_seq with region), styles
         # from the original content should not apply to the new content
-        if self._pass_through_styles and parent_styles:
-            output_style = parent_styles[0]
+        if self._pass_through_styles:
+            output_style = SeqStyle.from_parent(parent_styles, 0, len(result))
         else:
             output_style = SeqStyle.empty(len(result))
         return {'seq': result, 'style': output_style}

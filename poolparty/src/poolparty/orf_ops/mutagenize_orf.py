@@ -340,7 +340,7 @@ class MutagenizeOrfOp(Operation):
         result_seq = self._restore_tags(mutated_clean_seq, tags)
         
         # Pass through parent styles (mutagenize_orf preserves sequence length)
-        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(result_seq))
+        output_style = SeqStyle.from_parent(parent_styles, 0, len(result_seq))
         return {
             'codon_positions': positions,
             'wt_codons': wt_codons,

@@ -101,12 +101,12 @@ class StackOp(Operation):
                 active = i
                 seq = parent_seqs[active]
                 # Pass through styles from active parent
-                output_style = parent_styles[active] if parent_styles and len(parent_styles) > active else SeqStyle.empty(len(seq))
+                output_style = SeqStyle.from_parent(parent_styles, active, len(seq))
                 return {'active_parent': active, 'seq': seq, 'style': output_style}
         self.state.value = None
         active = None
         seq = parent_seqs[0] if parent_seqs else ''
-        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(seq))
+        output_style = SeqStyle.from_parent(parent_styles, 0, len(seq))
         return {'active_parent': active, 'seq': seq, 'style': output_style}
     
     def compute_seq_names(

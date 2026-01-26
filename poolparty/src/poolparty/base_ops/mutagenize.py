@@ -434,7 +434,7 @@ class MutagenizeOp(Operation):
         
         # Build output styles: pass through parent styles (mutagenize preserves length)
         # and add mutation style if _style is set
-        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(result_seq))
+        output_style = SeqStyle.from_parent(parent_styles, 0, len(result_seq))
         
         if self._style is not None and len(positions) > 0:
             # Convert logical positions to raw positions for styling

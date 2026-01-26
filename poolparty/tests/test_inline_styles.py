@@ -345,81 +345,6 @@ class TestPositionAdjustmentWithMarkers:
             assert all(2 <= pos < 6 for pos in positions)
 
 
-class TestPositionAdjustmentHelperUnit:
-    """Unit tests for _compute_style_position_offset() helper method."""
-    
-    def test_compute_offset_no_region(self):
-        """Returns 0 when no region is specified."""
-        with pp.Party() as party:
-            pool = mutagenize('ACGT', num_mutations=1, mode='sequential')
-            op = pool.operation
-        
-        # When _region is None, offset should be 0
-        assert op._region is None
-        offset = op._compute_style_position_offset('ACGT', '')
-        assert offset == 0
-    
-    def test_compute_offset_interval_region(self):
-        """Correct offset for [start, stop] interval region."""
-        with pp.Party() as party:
-            bg = pp.from_seq('AACCCCGG')
-            # Interval region starting at position 2
-            pool = mutagenize(bg, region=[2, 6], num_mutations=1, mode='sequential')
-            op = pool.operation
-        
-        # Prefix is 'AA' (2 chars), no marker tags, no spacer
-        offset = op._compute_style_position_offset('AACCCCGG', 'AA')
-        assert offset == 2
-    
-    def test_compute_offset_marker_region_remove_true(self):
-        """Correct offset for marker region with remove_marker=True."""
-        with pp.Party() as party:
-            bg = pp.from_seq('AA<test>CCCC</test>GG')
-            pool = mutagenize(
-                bg, region='test', num_mutations=1, 
-                mode='sequential'
-            )
-            op = pool.operation
-        
-        # Prefix is 'AA' (2 chars), marker tags removed
-        # So offset = just the prefix length = 2
-        parent_seq = 'AA<test>CCCC</test>GG'
-        offset = op._compute_style_position_offset(parent_seq, 'AA<test>')
-        assert offset == 2
-    
-    def test_compute_offset_marker_region_remove_false(self):
-        """Correct offset for marker region (markers removed by default)."""
-        with pp.Party() as party:
-            bg = pp.from_seq('AA<test>CCCC</test>GG')
-            pool = mutagenize(
-                bg, region='test', num_mutations=1, 
-                mode='sequential'
-            )
-            op = pool.operation
-        
-        # Prefix is 'AA' (2 chars), marker tags removed by default
-        # So offset = just the prefix length = 2
-        parent_seq = 'AA<test>CCCC</test>GG'
-        offset = op._compute_style_position_offset(parent_seq, 'AA<test>')
-        assert offset == 2
-    
-    def test_compute_offset_marker_with_strand_remove_false(self):
-        """Correct offset for marker with strand attribute, remove_marker=False."""
-        with pp.Party() as party:
-            bg = pp.from_seq("AA<test strand='-'>CCCC</test>GG")
-            pool = mutagenize(
-                bg, region='test', num_mutations=1, 
-                mode='sequential'
-            )
-            op = pool.operation
-        
-        # Prefix is 'AA' (2 chars), marker tags removed by default
-        # So offset = just the prefix length = 2
-        parent_seq = "AA<test strand='-'>CCCC</test>GG"
-        offset = op._compute_style_position_offset(parent_seq, "AA<test strand='-'>")
-        assert offset == 2
-    
-
 class TestCaseTransformInlineStyles:
     """Test 'upper' and 'lower' case transformation in inline styles."""
     
@@ -1471,3 +1396,141 @@ class TestSeqStyle:
         s = SeqStyle.empty(10)
         with pytest.raises(TypeError):
             _ = s[5]
+
+
+class TestSeqStyleFromParent:
+    """Test SeqStyle.from_parent() class method."""
+    
+    def test_from_parent_returns_parent_style(self):
+        """from_parent returns parent style when available."""
+        parent_style = SeqStyle.from_style_list([('red', np.array([0, 1]))], length=5)
+        parent_styles = [parent_style]
+        
+        result = SeqStyle.from_parent(parent_styles, 0, 10)
+        
+        # Should return the parent style (same object)
+        assert result is parent_style
+    
+    def test_from_parent_returns_empty_when_none(self):
+        """from_parent returns empty SeqStyle when parent_styles is None."""
+        result = SeqStyle.from_parent(None, 0, 10)
+        
+        assert result.length == 10
+        assert result.style_list == []
+        assert not result
+    
+    def test_from_parent_returns_empty_when_empty_list(self):
+        """from_parent returns empty SeqStyle when parent_styles is empty list."""
+        result = SeqStyle.from_parent([], 0, 10)
+        
+        assert result.length == 10
+        assert result.style_list == []
+    
+    def test_from_parent_returns_empty_when_index_out_of_range(self):
+        """from_parent returns empty SeqStyle when index >= len(parent_styles)."""
+        parent_style = SeqStyle.from_style_list([('red', np.array([0]))], length=5)
+        parent_styles = [parent_style]
+        
+        result = SeqStyle.from_parent(parent_styles, 1, 10)
+        
+        assert result.length == 10
+        assert result.style_list == []
+    
+    def test_from_parent_with_multiple_parents(self):
+        """from_parent can retrieve from different indices."""
+        style0 = SeqStyle.from_style_list([('red', np.array([0]))], length=5)
+        style1 = SeqStyle.from_style_list([('blue', np.array([0]))], length=5)
+        parent_styles = [style0, style1]
+        
+        result0 = SeqStyle.from_parent(parent_styles, 0, 10)
+        result1 = SeqStyle.from_parent(parent_styles, 1, 10)
+        
+        assert result0 is style0
+        assert result1 is style1
+
+
+class TestSeqStyleFull:
+    """Test SeqStyle.full() class method."""
+    
+    def test_full_with_style(self):
+        """full() creates SeqStyle with style on all positions."""
+        result = SeqStyle.full(5, 'red')
+        
+        assert result.length == 5
+        assert len(result.style_list) == 1
+        spec, positions = result.style_list[0]
+        assert spec == 'red'
+        assert list(positions) == [0, 1, 2, 3, 4]
+    
+    def test_full_without_style_returns_empty(self):
+        """full() with style=None returns empty SeqStyle."""
+        result = SeqStyle.full(5, None)
+        
+        assert result.length == 5
+        assert result.style_list == []
+        assert not result
+    
+    def test_full_with_zero_length(self):
+        """full() with length=0 returns empty SeqStyle."""
+        result = SeqStyle.full(0, 'red')
+        
+        assert result.length == 0
+        assert result.style_list == []
+    
+    def test_full_with_complex_style(self):
+        """full() works with complex style specs."""
+        result = SeqStyle.full(3, 'bold cyan underline')
+        
+        assert result.length == 3
+        assert len(result.style_list) == 1
+        spec, positions = result.style_list[0]
+        assert spec == 'bold cyan underline'
+        assert list(positions) == [0, 1, 2]
+    
+    def test_full_positions_are_int64(self):
+        """full() creates positions as int64 dtype."""
+        result = SeqStyle.full(3, 'red')
+        
+        spec, positions = result.style_list[0]
+        assert positions.dtype == np.int64
+
+
+class TestShuffleScanStylePropagation:
+    """Test that parent styles propagate correctly through shuffle_scan."""
+    
+    def test_shuffle_scan_preserves_parent_styles(self):
+        """Parent styles should propagate through shuffle_scan."""
+        with pp.Party():
+            pool = pp.from_seq('AA<cre>TTTTTTTTTT</cre>GG')
+            pool = pool.stylize(region='cre', style='purple')
+            pool = pool.shuffle_scan(region='cre', shuffle_length=4, mode='sequential').named('test')
+        
+        df = pool.generate_library(num_cycles=1, seed=42, report_design_cards=True)
+        # Verify purple style is present on CRE positions
+        assert '_inline_styles' in df.columns
+        for _, row in df.iterrows():
+            style = row['_inline_styles']
+            assert style is not None
+            assert len(style.style_list) > 0
+            # Check that purple style exists
+            has_purple = any('purple' in spec for spec, _ in style.style_list)
+            assert has_purple, "Purple style from parent should be present"
+    
+    def test_shuffle_scan_combines_parent_and_operation_styles(self):
+        """shuffle_scan should preserve parent styles and add its own."""
+        with pp.Party():
+            pool = pp.from_seq('AA<cre>TTTTTTTTTT</cre>GG')
+            pool = pool.stylize(region='cre', style='purple')
+            pool = pool.shuffle_scan(region='cre', shuffle_length=4, style='magenta bold', mode='sequential').named('test')
+        
+        df = pool.generate_library(num_cycles=1, seed=42, report_design_cards=True)
+        assert '_inline_styles' in df.columns
+        for _, row in df.iterrows():
+            style = row['_inline_styles']
+            assert style is not None
+            # Should have both purple (parent) and magenta (shuffle_scan)
+            specs = [spec for spec, _ in style.style_list]
+            has_purple = any('purple' in spec for spec in specs)
+            has_magenta = any('magenta' in spec for spec in specs)
+            assert has_purple, "Purple style from parent should be present"
+            assert has_magenta, "Magenta style from shuffle_scan should be present"

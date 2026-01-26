@@ -188,7 +188,7 @@ class SeqShuffleOp(Operation):
         shuffled_seq = ''.join(seq_list)
         
         # Pass through parent styles and add styling to shuffled characters if requested
-        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(shuffled_seq))
+        output_style = SeqStyle.from_parent(parent_styles, 0, len(shuffled_seq))
         if self._style and molecular_positions:
             output_style = output_style.add_style(
                 self._style, 

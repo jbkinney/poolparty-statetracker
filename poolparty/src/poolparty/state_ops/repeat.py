@@ -77,7 +77,7 @@ class RepeatOp(Operation):
         repeat_index = 0 if state is None else state
         seq = parent_seqs[0]
         # Pass through parent styles
-        output_style = parent_styles[0] if parent_styles else SeqStyle.empty(len(seq))
+        output_style = SeqStyle.from_parent(parent_styles, 0, len(seq))
         return {'repeat_index': repeat_index, 'seq': seq, 'style': output_style}
     
     def _get_copy_params(self) -> dict:

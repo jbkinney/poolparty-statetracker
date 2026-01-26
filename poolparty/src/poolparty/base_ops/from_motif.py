@@ -154,11 +154,7 @@ class FromMotifOp(Operation):
         seq = ''.join(dna_utils.BASES[i] for i in indices_list)
         
         # Apply styling if requested
-        output_style = SeqStyle.empty(len(seq))
-        if self._style:
-            # Style all positions of the generated sequence
-            positions = np.arange(len(seq), dtype=np.int64)
-            output_style = output_style.add_style(self._style, positions)
+        output_style = SeqStyle.full(len(seq), self._style)
         
         return {
             'prob_state': indices_list,
