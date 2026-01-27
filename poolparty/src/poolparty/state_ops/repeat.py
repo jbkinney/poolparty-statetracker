@@ -1,6 +1,6 @@
 """Repeat operation - repeat a pool's states n times."""
 from numbers import Real
-from ..types import Pool_type, Optional, beartype, SeqStyle
+from ..types import Pool_type, Optional, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -68,14 +68,14 @@ class RepeatOp(Operation):
     
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Return design card and parent sequence together."""
+    ) -> tuple[Seq, dict]:
+        """Return parent Seq and design card."""
         state = self.state.value
         repeat_index = 0 if state is None else state
-        seq = parent_seqs[0]
-        # Pass through parent styles
-        output_style = SeqStyle.from_parent(parent_styles, 0, len(seq))
-        return {'repeat_index': repeat_index, 'seq': seq, 'style': output_style}
+        
+        # Pass through parent Seq with updated name
+        output_seq = parents[0].with_name(self._default_name(parents))
+        
+        return output_seq, {'repeat_index': repeat_index}

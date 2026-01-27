@@ -1,7 +1,7 @@
 """Mutagenize operation - apply mutations to a sequence."""
 from itertools import combinations
 from math import comb, prod
-from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, beartype, SeqStyle
+from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
@@ -366,16 +366,15 @@ class MutagenizeOp(Operation):
     
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Return design card, mutated sequence, and styles together.
+    ) -> tuple[Seq, dict]:
+        """Return mutated Seq and design card.
         
         Note: Region handling is done by base class wrapper methods.
-        parent_seqs[0] is the region content when region is specified.
+        parents[0] is the region content when region is specified.
         """
-        seq = parent_seqs[0]
+        seq = parents[0].string
         valid_char_positions = self._get_molecular_positions(seq)
         
         # Get mutable positions and their options (also validates allowed_chars compatibility)
@@ -434,18 +433,21 @@ class MutagenizeOp(Operation):
         
         # Build output styles: pass through parent styles (mutagenize preserves length)
         # and add mutation style if _style is set
-        output_style = SeqStyle.from_parent(parent_styles, 0, len(result_seq))
+        output_style = parents[0].style
         
         if self._style is not None and len(positions) > 0:
             # Convert logical positions to raw positions for styling
             raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
             output_style = output_style.add_style(self._style, raw_positions)
         
-        return {
+        # Compute name
+        name = self._default_name(parents)
+        
+        output_seq = Seq(result_seq, output_style, name)
+        
+        return output_seq, {
             'positions': positions,
             'wt_chars': wt_chars,
             'mut_chars': mut_chars,
-            'seq': result_seq,
-            'style': output_style,
         }
     

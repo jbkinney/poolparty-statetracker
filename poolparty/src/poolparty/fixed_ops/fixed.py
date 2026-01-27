@@ -1,6 +1,6 @@
 """Fixed operation - create a pool from a fixed transformation of parent sequences."""
 from numbers import Real, Integral
-from ..types import Pool_type, Union, Optional, Sequence, Callable, RegionType, beartype, SeqStyle
+from ..types import Pool_type, Union, Optional, Sequence, Callable, RegionType, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 
@@ -119,22 +119,29 @@ class FixedOp(Operation):
 
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng=None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Compute output sequence using the user-defined function.
+    ) -> tuple[Seq, dict]:
+        """Compute output Seq using the user-defined function.
         
         Note: Region handling is done by the base class wrapper methods.
-        parent_seqs[0] is the region content when region is specified.
+        parents[0] is the region content when region is specified.
         """
-        result = self.seq_from_seqs_fn(parent_seqs)
+        # Extract strings for user function
+        parent_strings = [p.string for p in parents]
+        result_string = self.seq_from_seqs_fn(parent_strings)
+        
         # Pass through parent styles only if _pass_through_styles is True
         # When doing content replacement (e.g., from_seq with region), styles
         # from the original content should not apply to the new content
-        if self._pass_through_styles:
-            output_style = SeqStyle.from_parent(parent_styles, 0, len(result))
+        if self._pass_through_styles and parents:
+            output_style = parents[0].style[:len(result_string)] if len(parents[0]) >= len(result_string) else parents[0].style
         else:
-            output_style = SeqStyle.empty(len(result))
-        return {'seq': result, 'style': output_style}
+            output_style = Seq.from_string(result_string).style
+        
+        # Compute name
+        name = self._default_name(parents)
+        
+        output_seq = Seq(result_string, output_style, name)
+        return output_seq, {}
 

@@ -136,8 +136,8 @@ class TestSliceSeqCompute:
             pool = pp.from_seqs(['ACGT'])
             sliced = slice_seq(pool, slice(0, 2))
         
-        result = sliced.operation.compute(['ACGT'])
-        assert result['seq'] == 'AC'
+        output_seq, card = sliced.operation.compute([pp.types.Seq.from_string('ACGT')])
+        assert output_seq.string == 'AC'
     
     def test_compute_with_int(self):
         """Test compute with integer key."""
@@ -145,8 +145,8 @@ class TestSliceSeqCompute:
             pool = pp.from_seqs(['ACGT'])
             sliced = slice_seq(pool, 0)
         
-        result = sliced.operation.compute(['ACGT'])
-        assert result['seq'] == 'A'
+        output_seq, card = sliced.operation.compute([pp.types.Seq.from_string('ACGT')])
+        assert output_seq.string == 'A'
 
 
 class TestSliceSeqCustomName:

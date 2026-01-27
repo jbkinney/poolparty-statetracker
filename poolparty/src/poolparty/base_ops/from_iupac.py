@@ -1,6 +1,6 @@
 """FromIupac operation - generate DNA sequences from IUPAC notation."""
 from numbers import Real
-from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype, SeqStyle
+from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 from ..utils import dna_utils
@@ -165,11 +165,10 @@ class FromIupacOp(Operation):
 
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Return design card and DNA sequence together."""
+    ) -> tuple[Seq, dict]:
+        """Return Seq and design card."""
         if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
@@ -185,13 +184,17 @@ class FromIupacOp(Operation):
             result.append(position_opts[remaining % len(position_opts)])
             remaining //= len(position_opts)
         result = list(reversed(result))
-        seq = ''.join(result)
+        seq_string = ''.join(result)
         
         # Apply styling if requested
-        output_style = SeqStyle.full(len(seq), self._style)
+        from ..utils.style_utils import SeqStyle
+        output_style = SeqStyle.full(len(seq_string), self._style)
         
-        return {
+        # Compute name
+        name = self._default_name(parents)
+        
+        output_seq = Seq(seq_string, output_style, name)
+        
+        return output_seq, {
             'iupac_state': state,
-            'seq': seq,
-            'style': output_style,
         }

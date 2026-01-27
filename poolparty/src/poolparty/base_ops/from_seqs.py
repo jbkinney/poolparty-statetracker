@@ -1,6 +1,6 @@
 """FromSeqs operation - create a pool from a list of sequences."""
 from numbers import Real
-from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype, SeqStyle
+from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 from ..utils import dna_utils
@@ -148,15 +148,14 @@ class FromSeqsOp(Operation):
     
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Return design card and sequence together."""
+    ) -> tuple[Seq, dict]:
+        """Return Seq and design card."""
         if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
-            idx = rng.integers(0, len(self.seqs))
+            idx = int(rng.integers(0, len(self.seqs)))
         elif self.state is None:
             # Fixed mode - always use index 0
             idx = 0
@@ -165,30 +164,29 @@ class FromSeqsOp(Operation):
             state = self.state.value
             idx = (0 if state is None else state) % len(self.seqs)
         
-        seq = self.seqs[idx]
+        seq_string = self.seqs[idx]
         
         # Apply style to all positions if specified
-        output_style = SeqStyle.full(len(seq), self._style)
+        from ..utils.style_utils import SeqStyle
+        output_style = SeqStyle.full(len(seq_string), self._style)
         
-        return {
-            'seq_name': self.seq_names[idx],
-            'seq_index': idx,
-            'seq': seq,
-            'style': output_style,
+        # Compute name
+        name = self._compute_from_seqs_name(idx)
+        
+        output_seq = Seq(seq_string, output_style, name)
+        
+        return output_seq, {
+            'seq_name': self.seq_names[int(idx)],
+            'seq_index': int(idx),
         }
     
-    def compute_seq_names(
-        self,
-        parent_names: list[Optional[str]],
-        card: dict,
-    ) -> Optional[str]:
-        """Return name based on explicit seq_names or name_prefix."""
+    def _compute_from_seqs_name(self, idx: int) -> Optional[str]:
+        """Compute name based on explicit seq_names or name_prefix."""
         # Block name if _block_seq_names is set
         if self._block_seq_names:
             return None
         # If explicit seq_names were provided, use them directly
         if self._seq_names_explicit:
-            idx = card['seq_index']
             return self.seq_names[idx]
         # Otherwise fall back to prefix logic
         if self.prefix is None:

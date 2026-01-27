@@ -1,6 +1,6 @@
 """SeqShuffle operation - shuffle characters within a sequence region."""
 from numbers import Real
-from ..types import Pool_type, ModeType, Optional, Union, RegionType, beartype, SeqStyle
+from ..types import Pool_type, ModeType, Optional, Union, RegionType, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -140,14 +140,13 @@ class SeqShuffleOp(Operation):
     
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Return design card and shuffled sequence together.
+    ) -> tuple[Seq, dict]:
+        """Return shuffled Seq and design card.
         
         Note: Region handling is done by base class wrapper methods.
-        parent_seqs[0] is the region content when region is specified.
+        parents[0] is the region content when region is specified.
         """
         if self.mode == 'random':
             if rng is None:
@@ -155,7 +154,7 @@ class SeqShuffleOp(Operation):
         else:
             raise RuntimeError(f"Unsupported mode {self.mode!r}")
         
-        seq = parent_seqs[0]
+        seq = parents[0].string
         
         # Get molecular positions only (excludes markers and ignore_chars)
         molecular_positions = self._get_molecular_positions(seq)
@@ -188,27 +187,26 @@ class SeqShuffleOp(Operation):
         shuffled_seq = ''.join(seq_list)
         
         # Pass through parent styles and add styling to shuffled characters if requested
-        output_style = SeqStyle.from_parent(parent_styles, 0, len(shuffled_seq))
+        output_style = parents[0].style
         if self._style and molecular_positions:
             output_style = output_style.add_style(
                 self._style, 
                 np.array(molecular_positions, dtype=np.int64)
             )
         
-        return {
+        # Compute name
+        name = self._compute_shuffle_name(parents)
+        
+        output_seq = Seq(shuffled_seq, output_style, name)
+        
+        return output_seq, {
             'permutation': permutation,
-            'seq': shuffled_seq,
-            'style': output_style,
         }
     
-    def compute_seq_names(
-        self,
-        parent_names: list[Optional[str]],
-        card: dict,
-    ) -> Optional[str]:
-        """Compute output sequence names with optional shuffle_scan composite naming."""
+    def _compute_shuffle_name(self, parents: list[Seq]) -> Optional[str]:
+        """Compute name with optional shuffle_scan composite naming."""
         if not self._shuffle_naming:
-            return super().compute_seq_names(parent_names, card)
+            return self._default_name(parents)
         
         # Get position index from the position state object
         pos_idx = self._pos_state.value if self._pos_state is not None and self._pos_state.value is not None else 0
@@ -226,5 +224,6 @@ class SeqShuffleOp(Operation):
             name_parts.append(f'{self._seq_name_shuffle_prefix}_{shuffle_idx}')
         
         return '.'.join(name_parts) if name_parts else None
+    
     
 

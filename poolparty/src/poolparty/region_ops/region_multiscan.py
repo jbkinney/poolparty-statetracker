@@ -1,5 +1,5 @@
 """Insert multiple XML region tags into a sequence."""
-from poolparty.types import Union, Optional, Sequence, Literal, SeqStyle
+from poolparty.types import Union, Optional, Sequence, Literal, Seq
 from numbers import Integral, Real
 import numpy as np
 
@@ -314,12 +314,11 @@ class RegionMultiScanOp(Operation):
 
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Return design card and sequence with region tags inserted together."""
-        seq = parent_seqs[0]
+    ) -> tuple[Seq, dict]:
+        """Return Seq with region tags inserted and design card."""
+        seq = parents[0].string
         if rng is None:
             raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
 
@@ -375,11 +374,16 @@ class RegionMultiScanOp(Operation):
         
         # Region multiscan modifies sequence structure, so styles not meaningful
         # Return empty SeqStyle for consistency
-        return {
+        card = {
             'indices': indices_list,  # nontag indices, not literal positions
             'strands': strands,
             'region_tags': region_tags_list,
-            'seq': result_seq,
-            'style': SeqStyle.empty(len(result_seq)),
         }
+        
+        # Compute name and create output Seq
+        from ..utils.style_utils import SeqStyle
+        name = self._default_name(parents)
+        output_seq = Seq(result_seq, SeqStyle.empty(len(result_seq)), name)
+        
+        return output_seq, card
 

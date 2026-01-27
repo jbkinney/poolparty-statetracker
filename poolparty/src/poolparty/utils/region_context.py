@@ -1,6 +1,6 @@
 """Helper class for region-based operation logic."""
 from dataclasses import dataclass, field
-from ..types import RegionType, StyleList, SeqStyle, Optional, beartype
+from ..types import RegionType, StyleList, SeqStyle, Optional, beartype, Seq, Union
 from .parsing_utils import validate_single_region, parse_region, build_region_tags
 
 
@@ -31,16 +31,16 @@ class RegionContext:
     @classmethod
     def from_sequence(
         cls,
-        seq: str,
+        seq_obj: Union[Seq, str],
         region: RegionType,
         remove_tags: bool = True,
     ) -> 'RegionContext':
-        """Create RegionContext from a sequence and region specification.
+        """Create RegionContext from a Seq/string and region specification.
         
         Parameters
         ----------
-        seq : str
-            The sequence containing the region.
+        seq_obj : Union[Seq, str]
+            The Seq object or string containing the region.
         region : RegionType
             Region specification: region name (str) or [start, stop] interval.
         remove_tags : bool, default=True
@@ -51,6 +51,8 @@ class RegionContext:
         RegionContext
             Context object containing extracted region parts.
         """
+        seq = seq_obj.string if isinstance(seq_obj, Seq) else seq_obj
+        
         if isinstance(region, str):
             # Named region - parse to get clean parts and strand
             clean_prefix, content, clean_suffix, strand = parse_region(seq, region)
@@ -86,6 +88,76 @@ class RegionContext:
                 _original_seq=seq,
             )
     
+    def split_parent_seq(self, parent: Seq) -> tuple[Seq, Seq, Seq]:
+        """Split parent Seq into prefix, region, suffix Seq objects.
+        
+        Parameters
+        ----------
+        parent : Seq
+            Parent Seq to split.
+        
+        Returns
+        -------
+        tuple[Seq, Seq, Seq]
+            Prefix, region, and suffix as Seq objects with appropriate slicing.
+        """
+        if self.region_name is None:
+            # Interval region - simple slicing
+            prefix = parent[:self.region_start]
+            region = parent[self.region_start:self.region_end]
+            suffix = parent[self.region_end:]
+            return prefix, region, suffix
+        else:
+            # Named region - need to handle tags
+            # Use the region_obj to get correct boundaries
+            region_obj = validate_single_region(parent.string, self.region_name)
+            
+            # Prefix: everything before opening tag
+            prefix = parent[:region_obj.start]
+            
+            # Region: extract content between tags
+            region_string = self.region_content
+            region_style = parent.style[self.region_start:self.region_end]
+            region = Seq(region_string, region_style, parent.name)
+            
+            # Suffix: everything after closing tag
+            suffix = parent[region_obj.end:]
+            
+            return prefix, region, suffix
+    
+    def reassemble_seq_string(self, output_string: str) -> str:
+        """Legacy method: Reassemble output string with proper tag handling.
+        
+        Parameters
+        ----------
+        output_string : str
+            The sequence output string from compute().
+        
+        Returns
+        -------
+        str
+            Reassembled full sequence string with tags as appropriate.
+        """
+        if self.region_name is None:
+            # Interval region - simple concatenation
+            return self.prefix + output_string + self.suffix
+        
+        # Named region - get clean parts (prefix/suffix without tags)
+        from .parsing_utils import parse_region
+        clean_prefix, _, clean_suffix, _ = parse_region(self._original_seq, self.region_name)
+        
+        if self.remove_tags:
+            # Remove tags
+            return clean_prefix + output_string + clean_suffix
+        else:
+            # Keep tags - rebuild with new content
+            wrapped = build_region_tags(
+                self.region_name,
+                output_string,
+                strand=self.strand if self.strand else '+',
+            )
+            return clean_prefix + wrapped + clean_suffix
+    
     def split_parent_styles(
         self,
         parent_styles: list[SeqStyle] | None,
@@ -118,37 +190,74 @@ class RegionContext:
             # No parent styles - return empty
             return SeqStyle.empty(len(self.region_content))
     
-    def reassemble_seq(self, output_seq: str) -> str:
-        """Reassemble output sequence with proper tag handling.
+    def reassemble_seq(self, prefix: Seq, output: Seq, suffix: Seq) -> Seq:
+        """Reassemble Seq from prefix, output, and suffix with proper tag handling.
         
         Parameters
         ----------
-        output_seq : str
-            The sequence output from compute().
+        prefix : Seq
+            Prefix Seq.
+        output : Seq
+            Output Seq from compute().
+        suffix : Seq
+            Suffix Seq.
         
         Returns
         -------
-        str
-            Reassembled full sequence with tags as appropriate.
+        Seq
+            Reassembled Seq with tags handled appropriately.
+            The returned Seq will have output.name (not joined names).
         """
         if self.region_name is None:
-            # Interval region - simple concatenation
-            return self.prefix + output_seq + self.suffix
+            # Interval region - simple join, but clear names from prefix/suffix
+            # so only output.name is preserved
+            return Seq.join([prefix.with_name(None), output, suffix.with_name(None)])
         
-        # Named region - get clean parts (prefix/suffix without tags)
-        clean_prefix, _, clean_suffix, _ = parse_region(self._original_seq, self.region_name)
-        
+        # Named region - handle tags
         if self.remove_tags:
-            # Remove tags
-            return clean_prefix + output_seq + clean_suffix
+            # Remove tags - join clean parts
+            # Get clean prefix/suffix (without tags)
+            clean_prefix, _, clean_suffix, _ = parse_region(self._original_seq, self.region_name)
+            region_obj = validate_single_region(self._original_seq, self.region_name)
+            
+            # Create clean prefix/suffix Seq objects by slicing to exclude tags
+            clean_prefix_seq = prefix[:region_obj.start]
+            clean_suffix_seq = suffix
+            
+            # Clear names from prefix/suffix so only output.name is preserved
+            return Seq.join([clean_prefix_seq.with_name(None), output, clean_suffix_seq.with_name(None)])
         else:
-            # Keep tags - rebuild with new content
-            wrapped = build_region_tags(
+            # Keep tags - wrap output with region tags
+            wrapped_string = build_region_tags(
                 self.region_name,
-                output_seq,
+                output.string,
                 strand=self.strand if self.strand else '+',
             )
-            return clean_prefix + wrapped + clean_suffix
+            
+            # Calculate tag lengths
+            test_tag = build_region_tags(
+                self.region_name, 'X', strand=self.strand if self.strand else '+'
+            )
+            opening_tag_len = test_tag.index('>') + 1
+            closing_tag_len = len(wrapped_string) - opening_tag_len - len(output.string)
+            
+            # Create style for wrapped output (empty styles for tags)
+            wrapped_style = SeqStyle.join([
+                SeqStyle.empty(opening_tag_len),
+                output.style,
+                SeqStyle.empty(closing_tag_len),
+            ])
+            
+            wrapped_seq = Seq(wrapped_string, wrapped_style, output.name)
+            
+            # Get clean parts
+            clean_prefix, _, clean_suffix, _ = parse_region(self._original_seq, self.region_name)
+            region_obj = validate_single_region(self._original_seq, self.region_name)
+            
+            clean_prefix_seq = prefix[:region_obj.start]
+            
+            # Clear names from prefix/suffix so only wrapped_seq.name (which is output.name) is preserved
+            return Seq.join([clean_prefix_seq.with_name(None), wrapped_seq, suffix.with_name(None)])
     
     def reassemble_style(
         self,

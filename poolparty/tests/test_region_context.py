@@ -105,7 +105,7 @@ class TestRegionContextReassembleSeq:
         seq = 'AAACCCCGGG'
         ctx = RegionContext.from_sequence(seq, [3, 7])
         
-        result = ctx.reassemble_seq('TTTT')
+        result = ctx.reassemble_seq_string('TTTT')
         
         assert result == 'AAATTTTGGG'
     
@@ -114,7 +114,7 @@ class TestRegionContextReassembleSeq:
         seq = 'AAA<test>CCCC</test>GGG'
         ctx = RegionContext.from_sequence(seq, 'test', remove_tags=True)
         
-        result = ctx.reassemble_seq('TTTT')
+        result = ctx.reassemble_seq_string('TTTT')
         
         assert result == 'AAATTTTGGG'
         assert '<test>' not in result
@@ -124,7 +124,7 @@ class TestRegionContextReassembleSeq:
         seq = 'AAA<test>CCCC</test>GGG'
         ctx = RegionContext.from_sequence(seq, 'test', remove_tags=False)
         
-        result = ctx.reassemble_seq('TTTT')
+        result = ctx.reassemble_seq_string('TTTT')
         
         assert result == 'AAA<test>TTTT</test>GGG'
     
@@ -133,7 +133,7 @@ class TestRegionContextReassembleSeq:
         seq = 'AAA<test>CCCC</test>GGG'
         ctx = RegionContext.from_sequence(seq, 'test', remove_tags=True)
         
-        result = ctx.reassemble_seq('TT')
+        result = ctx.reassemble_seq_string('TT')
         
         assert result == 'AAATTGGG'
     
@@ -142,7 +142,7 @@ class TestRegionContextReassembleSeq:
         seq = "AAA<test strand='-'>CCCC</test>GGG"
         ctx = RegionContext.from_sequence(seq, 'test', remove_tags=False)
         
-        result = ctx.reassemble_seq('TTTT')
+        result = ctx.reassemble_seq_string('TTTT')
         
         assert result == "AAA<test strand='-'>TTTT</test>GGG"
 
@@ -246,7 +246,7 @@ class TestRegionContextIntegration:
         output_style = region_style  # Pass through
         
         # Reassemble
-        final_seq = ctx.reassemble_seq(output_seq)
+        final_seq = ctx.reassemble_seq_string(output_seq)
         final_style = ctx.reassemble_style(output_style, output_seq)
         
         assert final_seq == 'AAACCCCGGG'
@@ -270,7 +270,7 @@ class TestRegionContextIntegration:
         output_style = SeqStyle.from_style_list([('blue', output_positions)], len(output_seq))
         
         # Reassemble
-        final_seq = ctx.reassemble_seq(output_seq)
+        final_seq = ctx.reassemble_seq_string(output_seq)
         final_style = ctx.reassemble_style(output_style, output_seq)
         
         assert final_seq == 'AAATTGGG'

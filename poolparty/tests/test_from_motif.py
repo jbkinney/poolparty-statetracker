@@ -268,10 +268,9 @@ class TestFromMotifCompute:
         # For testing, we can't directly set prob_state, but we can verify
         # the structure of the result
         rng = np.random.default_rng(42)
-        result = pool.operation.compute([], rng)
-        assert 'seq' in result
-        assert 'prob_state' in result
-        assert result['seq'] in ['A', 'C', 'G', 'T']
+        output_seq, card = pool.operation.compute([], rng)
+        assert 'prob_state' in card
+        assert output_seq.string in ['A', 'C', 'G', 'T']
     
     def test_compute_with_rng(self):
         """Test compute in random mode uses RNG correctly."""
@@ -280,8 +279,8 @@ class TestFromMotifCompute:
             pool = from_motif(prob_df, mode='random')
         
         rng = np.random.default_rng(42)
-        result = pool.operation.compute([], rng)
-        assert result['seq'] == 'A'
+        output_seq, card = pool.operation.compute([], rng)
+        assert output_seq.string == 'A'
 
 
 class TestFromMotifCustomName:

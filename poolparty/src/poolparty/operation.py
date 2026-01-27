@@ -1,7 +1,7 @@
 """Operation base class for poolparty."""
 from numbers import Real
 import statetracker as st
-from .types import Pool_type, Sequence, ModeType, Optional, RegionType, beartype, SeqStyle
+from .types import Pool_type, Sequence, ModeType, Optional, RegionType, beartype, SeqStyle, Seq
 from .utils import dna_utils
 import numpy as np
 
@@ -240,96 +240,86 @@ class Operation:
     
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: np.random.Generator | None = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Compute design card, output sequences, and output styles together.
+    ) -> tuple[Seq, dict]:
+        """Compute output Seq and design card.
         
         Parameters
         ----------
-        parent_seqs : list[str]
-            Input sequences from parent pools.
+        parents : list[Seq]
+            Input Seq objects from parent pools.
         rng : np.random.Generator | None
             Random number generator (for random mode operations).
-        parent_styles : list[SeqStyle] | None
-            Input styles from parent pools. Each element is a SeqStyle object
-            for the corresponding parent sequence.
         
-        Returns a dictionary containing:
-        - Design card keys (matching design_card_keys)
-        - 'seq': output sequence string
-        - 'style': output SeqStyle object
+        Returns
+        -------
+        tuple[Seq, dict]
+            Output Seq (with string, style, and name) and design card dict.
         """
         raise NotImplementedError("Subclasses must implement compute()")
     
     def wrapped_compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: np.random.Generator | None = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
+    ) -> tuple[Seq, dict]:
         """Compute with automatic region handling and tag removal.
         
         If region is specified:
-        1. Extracts region content from parent_seqs[0]
-        2. Adjusts input style positions to be region-relative
-        3. Calls compute with modified sequences and styles
-        4. Reassembles prefix + result + suffix
-        5. Adjusts output style positions to account for prefix
-        6. Removes region tags if remove_tags=True and region is a region name
+        1. Extracts region from parents[0] as a Seq
+        2. Calls compute with modified parent list
+        3. Reassembles prefix + result + suffix using Seq.join
+        4. Removes region tags if remove_tags=True and region is a region name
         """
         if self._region is None:
-            return self.compute(parent_seqs, rng, parent_styles)
+            return self.compute(parents, rng)
         
         # Create context from first parent sequence
         from .utils.region_context import RegionContext
         ctx = RegionContext.from_sequence(
-            parent_seqs[0], self._region, self._remove_tags
+            parents[0], self._region, self._remove_tags
         )
         
-        # Split styles and prepare modified inputs
-        region_style = ctx.split_parent_styles(parent_styles)
-        modified_seqs = [ctx.region_content] + parent_seqs[1:]
-        modified_styles = [region_style] + list(parent_styles[1:]) if parent_styles else None
+        # Split first parent into prefix, region, suffix
+        prefix_seq, region_seq, suffix_seq = ctx.split_parent_seq(parents[0])
+        
+        # Prepare modified parents list (region as first element)
+        modified_parents = [region_seq] + parents[1:]
         
         # Call subclass compute
-        result = self.compute(modified_seqs, rng, modified_styles)
+        output_seq, card = self.compute(modified_parents, rng)
         
-        # Reassemble outputs
-        reassembled = {}
-        for key, value in result.items():
-            if key == 'seq':
-                reassembled[key] = ctx.reassemble_seq(value)
-            elif key == 'style':
-                output_seq = result.get('seq', '')
-                reassembled[key] = ctx.reassemble_style(value, output_seq)
-            else:
-                # Keep design card keys as-is
-                reassembled[key] = value
+        # Reassemble with prefix and suffix
+        reassembled_seq = ctx.reassemble_seq(prefix_seq, output_seq, suffix_seq)
         
-        return reassembled
+        return reassembled_seq, card
     
-    def compute_seq_names(
-        self,
-        parent_names: list[Optional[str]],
-        card: dict,
-    ) -> Optional[str]:
-        """Compute output sequence name from parent names and design card.
+    def _default_name(self, parents: list[Seq]) -> Optional[str]:
+        """Compute default output name from parent Seq objects.
         
-        Returns a string name or None.
+        This helper combines parent names with optional prefix based on
+        operation state and configuration.
+        
+        Parameters
+        ----------
+        parents : list[Seq]
+            Parent Seq objects.
+        
+        Returns
+        -------
+        str | None
+            Combined name or None.
         """
         # Block name if _block_seq_names is set
         if self._block_seq_names:
             return None
         
-        # Apply clear_parent_names if set
+        # Get parent names
         if self.clear_parent_names:
-            parent_names = [None] * len(parent_names)
-        
-        # Combine all non-None parent names
-        non_none_names = [n for n in parent_names if n is not None]
-        parent_name = '.'.join(non_none_names) if non_none_names else None
+            parent_name = None
+        else:
+            parent_name = Seq.combine_names(parents)
         
         # If no prefix, pass through parent name
         if self.prefix is None:

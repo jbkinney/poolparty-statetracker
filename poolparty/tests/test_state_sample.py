@@ -161,8 +161,8 @@ class TestStateSampleCompute:
             pool = pp.from_seqs(['ACGT'], mode='sequential')
             sampled = state_sample(pool, sampled_states=[0])
         
-        result = sampled.operation.compute(['ACGT'])
-        assert result['seq'] == 'ACGT'
+        output_seq, card = sampled.operation.compute([pp.types.Seq.from_string('ACGT')])
+        assert output_seq.string == 'ACGT'
 
 
 class TestStateSampleWithReplacement:

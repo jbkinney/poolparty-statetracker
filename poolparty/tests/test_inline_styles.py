@@ -75,9 +75,8 @@ class TestMutagenizeWithStyleMutations:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential')
         
         pool.operation.state._value = 0
-        result = pool.operation.compute(['ACGT'])
-        assert 'style' in result
-        assert isinstance(result['style'], SeqStyle)
+        output_seq, card = pool.operation.compute([pp.types.Seq.from_string('ACGT')])
+        assert isinstance(output_seq.style, SeqStyle)
     
     def test_compute_with_style_includes_positions(self):
         """compute() with style adds mutation positions to style."""
@@ -85,10 +84,10 @@ class TestMutagenizeWithStyleMutations:
             pool = mutagenize('ACGT', num_mutations=1, style='red', mode='sequential')
         
         pool.operation.state._value = 0
-        result = pool.operation.compute(['ACGT'])
+        output_seq, card = pool.operation.compute([pp.types.Seq.from_string('ACGT')])
         
         # Should have one style tuple with mutation positions
-        seq_style = result['style']
+        seq_style = output_seq.style
         assert len(seq_style.style_list) == 1
         spec, positions = seq_style.style_list[0]
         assert spec == 'red'
@@ -100,9 +99,9 @@ class TestMutagenizeWithStyleMutations:
             pool = mutagenize('ACGT', num_mutations=1, mode='sequential')
         
         pool.operation.state._value = 0
-        result = pool.operation.compute(['ACGT'])
+        output_seq, card = pool.operation.compute([pp.types.Seq.from_string('ACGT')])
         
-        seq_style = result['style']
+        seq_style = output_seq.style
         assert not seq_style  # Empty SeqStyle
 
 

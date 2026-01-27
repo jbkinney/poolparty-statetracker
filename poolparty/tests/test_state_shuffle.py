@@ -143,8 +143,8 @@ class TestStateShuffleCompute:
             pool = pp.from_seqs(['ACGT'], mode='sequential')
             shuffled = state_shuffle(pool, seed=42)
         
-        result = shuffled.operation.compute(['ACGT'])
-        assert result['seq'] == 'ACGT'
+        output_seq, card = shuffled.operation.compute([pp.types.Seq.from_string('ACGT')])
+        assert output_seq.string == 'ACGT'
 
 
 class TestStateShuffleWithPermutation:

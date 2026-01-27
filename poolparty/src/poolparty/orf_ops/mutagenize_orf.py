@@ -3,7 +3,7 @@ from itertools import combinations
 from math import comb
 from numbers import Real, Integral
 import re
-from ..types import Union, ModeType, Optional, Sequence, beartype, SeqStyle
+from ..types import Union, ModeType, Optional, Sequence, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 from ..party import get_active_party
@@ -296,12 +296,11 @@ class MutagenizeOrfOp(Operation):
     
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Return design card and mutated sequence together."""
-        seq = parent_seqs[0]
+    ) -> tuple[Seq, dict]:
+        """Return mutated Seq and design card."""
+        seq = parents[0].string
         # Strip tags and record their positions
         clean_seq, tags = self._strip_tags(seq)
         _, codons, _ = self._extract_codons(clean_seq)
@@ -340,15 +339,19 @@ class MutagenizeOrfOp(Operation):
         result_seq = self._restore_tags(mutated_clean_seq, tags)
         
         # Pass through parent styles (mutagenize_orf preserves sequence length)
-        output_style = SeqStyle.from_parent(parent_styles, 0, len(result_seq))
-        return {
+        output_style = parents[0].style
+        
+        # Compute name
+        name = self._default_name(parents)
+        
+        output_seq = Seq(result_seq, output_style, name)
+        
+        return output_seq, {
             'codon_positions': positions,
             'wt_codons': wt_codons,
             'mut_codons': mut_codons,
             'wt_aas': wt_aas,
             'mut_aas': mut_aas,
-            'seq': result_seq,
-            'style': output_style,
         }
     
     def _get_copy_params(self) -> dict:

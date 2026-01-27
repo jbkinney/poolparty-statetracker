@@ -1,6 +1,6 @@
 """Replace region content with sequences from another Pool."""
 from numbers import Real
-from poolparty.types import Optional, SeqStyle
+from poolparty.types import Optional, Seq
 import numpy as np
 
 from ..utils.parsing_utils import validate_single_region
@@ -149,53 +149,43 @@ class ReplaceRegionOp(Operation):
     
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
+    ) -> tuple[Seq, dict]:
         """Replace region in bg_seq with content_seq."""
-        bg_seq = parent_seqs[0]
-        content_seq = parent_seqs[1]
+        bg_seq_string = parents[0].string
+        content_seq_obj = parents[1]
         
         # Find and validate the region
-        region = validate_single_region(bg_seq, self.region_name)
+        region = validate_single_region(bg_seq_string, self.region_name)
         
         # If strand='-', reverse complement the content before insertion
         if region.strand == '-':
-            content_seq = dna_utils.reverse_complement(content_seq)
+            content_seq_obj = content_seq_obj.reversed()
         
-        # Build result: prefix + content + suffix
-        prefix = bg_seq[:region.start]
-        suffix = bg_seq[region.end:]
-        result_seq = prefix + content_seq + suffix
+        # Use Seq slicing for assembly
+        prefix_seq = parents[0][:region.start]
+        suffix_seq = parents[0][region.end:]
         
-        # Use SeqStyle for clean style assembly
-        bg_style = SeqStyle.from_parent(parent_styles, 0, len(bg_seq))
-        content_style = SeqStyle.from_parent(parent_styles, 1, len(parent_seqs[1]))
-        
-        output_style = SeqStyle.join([
-            bg_style[:region.start],                           # Prefix
-            content_style[:].reversed(region.strand == '-'),   # Content (maybe reversed)
-            bg_style[region.end:],                             # Suffix
-        ])
+        # Join with content
+        output_seq = Seq.join([prefix_seq, content_seq_obj, suffix_seq])
         
         # Apply style to all inserted content positions
         if self._style is not None:
             ins_start = region.start
-            ins_end = ins_start + len(content_seq)
+            ins_end = ins_start + len(content_seq_obj)
             ins_positions = np.arange(ins_start, ins_end, dtype=np.int64)
-            output_style = output_style.add_style(self._style, ins_positions)
+            output_seq = output_seq.add_style(self._style, ins_positions)
         
-        return {'seq': result_seq, 'style': output_style}
+        # Compute name
+        output_seq = output_seq.with_name(self._compute_replace_name(parents))
+        
+        return output_seq, {}
     
-    def compute_seq_names(
-        self,
-        parent_names: list[Optional[str]],
-        card: dict,
-    ) -> Optional[str]:
-        """Compute output sequence names with optional insertion_scan composite naming."""
+    def _compute_replace_name(self, parents: list[Seq]) -> Optional[str]:
+        """Compute name with optional insertion_scan composite naming."""
         if not self._insertion_naming:
-            return super().compute_seq_names(parent_names, card)
+            return self._default_name(parents)
         
         # Get position and site indices from the state objects
         pos_idx = self._pos_state.value if self._pos_state is not None and self._pos_state.value is not None else 0

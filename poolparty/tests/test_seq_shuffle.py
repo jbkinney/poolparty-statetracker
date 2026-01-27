@@ -69,15 +69,12 @@ class TestSeqShuffleDesignCard:
         with pp.Party():
             pool = shuffle_seq('WXYZ', region=[0, 4])
             rng = np.random.default_rng(42)
-            result = pool.operation.compute(['WXYZ'], rng)
-        shuffled = result['seq']
+            output_seq, card = pool.operation.compute([pp.types.Seq.from_string('WXYZ')], rng)
+        shuffled = output_seq.string
         assert set(shuffled) == set('WXYZ')
         assert len(shuffled) == 4
-        # applying again with same permutation should reproduce
-        card = {'permutation': result['permutation']}
-        # Note: Since we unified compute, we can't call compute_seq_from_card anymore
-        # Instead, we verify the permutation is stored correctly
-        assert 'permutation' in result
+        # Verify the permutation is stored correctly
+        assert 'permutation' in card
 
 
 class TestSeqShuffleWithMarker:

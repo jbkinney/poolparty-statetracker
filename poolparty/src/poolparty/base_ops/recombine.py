@@ -1,7 +1,7 @@
 """Recombine operation - simulate evolutionary recombination across aligned sequences."""
 from itertools import combinations
 from math import comb
-from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, beartype, SeqStyle
+from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -281,28 +281,29 @@ class RecombineOp(Operation):
     
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Generate recombined sequence and styles.
+    ) -> tuple[Seq, dict]:
+        """Generate recombined Seq.
         
         When region is specified:
-        - parent_seqs[0] is the region content (which we ignore)
-        - parent_seqs[1:] are the source pool sequences
+        - parents[0] is the region content (which we ignore)
+        - parents[1:] are the source pool sequences
         
         When region is not specified:
-        - parent_seqs are the source pool sequences directly
+        - parents are the source pool sequences directly
         """
-        # Determine which parent_seqs are source sequences
+        # Determine which parents are source sequences
         if self._region is not None:
-            # Region-based: skip first parent_seq (region content)
-            source_seqs = parent_seqs[1:]
-            source_styles = parent_styles[1:] if parent_styles else None
+            # Region-based: skip first parent (region content)
+            sources = parents[1:]
         else:
-            # Direct: all parent_seqs are source sequences
-            source_seqs = parent_seqs
-            source_styles = parent_styles
+            # Direct: all parents are source sequences
+            sources = parents
+        
+        # Extract strings and styles for compatibility with segment logic
+        source_seqs = [s.string for s in sources]
+        source_styles = [s.style for s in sources]
         
         # Get breakpoints and pool assignments
         if self.mode == 'sequential':
@@ -375,11 +376,13 @@ class RecombineOp(Operation):
             seg_style = SeqStyle.empty(len(segment))
         segment_styles.append(seg_style)
         
-        # Concatenate segments
-        result_seq = ''.join(segments)
+        # Build segments as Seq objects
+        seq_segments = []
+        for seg, seg_style in zip(segments, segment_styles):
+            seq_segments.append(Seq(seg, seg_style, None))
         
-        # Concatenate styles
-        output_style = SeqStyle.join(segment_styles)
+        # Join segments
+        output_seq = Seq.join(seq_segments)
         
         # Overlay additional styles if provided
         if self._styles is not None:
@@ -387,14 +390,15 @@ class RecombineOp(Operation):
             for seg_idx, style_spec in enumerate(self._styles):
                 if style_spec and style_spec != '':
                     # Apply style to this segment
-                    seg_len = len(segments[seg_idx])
+                    seg_len = len(seq_segments[seg_idx])
                     positions = np.arange(offset, offset + seg_len, dtype=np.int64)
-                    output_style = output_style.add_style(style_spec, positions)
-                offset += len(segments[seg_idx])
+                    output_seq = output_seq.add_style(style_spec, positions)
+                offset += len(seq_segments[seg_idx])
         
-        return {
+        # Compute name
+        output_seq = output_seq.with_name(self._default_name(parents))
+        
+        return output_seq, {
             'breakpoints': breakpoints,
             'pool_assignments': pool_assignments,
-            'seq': result_seq,
-            'style': output_style,
         }

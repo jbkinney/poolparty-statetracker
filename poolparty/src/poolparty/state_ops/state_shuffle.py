@@ -1,7 +1,7 @@
 """StateShuffle operation - randomly permute a pool's states."""
 from numbers import Real
 import statetracker as st
-from ..types import Optional, Sequence, Integral, Real, beartype, SeqStyle
+from ..types import Optional, Sequence, Integral, Real, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -80,11 +80,9 @@ class StateShuffleOp(Operation):
     
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Return parent sequence (state mapping handled by counter)."""
-        seq = parent_seqs[0]
-        output_style = SeqStyle.from_parent(parent_styles, 0, len(seq))
-        return {'seq': seq, 'style': output_style}
+    ) -> tuple[Seq, dict]:
+        """Return parent Seq (state mapping handled by counter)."""
+        output_seq = parents[0].with_name(self._default_name(parents))
+        return output_seq, {}

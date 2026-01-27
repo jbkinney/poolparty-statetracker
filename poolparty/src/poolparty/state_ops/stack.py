@@ -1,7 +1,7 @@
 """Stack operation - combine pools sequentially (disjoint union)."""
 from numbers import Real
 import statetracker as st
-from ..types import Optional, Sequence, Integral, Real, beartype, SeqStyle
+from ..types import Optional, Sequence, Integral, Real, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 import numpy as np
@@ -89,45 +89,46 @@ class StackOp(Operation):
     
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Return design card and sequence from active parent together."""
+    ) -> tuple[Seq, dict]:
+        """Return Seq from active parent and design card."""
+        # Find active parent
         for i, parent in enumerate(self.parent_pools):
             if parent.state.value is not None:
                 # Set operation counter to branch index (safe for leaf counter)
                 self.state.value = i
                 active = i
-                seq = parent_seqs[active]
-                # Pass through styles from active parent
-                output_style = SeqStyle.from_parent(parent_styles, active, len(seq))
-                return {'active_parent': active, 'seq': seq, 'style': output_style}
+                output_seq = parents[active]
+                
+                # Compute name from active parent
+                name = self._compute_stack_name(parents, active)
+                output_seq = output_seq.with_name(name)
+                
+                return output_seq, {'active_parent': active}
+        
+        # No active parent
         self.state.value = None
         active = None
-        seq = parent_seqs[0] if parent_seqs else ''
-        output_style = SeqStyle.from_parent(parent_styles, 0, len(seq))
-        return {'active_parent': active, 'seq': seq, 'style': output_style}
+        output_seq = parents[0] if parents else Seq.empty()
+        
+        # Compute name (from first parent)
+        name = self._compute_stack_name(parents, 0 if parents else None)
+        output_seq = output_seq.with_name(name)
+        
+        return output_seq, {'active_parent': active}
     
-    def compute_seq_names(
-        self,
-        parent_names: list[Optional[str]],
-        card: dict,
-    ) -> Optional[str]:
-        """Return the name from the active parent."""
+    def _compute_stack_name(self, parents: list[Seq], active: int | None) -> Optional[str]:
+        """Compute name from active parent with optional prefix."""
         # Block name if _block_seq_names is set
         if self._block_seq_names:
             return None
-        # Apply clear_parent_names if set
-        if self.clear_parent_names:
-            parent_names = [None] * len(parent_names)
         
-        # Get name from active parent (matching compute_seq_from_card logic)
-        active = card['active_parent']
-        if active is None:
-            name = parent_names[0] if parent_names else None
+        # Get name from active parent
+        if self.clear_parent_names or active is None:
+            name = None
         else:
-            name = parent_names[active]
+            name = parents[active].name if active < len(parents) else None
         
         # Append prefix if set
         if self.prefix is not None:

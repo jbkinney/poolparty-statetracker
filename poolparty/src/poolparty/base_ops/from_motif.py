@@ -1,6 +1,6 @@
 """FromMotif operation - generate sequences by sampling from a position probability matrix."""
 from numbers import Real
-from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype, SeqStyle
+from ..types import Pool_type, Sequence, ModeType, Optional, Union, RegionType, beartype, Seq
 from ..operation import Operation
 from ..pool import Pool
 from ..utils import dna_utils
@@ -140,26 +140,29 @@ class FromMotifOp(Operation):
 
     def compute(
         self,
-        parent_seqs: list[str],
+        parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
-        parent_styles: list[SeqStyle] | None = None,
-    ) -> dict:
-        """Return design card and sampled sequence together."""
+    ) -> tuple[Seq, dict]:
+        """Return Seq and design card."""
         if rng is None:
             raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
         length = len(self.prob_df)
         random_vals = rng.random(length)
         indices = (random_vals[:, np.newaxis] < self._cumprobs).argmax(axis=1)
         indices_list = indices.tolist()
-        seq = ''.join(dna_utils.BASES[i] for i in indices_list)
+        seq_string = ''.join(dna_utils.BASES[i] for i in indices_list)
         
         # Apply styling if requested
-        output_style = SeqStyle.full(len(seq), self._style)
+        from ..utils.style_utils import SeqStyle
+        output_style = SeqStyle.full(len(seq_string), self._style)
         
-        return {
+        # Compute name
+        name = self._default_name(parents)
+        
+        output_seq = Seq(seq_string, output_style, name)
+        
+        return output_seq, {
             'prob_state': indices_list,
-            'seq': seq,
-            'style': output_style,
         }
 
 

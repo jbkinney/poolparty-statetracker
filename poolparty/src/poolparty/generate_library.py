@@ -1,6 +1,6 @@
 """Library generation functions for poolparty."""
 import statetracker as st
-from .types import Pool_type, Union, Sequence, Literal, Optional, beartype, SeqStyle
+from .types import Pool_type, Union, Sequence, Literal, Optional, beartype, Seq
 from .utils.utils import clean_df_int_columns
 from .utils.df_utils import counter_col_name, organize_columns, finalize_generate_df
 import numpy as np
@@ -215,9 +215,7 @@ def _compute_one(
     pools_filter: set = None,
 ) -> dict:
     """Compute one row of output for the given global state."""
-    seqs_cache: dict[int, dict] = {}
-    styles_cache: dict[int, dict] = {}  # Track inline styles through DAG
-    names_cache: dict[int, dict] = {}
+    seq_cache: dict[int, Seq] = {}
     card_cache: dict[int, dict] = {}
     row: dict = {}
     
@@ -230,21 +228,8 @@ def _compute_one(
     # Iterates over the operations in topological order.
     # This is the code that effectively implements the DAG.
     for op in sorted_ops:
-        parent_seqs = []
-        parent_styles: list[SeqStyle] = []
-        parent_names = []
-        for parent_pool in op.parent_pools:
-            # Get parent sequences (already cached because of topological sort)
-            parent_pool_result = seqs_cache[parent_pool.operation.id]
-            parent_seqs.append(parent_pool_result['seq'])
-            
-            # Get parent styles
-            parent_styles_result = styles_cache.get(parent_pool.operation.id, {})
-            parent_styles.append(parent_styles_result.get('style', SeqStyle.empty(0)))
-            
-            # Get parent names
-            parent_name_result = names_cache[parent_pool.operation.id]
-            parent_names.append(parent_name_result)
+        # Get parent Seq objects (already cached because of topological sort)
+        parents = [seq_cache[p.operation.id] for p in op.parent_pools]
         
         # Determine RNG for this operation
         if op.mode == 'random' and op.state is not None:
@@ -256,20 +241,11 @@ def _compute_one(
         else:
             op_rng = op.rng
         
-        # Compute design card, sequences, and styles together (using wrapped method for region handling)
-        result = op.wrapped_compute(parent_seqs, op_rng, parent_styles)
-        
-        # Extract sequence, style, and design card
-        seq = result.get('seq', '')
-        style = result.get('style', SeqStyle.empty(len(seq)))
-        card = {k: v for k, v in result.items() if k not in ('seq', 'style')}
-        
-        name = op.compute_seq_names(parent_names, card)
+        # Compute output Seq and design card (using wrapped method for region handling)
+        output_seq, card = op.wrapped_compute(parents, op_rng)
         
         # Store in caches for downstream operations
-        seqs_cache[op.id] = {'seq': seq}
-        styles_cache[op.id] = {'style': style}
-        names_cache[op.id] = name
+        seq_cache[op.id] = output_seq
         card_cache[op.id] = card
         
         if report_op_keys and (ops_to_report is None or op.id in ops_to_report):
@@ -294,15 +270,13 @@ def _compute_one(
         if output_pool.state is not None and output_pool.state.value is None:
             row[output_name] = None
         else:
-            result = seqs_cache[output_pool.operation.id]
-            row[output_name] = result['seq']
+            seq_obj = seq_cache[output_pool.operation.id]
+            row[output_name] = seq_obj.string
     
-    # Get final name from names_cache (computed through DAG)
-    row['name'] = names_cache[pool.operation.id]
-    
-    # Get final inline styles from styles_cache (for print_library to use)
-    final_styles_result = styles_cache.get(pool.operation.id, {})
-    row['_inline_styles'] = final_styles_result.get('style', SeqStyle.empty(0))
+    # Get final name and inline styles from Seq object
+    final_seq = seq_cache[pool.operation.id]
+    row['name'] = final_seq.name
+    row['_inline_styles'] = final_seq.style
     
     return row
 

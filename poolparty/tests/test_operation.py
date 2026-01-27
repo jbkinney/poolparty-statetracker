@@ -181,12 +181,12 @@ class TestOperationCompute:
         
         # Set counter state and compute
         pool.operation.state._value = 0
-        result = pool.operation.compute([])
-        assert result['seq'] == 'AAA'
+        output_seq, card = pool.operation.compute([])
+        assert output_seq.string == 'AAA'
         
         pool.operation.state._value = 1
-        result = pool.operation.compute([])
-        assert result['seq'] == 'TTT'
+        output_seq, card = pool.operation.compute([])
+        assert output_seq.string == 'TTT'
 
 
 class TestOperationRepr:
@@ -327,8 +327,8 @@ class TestOperationCopy:
             
             # Verify copied op produces same results
             copied_op.state._value = 0
-            result = copied_op.compute([])
-            assert result['seq'] == 'A'
+            output_seq, card = copied_op.compute([])
+            assert output_seq.string == 'A'
     
     def test_copy_mutagenize_op(self):
         """Test copying MutagenizeOp."""

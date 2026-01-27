@@ -206,8 +206,9 @@ class TestJoinCompute:
             b = pp.from_seqs(['TTT'])
             combined = join([a, b])
         
-        result = combined.operation.compute(['AAA', 'TTT'])
-        assert result['seq'] == 'AAATTT'
+        parents = [pp.types.Seq.from_string(s) for s in ['AAA', 'TTT']]
+        output_seq, card = combined.operation.compute(parents)
+        assert output_seq.string == 'AAATTT'
     
     def test_compute_empty_string(self):
         """Test compute with empty string parent."""
@@ -216,8 +217,9 @@ class TestJoinCompute:
             b = pp.from_seqs([''])
             combined = join([a, b])
         
-        result = combined.operation.compute(['AAA', ''])
-        assert result['seq'] == 'AAA'
+        parents = [pp.types.Seq.from_string(s) for s in ['AAA', '']]
+        output_seq, card = combined.operation.compute(parents)
+        assert output_seq.string == 'AAA'
     
     def test_compute_many_parents(self):
         """Test compute with many parent sequences."""
@@ -225,8 +227,9 @@ class TestJoinCompute:
             pools = [pp.from_seqs([c]) for c in 'ABCDE']
             combined = join(pools)
         
-        result = combined.operation.compute(['A', 'B', 'C', 'D', 'E'])
-        assert result['seq'] == 'ABCDE'
+        parents = [pp.types.Seq.from_string(s) for s in ['A', 'B', 'C', 'D', 'E']]
+        output_seq, card = combined.operation.compute(parents)
+        assert output_seq.string == 'ABCDE'
 
 
 class TestJoinChaining:
@@ -362,8 +365,9 @@ class TestJoinSpacerStr:
             b = pp.from_seqs(['TTT'])
             combined = join([a, b], spacer_str='.')
         
-        result = combined.operation.compute(['AAA', 'TTT'])
-        assert result['seq'] == 'AAA.TTT'
+        parents = [pp.types.Seq.from_string(s) for s in ['AAA', 'TTT']]
+        output_seq, card = combined.operation.compute(parents)
+        assert output_seq.string == 'AAA.TTT'
     
     def test_spacer_str_with_single_pool(self):
         """Test spacer_str with single item (no spacer needed)."""
