@@ -24,6 +24,7 @@ def generate_library(
     report_op_keys: bool = True,
     pools_to_report: Union[str, Sequence[Pool_type]] = 'all',
     organize_columns_by: Literal['pool', 'type'] = 'type',
+    suppress_styles: bool = False,
 ) -> Union[pd.DataFrame, list[str]]:
     """Generate sequences from a pool.
     
@@ -100,7 +101,7 @@ def generate_library(
         row = _compute_one(
             pool, sorted_ops, outputs, global_state, 
             states, report_op_keys if report_design_cards else False, 
-            ops_to_report, pools_filter
+            ops_to_report, pools_filter, suppress_styles
         )
         rows.append(row)
     
@@ -213,6 +214,7 @@ def _compute_one(
     report_op_keys: bool = True,
     ops_to_report: set = None,
     pools_filter: set = None,
+    suppress_styles: bool = False,
 ) -> dict:
     """Compute one row of output for the given global state."""
     seq_cache: dict[int, Seq] = {}
@@ -245,7 +247,7 @@ def _compute_one(
             op_rng = op.rng
         
         # Compute output Seq and design card (handles region wrapping automatically)
-        output_seq, card = op.compute(parents, op_rng)
+        output_seq, card = op.compute(parents, op_rng, suppress_styles)
         
         # Store in caches for downstream operations
         seq_cache[op.id] = output_seq

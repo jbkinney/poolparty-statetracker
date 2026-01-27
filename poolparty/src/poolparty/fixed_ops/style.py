@@ -204,18 +204,24 @@ class StylizeOp(Operation):
         self,
         parents: list[Seq],
         rng=None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Return unchanged Seq with styling applied."""
         parent_seq = parents[0]
         
-        # Get positions matching the pattern
-        positions = self._get_matching_positions(parent_seq.string)
-        
-        # Add new style to parent Seq
-        if len(positions) > 0:
-            output_seq = parent_seq.add_style(self.style, positions)
+        if suppress_styles:
+            # Return with empty style when suppressing
+            from ..utils.style_utils import SeqStyle
+            output_seq = Seq(parent_seq.string, SeqStyle.empty(len(parent_seq.string)))
         else:
-            output_seq = parent_seq
+            # Get positions matching the pattern
+            positions = self._get_matching_positions(parent_seq.string)
+            
+            # Add new style to parent Seq
+            if len(positions) > 0:
+                output_seq = parent_seq.add_style(self.style, positions)
+            else:
+                output_seq = parent_seq
         
         return output_seq, {}
     

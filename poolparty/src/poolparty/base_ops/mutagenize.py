@@ -368,6 +368,7 @@ class MutagenizeOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Return mutated Seq and design card.
         
@@ -433,12 +434,15 @@ class MutagenizeOp(Operation):
         
         # Build output styles: pass through parent styles (mutagenize preserves length)
         # and add mutation style if _style is set
-        output_style = parents[0].style
-        
-        if self._style is not None and len(positions) > 0:
-            # Convert logical positions to raw positions for styling
-            raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
-            output_style = output_style.add_style(self._style, raw_positions)
+        from ..utils.style_utils import SeqStyle
+        if suppress_styles:
+            output_style = SeqStyle.empty(len(result_seq))
+        else:
+            output_style = parents[0].style
+            if self._style is not None and len(positions) > 0:
+                # Convert logical positions to raw positions for styling
+                raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
+                output_style = output_style.add_style(self._style, raw_positions)
         
         output_seq = Seq(result_seq, output_style)
         

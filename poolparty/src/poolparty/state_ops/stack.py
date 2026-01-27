@@ -91,6 +91,7 @@ class StackOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Return Seq from active parent and design card."""
         # Find active parent

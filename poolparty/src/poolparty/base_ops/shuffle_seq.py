@@ -117,6 +117,7 @@ class SeqShuffleOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Return shuffled Seq and design card.
         
@@ -162,12 +163,16 @@ class SeqShuffleOp(Operation):
         shuffled_seq = ''.join(seq_list)
         
         # Pass through parent styles and add styling to shuffled characters if requested
-        output_style = parents[0].style
-        if self._style and molecular_positions:
-            output_style = output_style.add_style(
-                self._style, 
-                np.array(molecular_positions, dtype=np.int64)
-            )
+        from ..utils.style_utils import SeqStyle
+        if suppress_styles:
+            output_style = SeqStyle.empty(len(shuffled_seq))
+        else:
+            output_style = parents[0].style
+            if self._style and molecular_positions:
+                output_style = output_style.add_style(
+                    self._style, 
+                    np.array(molecular_positions, dtype=np.int64)
+                )
         
         output_seq = Seq(shuffled_seq, output_style)
         

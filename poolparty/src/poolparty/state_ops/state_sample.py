@@ -103,6 +103,7 @@ class StateSampleOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Return parent Seq (state mapping handled by counter)."""
         return parents[0], {}

@@ -142,6 +142,7 @@ class FromMotifOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Return Seq and design card."""
         if rng is None:
@@ -154,7 +155,10 @@ class FromMotifOp(Operation):
         
         # Apply styling if requested
         from ..utils.style_utils import SeqStyle
-        output_style = SeqStyle.full(len(seq_string), self._style)
+        if suppress_styles:
+            output_style = SeqStyle.empty(len(seq_string))
+        else:
+            output_style = SeqStyle.full(len(seq_string), self._style)
         
         output_seq = Seq(seq_string, output_style)
         

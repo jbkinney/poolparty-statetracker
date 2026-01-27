@@ -298,6 +298,7 @@ class MutagenizeOrfOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Return mutated Seq and design card."""
         seq = parents[0].string
@@ -339,7 +340,11 @@ class MutagenizeOrfOp(Operation):
         result_seq = self._restore_tags(mutated_clean_seq, tags)
         
         # Pass through parent styles (mutagenize_orf preserves sequence length)
-        output_style = parents[0].style
+        from ..utils.style_utils import SeqStyle
+        if suppress_styles:
+            output_style = SeqStyle.empty(len(result_seq))
+        else:
+            output_style = parents[0].style
         
         output_seq = Seq(result_seq, output_style)
         

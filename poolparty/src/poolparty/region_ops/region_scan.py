@@ -214,6 +214,7 @@ class RegionScanOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Return Seq with region tags inserted and design card."""
         
@@ -289,24 +290,28 @@ class RegionScanOp(Operation):
         
         # Adjust parent styles to account for tag insertion
         seq_len = len(seq)
-        input_style = parents[0].style
         
-        if self._region_length > 0:
-            # Region tags: split and reassemble with tag spacers
-            output_style = SeqStyle.join([
-                input_style[:start_literal],              # Before tag
-                SeqStyle.empty(opening_tag_len),          # Opening tag spacer
-                input_style[start_literal:end_literal],   # Inside region
-                SeqStyle.empty(closing_tag_len),          # Closing tag spacer
-                input_style[end_literal:],                # After tag
-            ])
+        if suppress_styles:
+            output_style = SeqStyle.empty(len(result_seq))
         else:
-            # Zero-length region: insert tag spacer at position
-            output_style = SeqStyle.join([
-                input_style[:raw_position],              # Before tag
-                SeqStyle.empty(len(region_tag)),         # Tag spacer
-                input_style[raw_position:],              # After tag
-            ])
+            input_style = parents[0].style
+            
+            if self._region_length > 0:
+                # Region tags: split and reassemble with tag spacers
+                output_style = SeqStyle.join([
+                    input_style[:start_literal],              # Before tag
+                    SeqStyle.empty(opening_tag_len),          # Opening tag spacer
+                    input_style[start_literal:end_literal],   # Inside region
+                    SeqStyle.empty(closing_tag_len),          # Closing tag spacer
+                    input_style[end_literal:],                # After tag
+                ])
+            else:
+                # Zero-length region: insert tag spacer at position
+                output_style = SeqStyle.join([
+                    input_style[:raw_position],              # Before tag
+                    SeqStyle.empty(len(region_tag)),         # Tag spacer
+                    input_style[raw_position:],              # After tag
+                ])
         
         output_seq = Seq(result_seq, output_style)
         

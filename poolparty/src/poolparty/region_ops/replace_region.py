@@ -128,6 +128,7 @@ class ReplaceRegionOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Replace region in bg_seq with content_seq."""
         bg_seq_string = parents[0].string
@@ -148,11 +149,14 @@ class ReplaceRegionOp(Operation):
         output_seq = Seq.join([prefix_seq, content_seq_obj, suffix_seq])
         
         # Apply style to all inserted content positions
-        if self._style is not None:
+        if not suppress_styles and self._style is not None:
             ins_start = region.start
             ins_end = ins_start + len(content_seq_obj)
             ins_positions = np.arange(ins_start, ins_end, dtype=np.int64)
             output_seq = output_seq.add_style(self._style, ins_positions)
+        elif suppress_styles:
+            from ..utils.style_utils import SeqStyle
+            output_seq = Seq(output_seq.string, SeqStyle.empty(len(output_seq.string)))
         
         return output_seq, {}
     

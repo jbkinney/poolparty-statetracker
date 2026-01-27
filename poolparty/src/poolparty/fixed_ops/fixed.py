@@ -121,6 +121,7 @@ class FixedOp(Operation):
         self,
         parents: list[Seq],
         rng=None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Compute output Seq using the user-defined function.
         
@@ -134,7 +135,10 @@ class FixedOp(Operation):
         # Pass through parent styles only if _pass_through_styles is True
         # When doing content replacement (e.g., from_seq with region), styles
         # from the original content should not apply to the new content
-        if self._pass_through_styles and parents:
+        from ..utils.style_utils import SeqStyle
+        if suppress_styles:
+            output_style = SeqStyle.empty(len(result_string))
+        elif self._pass_through_styles and parents:
             output_style = parents[0].style[:len(result_string)] if len(parents[0]) >= len(result_string) else parents[0].style
         else:
             output_style = Seq.from_string(result_string).style

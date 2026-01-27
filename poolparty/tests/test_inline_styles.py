@@ -1486,3 +1486,184 @@ class TestShuffleScanStylePropagation:
             has_magenta = any('magenta' in spec for spec in specs)
             assert has_purple, "Purple style from parent should be present"
             assert has_magenta, "Magenta style from shuffle_scan should be present"
+
+
+class TestSuppressStyles:
+    """Test suppress_styles parameter functionality."""
+    
+    def test_suppress_styles_generate_library(self):
+        """suppress_styles=True produces empty styles in generate_library."""
+        pool = pp.from_seq('ACGT', style='red')
+        
+        # Without suppress_styles (default)
+        df_with_styles = pool.generate_library(num_seqs=1, report_design_cards=True)
+        style_with = df_with_styles.iloc[0]['_inline_styles']
+        assert len(style_with.style_list) > 0, "Should have styles by default"
+        
+        # With suppress_styles=True
+        df_no_styles = pool.generate_library(num_seqs=1, report_design_cards=True, suppress_styles=True)
+        style_without = df_no_styles.iloc[0]['_inline_styles']
+        assert len(style_without.style_list) == 0, "Should have no styles when suppressed"
+    
+    def test_suppress_styles_mutagenize(self):
+        """suppress_styles=True works with mutagenize operation."""
+        pool = pp.from_seq('ACGT').mutagenize(num_mutations=1, style='blue')
+        
+        # With styles (default)
+        df_with = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
+        style_with = df_with.iloc[0]['_inline_styles']
+        assert len(style_with.style_list) > 0, "Mutagenize should add styles"
+        
+        # Without styles
+        df_without = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True, suppress_styles=True)
+        style_without = df_without.iloc[0]['_inline_styles']
+        assert len(style_without.style_list) == 0, "Should have no styles when suppressed"
+    
+    def test_suppress_styles_chained_operations(self):
+        """suppress_styles=True works through chained operations."""
+        pool = (pp.from_seq('ACGTACGT', style='red')
+                .mutagenize(num_mutations=1, style='blue')
+                .shuffle_seq(style='green'))
+        
+        # With styles
+        df_with = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
+        style_with = df_with.iloc[0]['_inline_styles']
+        assert len(style_with.style_list) > 0, "Should accumulate styles from chain"
+        
+        # Without styles
+        df_without = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True, suppress_styles=True)
+        style_without = df_without.iloc[0]['_inline_styles']
+        assert len(style_without.style_list) == 0, "Should have no styles when suppressed"
+    
+    def test_suppress_styles_sequences_identical(self):
+        """Sequences should be identical with/without styles."""
+        pool = pp.from_seq('ACGTACGT', style='red').mutagenize(num_mutations=2, style='blue')
+        
+        # Generate with same seed
+        df_with = pool.generate_library(num_seqs=5, seed=42, report_design_cards=True)
+        df_without = pool.generate_library(num_seqs=5, seed=42, report_design_cards=True, suppress_styles=True)
+        
+        # Sequences should be identical
+        assert list(df_with['seq']) == list(df_without['seq']), "Sequences should match regardless of styles"
+    
+    def test_suppress_styles_recombine(self):
+        """suppress_styles=True works with recombine operation."""
+        pool1 = pp.from_seq('AAAA', style='red')
+        pool2 = pp.from_seq('CCCC', style='blue')
+        pool3 = pp.from_seq('GGGG', style='green')
+        
+        pool = pp.recombine(sources=[pool1, pool2, pool3], num_breakpoints=2, mode='random')
+        
+        # With styles
+        df_with = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
+        style_with = df_with.iloc[0]['_inline_styles']
+        assert len(style_with.style_list) >= 0, "Recombine should work with styles"
+        
+        # Without styles
+        df_without = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True, suppress_styles=True)
+        style_without = df_without.iloc[0]['_inline_styles']
+        assert len(style_without.style_list) == 0, "Should have no styles when suppressed"
+        
+        # Sequences should match
+        assert df_with.iloc[0]['seq'] == df_without.iloc[0]['seq']
+    
+    def test_suppress_styles_with_regions(self):
+        """suppress_styles=True works with region operations."""
+        pool = (pp.from_seq('ACGTACGTACGT')
+                .insert_tags(start=0, stop=4, region_name='cre')
+                .stylize(region='cre', style='purple')
+                .mutagenize(region='cre', num_mutations=1, style='yellow'))
+        
+        # With styles
+        df_with = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
+        style_with = df_with.iloc[0]['_inline_styles']
+        assert len(style_with.style_list) > 0, "Region operations should create styles"
+        
+        # Without styles
+        df_without = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True, suppress_styles=True)
+        style_without = df_without.iloc[0]['_inline_styles']
+        assert len(style_without.style_list) == 0, "Should have no styles when suppressed"
+    
+    def test_suppress_styles_stack(self):
+        """suppress_styles=True works with stack operation."""
+        pool1 = pp.from_seq('AAAA', style='red')
+        pool2 = pp.from_seq('CCCC', style='blue')
+        pool3 = pp.from_seq('GGGG', style='green')
+        
+        stacked = pp.stack([pool1, pool2, pool3])
+        
+        # With styles
+        df_with = stacked.generate_library(num_cycles=1, seed=42, report_design_cards=True)
+        assert all(len(row['_inline_styles'].style_list) > 0 for _, row in df_with.iterrows())
+        
+        # Without styles
+        df_without = stacked.generate_library(num_cycles=1, seed=42, report_design_cards=True, suppress_styles=True)
+        assert all(len(row['_inline_styles'].style_list) == 0 for _, row in df_without.iterrows())
+    
+    def test_suppress_styles_print_library(self):
+        """suppress_styles=True works with print_library (no ANSI codes)."""
+        import io
+        import sys
+        
+        pool = pp.from_seq('ACGT', style='red bold')
+        
+        # Capture output with styles
+        captured_with = io.StringIO()
+        sys.stdout = captured_with
+        pool.print_library(num_seqs=1, seed=42)
+        sys.stdout = sys.__stdout__
+        output_with = captured_with.getvalue()
+        
+        # Capture output without styles
+        captured_without = io.StringIO()
+        sys.stdout = captured_without
+        pool.print_library(num_seqs=1, seed=42, suppress_styles=True)
+        sys.stdout = sys.__stdout__
+        output_without = captured_without.getvalue()
+        
+        # With styles should have ANSI codes
+        assert '\033[' in output_with, "Should have ANSI escape codes with styles"
+        
+        # Without styles should not have ANSI codes
+        assert '\033[' not in output_without, "Should not have ANSI escape codes when suppressed"
+        
+        # Both should contain the sequence
+        assert 'ACGT' in output_with
+        assert 'ACGT' in output_without
+    
+    def test_suppress_styles_default_false(self):
+        """Default behavior should include styles (suppress_styles=False by default)."""
+        pool = pp.from_seq('ACGT', style='red')
+        
+        # Call without specifying suppress_styles
+        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        style = df.iloc[0]['_inline_styles']
+        
+        assert len(style.style_list) > 0, "Default should include styles"
+    
+    def test_suppress_styles_from_iupac(self):
+        """suppress_styles=True works with from_iupac."""
+        pool = pp.from_iupac('NNNN', style='cyan')
+        
+        df_with = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
+        df_without = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True, suppress_styles=True)
+        
+        assert len(df_with.iloc[0]['_inline_styles'].style_list) > 0
+        assert len(df_without.iloc[0]['_inline_styles'].style_list) == 0
+        assert df_with.iloc[0]['seq'] == df_without.iloc[0]['seq']
+    
+    def test_suppress_styles_multiple_seqs(self):
+        """suppress_styles=True works across multiple sequences."""
+        pool = pp.from_seqs(['AAAA', 'CCCC', 'GGGG'], mode='sequential', style='magenta')
+        
+        df_with = pool.generate_library(num_cycles=1, report_design_cards=True)
+        df_without = pool.generate_library(num_cycles=1, report_design_cards=True, suppress_styles=True)
+        
+        # All with styles
+        assert all(len(row['_inline_styles'].style_list) > 0 for _, row in df_with.iterrows())
+        
+        # All without styles
+        assert all(len(row['_inline_styles'].style_list) == 0 for _, row in df_without.iterrows())
+        
+        # Sequences match
+        assert list(df_with['seq']) == list(df_without['seq'])

@@ -302,6 +302,7 @@ class RegionMultiScanOp(Operation):
         self,
         parents: list[Seq],
         rng: Optional[np.random.Generator] = None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Return Seq with region tags inserted and design card."""
         seq = parents[0].string

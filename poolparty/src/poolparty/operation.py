@@ -227,6 +227,7 @@ class Operation:
         self,
         parents: list[Seq],
         rng: np.random.Generator | None = None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Compute output Seq and design card with automatic region handling.
         
@@ -239,6 +240,8 @@ class Operation:
             Input Seq objects from parent pools.
         rng : np.random.Generator | None
             Random number generator (for random mode operations).
+        suppress_styles : bool
+            If True, create empty styles instead of actual styles.
         
         Returns
         -------
@@ -252,7 +255,7 @@ class Operation:
         4. Removes region tags if remove_tags=True and region is a region name
         """
         if self._region is None:
-            return self._compute_core(parents, rng)
+            return self._compute_core(parents, rng, suppress_styles)
         
         # Create context from first parent sequence
         from .utils.region_context import RegionContext
@@ -267,7 +270,7 @@ class Operation:
         modified_parents = [region_seq] + parents[1:]
         
         # Call subclass _compute_core
-        output_seq, card = self._compute_core(modified_parents, rng)
+        output_seq, card = self._compute_core(modified_parents, rng, suppress_styles)
         
         # Reassemble with prefix and suffix
         reassembled_seq = ctx.reassemble_seq(prefix_seq, output_seq, suffix_seq)
@@ -278,6 +281,7 @@ class Operation:
         self,
         parents: list[Seq],
         rng: np.random.Generator | None = None,
+        suppress_styles: bool = False,
     ) -> tuple[Seq, dict]:
         """Compute output Seq and design card (core implementation).
         
@@ -291,6 +295,8 @@ class Operation:
             parents[0] contains only the region content.
         rng : np.random.Generator | None
             Random number generator (for random mode operations).
+        suppress_styles : bool
+            If True, create empty styles instead of actual styles.
         
         Returns
         -------
