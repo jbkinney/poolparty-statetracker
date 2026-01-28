@@ -51,7 +51,7 @@ class Seq:
     (e.g., a gap character has no molecular position).
     """
     string: str                    # Literal string WITH tags
-    style: SeqStyle                # Per-position styling
+    style: SeqStyle | None         # Per-position styling (None if suppressed)
     # Computed on construction (not lazy, for immutability)
     _clean: str = field(default='', repr=False)
     _regions: tuple = field(default=(), repr=False)
@@ -66,7 +66,8 @@ class Seq:
     
     def __repr__(self) -> str:
         """String representation."""
-        return f"Seq(len={len(self.string)}, styles={len(self.style.style_list)})"
+        num_styles = len(self.style.style_list) if self.style else 0
+        return f"Seq(len={len(self.string)}, styles={num_styles})"
     
     # Coordinate system properties
     @property
@@ -304,7 +305,7 @@ class Seq:
         # Return Seq with empty coordinate maps
         seq = Seq.__new__(Seq)
         object.__setattr__(seq, 'string', self.string[key])
-        object.__setattr__(seq, 'style', self.style[key])
+        object.__setattr__(seq, 'style', self.style[key] if self.style is not None else None)
         object.__setattr__(seq, '_clean', '')
         object.__setattr__(seq, '_regions', ())
         object.__setattr__(seq, '_nontag_to_literal', ())
@@ -348,14 +349,22 @@ class Seq:
         for i, s in enumerate(input_seqs):
             if i > 0 and sep:
                 strings.append(sep)
-                styles.append(SeqStyle.empty(len(sep)))
+                if s.style is not None:
+                    styles.append(SeqStyle.empty(len(sep)))
             strings.append(s.string)
-            styles.append(s.style)
+            if s.style is not None:
+                styles.append(s.style)
         
         # Use from_string to rebuild coordinate maps
+        # If any input has None style, result has None style
+        if any(s.style is None for s in input_seqs):
+            result_style = None
+        else:
+            result_style = SeqStyle.join(styles)
+        
         return cls.from_string(
             string=''.join(strings),
-            style=SeqStyle.join(styles),
+            style=result_style,
         )
     
     @classmethod
@@ -378,7 +387,7 @@ class Seq:
         string : str
             DNA sequence string (may contain region tags).
         style : SeqStyle | None, default=None
-            Optional style. If None, creates empty style.
+            Optional style. If None, creates empty style (or None if suppressed).
         
         Returns
         -------
@@ -386,9 +395,10 @@ class Seq:
             New Seq with parsed regions and coordinate maps.
         """
         from . import parsing_utils, dna_utils
+        from .style_utils import styles_suppressed
         
         if style is None:
-            style = SeqStyle.empty(len(string))
+            style = None if styles_suppressed() else SeqStyle.empty(len(string))
         
         # Parse regions
         regions = tuple(parsing_utils.find_all_regions(string))
@@ -473,12 +483,12 @@ class Seq:
         
         return Seq.from_string(reversed_string, reversed_style)
     
-    def with_style(self, style: SeqStyle) -> 'Seq':
+    def with_style(self, style: SeqStyle | None) -> 'Seq':
         """Return copy with updated style (preserves coordinate maps).
         
         Parameters
         ----------
-        style : SeqStyle
+        style : SeqStyle | None
             New style for the sequence.
         
         Returns
@@ -513,6 +523,8 @@ class Seq:
         Seq
             New Seq with added style.
         """
+        if self.style is None:
+            return self  # If styles suppressed, don't add any
         new_style = self.style.add_style(style_spec, positions)
         return self.with_style(new_style)
     

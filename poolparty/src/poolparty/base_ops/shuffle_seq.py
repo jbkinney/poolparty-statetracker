@@ -163,7 +163,7 @@ class SeqShuffleOp(Operation):
         
         # Pass through parent styles and add styling to shuffled characters if requested
         output_style = parents[0].style
-        if self._style and molecular_positions:
+        if output_style is not None and self._style and molecular_positions:
             output_style = output_style.add_style(
                 self._style, 
                 np.array(molecular_positions, dtype=np.int64)

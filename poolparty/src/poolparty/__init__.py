@@ -79,7 +79,7 @@ from .multiscan_ops import (
 __all__ = [
     '__version__',
     'Party', 'get_active_party', 'init', 'clear_pools',
-    'set_default', 'load_defaults',
+    'set_default', 'load_defaults', 'toggle_styles',
     'Pool', 'Operation', 'Region', 'State', 'StateManager', 'generate_library',
     'BASES', 'COMPLEMENT', 'IUPAC_TO_DNA', 'IGNORE_CHARS', 'VALID_CHARS',
     'fixed_operation', 'FixedOp',
@@ -147,6 +147,15 @@ def set_default(key: str, value) -> None:
 def load_defaults(filepath: str) -> None:
     """Load default parameters from a TOML file into the active Party."""
     get_active_party().load_defaults(filepath)
+
+
+def toggle_styles(on: bool = True) -> None:
+    """Toggle inline styling on/off for the active Party.
+    
+    When off (on=False), Seq.style will be None to avoid style overhead.
+    When on (on=True), normal style tracking is restored.
+    """
+    get_active_party().set_default('suppress_styles', not on)
 
 
 # === Copy factory docstrings to Pool methods ===

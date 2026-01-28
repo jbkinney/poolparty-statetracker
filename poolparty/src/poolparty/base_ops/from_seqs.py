@@ -172,10 +172,12 @@ class FromSeqsOp(Operation):
         seq_string = self.seqs[idx]
         
         # Apply style to all positions if specified
-        from ..utils.style_utils import SeqStyle
-        output_style = SeqStyle.full(len(seq_string), self._style)
-        
-        output_seq = Seq(seq_string, output_style)
+        from ..utils.style_utils import SeqStyle, styles_suppressed
+        if styles_suppressed():
+            output_seq = Seq(seq_string, None)
+        else:
+            output_style = SeqStyle.full(len(seq_string), self._style)
+            output_seq = Seq(seq_string, output_style)
         
         return output_seq, {
             'seq_name': self.seq_names[int(idx)],

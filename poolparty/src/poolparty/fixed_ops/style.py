@@ -206,7 +206,12 @@ class StylizeOp(Operation):
         rng=None,
     ) -> tuple[Seq, dict]:
         """Return unchanged Seq with styling applied."""
+        from ..utils.style_utils import styles_suppressed
         parent_seq = parents[0]
+        
+        # If styles suppressed, pass through unchanged
+        if styles_suppressed():
+            return parent_seq, {}
         
         # Get positions matching the pattern
         positions = self._get_matching_positions(parent_seq.string)

@@ -435,7 +435,7 @@ class MutagenizeOp(Operation):
         # and add mutation style if _style is set
         output_style = parents[0].style
         
-        if self._style is not None and len(positions) > 0:
+        if output_style is not None and self._style is not None and len(positions) > 0:
             # Convert logical positions to raw positions for styling
             raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
             output_style = output_style.add_style(self._style, raw_positions)

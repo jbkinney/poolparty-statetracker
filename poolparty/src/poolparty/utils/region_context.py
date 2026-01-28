@@ -117,7 +117,7 @@ class RegionContext:
             
             # Region: extract content between tags
             region_string = self.region_content
-            region_style = parent.style[self.region_start:self.region_end]
+            region_style = parent.style[self.region_start:self.region_end] if parent.style is not None else None
             region = Seq(region_string, region_style)
             
             # Suffix: everything after closing tag
@@ -156,22 +156,25 @@ class RegionContext:
     
     def split_parent_styles(
         self,
-        parent_styles: list[SeqStyle] | None,
-    ) -> SeqStyle:
+        parent_styles: list[SeqStyle | None] | None,
+    ) -> SeqStyle | None:
         """Split first parent style into prefix/region/suffix parts.
         
         Parameters
         ----------
-        parent_styles : list[SeqStyle] | None
+        parent_styles : list[SeqStyle | None] | None
             Input styles from parent pools.
         
         Returns
         -------
-        SeqStyle
-            Region style for compute input (0-indexed for region content).
+        SeqStyle | None
+            Region style for compute input (0-indexed for region content), or None if suppressed.
         """
         if parent_styles and len(parent_styles) > 0:
             parent_style = parent_styles[0]
+            if parent_style is None:
+                # Styles suppressed
+                return None
             prefix_style, region_style, suffix_style = parent_style.split(
                 [self.region_start, self.region_end]
             )
@@ -183,8 +186,9 @@ class RegionContext:
             self._suffix_seq_style = suffix_style
             return region_style
         else:
-            # No parent styles - return empty
-            return SeqStyle.empty(len(self.region_content))
+            # No parent styles
+            from .style_utils import styles_suppressed
+            return None if styles_suppressed() else SeqStyle.empty(len(self.region_content))
     
     def reassemble_seq(self, prefix: Seq, output: Seq, suffix: Seq) -> Seq:
         """Reassemble Seq from prefix, output, and suffix with proper tag handling.
@@ -232,11 +236,14 @@ class RegionContext:
             closing_tag_len = len(wrapped_string) - opening_tag_len - len(output.string)
             
             # Create style for wrapped output (empty styles for tags)
-            wrapped_style = SeqStyle.join([
-                SeqStyle.empty(opening_tag_len),
-                output.style,
-                SeqStyle.empty(closing_tag_len),
-            ])
+            if output.style is None:
+                wrapped_style = None
+            else:
+                wrapped_style = SeqStyle.join([
+                    SeqStyle.empty(opening_tag_len),
+                    output.style,
+                    SeqStyle.empty(closing_tag_len),
+                ])
             
             wrapped_seq = Seq(wrapped_string, wrapped_style)
             
@@ -250,23 +257,26 @@ class RegionContext:
     
     def reassemble_style(
         self,
-        output_style: SeqStyle,
+        output_style: SeqStyle | None,
         output_seq: str,
-    ) -> SeqStyle:
+    ) -> SeqStyle | None:
         """Reassemble output style with proper position adjustments.
         
         Parameters
         ----------
-        output_style : SeqStyle
-            The style output from compute() (0-indexed for region).
+        output_style : SeqStyle | None
+            The style output from compute() (0-indexed for region), or None if suppressed.
         output_seq : str
             The sequence output from compute() (needed for length calculations).
         
         Returns
         -------
-        SeqStyle
-            Reassembled full style with correct global positions.
+        SeqStyle | None
+            Reassembled full style with correct global positions, or None if suppressed.
         """
+        if output_style is None:
+            return None
+            
         if self.region_name is None:
             # Interval region - rebuild prefix/suffix with actual lengths
             prefix_seq_style = SeqStyle.from_style_list(

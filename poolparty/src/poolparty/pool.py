@@ -337,8 +337,9 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
                 from .utils.style_utils import SeqStyle
                 # Get per-sequence inline styles (from operation style parameters)
                 inline_styles = row.get('_inline_styles', SeqStyle.empty(0))
-                # Apply inline styles
-                seq = inline_styles.apply(seq)
+                # Apply inline styles if present
+                if inline_styles is not None:
+                    seq = inline_styles.apply(seq)
                 row_parts.append(seq)
             print("  ".join(row_parts))
         print('')

@@ -4,6 +4,13 @@ from ..types import Literal, Optional, beartype, StyleList, Sequence
 import numpy as np
 from dataclasses import dataclass
 
+
+def styles_suppressed() -> bool:
+    """Return True if inline styles are suppressed in the active party."""
+    from ..party import get_active_party
+    party = get_active_party()
+    return party.suppress_styles if party else False
+
 # ANSI escape codes for styling
 STYLE_CODES = {
     'red':      '91',

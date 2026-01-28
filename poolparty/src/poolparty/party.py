@@ -37,6 +37,7 @@ def init(
     _active_party = _default_party
     # Set default parameter values
     _default_party.set_default('remove_tags', False)
+    _default_party.set_default('suppress_styles', False)
     return _default_party
 
 
@@ -110,6 +111,11 @@ class Party:
     def codon_table(self) -> CodonTable:
         """Access the CodonTable for ORF operations."""
         return self._codon_table
+    
+    @property
+    def suppress_styles(self) -> bool:
+        """Return True if inline styles are suppressed."""
+        return self._defaults.get('suppress_styles', False)
     
     def set_genetic_code(self, genetic_code: Union[str, dict]) -> None:
         """Set or change the genetic code used for ORF operations."""

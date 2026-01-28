@@ -193,10 +193,12 @@ class GetKmersOp(Operation):
             kmer = kmer.lower()
         
         # Apply style to all positions if specified
-        from ..utils.style_utils import SeqStyle
-        output_style = SeqStyle.full(len(kmer), self._style)
-        
-        output_seq = Seq(kmer, output_style)
+        from ..utils.style_utils import SeqStyle, styles_suppressed
+        if styles_suppressed():
+            output_seq = Seq(kmer, None)
+        else:
+            output_style = SeqStyle.full(len(kmer), self._style)
+            output_seq = Seq(kmer, output_style)
         
         return output_seq, {
             'kmer_index': kmer_index,

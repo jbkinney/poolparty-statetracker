@@ -368,10 +368,11 @@ class RecombineOp(Operation):
             segments.append(segment)
             
             # Extract and offset style from source pool
-            if source_styles and pool_idx < len(source_styles):
+            from ..utils.style_utils import styles_suppressed
+            if source_styles and pool_idx < len(source_styles) and source_styles[pool_idx] is not None:
                 seg_style = source_styles[pool_idx][start:end]
             else:
-                seg_style = SeqStyle.empty(len(segment))
+                seg_style = None if styles_suppressed() else SeqStyle.empty(len(segment))
             segment_styles.append(seg_style)
             
             start = end
@@ -381,10 +382,11 @@ class RecombineOp(Operation):
         segment = source_seqs[last_pool_idx][start:]
         segments.append(segment)
         
-        if source_styles and last_pool_idx < len(source_styles):
+        from ..utils.style_utils import styles_suppressed
+        if source_styles and last_pool_idx < len(source_styles) and source_styles[last_pool_idx] is not None:
             seg_style = source_styles[last_pool_idx][start:]
         else:
-            seg_style = SeqStyle.empty(len(segment))
+            seg_style = None if styles_suppressed() else SeqStyle.empty(len(segment))
         segment_styles.append(seg_style)
         
         # Build segments as Seq objects

@@ -291,7 +291,10 @@ class RegionScanOp(Operation):
         seq_len = len(seq)
         input_style = parents[0].style
         
-        if self._region_length > 0:
+        if input_style is None:
+            # Styles suppressed
+            output_style = None
+        elif self._region_length > 0:
             # Region tags: split and reassemble with tag spacers
             output_style = SeqStyle.join([
                 input_style[:start_literal],              # Before tag

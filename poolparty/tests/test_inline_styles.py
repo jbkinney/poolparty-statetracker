@@ -1486,3 +1486,111 @@ class TestShuffleScanStylePropagation:
             has_magenta = any('magenta' in spec for spec in specs)
             assert has_purple, "Purple style from parent should be present"
             assert has_magenta, "Magenta style from shuffle_scan should be present"
+
+
+class TestStyleSuppression:
+    """Test style suppression via toggle_styles()."""
+    
+    def test_toggle_styles_off_suppresses_styles(self):
+        """toggle_styles(on=False) sets Seq.style to None."""
+        with pp.Party():
+            pp.toggle_styles(on=False)
+            pool = pp.from_seqs(['ACGT', 'TTTT'], mode='sequential').named('test')
+            df = pool.generate_library(num_seqs=2, report_design_cards=True)
+            
+            # Check that styles are None
+            for i in range(2):
+                seq_style = df['_inline_styles'].iloc[i]
+                assert seq_style is None, f"Row {i} should have None style when suppressed"
+    
+    def test_toggle_styles_on_enables_styles(self):
+        """toggle_styles(on=True) restores normal style behavior."""
+        with pp.Party():
+            pp.toggle_styles(on=True)
+            pool = pp.from_seqs(['ACGT', 'TTTT'], mode='sequential', style='red').named('test')
+        
+        df = pool.generate_library(num_seqs=2, report_design_cards=True)
+        
+        # Check that styles are present
+        for i in range(2):
+            seq_style = df['_inline_styles'].iloc[i]
+            assert seq_style is not None, f"Row {i} should have style when enabled"
+            assert len(seq_style.style_list) == 1
+            assert seq_style.style_list[0][0] == 'red'
+    
+    def test_stylize_is_noop_when_suppressed(self):
+        """stylize() is a no-op when styles are suppressed."""
+        with pp.Party():
+            pp.toggle_styles(on=False)
+            pool = pp.from_seq('ACGT').stylize(style='red').named('test')
+            df = pool.generate_library(num_seqs=1, report_design_cards=True)
+            seq_style = df['_inline_styles'].iloc[0]
+            assert seq_style is None, "stylize should be no-op when suppressed"
+    
+    def test_mutagenize_no_styles_when_suppressed(self):
+        """mutagenize with style parameter doesn't create styles when suppressed."""
+        with pp.Party():
+            pp.toggle_styles(on=False)
+            pool = pp.mutagenize('ACGT', num_mutations=1, style='red', mode='sequential').named('test')
+            df = pool.generate_library(num_seqs=1, report_design_cards=True)
+            seq_style = df['_inline_styles'].iloc[0]
+            assert seq_style is None
+    
+    def test_styles_pass_through_none_in_operations(self):
+        """Operations correctly pass through None styles."""
+        with pp.Party():
+            pp.toggle_styles(on=False)
+            pool = pp.from_seq('ACGT').mutagenize(num_mutations=1, mode='sequential').named('test')
+            df = pool.generate_library(num_seqs=1, report_design_cards=True)
+            seq_style = df['_inline_styles'].iloc[0]
+            assert seq_style is None
+    
+    def test_toggle_persists_through_operations(self):
+        """Style suppression persists through operation chains."""
+        with pp.Party():
+            pp.toggle_styles(on=False)
+            pool = (pp.from_seq('ACGTACGT')
+                    .mutagenize(num_mutations=1, style='red', mode='sequential')
+                    .stylize(style='blue')
+                    .repeat_states(2)
+                    .named('test'))
+            df = pool.generate_library(num_seqs=2, report_design_cards=True)
+            for i in range(2):
+                seq_style = df['_inline_styles'].iloc[i]
+                assert seq_style is None
+    
+    def test_region_ops_work_with_suppressed_styles(self):
+        """Region operations work correctly with suppressed styles."""
+        with pp.Party():
+            pp.toggle_styles(on=False)
+            bg = pp.from_seq('AA<test>CCCC</test>GG').named('bg')
+            mutated = bg.mutagenize(region='test', num_mutations=1, mode='sequential').named('mutated')
+            df = mutated.generate_library(num_seqs=1, report_design_cards=True)
+            seq_style = df['_inline_styles'].iloc[0]
+            assert seq_style is None
+    
+    def test_recombine_with_suppressed_styles(self):
+        """recombine works correctly with suppressed styles."""
+        with pp.Party():
+            pp.toggle_styles(on=False)
+            pool1 = pp.from_seq('AAAAAAAAAA').named('pool1')
+            pool2 = pp.from_seq('TTTTTTTTTT').named('pool2')
+            recombined = pp.recombine(sources=[pool1, pool2], num_breakpoints=2, mode='sequential').named('recombined')
+            df = recombined.generate_library(num_seqs=1, report_design_cards=True)
+            seq_style = df['_inline_styles'].iloc[0]
+            assert seq_style is None
+    
+    def test_insert_kmers_with_suppressed_styles(self):
+        """insert_kmers (which uses region_scan) works with suppressed styles."""
+        with pp.Party():
+            pp.toggle_styles(on=False)
+            pool = pp.from_seq('AA<bc/>TT').named('bg')
+            pool_with_kmers = pool.insert_kmers(region='bc', length=3, mode='sequential').named('with_kmers')
+            df = pool_with_kmers.generate_library(num_seqs=1, report_design_cards=True)
+            seq_style = df['_inline_styles'].iloc[0]
+            assert seq_style is None
+            # Verify sequence was generated correctly (tags removed by default)
+            seq = df['seq'].iloc[0]
+            assert len(seq) == 7  # AA (2) + 3-char kmer (3) + TT (2) = 7 chars
+            assert seq.startswith('AA')
+            assert seq.endswith('TT')
