@@ -249,6 +249,7 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
         report_op_keys: bool = True,
         pools_to_report: Union[str, Sequence[Pool_type]] = 'all',
         organize_columns_by: Literal['pool', 'type'] = 'type',
+        _include_inline_styles: bool = False,
     ) -> Union[pd.DataFrame, list[str]]:
         from .generate_library import generate_library
         return generate_library(
@@ -267,6 +268,7 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
             report_op_keys=report_op_keys,
             pools_to_report=pools_to_report,
             organize_columns_by=organize_columns_by,
+            _include_inline_styles=_include_inline_styles,
         )
     
     def print_library(
@@ -298,6 +300,7 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
             'report_design_cards': True,
             'init_state': 0,
             'seed': seed,
+            '_include_inline_styles': True,
         }
         if num_seqs is not None:
             gen_kwargs['num_seqs'] = num_seqs

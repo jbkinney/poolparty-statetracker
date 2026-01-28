@@ -194,11 +194,15 @@ class GetKmersOp(Operation):
         
         # Apply style to all positions if specified
         from ..utils.style_utils import SeqStyle, styles_suppressed
+        from ..party import cards_suppressed
         if styles_suppressed():
             output_seq = Seq(kmer, None)
         else:
             output_style = SeqStyle.full(len(kmer), self._style)
             output_seq = Seq(kmer, output_style)
+        
+        if cards_suppressed():
+            return output_seq, {}
         
         return output_seq, {
             'kmer_index': kmer_index,

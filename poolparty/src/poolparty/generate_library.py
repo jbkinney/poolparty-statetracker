@@ -24,6 +24,7 @@ def generate_library(
     report_op_keys: bool = True,
     pools_to_report: Union[str, Sequence[Pool_type]] = 'all',
     organize_columns_by: Literal['pool', 'type'] = 'type',
+    _include_inline_styles: bool = False,
 ) -> Union[pd.DataFrame, list[str]]:
     """Generate sequences from a pool.
     
@@ -61,17 +62,22 @@ def generate_library(
     if pool._master_seed is None:
         pool._master_seed = 0
     
+    # Check for global card suppression
+    from .party import get_active_party
+    party = get_active_party()
+    suppress_cards = party.suppress_cards if party else False
+    
     # Build outputs dict
     outputs: dict[str, Pool_type] = {f'{pool.name}.seq': pool}
-    if report_design_cards:
+    if report_design_cards and not suppress_cards:
         for aux_pool in aux_pools:
             outputs[f'{aux_pool.name}.seq'] = aux_pool
     
     sorted_ops = _topo_sort_operations(outputs)
     _seed_random_operations(sorted_ops, pool._master_seed)
     
-    # Determine which pools to report (only used when report_design_cards=True)
-    if report_design_cards:
+    # Determine which pools to report (only used when report_design_cards=True and cards not suppressed)
+    if report_design_cards and not suppress_cards:
         if pools_to_report == 'all':
             pools_filter = _collect_all_pools(outputs)
         elif pools_to_report == 'self':
@@ -100,7 +106,7 @@ def generate_library(
         row = _compute_one(
             pool, sorted_ops, outputs, global_state, 
             states, report_op_keys if report_design_cards else False, 
-            ops_to_report, pools_filter
+            ops_to_report, pools_filter, _include_inline_styles
         )
         rows.append(row)
     
@@ -120,6 +126,11 @@ def generate_library(
     df = clean_df_int_columns(df)
     df = organize_columns(df, pools_filter, organize_columns_by)
     df = finalize_generate_df(df, pool.name, report_seq, report_pool_seqs, pools_filter)
+    
+    # If cards are suppressed, remove the pool-specific seq column (keep only 'seq')
+    if suppress_cards and f'{pool.name}.seq' in df.columns:
+        df = df.drop(columns=[f'{pool.name}.seq'])
+    
     if seqs_only:
         return list(df['seq'])
     return df
@@ -213,6 +224,7 @@ def _compute_one(
     report_op_keys: bool = True,
     ops_to_report: set = None,
     pools_filter: set = None,
+    include_inline_styles: bool = False,
 ) -> dict:
     """Compute one row of output for the given global state."""
     seq_cache: dict[int, Seq] = {}
@@ -283,9 +295,10 @@ def _compute_one(
     final_name = '.'.join(all_contributions) if all_contributions else None
     row['name'] = final_name
     
-    # Get inline styles from final Seq object
-    final_seq = seq_cache[pool.operation.id]
-    row['_inline_styles'] = final_seq.style
+    # Get inline styles from final Seq object (only if requested)
+    if include_inline_styles:
+        final_seq = seq_cache[pool.operation.id]
+        row['_inline_styles'] = final_seq.style
     
     return row
 

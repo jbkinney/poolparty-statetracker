@@ -442,6 +442,10 @@ class MutagenizeOp(Operation):
         
         output_seq = Seq(result_seq, output_style)
         
+        from ..party import cards_suppressed
+        if cards_suppressed():
+            return output_seq, {}
+        
         return output_seq, {
             'positions': positions,
             'wt_chars': wt_chars,

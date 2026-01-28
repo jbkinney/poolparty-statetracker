@@ -343,6 +343,10 @@ class MutagenizeOrfOp(Operation):
         
         output_seq = Seq(result_seq, output_style)
         
+        from ..party import cards_suppressed
+        if cards_suppressed():
+            return output_seq, {}
+        
         return output_seq, {
             'codon_positions': positions,
             'wt_codons': wt_codons,

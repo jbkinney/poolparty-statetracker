@@ -7,9 +7,11 @@ from dataclasses import dataclass
 
 def styles_suppressed() -> bool:
     """Return True if inline styles are suppressed in the active party."""
+    # Import locally to avoid circular import (party.py imports types.py which imports style_utils.py)
     from ..party import get_active_party
     party = get_active_party()
     return party.suppress_styles if party else False
+
 
 # ANSI escape codes for styling
 STYLE_CODES = {

@@ -188,11 +188,15 @@ class FromIupacOp(Operation):
         
         # Apply styling if requested
         from ..utils.style_utils import SeqStyle, styles_suppressed
+        from ..party import cards_suppressed
         if styles_suppressed():
             output_seq = Seq(seq_string, None)
         else:
             output_style = SeqStyle.full(len(seq_string), self._style)
             output_seq = Seq(seq_string, output_style)
+        
+        if cards_suppressed():
+            return output_seq, {}
         
         return output_seq, {
             'iupac_state': state,

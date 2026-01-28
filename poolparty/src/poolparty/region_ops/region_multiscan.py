@@ -359,10 +359,14 @@ class RegionMultiScanOp(Operation):
         
         # Region multiscan modifies sequence structure, so styles not meaningful
         # Return empty SeqStyle for consistency
-        card = {
-            'indices': indices_list,  # nontag indices, not literal positions
-            'region_tags': region_tags_list,
-        }
+        from ..party import cards_suppressed
+        if cards_suppressed():
+            card = {}
+        else:
+            card = {
+                'indices': indices_list,  # nontag indices, not literal positions
+                'region_tags': region_tags_list,
+            }
         
         # Create output Seq
         from ..utils.style_utils import SeqStyle

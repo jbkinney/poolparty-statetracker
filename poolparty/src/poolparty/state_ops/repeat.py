@@ -72,8 +72,12 @@ class RepeatOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return parent Seq and design card."""
+        from ..party import cards_suppressed
+        
         state = self.state.value
         repeat_index = 0 if state is None else state
         
         # Pass through parent Seq
+        if cards_suppressed():
+            return parents[0], {}
         return parents[0], {'repeat_index': repeat_index}

@@ -79,7 +79,7 @@ from .multiscan_ops import (
 __all__ = [
     '__version__',
     'Party', 'get_active_party', 'init', 'clear_pools',
-    'set_default', 'load_defaults', 'toggle_styles',
+    'set_default', 'load_defaults', 'toggle_styles', 'toggle_cards',
     'Pool', 'Operation', 'Region', 'State', 'StateManager', 'generate_library',
     'BASES', 'COMPLEMENT', 'IUPAC_TO_DNA', 'IGNORE_CHARS', 'VALID_CHARS',
     'fixed_operation', 'FixedOp',
@@ -156,6 +156,15 @@ def toggle_styles(on: bool = True) -> None:
     When on (on=True), normal style tracking is restored.
     """
     get_active_party().set_default('suppress_styles', not on)
+
+
+def toggle_cards(on: bool = True) -> None:
+    """Toggle design card computation on/off for the active Party.
+    
+    When off (on=False), operations skip building design card data.
+    Inline styles are unaffected (controlled by toggle_styles).
+    """
+    get_active_party().set_default('suppress_cards', not on)
 
 
 # === Copy factory docstrings to Pool methods ===

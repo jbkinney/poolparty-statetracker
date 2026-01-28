@@ -313,6 +313,10 @@ class RegionScanOp(Operation):
         
         output_seq = Seq(result_seq, output_style)
         
+        from ..party import cards_suppressed
+        if cards_suppressed():
+            return output_seq, {}
+        
         return output_seq, {
             'position_index': position_index,
             'start': start,

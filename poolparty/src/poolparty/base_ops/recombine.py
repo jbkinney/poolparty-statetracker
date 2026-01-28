@@ -417,6 +417,10 @@ class RecombineOp(Operation):
                     output_seq = output_seq.add_style(style_spec, positions)
                 offset += len(seq_segments[seg_idx])
         
+        from ..party import cards_suppressed
+        if cards_suppressed():
+            return output_seq, {}
+        
         return output_seq, {
             'breakpoints': breakpoints,
             'pool_assignments': pool_assignments,

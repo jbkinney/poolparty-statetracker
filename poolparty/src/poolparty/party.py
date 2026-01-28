@@ -38,6 +38,7 @@ def init(
     # Set default parameter values
     _default_party.set_default('remove_tags', False)
     _default_party.set_default('suppress_styles', False)
+    _default_party.set_default('suppress_cards', False)
     return _default_party
 
 
@@ -116,6 +117,11 @@ class Party:
     def suppress_styles(self) -> bool:
         """Return True if inline styles are suppressed."""
         return self._defaults.get('suppress_styles', False)
+    
+    @property
+    def suppress_cards(self) -> bool:
+        """Return True if design cards are suppressed."""
+        return self._defaults.get('suppress_cards', False)
     
     def set_genetic_code(self, genetic_code: Union[str, dict]) -> None:
         """Set or change the genetic code used for ORF operations."""
@@ -355,3 +361,9 @@ class Party:
         """
         from .text_viz import print_pool_graph
         print_pool_graph(self._pools_by_id, self._ops_by_id, style=style)
+
+
+def cards_suppressed() -> bool:
+    """Return True if design cards are suppressed in the active party."""
+    party = get_active_party()
+    return party.suppress_cards if party else False

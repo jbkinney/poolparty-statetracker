@@ -171,6 +171,10 @@ class SeqShuffleOp(Operation):
         
         output_seq = Seq(shuffled_seq, output_style)
         
+        from ..party import cards_suppressed
+        if cards_suppressed():
+            return output_seq, {}
+        
         return output_seq, {
             'permutation': permutation,
         }

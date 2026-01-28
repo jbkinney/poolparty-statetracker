@@ -93,6 +93,8 @@ class StackOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return Seq from active parent and design card."""
+        from ..party import cards_suppressed
+        
         # Find active parent
         for i, parent in enumerate(self.parent_pools):
             if parent.state.value is not None:
@@ -100,10 +102,14 @@ class StackOp(Operation):
                 self.state.value = i
                 active = i
                 output_seq = parents[active]
+                if cards_suppressed():
+                    return output_seq, {}
                 return output_seq, {'active_parent': active}
         
         # No active parent
         self.state.value = None
         active = None
         output_seq = parents[0] if parents else Seq.empty()
+        if cards_suppressed():
+            return output_seq, {}
         return output_seq, {'active_parent': active}
