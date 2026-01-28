@@ -35,10 +35,6 @@ def init(
     _default_party._counter_manager.__enter__()
     _default_party._is_active = True
     _active_party = _default_party
-    # Set default parameter values
-    _default_party.set_default('remove_tags', False)
-    _default_party.set_default('suppress_styles', False)
-    _default_party.set_default('suppress_cards', False)
     return _default_party
 
 
@@ -56,6 +52,21 @@ def clear_pools() -> None:
     if party is None:
         raise RuntimeError("No active Party context.")
     party.clear_pools()
+
+@beartype
+def load_config(filepath: str) -> None:
+    """Load configuration from TOML file into the active party.
+    
+    Args:
+        filepath: Path to TOML configuration file.
+    
+    Raises:
+        RuntimeError: If no active Party context exists.
+    """
+    party = get_active_party()
+    if party is None:
+        raise RuntimeError("No active Party. Call pp.init() first.")
+    party.load_config(filepath)
 
 @beartype
 class Party:
@@ -83,7 +94,10 @@ class Party:
         self._regions_by_name: dict[str, Region] = {}
         # Build codon table for ORF operations
         self._codon_table: CodonTable = CodonTable(genetic_code)
-        # Default parameter values for operations
+        # Configuration for library output
+        from .config import Config
+        self._config: Config = Config()
+        # Legacy: Default parameter values for operations (deprecated, use _config)
         self._defaults: dict[str, Any] = {}
     
     def _get_next_pool_id(self) -> int:
@@ -116,12 +130,12 @@ class Party:
     @property
     def suppress_styles(self) -> bool:
         """Return True if inline styles are suppressed."""
-        return self._defaults.get('suppress_styles', False)
+        return self._config.suppress_styles
     
     @property
     def suppress_cards(self) -> bool:
         """Return True if design cards are suppressed."""
-        return self._defaults.get('suppress_cards', False)
+        return self._config.suppress_cards
     
     def set_genetic_code(self, genetic_code: Union[str, dict]) -> None:
         """Set or change the genetic code used for ORF operations."""
@@ -135,8 +149,16 @@ class Party:
         """Get a default parameter value, or fallback if not set."""
         return self._defaults.get(key, fallback)
     
+    def load_config(self, filepath: str) -> None:
+        """Load configuration from a TOML file."""
+        from .config import Config
+        self._config = Config.from_toml(filepath)
+    
     def load_defaults(self, filepath: str) -> None:
-        """Load default parameter values from a TOML file."""
+        """Load default parameter values from a TOML file.
+        
+        Deprecated: Use load_config() instead.
+        """
         with open(filepath, 'rb') as f:
             defaults = tomllib.load(f)
         self._defaults.update(defaults)

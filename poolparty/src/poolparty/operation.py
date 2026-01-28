@@ -98,9 +98,14 @@ class Operation:
         self._validate_region(region)
         if region is not None and len(self.parent_pools) == 0:
             raise ValueError("region requires at least one parent pool")
-        # Resolve remove_tags from party default if None
+        # Resolve remove_tags from party config if None
         if remove_tags is None:
-            self._remove_tags = party.get_default('remove_tags', True)
+            # Check legacy defaults first for backwards compatibility
+            legacy_default = party.get_default('remove_tags', None)
+            if legacy_default is not None:
+                self._remove_tags = legacy_default
+            else:
+                self._remove_tags = party._config.remove_tags
         else:
             self._remove_tags = remove_tags
         
@@ -252,27 +257,38 @@ class Operation:
         4. Removes region tags if remove_tags=True and region is a region name
         """
         if self._region is None:
-            return self._compute_core(parents, rng)
+            output_seq, card = self._compute_core(parents, rng)
+        else:
+            # Create context from first parent sequence
+            from .utils.region_context import RegionContext
+            ctx = RegionContext.from_sequence(
+                parents[0], self._region, self._remove_tags
+            )
+            
+            # Split first parent into prefix, region, suffix
+            prefix_seq, region_seq, suffix_seq = ctx.split_parent_seq(parents[0])
+            
+            # Prepare modified parents list (region as first element)
+            modified_parents = [region_seq] + parents[1:]
+            
+            # Call subclass _compute_core
+            output_seq, card = self._compute_core(modified_parents, rng)
+            
+            # Reassemble with prefix and suffix
+            output_seq = ctx.reassemble_seq(prefix_seq, output_seq, suffix_seq)
         
-        # Create context from first parent sequence
-        from .utils.region_context import RegionContext
-        ctx = RegionContext.from_sequence(
-            parents[0], self._region, self._remove_tags
-        )
+        # Filter design card based on config
+        card = self._filter_design_card(card)
         
-        # Split first parent into prefix, region, suffix
-        prefix_seq, region_seq, suffix_seq = ctx.split_parent_seq(parents[0])
-        
-        # Prepare modified parents list (region as first element)
-        modified_parents = [region_seq] + parents[1:]
-        
-        # Call subclass _compute_core
-        output_seq, card = self._compute_core(modified_parents, rng)
-        
-        # Reassemble with prefix and suffix
-        reassembled_seq = ctx.reassemble_seq(prefix_seq, output_seq, suffix_seq)
-        
-        return reassembled_seq, card
+        return output_seq, card
+    
+    def _filter_design_card(self, card: dict) -> dict:
+        """Filter design card to only include enabled keys based on config."""
+        config = self._party._config
+        if config is None or config.suppress_cards:
+            return {}
+        enabled = config.get_enabled_keys(self.factory_name, list(self.design_card_keys))
+        return {k: v for k, v in card.items() if k in enabled}
     
     def _compute_core(
         self,

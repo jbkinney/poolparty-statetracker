@@ -1,0 +1,69 @@
+# Poolparty Configuration File
+# All values default to true (show). Set to false to hide columns/keys.
+
+[general]
+remove_tags = true        # Remove region tags from sequences (default True)
+suppress_styles = false   # Suppress inline styling
+suppress_cards = false    # Suppress all design cards (overrides [design_cards])
+
+[columns]
+name = true              # Show 'name' column
+seq = true               # Show main 'seq' column  
+pool_seqs = true         # Show '{pool}.seq' columns
+pool_states = true       # Show '{pool}.state' columns
+op_states = true         # Show '{op}.state' columns
+
+# Design card keys per operation type
+# Only keys set to true will appear in generate_library() output
+
+[design_cards.from_seqs]
+seq_name = true
+seq_index = true
+
+[design_cards.from_iupac]
+iupac_state = true
+
+[design_cards.from_motif]
+prob_state = true
+
+[design_cards.get_kmers]
+kmer_index = true
+kmer = true
+
+[design_cards.mutagenize]
+positions = true
+wt_chars = true
+mut_chars = true
+
+[design_cards.recombine]
+breakpoints = true
+pool_assignments = true
+
+[design_cards.shuffle_seq]
+permutation = true
+
+[design_cards.mutagenize_orf]
+codon_positions = true
+wt_codons = true
+mut_codons = true
+wt_aas = true
+mut_aas = true
+
+[design_cards.region_scan]
+position_index = true
+start = true
+stop = true
+length = true
+region_name = true
+region_content = true
+region_seq = true
+
+[design_cards.region_multiscan]
+indices = true
+region_tags = true
+
+[design_cards.repeat]
+repeat_index = true
+
+[design_cards.stack]
+active_parent = true

@@ -17,11 +17,6 @@ def generate_library(
     seqs_only: bool = False,
     report_design_cards: bool = False,
     aux_pools: Sequence[Pool_type] = (),
-    report_seq: bool = True,
-    report_pool_seqs: bool = True,
-    report_pool_states: bool = True,
-    report_op_states: bool = True,
-    report_op_keys: bool = True,
     pools_to_report: Union[str, Sequence[Pool_type]] = 'all',
     organize_columns_by: Literal['pool', 'type'] = 'type',
     _include_inline_styles: bool = False,
@@ -36,7 +31,11 @@ def generate_library(
         init_state: Initial state to start generation from.
         seqs_only: If True, return list of sequences instead of DataFrame.
         report_design_cards: If True, include detailed design card info in output.
+            Column visibility controlled by party config (use pp.load_config()).
             When False (default), returns minimal DataFrame with "name" and "seq".
+        aux_pools: Additional pools to include in output.
+        pools_to_report: Which pools to report ('all', 'self', or list of pools).
+        organize_columns_by: Column organization ('pool' or 'type').
     
     Returns:
         DataFrame with generated sequences, or list of sequences if seqs_only=True.
@@ -62,10 +61,11 @@ def generate_library(
     if pool._master_seed is None:
         pool._master_seed = 0
     
-    # Check for global card suppression
+    # Get config from active party
     from .party import get_active_party
     party = get_active_party()
-    suppress_cards = party.suppress_cards if party else False
+    config = party._config if party else None
+    suppress_cards = config.suppress_cards if config else False
     
     # Build outputs dict
     outputs: dict[str, Pool_type] = {f'{pool.name}.seq': pool}
@@ -93,6 +93,10 @@ def generate_library(
             if key not in outputs:
                 outputs[key] = p
         
+        # Get column visibility from config (defaults to True)
+        report_pool_states = config.show_pool_states if config else True
+        report_op_states = config.show_op_states if config else True
+        
         states = _collect_counters(pools_filter, report_pool_states, report_op_states)
     else:
         pools_filter = {pool}
@@ -105,7 +109,7 @@ def generate_library(
         global_state = pool._current_state + i
         row = _compute_one(
             pool, sorted_ops, outputs, global_state, 
-            states, report_op_keys if report_design_cards else False, 
+            states, report_design_cards and not suppress_cards, 
             ops_to_report, pools_filter, _include_inline_styles
         )
         rows.append(row)
@@ -125,7 +129,13 @@ def generate_library(
     # Full design card output
     df = clean_df_int_columns(df)
     df = organize_columns(df, pools_filter, organize_columns_by)
-    df = finalize_generate_df(df, pool.name, report_seq, report_pool_seqs, pools_filter)
+    
+    # Get column visibility from config
+    report_seq = config.show_seq if config else True
+    report_pool_seqs = config.show_pool_seqs if config else True
+    show_name = config.show_name if config else True
+    
+    df = finalize_generate_df(df, pool.name, report_seq, report_pool_seqs, pools_filter, show_name)
     
     # If cards are suppressed, remove the pool-specific seq column (keep only 'seq')
     if suppress_cards and f'{pool.name}.seq' in df.columns:
@@ -221,7 +231,7 @@ def _compute_one(
     outputs: dict,
     global_state: int,
     states: list[st.State] = (),
-    report_op_keys: bool = True,
+    report_design_cards: bool = True,
     ops_to_report: set = None,
     pools_filter: set = None,
     include_inline_styles: bool = False,
@@ -266,15 +276,15 @@ def _compute_one(
         # Collect name contributions from this operation
         all_contributions.extend(op.compute_name_contributions())
         
-        if report_op_keys and (ops_to_report is None or op.id in ops_to_report):
-            for key in op.design_card_keys:
-                if key in card:
-                    # For ops with state: return None if state is inactive (value=None)
-                    # For stateless ops (state=None): always report design card
-                    if op.state is not None and op.state.value is None:
-                        row[f"{op.name}.key.{key}"] = None
-                    else:
-                        row[f"{op.name}.key.{key}"] = card[key]
+        # Design cards are already filtered in Operation.compute()
+        if report_design_cards and (ops_to_report is None or op.id in ops_to_report):
+            for key, value in card.items():
+                # For ops with state: return None if state is inactive (value=None)
+                # For stateless ops (state=None): always report design card
+                if op.state is not None and op.state.value is None:
+                    row[f"{op.name}.key.{key}"] = None
+                else:
+                    row[f"{op.name}.key.{key}"] = value
     
     # Read state values AFTER design card computation
     # (allows operations like StackOp to set state value during compute_design_card)

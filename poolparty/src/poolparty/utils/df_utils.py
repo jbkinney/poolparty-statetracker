@@ -116,12 +116,13 @@ def finalize_generate_df(
     report_seq: bool,
     report_pool_seqs: bool,
     pools_filter: set = None,
+    show_name: bool = True,
 ) -> pd.DataFrame:
     """Apply final column transforms to generated DataFrame."""
     # Move 'name' column to position 0 if it exists and has values
     if 'name' in df.columns:
         name_col = df.pop('name')
-        if name_col.notna().any():
+        if show_name and name_col.notna().any():
             df.insert(0, 'name', name_col)
     
     if report_seq:

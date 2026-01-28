@@ -4,7 +4,7 @@ __version__ = "0.3.0"
 
 import statetracker as st
 
-from .party import Party, get_active_party, init, clear_pools, _init_default_party
+from .party import Party, get_active_party, init, clear_pools, load_config, _init_default_party
 from .pool import Pool
 from .operation import Operation
 from .region import Region
@@ -79,7 +79,7 @@ from .multiscan_ops import (
 __all__ = [
     '__version__',
     'Party', 'get_active_party', 'init', 'clear_pools',
-    'set_default', 'load_defaults', 'toggle_styles', 'toggle_cards',
+    'set_default', 'load_defaults', 'load_config', 'toggle_styles', 'toggle_cards',
     'Pool', 'Operation', 'Region', 'State', 'StateManager', 'generate_library',
     'BASES', 'COMPLEMENT', 'IUPAC_TO_DNA', 'IGNORE_CHARS', 'VALID_CHARS',
     'fixed_operation', 'FixedOp',
@@ -155,16 +155,18 @@ def toggle_styles(on: bool = True) -> None:
     When off (on=False), Seq.style will be None to avoid style overhead.
     When on (on=True), normal style tracking is restored.
     """
-    get_active_party().set_default('suppress_styles', not on)
+    party = get_active_party()
+    party._config.suppress_styles = not on
 
 
 def toggle_cards(on: bool = True) -> None:
     """Toggle design card computation on/off for the active Party.
     
-    When off (on=False), operations skip building design card data.
+    When off (on=False), operations skip building design card data and columns.
     Inline styles are unaffected (controlled by toggle_styles).
     """
-    get_active_party().set_default('suppress_cards', not on)
+    party = get_active_party()
+    party._config.suppress_cards = not on
 
 
 # === Copy factory docstrings to Pool methods ===

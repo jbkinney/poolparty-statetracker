@@ -242,34 +242,88 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
         seqs_only: bool = False,
         report_design_cards: bool = False,
         aux_pools: Sequence[Pool_type] = (),
-        report_seq: bool = True,
-        report_pool_seqs: bool = True,
-        report_pool_states: bool = True,
-        report_op_states: bool = True,
-        report_op_keys: bool = True,
         pools_to_report: Union[str, Sequence[Pool_type]] = 'all',
         organize_columns_by: Literal['pool', 'type'] = 'type',
         _include_inline_styles: bool = False,
+        # Deprecated parameters (for backwards compatibility)
+        report_seq: Optional[bool] = None,
+        report_pool_seqs: Optional[bool] = None,
+        report_pool_states: Optional[bool] = None,
+        report_op_states: Optional[bool] = None,
+        report_op_keys: Optional[bool] = None,
     ) -> Union[pd.DataFrame, list[str]]:
         from .generate_library import generate_library
-        return generate_library(
-            pool=self,
-            num_cycles=num_cycles,
-            num_seqs=num_seqs,
-            seed=seed,
-            init_state=init_state,
-            seqs_only=seqs_only,
-            report_design_cards=report_design_cards,
-            aux_pools=aux_pools,
-            report_seq=report_seq,
-            report_pool_seqs=report_pool_seqs,
-            report_pool_states=report_pool_states,
-            report_op_states=report_op_states,
-            report_op_keys=report_op_keys,
-            pools_to_report=pools_to_report,
-            organize_columns_by=organize_columns_by,
-            _include_inline_styles=_include_inline_styles,
-        )
+        # Handle deprecated parameters by temporarily modifying config
+        party = self._party
+        if any(arg is not None for arg in [report_seq, report_pool_seqs, report_pool_states, report_op_states, report_op_keys]):
+            # Save original config values
+            orig_show_seq = party._config.show_seq
+            orig_show_pool_seqs = party._config.show_pool_seqs
+            orig_show_pool_states = party._config.show_pool_states
+            orig_show_op_states = party._config.show_op_states
+            orig_design_cards = party._config._design_cards.copy()
+            
+            # Apply deprecated parameters
+            if report_seq is not None:
+                party._config.show_seq = report_seq
+            if report_pool_seqs is not None:
+                party._config.show_pool_seqs = report_pool_seqs
+            if report_pool_states is not None:
+                party._config.show_pool_states = report_pool_states
+            if report_op_states is not None:
+                party._config.show_op_states = report_op_states
+            if report_op_keys is not None and not report_op_keys:
+                # Set all design cards to empty to filter out all keys
+                party._config._design_cards = {
+                    'from_seqs': set(),
+                    'from_iupac': set(),
+                    'from_motif': set(),
+                    'get_kmers': set(),
+                    'mutagenize': set(),
+                    'recombine': set(),
+                    'shuffle_seq': set(),
+                    'mutagenize_orf': set(),
+                    'region_scan': set(),
+                    'region_multiscan': set(),
+                    'repeat': set(),
+                    'stack': set(),
+                }
+            
+            try:
+                return generate_library(
+                    pool=self,
+                    num_cycles=num_cycles,
+                    num_seqs=num_seqs,
+                    seed=seed,
+                    init_state=init_state,
+                    seqs_only=seqs_only,
+                    report_design_cards=report_design_cards,
+                    aux_pools=aux_pools,
+                    pools_to_report=pools_to_report,
+                    organize_columns_by=organize_columns_by,
+                    _include_inline_styles=_include_inline_styles,
+                )
+            finally:
+                # Restore original config values
+                party._config.show_seq = orig_show_seq
+                party._config.show_pool_seqs = orig_show_pool_seqs
+                party._config.show_pool_states = orig_show_pool_states
+                party._config.show_op_states = orig_show_op_states
+                party._config._design_cards = orig_design_cards
+        else:
+            return generate_library(
+                pool=self,
+                num_cycles=num_cycles,
+                num_seqs=num_seqs,
+                seed=seed,
+                init_state=init_state,
+                seqs_only=seqs_only,
+                report_design_cards=report_design_cards,
+                aux_pools=aux_pools,
+                pools_to_report=pools_to_report,
+                organize_columns_by=organize_columns_by,
+                _include_inline_styles=_include_inline_styles,
+            )
     
     def print_library(
         self,
