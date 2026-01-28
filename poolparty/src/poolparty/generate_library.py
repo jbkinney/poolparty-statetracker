@@ -15,16 +15,16 @@ def generate_library(
     seed: Optional[int] = None,
     init_state: Optional[int] = None,
     seqs_only: bool = False,
-    report_design_cards: bool = False,
+    report_design_cards: bool = True,
     aux_pools: Sequence[Pool_type] = (),
-    report_seq: bool = True,
-    report_pool_seqs: bool = True,
-    report_pool_states: bool = True,
-    report_op_states: bool = True,
+    report_seq: bool = False,
+    report_pool_seqs: bool = False,
+    report_pool_states: bool = False,
+    report_op_states: bool = False,
     report_op_keys: bool = True,
     pools_to_report: Union[str, Sequence[Pool_type]] = 'all',
     organize_columns_by: Literal['pool', 'type'] = 'type',
-    suppress_styles: bool = False,
+    suppress_styles: bool = True,
 ) -> Union[pd.DataFrame, list[str]]:
     """Generate sequences from a pool.
     
@@ -110,6 +110,11 @@ def generate_library(
     # Build and format DataFrame
     df = pd.DataFrame(rows)
     
+    # Drop _inline_styles col; used only for styling
+    if suppress_styles:
+        df = df.drop('_inline_styles', axis=1)
+    print(f'{suppress_styles=}')
+    
     if not report_design_cards:
         # Minimal output: just "name" and "seq" columns
         df = df[['name', f'{pool.name}.seq']].rename(columns={f'{pool.name}.seq': 'seq'})
@@ -123,6 +128,7 @@ def generate_library(
     df = finalize_generate_df(df, pool.name, report_seq, report_pool_seqs, pools_filter)
     if seqs_only:
         return list(df['seq'])
+        
     return df
 
 ## THIS IS THE TOPOLOGICAL SORTING FUNCTION THAT IS USED TO DETERMINE THE ORDER OF OPERATIONS.
