@@ -1,5 +1,5 @@
 """Runtime benchmarks for scan operations using pytest-benchmark."""
-from .workloads import workload_deletion_scan, workload_insertion_scan
+from .timing import workload_deletion_scan, workload_insertion_scan
 from .benchmark_utils import generate_benchmark_tests
 
 BENCHMARK_SPECS = {

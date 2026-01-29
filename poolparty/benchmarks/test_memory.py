@@ -2,7 +2,7 @@
 import tracemalloc
 import pytest
 from pathlib import Path
-from .workloads import (
+from .timing import (
     workload_mutagenize,
     workload_mutagenize_sequential,
     workload_recombine,
@@ -119,7 +119,7 @@ def run_with_memray(workload_name: str, output_file: str = None):
         print("memray not installed. Install with: uv pip install memray")
         return
     
-    from .workloads import ALL_WORKLOADS
+    from .timing import ALL_WORKLOADS
     
     if workload_name not in ALL_WORKLOADS:
         print(f"Unknown workload: {workload_name}")

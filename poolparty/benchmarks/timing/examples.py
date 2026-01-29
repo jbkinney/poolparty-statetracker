@@ -1,126 +1,6 @@
-"""Benchmark workloads for poolparty profiling."""
+"""Example workloads for poolparty benchmarking."""
 import poolparty as pp
-from typing import Literal
 
-def make_sequence(length: int) -> str:
-    """Generate a DNA sequence of specified length."""
-    bases = 'ACGT'
-    return (bases * (length // 4 + 1))[:length]
-
-def workload_mutagenize(
-    seq_len: int = 100,
-    mut_rate: float = None,
-    num_mut: int = None,
-    num_seqs: int = 100,
-    mode: Literal['random', 'sequential'] = 'random',
-    use_styles: bool = False,
-    use_cards: bool = False
-):
-    pp.init()
-    pp.toggle_styles(on=use_styles)
-    pp.toggle_cards(on=use_cards)
-    seq = make_sequence(seq_len)
-    pool = pp.mutagenize(seq, mutation_rate=mut_rate, num_mutations=num_mut, mode=mode)
-    return pool.generate_library(num_seqs=num_seqs)
-
-
-def workload_shuffle_seq(
-    seq_len: int = 100,
-    num_seqs: int = 100,
-    mode: Literal['random', 'sequential'] = 'random',
-    use_styles: bool = False,
-    use_cards: bool = False
-):
-    pp.init()
-    pp.toggle_styles(on=use_styles)
-    pp.toggle_cards(on=use_cards)
-    seq = make_sequence(seq_len)
-    pool = pp.shuffle_seq(seq, mode=mode)
-    return pool.generate_library(num_seqs=num_seqs)
-
-
-def workload_deletion_scan(
-    seq_len: int = 100,
-    num_seqs: int = 100,
-    del_len: int=5,
-    positions = None,
-    mode: Literal['random', 'sequential'] = 'random',
-    use_styles: bool = False,
-    use_cards: bool = False
-):
-    pp.init()
-    pp.toggle_styles(on=use_styles)
-    pp.toggle_cards(on=use_cards)
-    seq = make_sequence(seq_len)
-    pool = pp.deletion_scan(seq, deletion_length=del_len, positions=positions, mode=mode)
-    return pool.generate_library(num_seqs=num_seqs)
-
-
-def workload_insertion_scan(
-    seq_len: int = 100,
-    num_seqs: int = 100,
-    num_ins: int = 10,
-    ins_len: int=5,
-    positions = None,
-    mode: Literal['random', 'sequential'] = 'random',
-    use_styles: bool = False,
-    use_cards: bool = False
-):
-    pp.init()
-    pp.toggle_styles(on=use_styles)
-    pp.toggle_cards(on=use_cards)
-    seq = make_sequence(seq_len)
-    ins_seqs = ['A'*ins_len]*num_ins
-    ins_pool = pp.from_seqs(ins_seqs)
-    pool = pp.insertion_scan(seq, ins_pool = ins_pool, positions=positions, mode=mode)
-    return pool.generate_library(num_seqs=num_seqs)
-
-
-def workload_get_kmers(
-    kmer_len: int = 5,
-    num_seqs: int = 100,
-    mode: Literal['random', 'sequential'] = 'random',
-    use_styles: bool = False,
-    use_cards: bool = False
-):
-    pp.init()
-    pp.toggle_styles(on=use_styles)
-    pp.toggle_cards(on=use_cards)
-    pool = pp.get_kmers(length=kmer_len, mode=mode)
-    return pool.generate_library(num_seqs=num_seqs)
-
-
-def workload_from_iupac(
-    seq_len: int = 5,
-    num_seqs: int = 100,
-    mode: Literal['random', 'sequential'] = 'random',
-    use_styles: bool = False,
-    use_cards: bool = False
-):
-    pp.init()
-    pp.toggle_styles(on=use_styles)
-    pp.toggle_cards(on=use_cards)
-    seq = 'N'*seq_len
-    pool = pp.from_iupac(iupac_seq=seq, mode=mode)
-    return pool.generate_library(num_seqs=num_seqs)
-
-
-def workload_recombine(
-    seq_len: int = 100,
-    num_breakpoints: int = 3,
-    num_sources: int = 4,
-    num_seqs: int = 100,
-    mode: Literal['random', 'sequential'] = 'random',
-    use_styles: bool = False,
-    use_cards: bool = False
-):
-    pp.init()
-    pp.toggle_styles(on=use_styles)
-    pp.toggle_cards(on=use_cards)
-    # Create source sequences of specified length
-    sources = [make_sequence(seq_len) for _ in range(num_sources)]
-    pool = pp.recombine(sources=sources, num_breakpoints=num_breakpoints, mode=mode)
-    return pool.generate_library(num_seqs=num_seqs)
 
 def workload_mpra_example(
     num_seqs: int = 1000,
@@ -200,15 +80,13 @@ def workload_mpra_example(
     pp.toggle_cards(on=use_cards)
     return combo_pool.generate_library(num_seqs=num_seqs)
 
+workload_mpra_example.benchmark_specs = [
+    ("TestMPRAExample", "num_seqs", [10, 100, 1_000]),
+]
 
-# Collect all workloads for easy iteration
-ALL_WORKLOADS = {
-    'mutagenize': workload_mutagenize,
-    'shuffle_seq': workload_shuffle_seq,
-    'deletion_scan': workload_deletion_scan,
-    'insertion_scan': workload_insertion_scan,
-    'get_kmers': workload_get_kmers,
-    'from_iupac': workload_from_iupac,
-    'recombine': workload_recombine,
-    'mpra_example': workload_mpra_example,
-}
+
+# Generate test classes for running this file directly with pytest
+from ._utils import collect_local_specs
+from ..benchmark_utils import generate_benchmark_tests
+
+globals().update(generate_benchmark_tests(collect_local_specs(globals())))

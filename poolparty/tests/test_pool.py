@@ -238,14 +238,6 @@ class TestPoolDeepCopy:
             
             assert copied.name == 'my_deepcopy'
     
-    def test_deepcopy_default_name_uses_suffix(self):
-        """Test that deepcopy() uses self.name + '.copy' as default name."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(['AAA']).named('my_pool')
-            copied = pool.deepcopy()
-            
-            assert copied.name == 'my_pool.copy'
-    
     def test_deepcopy_produces_same_sequences(self):
         """Test that deepcopied pool produces the same sequences."""
         with pp.Party() as party:

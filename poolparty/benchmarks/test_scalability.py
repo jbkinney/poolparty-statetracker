@@ -1,7 +1,7 @@
 """Scalability tests to measure how performance scales with parameters."""
 import pytest
 import time
-from .workloads import workload_mutagenize, workload_recombine, workload_complex_dag
+from .timing import workload_mutagenize, workload_recombine, workload_complex_dag
 
 
 def time_function(func, *args, **kwargs):

@@ -445,10 +445,7 @@ class Operation:
         if 'content_pool' in init_params and len(new_parent_pools) > 1:
             init_params['content_pool'] = new_parent_pools[1]
         
-        if name is not None:
-            init_params['name'] = name
-        else:
-            init_params['name'] = self.name + '.copy'
+        init_params['name'] = name
         
         return self.__class__(**init_params)
     

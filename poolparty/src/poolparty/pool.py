@@ -222,11 +222,7 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
             A new Pool backed by a recursively copied Operation.
         """
         new_op = self.operation.deepcopy()
-        new_pool = Pool(operation=new_op)
-        if name is not None:
-            new_pool.name = name
-        else:
-            new_pool.name = self.name + '.copy'
+        new_pool = Pool(operation=new_op, name=name)
         return new_pool
     
     #########################################################################

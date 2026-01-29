@@ -8,82 +8,101 @@ Performance profiling suite for poolparty runtime and memory analysis.
 # Install benchmark dependencies
 uv sync --group benchmark
 
-# Run small benchmarks (fast)
-uv run pytest poolparty/benchmarks/ -v
+# Run all timing benchmarks
+uv run pytest benchmarks/timing/all.py -v
 
-# Run all benchmarks including slow ones
-uv run pytest poolparty/benchmarks/ -v --run-slow
+# Run specific category
+uv run pytest benchmarks/timing/base_ops.py -v
 ```
 
 ## Benchmark Structure
 
-- `workloads.py` - Parameterized benchmark workloads
-- `benchmark_base_ops.py` - Runtime benchmarks for base operations
-- `benchmark_scan_ops.py` - Runtime benchmarks for scan operations
-- `benchmark_utils.py` - Utilities for generating benchmark tests
-- `run_benchmarks.py` - Run benchmarks and export to CSV
-- `test_memory.py` - Memory profiling using tracemalloc
-- `test_scalability.py` - Scalability tests for various parameters
-- `run_profile.py` - CLI for ad-hoc profiling
+```
+benchmarks/
+├── timing/                    # Timing benchmarks (self-runnable)
+│   ├── __init__.py            # Auto-discovers modules, exports ALL_WORKLOADS
+│   ├── _utils.py              # Shared utilities
+│   ├── base_ops.py            # mutagenize, shuffle_seq, get_kmers, from_iupac, recombine
+│   ├── scan_ops.py            # deletion_scan, insertion_scan
+│   ├── dag_ops.py             # chain_of_joins, tree_of_joins
+│   ├── examples.py            # mpra_example
+│   └── all.py                 # Aggregates all benchmarks
+├── benchmark_utils.py         # Utilities for generating benchmark tests
+├── run_benchmarks.py          # Run benchmarks and export to CSV
+├── run_profile.py             # CLI for ad-hoc profiling
+├── test_memory.py             # Memory profiling using tracemalloc
+└── test_scalability.py        # Scalability tests for various parameters
+```
 
-## Workloads
+## Timing Benchmarks
 
-Available workloads (defined in `workloads.py`):
-
-| Workload | Description |
-|----------|-------------|
-| `mutagenize` | Random mutagenesis |
-| `mutagenize_sequential` | Sequential enumeration of all mutations |
-| `recombine` | Recombination with breakpoints |
-| `deletion_scan` | Deletion scanning |
-| `insertion_scan` | Insertion scanning |
-| `complex_dag` | Multi-operation DAG (mutagenize + join + barcode) |
-| `region_operations` | Operations on tagged regions |
-| `stack` | Stacking multiple pools |
-| `get_kmers` | K-mer generation |
-
-## Runtime Benchmarks
+Each file in `timing/` is self-runnable with pytest:
 
 ```bash
-# Run with pytest-benchmark
-uv run pytest poolparty/benchmarks/test_runtime.py -v
+# Run specific category
+uv run pytest benchmarks/timing/base_ops.py -v      # Base operations
+uv run pytest benchmarks/timing/scan_ops.py -v      # Scan operations
+uv run pytest benchmarks/timing/dag_ops.py -v       # DAG operations
+uv run pytest benchmarks/timing/examples.py -v      # Complex examples
 
-# Compare against baseline
-uv run pytest poolparty/benchmarks/test_runtime.py --benchmark-compare
+# Run ALL timing benchmarks
+uv run pytest benchmarks/timing/all.py -v
 
-# Save results to JSON
-uv run pytest poolparty/benchmarks/test_runtime.py --benchmark-json=results.json
+# Run specific test class
+uv run pytest benchmarks/timing/base_ops.py::TestMutagenize -v
+
+# Disable actual benchmarking (just verify tests work)
+uv run pytest benchmarks/timing/all.py --benchmark-disable -v
 ```
+
+### Available Workloads
+
+| File | Workloads | Test Classes |
+|------|-----------|--------------|
+| `base_ops.py` | mutagenize, shuffle_seq, get_kmers, from_iupac, recombine | TestMutagenize, TestShuffleSeq, TestGetKmers, TestFromIupac, TestRecombine |
+| `scan_ops.py` | deletion_scan, insertion_scan | TestDeletionScan, TestInsertionScan |
+| `dag_ops.py` | chain_of_joins, tree_of_joins | TestDAGSize |
+| `examples.py` | mpra_example | TestMPRAExample |
+
+### Adding New Benchmarks
+
+1. Add a workload function with `workload_` prefix
+2. Attach `.benchmark_specs` attribute with test specifications:
+
+```python
+def workload_my_operation(seq_len: int = 100, num_seqs: int = 100):
+    # ... implementation ...
+    pass
+
+workload_my_operation.benchmark_specs = [
+    # (TestClassName, param_name, param_values)
+    ("TestMyOperation", "seq_len", [10, 30, 100, 300]),
+    # With constants: (TestClassName, param_name, values, {constants})
+    ("TestMyOperation", "num_seqs", [10, 100, 1000], {"seq_len": 50}),
+]
+```
+
+The test classes are auto-generated when the module is imported.
 
 ## Export Benchmarks to CSV
 
-Use `run_benchmarks.py` to run benchmarks and export results to CSV:
+Use `run_benchmarks.py` to run benchmarks and export results:
 
 ```bash
-# Run benchmarks and save to benchmark_base_ops.results.csv
-uv run python poolparty/benchmarks/run_benchmarks.py benchmark_base_ops.py
+# Run and save to CSV
+uv run python benchmarks/run_benchmarks.py timing/base_ops.py
 
-# Also print a formatted table to stdout
-uv run python poolparty/benchmarks/run_benchmarks.py benchmark_base_ops.py --table
+# Print formatted table to stdout
+uv run python benchmarks/run_benchmarks.py timing/base_ops.py --table
+
+# Run specific test class
+uv run python benchmarks/run_benchmarks.py timing/base_ops.py -c TestMutagenize --table
 
 # Specify custom output path
-uv run python poolparty/benchmarks/run_benchmarks.py benchmark_base_ops.py -o results.csv
+uv run python benchmarks/run_benchmarks.py timing/all.py -o results.csv
 ```
 
 The CSV contains: `test_name`, `mean`, `stddev`, `min`, `max`, `rounds`.
-
-## Memory Benchmarks
-
-```bash
-# Run memory tests (uses tracemalloc)
-uv run pytest poolparty/benchmarks/test_memory.py -v -s
-
-# Profile with memray (more detailed)
-uv run python -m poolparty.benchmarks.run_profile mutagenize --memray
-
-# Generate flamegraph
-uv run memray flamegraph poolparty/benchmarks/profiles/mutagenize.bin
-```
 
 ## Ad-hoc Profiling
 
@@ -91,31 +110,44 @@ Use `run_profile.py` for interactive profiling:
 
 ```bash
 # Profile with pyinstrument (call tree)
-uv run python poolparty/benchmarks/run_profile.py mutagenize
+uv run python benchmarks/run_profile.py mutagenize
 
 # Profile with cProfile (detailed stats)
-uv run python poolparty/benchmarks/run_profile.py mutagenize --cprofile
+uv run python benchmarks/run_profile.py mutagenize --cprofile
 
 # Profile with memray (memory)
-uv run python poolparty/benchmarks/run_profile.py mutagenize --memray
+uv run python benchmarks/run_profile.py mutagenize --memray
 
 # Custom parameters
-uv run python poolparty/benchmarks/run_profile.py mutagenize --seq-len 200 --num-seqs 5000
+uv run python benchmarks/run_profile.py mutagenize --seq-len 200 --num-seqs 5000
 
 # List available workloads
-uv run python poolparty/benchmarks/run_profile.py --list
+uv run python benchmarks/run_profile.py --list
+```
+
+## Memory Benchmarks
+
+```bash
+# Run memory tests (uses tracemalloc)
+uv run pytest benchmarks/test_memory.py -v -s
+
+# Profile with memray (more detailed)
+uv run python benchmarks/run_profile.py mutagenize --memray
+
+# Generate flamegraph
+uv run memray flamegraph benchmarks/profiles/mutagenize.bin
 ```
 
 ## Scalability Tests
 
 ```bash
 # Run scalability tests
-uv run pytest poolparty/benchmarks/test_scalability.py -v -s
+uv run pytest benchmarks/test_scalability.py -v -s
 
 # Test specific scaling dimension
-uv run pytest poolparty/benchmarks/test_scalability.py::TestScaleNumSeqs -v -s
-uv run pytest poolparty/benchmarks/test_scalability.py::TestScaleSeqLength -v -s
-uv run pytest poolparty/benchmarks/test_scalability.py::TestScaleNumMutations -v -s
+uv run pytest benchmarks/test_scalability.py::TestScaleNumSeqs -v -s
+uv run pytest benchmarks/test_scalability.py::TestScaleSeqLength -v -s
+uv run pytest benchmarks/test_scalability.py::TestScaleNumMutations -v -s
 ```
 
 ## Interpreting Results

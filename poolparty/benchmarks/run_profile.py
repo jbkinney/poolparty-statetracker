@@ -30,7 +30,7 @@ PROFILES_DIR = BENCHMARKS_DIR / "profiles"
 
 def list_workloads():
     """Print available workloads."""
-    from workloads import ALL_WORKLOADS
+    from timing import ALL_WORKLOADS
     print("Available workloads:")
     for name in ALL_WORKLOADS:
         print(f"  - {name}")
@@ -166,7 +166,7 @@ def main():
         parser.print_help()
         return
     
-    from workloads import ALL_WORKLOADS
+    from timing import ALL_WORKLOADS
     
     if args.workload not in ALL_WORKLOADS:
         print(f"Unknown workload: {args.workload}")

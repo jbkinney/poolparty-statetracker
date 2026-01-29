@@ -1,5 +1,5 @@
 """Runtime benchmarks for complex workflow examples using pytest-benchmark."""
-from .workloads import workload_mpra_example
+from .timing import workload_mpra_example
 
 
 class TestMPRA:
