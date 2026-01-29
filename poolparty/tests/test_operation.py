@@ -226,15 +226,14 @@ class TestOperationRng:
             # Before generate, rng should be None
             assert pool.operation.rng is None
     
-    def test_rng_set_by_generate(self):
-        """Test that generate_library sets RNG for random operations."""
+    def test_rng_is_none_after_generate(self):
+        """Test that op.rng remains None after generate (RNG created per-call)."""
         with pp.Party() as party:
             pool = pp.get_kmers(length=4, mode='random').named('kmer')
         
-        # After generate, rng should be set
+        # After generate, rng should still be None (RNG is created per-call in _compute_one)
         pool.generate_library(num_seqs=1, seed=42)
-        assert pool.operation.rng is not None
-        assert isinstance(pool.operation.rng, np.random.Generator)
+        assert pool.operation.rng is None
     
     def test_sequential_rng_is_none(self):
         """Test that sequential mode RNG remains None after generate."""

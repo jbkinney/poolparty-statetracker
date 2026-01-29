@@ -237,12 +237,13 @@ class TestMutagenizeRandomModeWithNum:
         unique_mutants = df['seq'].nunique()
         assert unique_mutants > 10  # Should have variety
     
-    def test_random_syncs_to_parent(self):
-        """Test that random mode syncs to parent state (from_seq has 1 state)."""
+    def test_random_is_stateless_without_num_states(self):
+        """Test that random mode without num_states is stateless (no implicit syncing)."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', num_mutations=1, mode='random')
-            # Syncs to from_seq parent which has 1 state
-            assert pool.operation.num_states == 1
+            # Stays stateless (no implicit syncing to parent)
+            assert pool.operation.num_states is None
+            assert pool.operation.state is None
 
 
 # =============================================================================
@@ -252,12 +253,13 @@ class TestMutagenizeRandomModeWithNum:
 class TestMutagenizeRandomModeWithRate:
     """Test random mode with mutation_rate."""
     
-    def test_random_mode_syncs_to_parent(self):
-        """Random mode syncs to parent state (from_seq has 1 state)."""
+    def test_random_mode_is_stateless(self):
+        """Random mode without num_states is stateless (no implicit syncing)."""
         with pp.Party() as party:
             pool = mutagenize('ACGT', mutation_rate=0.1, mode='random')
-            # Syncs to from_seq parent which has 1 state
-            assert pool.operation.num_states == 1
+            # Stays stateless (no implicit syncing to parent)
+            assert pool.operation.num_states is None
+            assert pool.operation.state is None
     
     def test_random_mode_produces_valid_output(self):
         """Random mode generates valid mutated sequences."""

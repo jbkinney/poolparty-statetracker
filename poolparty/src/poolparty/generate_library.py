@@ -167,19 +167,9 @@ def _topo_sort_operations(outputs: dict) -> list:
 
 
 def _seed_random_operations(sorted_ops: list, master_seed: int) -> None:
-    """Set up shared RNG for random mode operations.
-    
-    Note: random mode operations with num_states > 1 don't get an RNG here - their RNG
-    is created per-state in _compute_one using SeedSequence.
-    """
-    shared_rng = np.random.default_rng(master_seed)
+    """Clear RNG on all operations (RNG is created per-call in _compute_one)."""
     for op in sorted_ops:
-        if op.mode == 'random' and op.state is None:
-            # Pure random mode (num_states=None) uses shared RNG
-            op.rng = shared_rng
-        else:
-            # random with num_states > 1, sequential, fixed modes don't use shared RNG
-            op.rng = None
+        op.rng = None
 
 
 def _collect_all_pools(outputs: dict) -> set:
@@ -257,10 +247,13 @@ def _compute_one(
         parents = [seq_cache[p.operation.id] for p in op.parent_pools]
         
         # Determine RNG for this operation
-        if op.mode == 'random' and op.state is not None:
-            # Create state-specific RNG for random mode with state using SeedSequence
-            # This handles both explicit num_states and auto-synced states from parents
-            state = op.state.value if op.state.value is not None else 0
+        if op.mode == 'random':
+            if op.state is not None:
+                # Explicit num_states: use state value
+                state = op.state.value if op.state.value is not None else 0
+            else:
+                # Stateless random: use global_state (row number)
+                state = global_state
             seed_seq = np.random.SeedSequence([pool._master_seed, op.id, state])
             op_rng = np.random.default_rng(seed_seq)
         else:
@@ -274,7 +267,7 @@ def _compute_one(
         card_cache[op.id] = card
         
         # Collect name contributions from this operation
-        all_contributions.extend(op.compute_name_contributions())
+        all_contributions.extend(op.compute_name_contributions(global_state))
         
         # Design cards are already filtered in Operation.compute()
         if report_design_cards and (ops_to_report is None or op.id in ops_to_report):

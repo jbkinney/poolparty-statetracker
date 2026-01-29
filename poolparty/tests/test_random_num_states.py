@@ -17,14 +17,15 @@ class TestRandomNumStatesBasic:
             pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=100)
             assert pool.operation.num_states == 100
     
-    def test_random_mode_syncs_to_parent(self):
-        """Test that random mode without num_states syncs to parent state."""
+    def test_random_mode_stateless_without_num_states(self):
+        """Test that random mode without num_states is stateless (no implicit syncing)."""
         with pp.Party() as party:
-            # With a parent (from_seq creates a parent with num_values=1), syncs to parent
+            # With a parent but no explicit num_states, stays stateless
             pool = mutagenize('ACGT', num_mutations=1, mode='random')
-            assert pool.operation.num_states == 1  # Synced to from_seq parent
+            assert pool.operation.num_states is None
+            assert pool.operation.state is None
             
-            # Without a parent (source operation), stays stateless
+            # Without a parent (source operation), also stays stateless
             source_pool = get_kmers(length=4, mode='random')
             assert source_pool.operation.num_states is None
     
@@ -220,11 +221,11 @@ class TestRandomNumStatesVsRandomMode:
             random_num_states_pool = mutagenize('ACGT', num_mutations=1, mode='random', num_states=50)
             assert random_num_states_pool.operation.num_states == 50
             
-            # Without explicit num_states, syncs to parent (from_seq has 1 state)
+            # Without explicit num_states, stays stateless (no implicit syncing)
             random_pool = mutagenize('ACGT', num_mutations=1, mode='random')
-            assert random_pool.operation.num_states == 1  # Synced to from_seq
+            assert random_pool.operation.num_states is None
             
-            # For truly stateless, need source op with no parents
+            # Source op with no parents is also stateless
             stateless_pool = get_kmers(length=4, mode='random')
             assert stateless_pool.operation.num_states is None
     
@@ -296,60 +297,70 @@ class TestRandomNumStatesComposability:
         assert len(df) == 15
 
 
-class TestRandomAutoSyncToParent:
-    """Test auto-sync behavior for random mode with num_states=None and parent pools."""
+class TestStatelessRandomWithGlobalState:
+    """Test stateless random mode (num_states=None) uses global_state for seeding."""
     
-    def test_random_with_stateful_parent_syncs_state(self):
-        """Test that random operation with stateful parent auto-syncs to parent state."""
+    def test_random_with_parent_stays_stateless(self):
+        """Test that random operation with parent stays stateless (no implicit syncing)."""
         with pp.Party() as party:
             parent = from_seqs(['AAAA', 'TTTT', 'GGGG'], mode='sequential')
-            # Random mode without explicit num_states should sync to parent
+            # Random mode without explicit num_states should stay stateless
             child = mutagenize(parent, num_mutations=1, mode='random').named('mutant')
             
-            # Operation should have state synced to parent (3 states)
-            assert child.operation.state is not None
-            assert child.operation.num_states == 3
-            # Pool should also have 3 states
+            # Operation should be stateless
+            assert child.operation.state is None
+            assert child.operation.num_states is None
+            # Pool state comes from parent only
             assert child.num_states == 3
     
-    def test_random_with_stateful_parent_reproducible(self):
-        """Test that random operation synced to parent produces reproducible output."""
+    def test_stateless_random_reproducible_with_seed(self):
+        """Test that stateless random operation is reproducible with same seed."""
         with pp.Party() as party:
             parent = from_seqs(['AAAA', 'TTTT', 'GGGG'], mode='sequential')
             child = mutagenize(parent, num_mutations=1, mode='random').named('mutant')
         
-        df1 = child.generate_library(num_cycles=2, seed=42)
+        df1 = child.generate_library(num_seqs=10, seed=42)
         
         with pp.Party() as party:
             parent = from_seqs(['AAAA', 'TTTT', 'GGGG'], mode='sequential')
             child = mutagenize(parent, num_mutations=1, mode='random').named('mutant')
         
-        df2 = child.generate_library(num_cycles=2, seed=42)
+        df2 = child.generate_library(num_seqs=10, seed=42)
         
-        # Should produce identical results
+        # Should produce identical results with same seed
         assert list(df1['seq']) == list(df2['seq'])
-        
-        # First 3 (cycle 1) and second 3 (cycle 2) should match
-        assert list(df1['seq'][:3]) == list(df1['seq'][3:6])
     
-    def test_random_with_stateless_parent_stays_stateless(self):
+    def test_stateless_random_different_per_row(self):
+        """Test that stateless random produces different sequences per row."""
+        with pp.Party() as party:
+            parent = from_seqs(['AAAA'], mode='sequential')  # 1 state parent
+            child = mutagenize(parent, num_mutations=1, mode='random').named('mutant')
+        
+        df = child.generate_library(num_seqs=20, seed=42)
+        
+        # Even though parent has only 1 state, we should get varied outputs
+        # because stateless random uses global_state (row number) for seeding
+        unique_seqs = df['seq'].nunique()
+        # With 20 single mutations on 'AAAA', we expect variety
+        assert unique_seqs > 1, "Stateless random should produce different sequences per row"
+    
+    def test_stateless_random_with_stateless_parent(self):
         """Test that random operation with stateless parent remains stateless."""
         with pp.Party() as party:
             # Parent pool with no state (pure random source operation)
-            # get_kmers with mode='random' and no parents is truly stateless
             parent = get_kmers(length=4, mode='random')
             
             # Verify parent is truly stateless
             assert parent.operation.state is None
             assert parent.state is None
             
-            # Child should also be stateless (no parent state to sync to)
+            # Child should also be stateless
             child = mutagenize(parent, num_mutations=1, mode='random').named('mutant')
             
             assert child.operation.state is None
             assert child.state is None
     
-    def test_random_without_parent_stays_stateless(self):
+    def test_stateless_random_without_parent(self):
         """Test that random operation without parent remains stateless."""
         with pp.Party() as party:
             pool = get_kmers(length=4, mode='random').named('kmer')
@@ -357,77 +368,135 @@ class TestRandomAutoSyncToParent:
             assert pool.operation.state is None
             assert pool.state is None
     
-    def test_random_synced_with_multiple_stateful_parents(self):
-        """Test random operation with multiple stateful parents uses product."""
+    def test_stateless_random_with_multiple_stateful_parents(self):
+        """Test random operation with multiple stateful parents stays stateless."""
         with pp.Party() as party:
             from poolparty.fixed_ops.join import join
             parent1 = from_seqs(['AA', 'TT'], mode='sequential')  # 2 states
             parent2 = from_seqs(['GGG', 'CCC', 'AAA'], mode='sequential')  # 3 states
             joined = join([parent1, parent2], spacer_str='_')
-            # Random operation on joined pool should have 2*3=6 states
+            # Random operation on joined pool should be stateless
             child = mutagenize(joined, num_mutations=1, mode='random').named('mutant')
             
-            assert child.operation.state is not None
+            # Op should be stateless
+            assert child.operation.state is None
+            assert child.operation.num_states is None
+            # Pool state comes from parents (product)
             assert child.num_states == 6
     
-    def test_random_synced_with_single_state_parent(self):
-        """Test random operation with single-state parent (edge case)."""
+    def test_stateless_random_single_state_parent_different_outputs(self):
+        """Test stateless random with single-state parent produces different outputs."""
         with pp.Party() as party:
             parent = from_seqs(['ACGT'], mode='sequential')  # 1 state
             child = mutagenize(parent, num_mutations=1, mode='random').named('mutant')
             
-            # Should have 1 state (synced to parent)
-            assert child.operation.state is not None
-            assert child.num_states == 1
+            # Should be stateless
+            assert child.operation.state is None
         
-        # Should generate reproducible output
-        df = child.generate_library(num_cycles=2, seed=42)
-        assert len(df) == 2
-        # Same state, same seed -> same output
-        assert df['seq'].iloc[0] == df['seq'].iloc[1]
+        # Should generate different outputs for each row (not cycling)
+        df = child.generate_library(num_seqs=10, seed=42)
+        assert len(df) == 10
+        # Different rows should have different outputs (using global_state)
+        unique_seqs = df['seq'].nunique()
+        assert unique_seqs > 1, "Different rows should produce different sequences"
     
-    def test_random_synced_chain_propagates(self):
-        """Test that synced states propagate through a chain of operations."""
+    def test_stateless_random_chain_stays_stateless(self):
+        """Test that stateless random chain stays stateless."""
         with pp.Party() as party:
             base = from_seqs(['AAAAAAAAAA', 'TTTTTTTTTT'], mode='sequential')  # 2 states
-            mut1 = mutagenize(base, num_mutations=1, mode='random')  # syncs to base
-            mut2 = mutagenize(mut1, num_mutations=1, mode='random').named('final')  # syncs to mut1
+            mut1 = mutagenize(base, num_mutations=1, mode='random')  # stateless
+            mut2 = mutagenize(mut1, num_mutations=1, mode='random').named('final')  # stateless
             
-            # All should have 2 states
+            # Base has states, but random ops are stateless
             assert base.num_states == 2
+            assert mut1.operation.state is None
+            assert mut2.operation.state is None
+            # Pool states come from base only
             assert mut1.num_states == 2
             assert mut2.num_states == 2
-        
-        df = mut2.generate_library(num_cycles=2, seed=42)
-        # 2 states * 2 cycles = 4 sequences
-        assert len(df) == 4
-        # Cycles should repeat
-        assert list(df['seq'][:2]) == list(df['seq'][2:])
     
-    def test_random_synced_explicit_num_states_overrides(self):
-        """Test that explicit num_states overrides auto-sync behavior."""
+    def test_explicit_num_states_creates_state(self):
+        """Test that explicit num_states creates state (not stateless)."""
         with pp.Party() as party:
             parent = from_seqs(['AAAA', 'TTTT', 'GGGG'], mode='sequential')  # 3 states
-            # Explicit num_states should override auto-sync
+            # Explicit num_states should create state
             child = mutagenize(parent, num_mutations=1, mode='random', num_states=10).named('mutant')
             
-            # Should have 10 states (explicit), not synced
+            # Should have 10 states (explicit)
             assert child.operation.num_states == 10
+            assert child.operation.state is not None
             # Pool state is product: 3 * 10 = 30
             assert child.num_states == 30
     
-    def test_random_synced_with_get_kmers_region(self):
-        """Test auto-sync with get_kmers inserting into a parent pool region."""
+    def test_stateless_random_with_region(self):
+        """Test stateless random with region parameter stays stateless."""
         with pp.Party() as party:
             parent = from_seqs(['AA<bc></bc>CC', 'TT<bc></bc>GG'], mode='sequential')  # 2 states
             child = get_kmers(length=3, pool=parent, region='bc', mode='random').named('barcode')
             
-            # Should sync to parent's 2 states
+            # Should be stateless
+            assert child.operation.state is None
+            # Pool state comes from parent
             assert child.num_states == 2
         
-        df = child.generate_library(num_cycles=1, seed=42)
-        assert len(df) == 2
+        # Should be reproducible with same seed
+        df1 = child.generate_library(num_seqs=6, seed=42)
         
-        # Each parent state should get a reproducible random barcode
-        df2 = child.generate_library(num_cycles=1, seed=42)
-        assert list(df['seq']) == list(df2['seq'])
+        with pp.Party() as party:
+            parent = from_seqs(['AA<bc></bc>CC', 'TT<bc></bc>GG'], mode='sequential')
+            child = get_kmers(length=3, pool=parent, region='bc', mode='random').named('barcode')
+        
+        df2 = child.generate_library(num_seqs=6, seed=42)
+        assert list(df1['seq']) == list(df2['seq'])
+    
+    def test_stateless_random_uses_global_state_for_seeding(self):
+        """Test that stateless random uses global_state (row number) for RNG seeding."""
+        with pp.Party() as party:
+            # Single-state parent to isolate the effect
+            parent = from_seqs(['ACGTACGT'], mode='sequential')
+            child = mutagenize(parent, num_mutations=2, mode='random').named('mutant')
+        
+        # Generate with init_state=0
+        df1 = child.generate_library(num_seqs=5, seed=42, init_state=0)
+        
+        with pp.Party() as party:
+            parent = from_seqs(['ACGTACGT'], mode='sequential')
+            child = mutagenize(parent, num_mutations=2, mode='random').named('mutant')
+        
+        # Generate with init_state=5 (should match rows 5-9 of a longer run)
+        df2 = child.generate_library(num_seqs=5, seed=42, init_state=5)
+        
+        # The sequences should be different because global_state differs
+        # (init_state=0 gives global_states 0,1,2,3,4; init_state=5 gives 5,6,7,8,9)
+        assert list(df1['seq']) != list(df2['seq'])
+    
+    def test_stateless_random_prefix_uses_global_state(self):
+        """Test that stateless random with prefix uses global_state for naming."""
+        with pp.Party() as party:
+            parent = from_seqs(['AA<bc></bc>CC'], mode='sequential')
+            child = get_kmers(length=3, pool=parent, region='bc', mode='random', prefix='bc').named('barcode')
+        
+        df = child.generate_library(num_seqs=5, seed=42)
+        
+        # Names should include bc_0, bc_1, bc_2, etc. (using global_state)
+        names = list(df['name'])
+        assert names[0] == 'bc_0'
+        assert names[1] == 'bc_1'
+        assert names[2] == 'bc_2'
+        assert names[3] == 'bc_3'
+        assert names[4] == 'bc_4'
+    
+    def test_stateless_random_prefix_with_init_state(self):
+        """Test that stateless random prefix uses correct global_state with init_state."""
+        with pp.Party() as party:
+            parent = from_seqs(['AA<bc></bc>CC'], mode='sequential')
+            child = get_kmers(length=3, pool=parent, region='bc', mode='random', prefix='bc').named('barcode')
+        
+        # Start from init_state=10
+        df = child.generate_library(num_seqs=3, seed=42, init_state=10)
+        
+        # Names should start from bc_10
+        names = list(df['name'])
+        assert names[0] == 'bc_10'
+        assert names[1] == 'bc_11'
+        assert names[2] == 'bc_12'

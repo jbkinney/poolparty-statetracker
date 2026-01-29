@@ -433,7 +433,7 @@ class MutagenizeOp(Operation):
         
         if self.mode == 'random':
             if rng is None:
-                raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
+                raise RuntimeError(f"{self.mode} mode requires RNG - use Party.generate(seed=...)")
             positions, wt_chars, mut_chars = self._random_mutation(
                 seq, rng, valid_char_positions, mutable_positions, mutation_options
             )

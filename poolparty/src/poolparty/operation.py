@@ -64,33 +64,11 @@ class Operation:
         # If not provided, defaults to the effective num_states
         self._natural_num_states = _natural_num_states
         
-        # Track whether this operation's state is synced to parent states
-        self._random_synced_to_parents = False
-        
         if validated_num_states is not None and mode != 'fixed':
             # Non-fixed ops with explicit num_states - create state
             self.state = st.State(num_values=validated_num_states, name=f"{self._name}.state", iter_order=iter_order)
-        elif mode == 'random' and parent_pools:
-            # Random mode with no explicit num_states - check for parent states
-            parent_states = [p.state for p in parent_pools if p.state is not None]
-            if parent_states:
-                # Create state synced to parent states
-                if len(parent_states) == 1:
-                    # Single parent - create synced state
-                    self.state = st.synced_to(parent_states[0], name=f"{self._name}.state")
-                else:
-                    # Multiple parents - create product state
-                    self.state = st.ordered_product(states=parent_states)
-                    self.state.name = f"{self._name}.state"
-                if iter_order is not None:
-                    self.state.iter_order = iter_order
-                self._random_synced_to_parents = True
-                validated_num_states = self.state.num_values
-            else:
-                # All parents are stateless - remain stateless
-                self.state = None
         else:
-            # No parents or not random mode - state is None
+            # No explicit num_states or fixed mode - no state
             self.state = None
         
         self.rng: np.random.Generator | None = None
@@ -224,9 +202,6 @@ class Operation:
                 return st.ordered_product(states=parent_states)
         else:
             # Non-fixed: include op.state in the product
-            if self._random_synced_to_parents and self.state is not None:
-                return st.synced_to(self.state)
-            
             op_states = [self.state] if self.state is not None else []
             all_states = parent_states + op_states
             
@@ -328,11 +303,17 @@ class Operation:
         """
         raise NotImplementedError("Subclasses must implement _compute_core()")
     
-    def compute_name_contributions(self) -> list[str]:
+    def compute_name_contributions(self, global_state: Optional[int] = None) -> list[str]:
         """Compute this operation's contributions to the final sequence name.
         
         Returns list of name elements in the order they should appear.
         Default: [prefix_state.value] when active, [] otherwise.
+        For stateless random operations, uses global_state if provided.
+        
+        Parameters
+        ----------
+        global_state : Optional[int]
+            The global row index, used for stateless random operations.
         
         Returns
         -------
@@ -341,9 +322,14 @@ class Operation:
         """
         if self.prefix is None:
             return []
-        if self.state is None or self.state.value is None:
+        if self.state is not None and self.state.value is not None:
+            # Has state: use state value
+            return [f'{self.prefix}_{self.state.value}']
+        elif self.mode == 'random' and global_state is not None:
+            # Stateless random: use global_state
+            return [f'{self.prefix}_{global_state}']
+        else:
             return []
-        return [f'{self.prefix}_{self.state.value}']
     
     def __repr__(self) -> str:
         num_states_str = "None" if self.num_states is None else str(self.num_states)
