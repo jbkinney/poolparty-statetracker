@@ -7,9 +7,10 @@ def make_sequence(length: int) -> str:
     bases = 'ACGT'
     return (bases * (length // 4 + 1))[:length]
 
-def workload_mutagenize_num_mut(
+def workload_mutagenize(
     seq_len: int = 100,
-    num_mut: int = 2,
+    mut_rate: float = None,
+    num_mut: int = None,
     num_seqs: int = 100,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
@@ -19,23 +20,7 @@ def workload_mutagenize_num_mut(
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
     seq = make_sequence(seq_len)
-    pool = pp.mutagenize(seq, num_mutations=num_mut, mode=mode)
-    return pool.generate_library(num_seqs=num_seqs)
-
-
-def workload_mutagenize_mut_rate(
-    seq_len: int = 100,
-    mut_rate: float = 0.1,
-    num_seqs: int = 100,
-    mode: Literal['random', 'sequential'] = 'random',
-    use_styles: bool = False,
-    use_cards: bool = False
-):
-    pp.init()
-    pp.toggle_styles(on=use_styles)
-    pp.toggle_cards(on=use_cards)
-    seq = make_sequence(seq_len)
-    pool = pp.mutagenize(seq, mutation_rate=mut_rate, mode=mode)
+    pool = pp.mutagenize(seq, mutation_rate=mut_rate, num_mutations=num_mut, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
 
 
@@ -120,6 +105,23 @@ def workload_from_iupac(
     return pool.generate_library(num_seqs=num_seqs)
 
 
+def workload_recombine(
+    seq_len: int = 100,
+    num_breakpoints: int = 3,
+    num_sources: int = 4,
+    num_seqs: int = 100,
+    mode: Literal['random', 'sequential'] = 'random',
+    use_styles: bool = False,
+    use_cards: bool = False
+):
+    pp.init()
+    pp.toggle_styles(on=use_styles)
+    pp.toggle_cards(on=use_cards)
+    # Create source sequences of specified length
+    sources = [make_sequence(seq_len) for _ in range(num_sources)]
+    pool = pp.recombine(sources=sources, num_breakpoints=num_breakpoints, mode=mode)
+    return pool.generate_library(num_seqs=num_seqs)
+
 def workload_mpra_example(
     num_seqs: int = 1000,
     use_styles: bool = False,
@@ -201,7 +203,12 @@ def workload_mpra_example(
 
 # Collect all workloads for easy iteration
 ALL_WORKLOADS = {
-    'mutagenize_num_mut': workload_mutagenize_num_mut,
-    'mutagenize_mut_rate': workload_mutagenize_mut_rate,
+    'mutagenize': workload_mutagenize,
+    'shuffle_seq': workload_shuffle_seq,
+    'deletion_scan': workload_deletion_scan,
+    'insertion_scan': workload_insertion_scan,
+    'get_kmers': workload_get_kmers,
+    'from_iupac': workload_from_iupac,
+    'recombine': workload_recombine,
     'mpra_example': workload_mpra_example,
 }

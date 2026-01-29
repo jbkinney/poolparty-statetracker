@@ -18,7 +18,10 @@ uv run pytest poolparty/benchmarks/ -v --run-slow
 ## Benchmark Structure
 
 - `workloads.py` - Parameterized benchmark workloads
-- `test_runtime.py` - Runtime benchmarks using pytest-benchmark
+- `benchmark_base_ops.py` - Runtime benchmarks for base operations
+- `benchmark_scan_ops.py` - Runtime benchmarks for scan operations
+- `benchmark_utils.py` - Utilities for generating benchmark tests
+- `run_benchmarks.py` - Run benchmarks and export to CSV
 - `test_memory.py` - Memory profiling using tracemalloc
 - `test_scalability.py` - Scalability tests for various parameters
 - `run_profile.py` - CLI for ad-hoc profiling
@@ -51,6 +54,23 @@ uv run pytest poolparty/benchmarks/test_runtime.py --benchmark-compare
 # Save results to JSON
 uv run pytest poolparty/benchmarks/test_runtime.py --benchmark-json=results.json
 ```
+
+## Export Benchmarks to CSV
+
+Use `run_benchmarks.py` to run benchmarks and export results to CSV:
+
+```bash
+# Run benchmarks and save to benchmark_base_ops.results.csv
+uv run python poolparty/benchmarks/run_benchmarks.py benchmark_base_ops.py
+
+# Also print a formatted table to stdout
+uv run python poolparty/benchmarks/run_benchmarks.py benchmark_base_ops.py --table
+
+# Specify custom output path
+uv run python poolparty/benchmarks/run_benchmarks.py benchmark_base_ops.py -o results.csv
+```
+
+The CSV contains: `test_name`, `mean`, `stddev`, `min`, `max`, `rounds`.
 
 ## Memory Benchmarks
 
