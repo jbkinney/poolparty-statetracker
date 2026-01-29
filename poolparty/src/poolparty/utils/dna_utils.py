@@ -52,6 +52,14 @@ VALID_CHARS: frozenset[str] = frozenset('ACGTacgt')
 # All valid IUPAC characters
 IUPAC_CHARS: frozenset[str] = frozenset(IUPAC_TO_DNA.keys())
 
+# Pre-computed mutation targets: wt_char -> list of mutation targets
+MUTATIONS_DICT: dict[str, list[str]] = {
+    'A': ['C', 'G', 'T'], 'C': ['A', 'G', 'T'],
+    'G': ['A', 'C', 'T'], 'T': ['A', 'C', 'G'],
+    'a': ['c', 'g', 't'], 'c': ['a', 'g', 't'],
+    'g': ['a', 'c', 't'], 't': ['a', 'c', 'g'],
+}
+
 
 @beartype
 def complement(char: str) -> str:

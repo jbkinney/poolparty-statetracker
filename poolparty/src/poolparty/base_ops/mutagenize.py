@@ -1,4 +1,5 @@
 """Mutagenize operation - apply mutations to a sequence."""
+from functools import lru_cache
 from itertools import combinations
 from math import comb, prod
 from ..types import Union, ModeType, Optional, Real, Integral, Sequence, RegionType, beartype, Seq
@@ -235,6 +236,15 @@ class MutagenizeOp(Operation):
             region=region,
             _natural_num_states=natural_num_states,
         )
+        
+        # Create LRU-cached version for position data computation
+        self._cached_get_positions = lru_cache(maxsize=8)(self._compute_positions_data)
+    
+    def _compute_positions_data(self, seq: str):
+        """Compute and return position data (cached via _cached_get_positions)."""
+        valid_char_positions = self._get_molecular_positions(seq)
+        mutable_positions, mutation_options = self._get_position_mutations(seq, valid_char_positions)
+        return (valid_char_positions, mutable_positions, mutation_options)
     
     def _build_caches(self, num_positions: int, mutation_counts: Optional[list[int]] = None) -> int:
         """Build caches for sequential enumeration.
@@ -326,7 +336,7 @@ class MutagenizeOp(Operation):
                     valid_muts = [b for b in sorted(allowed_bases_upper) if b != wt_upper]
             else:
                 # No restriction: all non-wt bases are valid
-                valid_muts = dna_utils.get_mutations(wt)
+                valid_muts = dna_utils.MUTATIONS_DICT[wt]
             
             if valid_muts:
                 mutable_positions.append(logical_pos)
@@ -334,12 +344,15 @@ class MutagenizeOp(Operation):
         
         return mutable_positions, mutation_options
     
-    def _random_mutation(self, seq: str, rng: np.random.Generator) -> tuple:
+    def _random_mutation(
+        self,
+        seq: str,
+        rng: np.random.Generator,
+        valid_char_positions: list[int],
+        mutable_positions: list[int],
+        mutation_options: list[list[str]],
+    ) -> tuple:
         """Generate random mutation positions (logical) and characters."""
-        valid_char_positions = self._get_molecular_positions(seq)
-        
-        # Get mutable positions and their options (respects allowed_chars)
-        mutable_positions, mutation_options = self._get_position_mutations(seq, valid_char_positions)
         num_mutable = len(mutable_positions)
         
         if num_mutable == 0:
@@ -384,10 +397,9 @@ class MutagenizeOp(Operation):
         parents[0] is the region content when region is specified.
         """
         seq = parents[0].string
-        valid_char_positions = self._get_molecular_positions(seq)
         
-        # Get mutable positions and their options (also validates allowed_chars compatibility)
-        mutable_positions, mutation_options = self._get_position_mutations(seq, valid_char_positions)
+        # Use cached position computation
+        valid_char_positions, mutable_positions, mutation_options = self._cached_get_positions(seq)
         num_mutable = len(mutable_positions)
         
         if self.num_mutations is not None and self.num_mutations > num_mutable:
@@ -396,7 +408,9 @@ class MutagenizeOp(Operation):
         if self.mode == 'random':
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)")
-            positions, wt_chars, mut_chars = self._random_mutation(seq, rng)
+            positions, wt_chars, mut_chars = self._random_mutation(
+                seq, rng, valid_char_positions, mutable_positions, mutation_options
+            )
         else:
             # Sequential mode (only available with num_mutations)
             # When allowed_chars is set, cache is pre-built at init time with correct num_states
