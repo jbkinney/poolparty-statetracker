@@ -1,4 +1,8 @@
 """Library generation functions for poolparty."""
+import logging
+
+logger = logging.getLogger(__name__)
+
 import statetracker as st
 from .types import Pool_type, Union, Sequence, Literal, Optional, beartype, Seq
 from .utils.utils import clean_df_int_columns
@@ -66,6 +70,8 @@ def generate_library(
     party = get_active_party()
     config = party._config if party else None
     suppress_cards = config.suppress_cards if config else False
+    
+    logger.info("Starting library generation: pool=%s num_seqs=%s seed=%s", pool.name, num_seqs, seed)
     
     # Build outputs dict
     outputs: dict[str, Pool_type] = {f'{pool.name}.seq': pool}
@@ -141,6 +147,7 @@ def generate_library(
     if suppress_cards and f'{pool.name}.seq' in df.columns:
         df = df.drop(columns=[f'{pool.name}.seq'])
     
+    logger.info("Completed library generation: %d sequences", len(df))
     if seqs_only:
         return list(df['seq'])
     return df

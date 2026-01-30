@@ -1,4 +1,9 @@
 """StateTracker - Composable states with unidirectional value propagation."""
+import logging
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
 from .manager import Manager
 from .operation import Operation
 from .ops import (

@@ -1,4 +1,8 @@
 """Pool class for poolparty."""
+import logging
+
+logger = logging.getLogger(__name__)
+
 import statetracker as st
 from .types import Pool_type, Operation_type, Union, Optional, Real, Integral, Sequence, beartype
 from typing import Literal
@@ -61,6 +65,7 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
         
         # Register pool with party after name is set
         party._register_pool(self)
+        logger.debug("Created pool id=%s name=%s seq_length=%s num_states=%s", self._id, self._name, self.seq_length, self.num_states)
     
     @property
     def iter_order(self) -> Real:

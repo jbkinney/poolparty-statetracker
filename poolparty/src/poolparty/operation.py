@@ -1,9 +1,12 @@
 """Operation base class for poolparty."""
+import logging
 from numbers import Real
 import statetracker as st
 from .types import Pool_type, Sequence, ModeType, Optional, RegionType, beartype, SeqStyle, Seq
 from .utils import dna_utils
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class Operation:
@@ -26,6 +29,7 @@ class Operation:
                     f"max_num_sequential_states ({cls.max_num_sequential_states}). "
                     f"Use mode='random' instead."
                 )
+            logger.info("Large state space detected: num_states=%s exceeds threshold, using inf", num_states)
             return np.inf
         return num_states
     
@@ -87,6 +91,7 @@ class Operation:
         
         # Register operation with party after name is set
         party._register_operation(self)
+        logger.debug("Created operation id=%s name=%s mode=%s num_states=%s", self._id, self._name, mode, validated_num_states)
     
     @property
     def iter_order(self) -> Real:
@@ -234,6 +239,7 @@ class Operation:
         3. Reassembles prefix + result + suffix using Seq.join
         4. Removes region tags if remove_tags=True and region is a region name
         """
+        logger.debug("Computing operation=%s with %d parent(s)", self.name, len(parents))
         if self._region is None:
             output_seq, card = self._compute_core(parents, rng)
         else:

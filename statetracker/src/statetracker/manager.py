@@ -1,4 +1,8 @@
 """Manager - Context manager for handling State objects."""
+import logging
+
+logger = logging.getLogger(__name__)
+
 try:
     from IPython.display import display
 except ImportError:
@@ -34,11 +38,13 @@ class Manager:
         if state._name is None:
             state._name = f'State[{state._id}]'
         self._states.append(state)
+        logger.debug("Registered state id=%s name=%s num_values=%s", state._id, state._name, state.num_values)
     
     def get_ancestors(self, state, visited=None):
         """Recursively collect all ancestor states and sync group peers."""
         if visited is None:
             visited = []
+            logger.debug("Getting ancestors for state id=%s name=%s", state._id, state._name)
         if state in visited:
             return visited
         visited.append(state)
@@ -53,6 +59,7 @@ class Manager:
     
     def clear_all_values(self):
         """Directly clear all states and sync groups to None (bypasses setter)."""
+        logger.debug("Clearing all values for %d states", len(self._states))
         seen_groups = set()
         for state in self._states:
             state._value = None

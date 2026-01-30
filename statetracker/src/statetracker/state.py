@@ -1,4 +1,8 @@
 """State class for composable iteration."""
+import logging
+
+logger = logging.getLogger(__name__)
+
 from .imports import beartype, Sequence, Optional, Real, Integral, Operation_type, State_type, Union
 from .manager import Manager
 from .sync_group import SynchronizedGroup
@@ -103,6 +107,7 @@ class State:
         """Synchronize this state with another (bidirectional)."""
         if self._synced_group is other._synced_group:
             return
+        logger.debug("Syncing state id=%s with state id=%s", self._id, other._id)
         if len(self._synced_group) >= len(other._synced_group):
             self._synced_group.merge(other._synced_group)
         else:
@@ -116,6 +121,7 @@ class State:
     @value.setter
     def value(self, val: Optional[Integral]):
         """Set value and propagate to parents."""
+        logger.debug("Setting value=%s for state id=%s name=%s", val, self._id, self._name)
         if val is None:
             self._synced_group.inactivate_trees()
         elif any(s._parents for s in self._synced_group._states):
@@ -131,6 +137,7 @@ class State:
     def advance(self):
         """Advance to next value (wraps around using this state's num_values)."""
         if self._synced_group._value is None:
+            logger.warning("Attempting to advance inactive state id=%s name=%s", self._id, self._name)
             raise RuntimeError("Cannot advance an inactive state (group value=None)")
         # Advance using this state's num_values for wrapping
         new_val = (self._synced_group._value + 1) % self._num_values

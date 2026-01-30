@@ -2,9 +2,14 @@
 
 __version__ = "0.3.0"
 
+import logging
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
 import statetracker as st
 
-from .party import Party, get_active_party, init, clear_pools, load_config, _init_default_party
+from .party import Party, get_active_party, init, clear_pools, load_config, configure_logging, _init_default_party
 from .pool import Pool
 from .operation import Operation
 from .region import Region
@@ -79,7 +84,7 @@ from .multiscan_ops import (
 __all__ = [
     '__version__',
     'Party', 'get_active_party', 'init', 'clear_pools',
-    'set_default', 'load_defaults', 'load_config', 'toggle_styles', 'toggle_cards',
+    'set_default', 'load_defaults', 'load_config', 'configure_logging', 'toggle_styles', 'toggle_cards',
     'Pool', 'Operation', 'Region', 'State', 'StateManager', 'generate_library',
     'BASES', 'COMPLEMENT', 'IUPAC_TO_DNA', 'IGNORE_CHARS', 'VALID_CHARS',
     'fixed_operation', 'FixedOp',

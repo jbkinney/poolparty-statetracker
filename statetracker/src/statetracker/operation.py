@@ -1,5 +1,8 @@
 """Operation - Abstract base class for state operations."""
+import logging
 from abc import ABC, abstractmethod
+
+logger = logging.getLogger(__name__)
 
 
 class Operation(ABC):

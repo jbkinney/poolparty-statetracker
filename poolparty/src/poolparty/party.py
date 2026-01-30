@@ -4,14 +4,54 @@ if sys.version_info >= (3, 11):
     import tomllib
 else:
     import tomli as tomllib
+import logging
 import statetracker as st
 from .types import Pool_type, Operation_type, Optional, beartype, Union, Any
 from .codon_table import CodonTable
 from .utils import dna_utils
 from .region import Region
 
+logger = logging.getLogger(__name__)
+
 _active_party: Optional["Party"] = None
 _default_party: Optional["Party"] = None
+
+
+@beartype
+def configure_logging(
+    level: str = "WARNING",
+    format: str = "%(levelname)s - %(name)s - %(message)s",
+    handler: Optional[logging.Handler] = None,
+) -> None:
+    """Configure logging for poolparty and statetracker.
+    
+    Parameters
+    ----------
+    level : str
+        Logging level ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL").
+    format : str
+        Log message format string.
+    handler : Optional[logging.Handler]
+        Custom handler (defaults to StreamHandler if None).
+    """
+    for logger_name in ("poolparty", "statetracker"):
+        pkg_logger = logging.getLogger(logger_name)
+        pkg_logger.setLevel(getattr(logging, level.upper()))
+        
+        if handler is None:
+            stream_handler = logging.StreamHandler()
+            stream_handler.setFormatter(logging.Formatter(format))
+            handler_to_add = stream_handler
+        else:
+            handler_to_add = handler
+        
+        # Replace NullHandler with real handler
+        pkg_logger.handlers.clear()
+        pkg_logger.addHandler(handler_to_add)
+        
+        # Reset handler to None for next iteration if we created it
+        if handler is None:
+            handler = None
 
 
 @beartype
@@ -23,9 +63,21 @@ def get_active_party() -> Optional["Party"]:
 @beartype
 def init(
     genetic_code: Union[str, dict] = 'standard',
+    log_level: Optional[str] = None,
 ) -> "Party":
-    """Initialize (or reset) the default Party, clearing all registered pools/operations/regions."""
+    """Initialize (or reset) the default Party, clearing all registered pools/operations/regions.
+    
+    Parameters
+    ----------
+    genetic_code : Union[str, dict]
+        Genetic code to use for ORF operations.
+    log_level : Optional[str]
+        If provided, configure logging at this level ("DEBUG", "INFO", "WARNING", "ERROR").
+    """
     global _active_party, _default_party
+    # Configure logging if requested
+    if log_level is not None:
+        configure_logging(level=log_level)
     # Exit current default party if active
     if _default_party is not None and _default_party._is_active:
         _default_party._counter_manager.__exit__(None, None, None)
@@ -35,6 +87,7 @@ def init(
     _default_party._counter_manager.__enter__()
     _default_party._is_active = True
     _active_party = _default_party
+    logger.info("Initialized default Party")
     return _default_party
 
 
@@ -183,6 +236,7 @@ class Party:
         _active_party = self
         self._is_active = True
         self._counter_manager.__enter__()
+        logger.info("Entered Party context")
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -193,6 +247,7 @@ class Party:
         # Restore previous party (could be default or another explicit party)
         _active_party = self._previous_party
         self._previous_party = None
+        logger.info("Exited Party context")
     
     def _validate_pool_name(self, name: str, pool: Optional[Pool_type] = None) -> str:
         """Validate that a pool name is unique."""
@@ -212,6 +267,7 @@ class Party:
         """Register a pool with this party."""
         self._pools_by_id.append(pool)
         self._pools_by_name[pool.name] = pool
+        logger.debug("Registered pool id=%s name=%s num_states=%s", pool._id, pool.name, pool.num_states)
     
     def _update_pool_name(self, pool: Pool_type, old_name: str, new_name: str) -> None:
         """Update a pool's name in the tracking dict."""
@@ -225,6 +281,7 @@ class Party:
             self._operations.append(operation)
         self._ops_by_id.append(operation)
         self._ops_by_name[operation.name] = operation
+        logger.debug("Registered operation id=%s name=%s mode=%s", operation._id, operation.name, operation.mode)
     
     def _update_op_name(self, op: Operation_type, old_name: str, new_name: str) -> None:
         """Update an operation's name in the tracking dict."""
@@ -297,6 +354,7 @@ class Party:
         region = Region(name=name, seq_length=seq_length, _id=self._get_next_region_id())
         self._regions_by_id.append(region)
         self._regions_by_name[name] = region
+        logger.debug("Registered region id=%s name=%s seq_length=%s", region._id, name, seq_length)
         return region
     
     def get_region_by_id(self, id_: int) -> Region:
