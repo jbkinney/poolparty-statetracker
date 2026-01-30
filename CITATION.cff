@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+title: "PoolParty and StateTracker: Tools for DNA Library Design and Combinatorial State Management"
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+authors:
+  - family-names: Kinney
+    given-names: Justin B.
+    orcid: "https://orcid.org/0000-0003-1897-3778"
+    affiliation: Cold Spring Harbor Laboratory
+  - family-names: Liu
+    given-names: Zhihan
+    affiliation: Cold Spring Harbor Laboratory
+repository-code: "https://github.com/jbkinney/poolparty-statecounter"
+license: MIT
+keywords:
+  - DNA library design
+  - oligonucleotide pools
+  - combinatorics
+  - bioinformatics
+  - state management
+  - MPRA
+  - deep mutational scanning
+
+# For citing the individual packages:
+references:
+  - type: software
+    title: "PoolParty: Declarative DNA Library Design"
+    authors:
+      - family-names: Kinney
+        given-names: Justin B.
+        orcid: "https://orcid.org/0000-0003-1897-3778"
+    version: "0.1.0"
+    license: MIT
+    repository-code: "https://github.com/jbkinney/poolparty-statecounter/tree/main/poolparty"
+
+  - type: software
+    title: "StateTracker: Composable States for Combinatorial Enumeration"
+    authors:
+      - family-names: Liu
+        given-names: Zhihan
+      - family-names: Kinney
+        given-names: Justin B.
+        orcid: "https://orcid.org/0000-0003-1897-3778"
+    version: "0.1.0"
+    license: MIT
+    repository-code: "https://github.com/jbkinney/poolparty-statecounter/tree/main/statetracker"
+    url: "https://statetracker.readthedocs.io"
