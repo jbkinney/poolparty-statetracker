@@ -311,6 +311,10 @@ class RecombineOp(Operation):
         When region is not specified:
         - parents are the source pool sequences directly
         """
+        # Cache party attributes at start (avoid repeated function calls)
+        _suppress_styles = self._party.suppress_styles
+        _suppress_cards = self._party.suppress_cards
+        
         # Determine which parents are source sequences
         if self._region is not None:
             # Region-based: skip first parent (region content)
@@ -375,11 +379,10 @@ class RecombineOp(Operation):
             segments.append(segment)
             
             # Extract and offset style from source pool
-            from ..utils.style_utils import styles_suppressed
             if source_styles and pool_idx < len(source_styles) and source_styles[pool_idx] is not None:
                 seg_style = source_styles[pool_idx][start:end]
             else:
-                seg_style = None if styles_suppressed() else SeqStyle.empty(len(segment))
+                seg_style = None if _suppress_styles else SeqStyle.empty(len(segment))
             segment_styles.append(seg_style)
             
             start = end
@@ -389,11 +392,10 @@ class RecombineOp(Operation):
         segment = source_seqs[last_pool_idx][start:]
         segments.append(segment)
         
-        from ..utils.style_utils import styles_suppressed
         if source_styles and last_pool_idx < len(source_styles) and source_styles[last_pool_idx] is not None:
             seg_style = source_styles[last_pool_idx][start:]
         else:
-            seg_style = None if styles_suppressed() else SeqStyle.empty(len(segment))
+            seg_style = None if _suppress_styles else SeqStyle.empty(len(segment))
         segment_styles.append(seg_style)
         
         # Build segments as Seq objects
@@ -401,8 +403,8 @@ class RecombineOp(Operation):
         for seg, seg_style in zip(segments, segment_styles):
             seq_segments.append(Seq(seg, seg_style))
         
-        # Join segments
-        output_seq = Seq.join(seq_segments)
+        # Join segments (use fast path since segments are tag-free)
+        output_seq = Seq._join_fast(seq_segments)
         
         # Overlay additional styles if provided
         if self._styles is not None:
@@ -424,8 +426,7 @@ class RecombineOp(Operation):
                     output_seq = output_seq.add_style(style_spec, positions)
                 offset += len(seq_segments[seg_idx])
         
-        from ..party import cards_suppressed
-        if cards_suppressed():
+        if _suppress_cards:
             return output_seq, {}
         
         return output_seq, {

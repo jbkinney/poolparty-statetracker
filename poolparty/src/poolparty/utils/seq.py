@@ -6,6 +6,9 @@ import numpy as np
 
 CoordSystem = Literal['literal', 'nontag', 'molecular']
 
+# Sentinel for lazy coordinate map computation
+_NOT_COMPUTED = object()
+
 
 @dataclass(frozen=True)
 class Seq:
@@ -77,11 +80,13 @@ class Seq:
     @property
     def nontag_length(self) -> int:
         """Length in nontag coordinates (excludes tag markup)."""
+        self._ensure_coord_maps()
         return len(self._nontag_to_literal)
     
     @property
     def molecular_length(self) -> int:
         """Length in molecular coordinates (DNA characters only)."""
+        self._ensure_coord_maps()
         return len(self._molecular_to_literal)
     
     @property
@@ -93,6 +98,67 @@ class Seq:
     def regions(self) -> tuple:
         """Parsed region tags in this sequence."""
         return self._regions
+    
+    def _ensure_coord_maps(self) -> None:
+        """Compute coordinate maps if not already computed (lazy initialization)."""
+        if self._nontag_to_literal is _NOT_COMPUTED:
+            from . import parsing_utils, dna_utils
+            
+            string = self.string
+            n = len(string)
+            
+            # Fast path: no tags possible if no '<' character
+            if '<' not in string:
+                # For tag-free strings: nontag coords == literal coords
+                identity_map = tuple(range(n))
+                
+                # molecular_to_literal: only DNA characters (ACGTacgt)
+                molecular_positions = []
+                for i, c in enumerate(string):
+                    if c in dna_utils.VALID_CHARS:
+                        molecular_positions.append(i)
+                molecular_to_literal = tuple(molecular_positions)
+                
+                # literal_to_molecular: reverse mapping (None for non-DNA chars)
+                literal_to_molecular_list = [None] * n
+                for mol_idx, lit_pos in enumerate(molecular_to_literal):
+                    literal_to_molecular_list[lit_pos] = mol_idx
+                literal_to_molecular = tuple(literal_to_molecular_list)
+                
+                object.__setattr__(self, '_nontag_to_literal', identity_map)
+                object.__setattr__(self, '_molecular_to_literal', molecular_to_literal)
+                object.__setattr__(self, '_literal_to_nontag', identity_map)
+                object.__setattr__(self, '_literal_to_molecular', literal_to_molecular)
+            else:
+                # Has tags - need full parsing
+                # 1. nontag_to_literal: map nontag positions to literal positions
+                nontag_positions = parsing_utils.get_nontag_positions(string)
+                nontag_to_literal = tuple(nontag_positions)
+                
+                # 2. molecular_to_literal: map molecular (DNA only) positions to literal
+                molecular_positions = []
+                for lit_pos in nontag_positions:
+                    char = string[lit_pos]
+                    if char in dna_utils.VALID_CHARS:
+                        molecular_positions.append(lit_pos)
+                molecular_to_literal = tuple(molecular_positions)
+                
+                # 3. literal_to_nontag: map literal positions to nontag (None for tag chars)
+                literal_to_nontag_list = [None] * n
+                for nontag_idx, lit_pos in enumerate(nontag_to_literal):
+                    literal_to_nontag_list[lit_pos] = nontag_idx
+                literal_to_nontag = tuple(literal_to_nontag_list)
+                
+                # 4. literal_to_molecular: map literal positions to molecular (None for non-DNA)
+                literal_to_molecular_list = [None] * n
+                for mol_idx, lit_pos in enumerate(molecular_to_literal):
+                    literal_to_molecular_list[lit_pos] = mol_idx
+                literal_to_molecular = tuple(literal_to_molecular_list)
+                
+                object.__setattr__(self, '_nontag_to_literal', nontag_to_literal)
+                object.__setattr__(self, '_molecular_to_literal', molecular_to_literal)
+                object.__setattr__(self, '_literal_to_nontag', literal_to_nontag)
+                object.__setattr__(self, '_literal_to_molecular', literal_to_molecular)
     
     # Coordinate conversion methods
     def convert_pos(
@@ -137,6 +203,9 @@ class Seq:
         if from_coord == to_coord:
             return pos
         
+        # Ensure coordinate maps are computed
+        self._ensure_coord_maps()
+        
         # Convert to literal first if needed
         if from_coord == 'nontag':
             if pos < 0 or pos >= len(self._nontag_to_literal):
@@ -161,24 +230,28 @@ class Seq:
     
     def molecular_to_literal(self, pos: int) -> int:
         """Convert molecular position to literal position."""
+        self._ensure_coord_maps()
         if pos < 0 or pos >= len(self._molecular_to_literal):
             raise IndexError(f"molecular position {pos} out of range [0, {len(self._molecular_to_literal)})")
         return self._molecular_to_literal[pos]
     
     def nontag_to_literal(self, pos: int) -> int:
         """Convert nontag position to literal position."""
+        self._ensure_coord_maps()
         if pos < 0 or pos >= len(self._nontag_to_literal):
             raise IndexError(f"nontag position {pos} out of range [0, {len(self._nontag_to_literal)})")
         return self._nontag_to_literal[pos]
     
     def literal_to_molecular(self, pos: int) -> int | None:
         """Convert literal position to molecular position (None if not DNA)."""
+        self._ensure_coord_maps()
         if pos < 0 or pos >= len(self._literal_to_molecular):
             raise IndexError(f"literal position {pos} out of range [0, {len(self._literal_to_molecular)})")
         return self._literal_to_molecular[pos]
     
     def literal_to_nontag(self, pos: int) -> int | None:
         """Convert literal position to nontag position (None if inside tag)."""
+        self._ensure_coord_maps()
         if pos < 0 or pos >= len(self._literal_to_nontag):
             raise IndexError(f"literal position {pos} out of range [0, {len(self._literal_to_nontag)})")
         return self._literal_to_nontag[pos]
@@ -372,6 +445,38 @@ class Seq:
         )
     
     @classmethod
+    def _join_fast(cls, input_seqs: Sequence['Seq']) -> 'Seq':
+        """Fast join for tag-free segments - skips coordinate map computation.
+        
+        Use when joining segments that are known to be tag-free (e.g., slices
+        from recombine operations). Does not support separators.
+        """
+        if not input_seqs:
+            return cls.empty()
+        
+        # Join strings directly
+        string = ''.join(s.string for s in input_seqs)
+        
+        # Join styles if present
+        if any(s.style is None for s in input_seqs):
+            result_style = None
+        else:
+            styles = [s.style for s in input_seqs]
+            result_style = SeqStyle.join(styles)
+        
+        # Construct Seq without reparsing (coordinate maps computed lazily)
+        seq = cls.__new__(cls)
+        object.__setattr__(seq, 'string', string)
+        object.__setattr__(seq, 'style', result_style)
+        object.__setattr__(seq, '_clean', string)  # No tags
+        object.__setattr__(seq, '_regions', ())
+        object.__setattr__(seq, '_nontag_to_literal', _NOT_COMPUTED)
+        object.__setattr__(seq, '_molecular_to_literal', _NOT_COMPUTED)
+        object.__setattr__(seq, '_literal_to_nontag', _NOT_COMPUTED)
+        object.__setattr__(seq, '_literal_to_molecular', _NOT_COMPUTED)
+        return seq
+    
+    @classmethod
     def empty(cls) -> 'Seq':
         """Create empty Seq.
         
@@ -398,7 +503,7 @@ class Seq:
         Seq
             New Seq with parsed regions and coordinate maps.
         """
-        from . import parsing_utils, dna_utils
+        from . import parsing_utils
         from .style_utils import styles_suppressed
         
         if style is None:
@@ -406,32 +511,16 @@ class Seq:
         
         # Fast path: no tags possible if no '<' character
         if '<' not in string:
-            n = len(string)
-            # For tag-free strings: nontag coords == literal coords
-            identity_map = tuple(range(n))
-            
-            # molecular_to_literal: only DNA characters (ACGTacgt)
-            molecular_positions = []
-            for i, c in enumerate(string):
-                if c in dna_utils.VALID_CHARS:
-                    molecular_positions.append(i)
-            molecular_to_literal = tuple(molecular_positions)
-            
-            # literal_to_molecular: reverse mapping (None for non-DNA chars)
-            literal_to_molecular_list = [None] * n
-            for mol_idx, lit_pos in enumerate(molecular_to_literal):
-                literal_to_molecular_list[lit_pos] = mol_idx
-            literal_to_molecular = tuple(literal_to_molecular_list)
-            
             seq = cls.__new__(cls)
             object.__setattr__(seq, 'string', string)
             object.__setattr__(seq, 'style', style)
             object.__setattr__(seq, '_clean', string)  # No tags to strip
             object.__setattr__(seq, '_regions', ())    # No regions
-            object.__setattr__(seq, '_nontag_to_literal', identity_map)
-            object.__setattr__(seq, '_molecular_to_literal', molecular_to_literal)
-            object.__setattr__(seq, '_literal_to_nontag', identity_map)
-            object.__setattr__(seq, '_literal_to_molecular', literal_to_molecular)
+            # Coordinate maps computed lazily via _ensure_coord_maps()
+            object.__setattr__(seq, '_nontag_to_literal', _NOT_COMPUTED)
+            object.__setattr__(seq, '_molecular_to_literal', _NOT_COMPUTED)
+            object.__setattr__(seq, '_literal_to_nontag', _NOT_COMPUTED)
+            object.__setattr__(seq, '_literal_to_molecular', _NOT_COMPUTED)
             return seq
         
         # Parse regions (skip validation since fast path handles tag-free case)
@@ -440,41 +529,17 @@ class Seq:
         # Strip tags to get clean content
         clean = parsing_utils.strip_all_tags(string)
         
-        # Build coordinate maps
-        # 1. nontag_to_literal: map nontag positions to literal positions
-        nontag_positions = parsing_utils.get_nontag_positions(string)
-        nontag_to_literal = tuple(nontag_positions)
-        
-        # 2. molecular_to_literal: map molecular (DNA only) positions to literal positions
-        molecular_positions = []
-        for lit_pos in nontag_positions:
-            char = string[lit_pos]
-            if char in dna_utils.VALID_CHARS:  # VALID_CHARS contains both upper and lowercase
-                molecular_positions.append(lit_pos)
-        molecular_to_literal = tuple(molecular_positions)
-        
-        # 3. literal_to_nontag: map literal positions to nontag (None for tag chars)
-        literal_to_nontag_list = [None] * len(string)
-        for nontag_idx, lit_pos in enumerate(nontag_to_literal):
-            literal_to_nontag_list[lit_pos] = nontag_idx
-        literal_to_nontag = tuple(literal_to_nontag_list)
-        
-        # 4. literal_to_molecular: map literal positions to molecular (None for non-DNA)
-        literal_to_molecular_list = [None] * len(string)
-        for mol_idx, lit_pos in enumerate(molecular_to_literal):
-            literal_to_molecular_list[lit_pos] = mol_idx
-        literal_to_molecular = tuple(literal_to_molecular_list)
-        
         # Use object.__setattr__ for frozen dataclass
         seq = cls.__new__(cls)
         object.__setattr__(seq, 'string', string)
         object.__setattr__(seq, 'style', style)
         object.__setattr__(seq, '_clean', clean)
         object.__setattr__(seq, '_regions', regions)
-        object.__setattr__(seq, '_nontag_to_literal', nontag_to_literal)
-        object.__setattr__(seq, '_molecular_to_literal', molecular_to_literal)
-        object.__setattr__(seq, '_literal_to_nontag', literal_to_nontag)
-        object.__setattr__(seq, '_literal_to_molecular', literal_to_molecular)
+        # Coordinate maps computed lazily via _ensure_coord_maps()
+        object.__setattr__(seq, '_nontag_to_literal', _NOT_COMPUTED)
+        object.__setattr__(seq, '_molecular_to_literal', _NOT_COMPUTED)
+        object.__setattr__(seq, '_literal_to_nontag', _NOT_COMPUTED)
+        object.__setattr__(seq, '_literal_to_molecular', _NOT_COMPUTED)
         
         return seq
     
