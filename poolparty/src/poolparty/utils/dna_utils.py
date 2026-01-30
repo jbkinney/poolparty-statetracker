@@ -102,8 +102,8 @@ def get_length_without_tags(seq: str) -> int:
 @beartype
 def get_molecular_positions(seq: str) -> list[int]:
     """Get positions of valid DNA characters, excluding gaps and region tags."""
-    nontag_positions = set(get_nontag_positions(seq))
-    return [i for i, c in enumerate(seq) if c in VALID_CHARS and i in nontag_positions]
+    nontag_positions = get_nontag_positions(seq)
+    return [i for i in nontag_positions if seq[i] in VALID_CHARS]
 
 
 @beartype

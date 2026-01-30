@@ -130,8 +130,13 @@ class SeqShuffleOp(Operation):
         
         seq = parents[0].string
         
-        # Get molecular positions only (excludes markers and ignore_chars)
-        molecular_positions = self._get_molecular_positions(seq)
+        # Cache molecular positions for repeated sequences
+        if not hasattr(self, '_mol_pos_cache'):
+            self._mol_pos_cache = {}
+        
+        if seq not in self._mol_pos_cache:
+            self._mol_pos_cache[seq] = self._get_molecular_positions(seq)
+        molecular_positions = self._mol_pos_cache[seq]
         num_molecular = len(molecular_positions)
         
         if num_molecular == 0:
@@ -139,26 +144,16 @@ class SeqShuffleOp(Operation):
             shuffled_seq = seq
         else:
             order = rng.permutation(num_molecular)
-            # Convert order (new positions holding original indices) to mapping original->new
-            permutation = [0] * num_molecular
-            for new_pos, orig_idx in enumerate(order):
-                permutation[orig_idx] = int(new_pos)
-            permutation = tuple(permutation)
+            # Use argsort to compute inverse permutation (vectorized)
+            permutation = tuple(np.argsort(order).tolist())
             
-            # Extract molecular characters
-            molecular_chars = [seq[pos] for pos in molecular_positions]
-            
-            # Apply permutation: permutation[i] tells us where char i should go
-            shuffled_molecular = [''] * num_molecular
-            for i, ch in enumerate(molecular_chars):
-                dest = permutation[i]
-                shuffled_molecular[dest] = ch
-            
-        # Place shuffled molecular chars back at their original positions
-        seq_list = list(seq)
-        for i, pos in enumerate(molecular_positions):
-            seq_list[pos] = shuffled_molecular[i]
-        shuffled_seq = ''.join(seq_list)
+            # Vectorized character shuffling using numpy
+            pos_arr = np.array(molecular_positions, dtype=np.intp)
+            seq_arr = np.array(list(seq), dtype='U1')
+            molecular_chars = seq_arr[pos_arr]
+            shuffled_molecular = molecular_chars[order]
+            seq_arr[pos_arr] = shuffled_molecular
+            shuffled_seq = ''.join(seq_arr)
         
         # Pass through parent styles and add styling to shuffled characters if requested
         output_style = parents[0].style
