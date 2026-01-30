@@ -72,7 +72,6 @@ def from_iupac(
     return result_pool
 
 
-@beartype
 class FromIupacOp(Operation):
     """Generate DNA sequences from IUPAC notation."""
     factory_name = "from_iupac"

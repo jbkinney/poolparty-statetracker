@@ -64,7 +64,6 @@ def stylize(
     return Pool(operation=op)
 
 
-@beartype
 class StylizeOp(Operation):
     """Apply inline styling to sequences without modification."""
     factory_name = "stylize"

@@ -59,7 +59,6 @@ def fixed_operation(
     return pool
 
 
-@beartype
 class FixedOp(Operation):
     """Fixed operation that applies a user-defined function to parent sequences."""
     factory_name = "fixed"

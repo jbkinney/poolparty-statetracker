@@ -70,7 +70,6 @@ def get_kmers(
     return pool
 
 
-@beartype
 class GetKmersOp(Operation):
     """Generate DNA k-mers."""
     factory_name = "get_kmers"

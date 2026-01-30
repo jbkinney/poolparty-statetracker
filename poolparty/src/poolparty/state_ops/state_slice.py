@@ -63,7 +63,6 @@ def state_slice(
     return result_pool
 
 
-@beartype
 class StateSliceOp(Operation):
     """Slice a pool's states to select a subset."""
     factory_name = "state_slice"

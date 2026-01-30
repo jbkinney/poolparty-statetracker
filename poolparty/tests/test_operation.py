@@ -100,15 +100,18 @@ class TestOperationModeValidation:
             assert combined.operation.mode == 'fixed'
     
     def test_invalid_mode_error(self):
-        """Test that invalid mode raises error."""
-        # Beartype validates the Literal type before our code runs
-        with pytest.raises(Exception):  # BeartypeCallHintParamViolation
-            # Create a direct Operation with invalid mode
+        """Test that invalid mode is accepted (no runtime validation after beartype removal)."""
+        # Note: Operation class no longer has beartype for performance reasons.
+        # Invalid modes are only validated at factory function level (which still have beartype).
+        # Direct Operation instantiation with invalid mode will not raise an error.
+        with pp.Party():
             op = Operation(
                 parent_pools=[],
                 num_states=1,
                 mode='invalid',  # type: ignore
             )
+            # Should not raise - validation happens at factory function level, not class level
+            assert op.mode == 'invalid'
 
 
 class TestValidateNumStates:

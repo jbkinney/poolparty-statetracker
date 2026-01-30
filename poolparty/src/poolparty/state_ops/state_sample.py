@@ -56,7 +56,6 @@ def state_sample(
     return result_pool
 
 
-@beartype
 class StateSampleOp(Operation):
     """Sample states from a pool."""
     factory_name = "state_sample"

@@ -78,7 +78,6 @@ def from_motif(
     return result_pool
 
 
-@beartype
 class FromMotifOp(Operation):
     """Sample sequences from a position probability matrix."""
     factory_name = "from_motif"

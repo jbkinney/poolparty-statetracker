@@ -41,7 +41,6 @@ def state_shuffle(
     return result_pool
 
 
-@beartype
 class StateShuffleOp(Operation):
     """Randomly permute a pool's states."""
     factory_name = "state_shuffle"

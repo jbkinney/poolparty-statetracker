@@ -6,7 +6,6 @@ from .utils import dna_utils
 import numpy as np
 
 
-@beartype
 class Operation:
     """Base class for all operations."""
     design_card_keys: Sequence[str] = []

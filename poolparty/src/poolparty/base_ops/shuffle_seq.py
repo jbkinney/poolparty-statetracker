@@ -62,7 +62,6 @@ def shuffle_seq(
     return result_pool
 
 
-@beartype
 class SeqShuffleOp(Operation):
     """Randomly shuffle characters within a region of the parent sequence."""
     factory_name = "shuffle_seq"

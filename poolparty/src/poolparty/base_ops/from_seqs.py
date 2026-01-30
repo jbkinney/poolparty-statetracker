@@ -69,7 +69,6 @@ def from_seqs(
     return result_pool
 
 
-@beartype
 class FromSeqsOp(Operation):
     """Create a pool from a list of sequences."""
     factory_name = "from_seqs"

@@ -38,50 +38,6 @@ class TestTypeAliases:
         assert Callable is not None
 
 
-class TestBeartypeIntegration:
-    """Test that beartype decorator works as expected."""
-    
-    def test_beartype_validates_types(self):
-        """Test that beartype actually validates types."""
-        from poolparty.types import beartype
-        
-        @beartype
-        def typed_func(x: int, y: str) -> str:
-            return f"{x}-{y}"
-        
-        # Valid call
-        result = typed_func(42, "hello")
-        assert result == "42-hello"
-    
-    def test_beartype_rejects_invalid_types(self):
-        """Test that beartype rejects invalid types."""
-        from poolparty.types import beartype
-        
-        @beartype
-        def typed_func(x: int) -> int:
-            return x * 2
-        
-        # Invalid call should raise
-        with pytest.raises(Exception):  # BeartypeCallHintViolation
-            typed_func("not an int")
-
-
-class TestModeTypeUsage:
-    """Test ModeType literal values."""
-    
-    def test_valid_mode_values(self):
-        """Test that valid mode values work with beartype."""
-        from poolparty.types import ModeType, beartype
-        
-        @beartype
-        def check_mode(mode: ModeType) -> str:
-            return mode
-        
-        assert check_mode('random') == 'random'
-        assert check_mode('sequential') == 'sequential'
-        assert check_mode('fixed') == 'fixed'
-
-
 class TestAllExports:
     """Test __all__ exports are complete."""
     

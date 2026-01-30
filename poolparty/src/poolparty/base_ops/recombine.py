@@ -114,7 +114,6 @@ def recombine(
     return result_pool
 
 
-@beartype
 class RecombineOp(Operation):
     """Recombine segments from multiple source pools at specified breakpoints.
     

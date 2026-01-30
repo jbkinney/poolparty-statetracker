@@ -38,7 +38,6 @@ def repeat(
     return result_pool
 
 
-@beartype
 class RepeatOp(Operation):
     """Repeat a pool's states n times."""
     factory_name = "repeat"

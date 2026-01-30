@@ -72,7 +72,6 @@ def mutagenize_orf(
     return Pool(operation=op)
 
 
-@beartype
 class MutagenizeOrfOp(Operation):
     """Apply codon-level mutations to an ORF sequence."""
     factory_name = "mutagenize_orf"

@@ -34,7 +34,6 @@ def passthrough(
     return Pool(operation=op)
 
 
-@beartype
 class PassthroughOp(Operation):
     """Pass through sequence unchanged, optionally contributing custom names."""
     factory_name = "passthrough"

@@ -49,7 +49,6 @@ def stack(
     return result_pool
 
 
-@beartype
 class StackOp(Operation):
     """Stack multiple pools sequentially (disjoint union)."""
     factory_name = "stack"

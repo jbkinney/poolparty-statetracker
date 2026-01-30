@@ -7,7 +7,6 @@ import numpy as np
 CoordSystem = Literal['literal', 'nontag', 'molecular']
 
 
-@beartype
 @dataclass(frozen=True)
 class Seq:
     """Immutable container bundling DNA sequence string, style, and region metadata.

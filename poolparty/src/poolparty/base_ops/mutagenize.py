@@ -80,7 +80,6 @@ def mutagenize(
     return pool
 
 
-@beartype
 class MutagenizeOp(Operation):
     """Apply mutations to a parent sequence or a specified region within it.
     
