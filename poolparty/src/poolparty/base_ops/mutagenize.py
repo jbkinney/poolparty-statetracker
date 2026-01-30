@@ -246,7 +246,50 @@ class MutagenizeOp(Operation):
         mutable_positions, mutation_options = self._get_position_mutations(seq, valid_char_positions)
         # Pre-convert to numpy for faster mutation application
         seq_bytes = np.frombuffer(seq.encode('ascii'), dtype=np.uint8)
-        return (valid_char_positions, mutable_positions, mutation_options, seq_bytes)
+        
+        # Pre-compute numpy arrays for vectorized mutation
+        num_mutable = len(mutable_positions)
+        if num_mutable > 0:
+            # Convert positions to numpy arrays
+            mutable_positions_arr = np.array(mutable_positions, dtype=np.intp)
+            valid_char_positions_arr = np.array(valid_char_positions, dtype=np.intp)
+            
+            # Build raw_positions lookup: raw_pos = valid_char_positions[mutable_positions[i]]
+            raw_positions_arr = valid_char_positions_arr[mutable_positions_arr]
+            
+            # Pre-extract WT characters as bytes at mutable positions
+            wt_bytes_arr = seq_bytes[raw_positions_arr]
+            
+            # Build mutation options as 2D numpy array (num_positions x max_options)
+            # Each row contains byte values of valid mutations, padded with 0
+            mutation_counts = [len(opts) for opts in mutation_options]
+            max_options = max(mutation_counts) if mutation_counts else 0
+            mutation_options_arr = np.zeros((num_mutable, max_options), dtype=np.uint8)
+            mutation_counts_arr = np.array(mutation_counts, dtype=np.intp)
+            for i, opts in enumerate(mutation_options):
+                for j, char in enumerate(opts):
+                    mutation_options_arr[i, j] = ord(char)
+        else:
+            valid_char_positions_arr = np.array(valid_char_positions, dtype=np.intp) if valid_char_positions else np.array([], dtype=np.intp)
+            mutable_positions_arr = np.array([], dtype=np.intp)
+            raw_positions_arr = np.array([], dtype=np.intp)
+            wt_bytes_arr = np.array([], dtype=np.uint8)
+            mutation_options_arr = np.zeros((0, 0), dtype=np.uint8)
+            mutation_counts_arr = np.array([], dtype=np.intp)
+        
+        return (
+            valid_char_positions,      # Keep for compatibility
+            mutable_positions,         # Keep for compatibility  
+            mutation_options,          # Keep for compatibility
+            seq_bytes,                 # Keep for _apply_mutations_numpy
+            # Cached numpy arrays for vectorized operations:
+            valid_char_positions_arr,
+            mutable_positions_arr,
+            raw_positions_arr,
+            wt_bytes_arr,
+            mutation_options_arr,
+            mutation_counts_arr,
+        )
     
     def _build_caches(self, num_positions: int, mutation_counts: Optional[list[int]] = None) -> int:
         """Build caches for sequential enumeration.
@@ -348,52 +391,56 @@ class MutagenizeOp(Operation):
     
     def _random_mutation(
         self,
-        seq: str,
         rng: np.random.Generator,
-        valid_char_positions: list[int],
-        mutable_positions: list[int],
-        mutation_options: list[list[str]],
+        num_mutable: int,
+        mutable_positions_arr: np.ndarray,
+        wt_bytes_arr: np.ndarray,
+        mutation_options_arr: np.ndarray,
+        mutation_counts_arr: np.ndarray,
     ) -> tuple:
-        """Generate random mutation positions (logical) and characters."""
-        num_mutable = len(mutable_positions)
-        
+        """Generate random mutation positions and characters (vectorized)."""
         if num_mutable == 0:
-            return tuple(), tuple(), tuple()
+            return (), (), ()
         
         # Determine number of mutations
         if self.num_mutations is not None:
             num_mut = min(self.num_mutations, num_mutable)
         else:
-            # Use binomial distribution based on mutation_rate
             num_mut = rng.binomial(num_mutable, self.mutation_rate)
             if num_mut == 0:
-                return tuple(), tuple(), tuple()
+                return (), (), ()
         
-        # Choose random positions from mutable positions
-        chosen_indices = sorted(rng.choice(num_mutable, size=num_mut, replace=False))
-        positions = tuple(mutable_positions[i] for i in chosen_indices)
+        # Choose random position indices
+        chosen_indices = rng.choice(num_mutable, size=num_mut, replace=False)
         
-        # Determine wild-type and mutant characters using raw positions
-        wt_chars = []
-        mut_chars = []
-        for idx in chosen_indices:
-            logical_pos = mutable_positions[idx]
-            raw_pos = valid_char_positions[logical_pos]
-            wt = seq[raw_pos]
-            wt_chars.append(wt)
-            # Select randomly from position-specific options
-            opts = mutation_options[idx]
-            mut = opts[rng.integers(0, len(opts))]
-            mut_chars.append(mut)
+        # Vectorized lookups
+        positions = mutable_positions_arr[chosen_indices]
+        wt_bytes = wt_bytes_arr[chosen_indices]
         
-        return positions, tuple(wt_chars), tuple(mut_chars)
+        # Vectorized mutation selection
+        # For each chosen position, pick a random index from 0 to mutation_count-1
+        counts = mutation_counts_arr[chosen_indices]
+        mut_indices = (rng.random(num_mut) * counts).astype(np.intp)
+        mut_bytes = mutation_options_arr[chosen_indices, mut_indices]
+        
+        # Sort by position for consistent output (needed for design cards)
+        sort_order = np.argsort(positions)
+        positions = positions[sort_order]
+        wt_bytes = wt_bytes[sort_order]
+        mut_bytes = mut_bytes[sort_order]
+        
+        return (
+            tuple(positions.tolist()),
+            tuple(chr(b) for b in wt_bytes),
+            tuple(chr(b) for b in mut_bytes),
+        )
     
     def _apply_mutations_numpy(
         self,
         seq_bytes: np.ndarray,
         positions: tuple,
         mut_chars: tuple,
-        valid_char_positions: list[int],
+        valid_char_positions_arr: np.ndarray,
     ) -> str:
         """Apply mutations using NumPy for better performance on long sequences."""
         if len(positions) == 0:
@@ -402,8 +449,9 @@ class MutagenizeOp(Operation):
         # Copy the cached array (fast for numpy)
         seq_arr = seq_bytes.copy()
         
-        # Compute raw positions and mutation bytes
-        raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.intp)
+        # Compute raw positions and mutation bytes (vectorized)
+        positions_arr = np.array(positions, dtype=np.intp)
+        raw_positions = valid_char_positions_arr[positions_arr]
         mut_bytes = np.array([ord(m) for m in mut_chars], dtype=np.uint8)
         
         # Apply all mutations at once (vectorized)
@@ -424,8 +472,10 @@ class MutagenizeOp(Operation):
         """
         seq = parents[0].string
         
-        # Use cached position computation (includes pre-converted numpy bytes)
-        valid_char_positions, mutable_positions, mutation_options, seq_bytes = self._cached_get_positions(seq)
+        # Use cached position computation (includes pre-converted numpy arrays)
+        (valid_char_positions, mutable_positions, mutation_options, seq_bytes,
+         valid_char_positions_arr, mutable_positions_arr, raw_positions_arr,
+         wt_bytes_arr, mutation_options_arr, mutation_counts_arr) = self._cached_get_positions(seq)
         num_mutable = len(mutable_positions)
         
         if self.num_mutations is not None and self.num_mutations > num_mutable:
@@ -435,7 +485,9 @@ class MutagenizeOp(Operation):
             if rng is None:
                 raise RuntimeError(f"{self.mode} mode requires RNG - use Party.generate(seed=...)")
             positions, wt_chars, mut_chars = self._random_mutation(
-                seq, rng, valid_char_positions, mutable_positions, mutation_options
+                rng, num_mutable,
+                mutable_positions_arr, wt_bytes_arr,
+                mutation_options_arr, mutation_counts_arr
             )
         else:
             # Sequential mode (only available with num_mutations)
@@ -474,15 +526,16 @@ class MutagenizeOp(Operation):
             mut_chars = tuple(mut_chars)
         
         # Apply mutations to sequence using NumPy for performance
-        result_seq = self._apply_mutations_numpy(seq_bytes, positions, mut_chars, valid_char_positions)
+        result_seq = self._apply_mutations_numpy(seq_bytes, positions, mut_chars, valid_char_positions_arr)
         
         # Build output styles: pass through parent styles (mutagenize preserves length)
         # and add mutation style if _style is set
         output_style = parents[0].style
         
         if output_style is not None and self._style is not None and len(positions) > 0:
-            # Convert logical positions to raw positions for styling
-            raw_positions = np.array([valid_char_positions[p] for p in positions], dtype=np.int64)
+            # Convert logical positions to raw positions for styling (vectorized)
+            positions_arr = np.array(positions, dtype=np.intp)
+            raw_positions = valid_char_positions_arr[positions_arr].astype(np.int64)
             output_style = output_style.add_style(self._style, raw_positions)
         
         output_seq = Seq(result_seq, output_style)
