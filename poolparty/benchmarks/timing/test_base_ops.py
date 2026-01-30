@@ -2,6 +2,10 @@
 from typing import Literal
 from ._utils import make_sequence, DEFAULT_NUM_SEQS, DEFAULT_SEQ_LEN
 
+# Pre-warm imports before profiling
+import poolparty as pp
+pp.init()
+
 # uv run python poolparty/benchmarks/run_benchmarks.py benchmark.py -c TestMutagenize -t    
 
 def workload_mutagenize(
@@ -13,7 +17,6 @@ def workload_mutagenize(
     use_styles: bool = False,
     use_cards: bool = False,
 ):
-    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
@@ -37,7 +40,6 @@ def workload_shuffle_seq(
     use_styles: bool = False,
     use_cards: bool = False,
 ):
-    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
@@ -57,7 +59,6 @@ def workload_get_kmers(
     use_styles: bool = False,
     use_cards: bool = False,
 ):
-    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
@@ -76,7 +77,6 @@ def workload_from_iupac(
     use_styles: bool = False,
     use_cards: bool = False,
 ):
-    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
@@ -98,7 +98,6 @@ def workload_recombine(
     use_styles: bool = False,
     use_cards: bool = False,
 ):
-    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)

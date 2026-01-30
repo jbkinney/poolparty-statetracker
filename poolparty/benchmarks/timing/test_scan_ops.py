@@ -2,6 +2,10 @@
 from typing import Literal
 from ._utils import make_sequence, DEFAULT_NUM_SEQS, DEFAULT_SEQ_LEN
 
+# Pre-warm imports before profiling
+import poolparty as pp
+pp.init()
+
 
 def workload_deletion_scan(
     seq_len: int = DEFAULT_SEQ_LEN,
@@ -12,7 +16,6 @@ def workload_deletion_scan(
     use_styles: bool = False,
     use_cards: bool = False,
 ):
-    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
@@ -35,7 +38,6 @@ def workload_insertion_scan(
     use_styles: bool = False,
     use_cards: bool = False,
 ):
-    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)

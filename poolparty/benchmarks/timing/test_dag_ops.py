@@ -1,6 +1,11 @@
 """DAG operation workloads for poolparty benchmarking."""
 from ._utils import DEFAULT_NUM_SEQS, DEFAULT_SEQ_LEN
 
+# Pre-warm imports before profiling
+import poolparty as pp
+pp.init()
+
+
 def workload_chain_of_joins(
     num_joins: int = 5,
     seg_len: int = 5,
@@ -8,7 +13,6 @@ def workload_chain_of_joins(
     use_styles: bool = False,
     use_cards: bool = False,
 ):
-    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
@@ -31,7 +35,6 @@ def workload_tree_of_joins(
     use_styles: bool = False,
     use_cards: bool = False,
 ):
-    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
