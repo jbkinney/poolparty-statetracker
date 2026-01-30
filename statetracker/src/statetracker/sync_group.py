@@ -1,5 +1,6 @@
 """SynchronizedGroup - A group of states that share the same value."""
 from .imports import beartype, State_type, Optional
+from numbers import Integral
 
 
 @beartype
@@ -57,9 +58,6 @@ class SynchronizedGroup:
     
     def set_inactivated_values_in_trees(self, val) -> None:
         """Set group value and propagate to states within their valid ranges."""
-        from .state import ConflictingValueAssignmentError
-        from numbers import Integral
-        
         # Track the logical value at the group level
         self._value = val
         
@@ -77,6 +75,7 @@ class SynchronizedGroup:
                 case (Integral(), None):
                     pass
                 case _:
+                    from .state import ConflictingValueAssignmentError
                     raise ConflictingValueAssignmentError(
                         f"State '{state.name}' received conflicting values: "
                         f"{state._value} vs {state_val}"

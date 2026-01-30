@@ -1,7 +1,7 @@
 """Helper class for region-based operation logic."""
 from dataclasses import dataclass, field
 from ..types import RegionType, StyleList, SeqStyle, Optional, beartype, Seq, Union
-from .parsing_utils import validate_single_region, parse_region, build_region_tags
+from .parsing_utils import validate_single_region, validate_single_region_from_list, parse_region, build_region_tags
 
 
 @beartype
@@ -109,8 +109,12 @@ class RegionContext:
             return prefix, region, suffix
         else:
             # Named region - need to handle tags
-            # Use the region_obj to get correct boundaries
-            region_obj = validate_single_region(parent.string, self.region_name)
+            # Use the region_obj to get correct boundaries (use pre-parsed regions if available)
+            if parent.regions:
+                region_obj = validate_single_region_from_list(parent.regions, self.region_name, parent.string)
+            else:
+                # Fall back to parsing if regions not available (e.g., from slicing)
+                region_obj = validate_single_region(parent.string, self.region_name)
             
             # Prefix: everything before opening tag
             prefix = parent[:region_obj.start]

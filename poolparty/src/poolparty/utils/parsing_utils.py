@@ -2,7 +2,7 @@
 import re
 from dataclasses import dataclass
 from xml.etree import ElementTree as ET
-from poolparty.types import Optional, Literal, Callable
+from poolparty.types import Optional, Literal, Callable, Sequence
 
 # Regex pattern for XML-style region tags (simplified, no attributes)
 # 
@@ -93,13 +93,34 @@ def has_region(seq: str, name: str) -> bool:
     return any(r.name == name for r in regions)
 
 
-def validate_single_region(seq: str, name: str) -> ParsedRegion:
+def validate_single_region_from_list(
+    regions: Sequence[ParsedRegion], 
+    name: str, 
+    seq: str = ""
+) -> ParsedRegion:
     """Validate that exactly one region with the given name exists.
     
-    Returns the ParsedRegion if found.
-    Raises ValueError if region not found or appears multiple times.
+    Uses pre-parsed regions to avoid redundant parsing.
+    
+    Parameters
+    ----------
+    regions : Sequence[ParsedRegion]
+        Pre-parsed regions list.
+    name : str
+        Region name to validate.
+    seq : str, default=""
+        Optional sequence string for error messages.
+    
+    Returns
+    -------
+    ParsedRegion
+        The ParsedRegion if found.
+    
+    Raises
+    ------
+    ValueError
+        If region not found or appears multiple times.
     """
-    regions = find_all_regions(seq)
     matching = [r for r in regions if r.name == name]
     
     if len(matching) == 0:
@@ -120,6 +141,30 @@ def validate_single_region(seq: str, name: str) -> ParsedRegion:
         )
     
     return matching[0]
+
+
+def validate_single_region(seq: str, name: str) -> ParsedRegion:
+    """Validate that exactly one region with the given name exists.
+    
+    Parameters
+    ----------
+    seq : str
+        Sequence string to parse and validate.
+    name : str
+        Region name to validate.
+    
+    Returns
+    -------
+    ParsedRegion
+        The ParsedRegion if found.
+    
+    Raises
+    ------
+    ValueError
+        If region not found or appears multiple times.
+    """
+    regions = find_all_regions(seq)
+    return validate_single_region_from_list(regions, name, seq)
 
 
 def parse_region(seq: str, name: str) -> tuple[str, str, str]:

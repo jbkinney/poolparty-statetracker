@@ -89,6 +89,11 @@ class Seq:
         """Sequence with all tags removed (nontag content as string)."""
         return self._clean
     
+    @property
+    def regions(self) -> tuple:
+        """Parsed region tags in this sequence."""
+        return self._regions
+    
     # Coordinate conversion methods
     def convert_pos(
         self, 

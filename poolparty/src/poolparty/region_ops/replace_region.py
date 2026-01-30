@@ -3,7 +3,7 @@ from numbers import Real
 from poolparty.types import Optional, Seq
 import numpy as np
 
-from ..utils.parsing_utils import validate_single_region
+from ..utils.parsing_utils import validate_single_region_from_list
 from ..operation import Operation
 from ..utils import dna_utils
 
@@ -130,11 +130,16 @@ class ReplaceRegionOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Replace region in bg_seq with content_seq."""
-        bg_seq_string = parents[0].string
+        bg_seq = parents[0]
         content_seq_obj = parents[1]
         
-        # Find and validate the region
-        region = validate_single_region(bg_seq_string, self.region_name)
+        # Find and validate the region (use pre-parsed regions if available)
+        if bg_seq.regions:
+            region = validate_single_region_from_list(bg_seq.regions, self.region_name, bg_seq.string)
+        else:
+            # Fall back to parsing if regions not available (e.g., from slicing)
+            from ..utils.parsing_utils import validate_single_region
+            region = validate_single_region(bg_seq.string, self.region_name)
         
         # If rc=True, reverse complement the content before insertion
         if self.rc:
