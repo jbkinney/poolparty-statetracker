@@ -1,5 +1,4 @@
 """Base operation workloads for poolparty benchmarking."""
-import poolparty as pp
 from typing import Literal
 from ._utils import make_sequence
 
@@ -12,12 +11,21 @@ def workload_mutagenize(
     num_seqs: int = 100,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
-    use_cards: bool = False
+    use_cards: bool = False,
+    use_beartype: bool = False,
 ):
+    if not use_beartype:
+        from beartype import BeartypeConf
+        from beartype.claw import beartype_package
+        beartype_package('poolparty', conf=BeartypeConf(is_debug=True))
+    
+    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
     seq = make_sequence(seq_len)
+    if num_mut is None and mut_rate is None:
+        num_mut = 2 # Default value
     pool = pp.mutagenize(seq, mutation_rate=mut_rate, num_mutations=num_mut, mode=mode)
     return pool.generate_library(num_seqs=num_seqs)
 
@@ -33,8 +41,15 @@ def workload_shuffle_seq(
     num_seqs: int = 100,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
-    use_cards: bool = False
+    use_cards: bool = False,
+    use_beartype: bool = False,
 ):
+    if not use_beartype:
+        from beartype import BeartypeConf
+        from beartype.claw import beartype_package
+        beartype_package('poolparty', conf=BeartypeConf(is_debug=True))
+    
+    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
@@ -52,8 +67,15 @@ def workload_get_kmers(
     num_seqs: int = 100,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
-    use_cards: bool = False
+    use_cards: bool = False,
+    use_beartype: bool = False,
 ):
+    if not use_beartype:
+        from beartype import BeartypeConf
+        from beartype.claw import beartype_package
+        beartype_package('poolparty', conf=BeartypeConf(is_debug=True))
+    
+    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
@@ -70,8 +92,15 @@ def workload_from_iupac(
     num_seqs: int = 100,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
-    use_cards: bool = False
+    use_cards: bool = False,
+    use_beartype: bool = False,
 ):
+    if not use_beartype:
+        from beartype import BeartypeConf
+        from beartype.claw import beartype_package
+        beartype_package('poolparty', conf=BeartypeConf(is_debug=True))
+    
+    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)
@@ -91,8 +120,15 @@ def workload_recombine(
     num_seqs: int = 100,
     mode: Literal['random', 'sequential'] = 'random',
     use_styles: bool = False,
-    use_cards: bool = False
+    use_cards: bool = False,
+    use_beartype: bool = False,
 ):
+    if not use_beartype:
+        from beartype import BeartypeConf
+        from beartype.claw import beartype_package
+        beartype_package('poolparty', conf=BeartypeConf(is_debug=True))
+    
+    import poolparty as pp
     pp.init()
     pp.toggle_styles(on=use_styles)
     pp.toggle_cards(on=use_cards)

@@ -182,6 +182,10 @@ def get_nontag_positions(seq: str) -> list[int]:
     Returns positions of characters that are NOT part of region tags.
     This includes region content but excludes the <...> tag syntax itself.
     """
+    # Fast path: no tags possible if no '<' character
+    if '<' not in seq:
+        return list(range(len(seq)))
+    
     # Find all region tag spans (the tags themselves, not content)
     tag_spans: set[int] = set()
     for match in TAG_PATTERN.finditer(seq):

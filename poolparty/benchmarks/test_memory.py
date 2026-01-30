@@ -7,7 +7,6 @@ from .timing import (
     workload_mutagenize_sequential,
     workload_recombine,
     workload_complex_dag,
-    workload_region_operations,
     WORKLOAD_SIZES,
 )
 

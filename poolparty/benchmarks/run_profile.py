@@ -15,7 +15,7 @@ Usage:
     uv run python poolparty/benchmarks/run_profile.py --list
     
     # Custom parameters
-    uv run python poolparty/benchmarks/run_profile.py mutagenize --seq-len 200 --num-seqs 5000
+     
 """
 import argparse
 import sys
@@ -133,22 +133,28 @@ def main():
         help="Use memray for memory profiling",
     )
     parser.add_argument(
-        "--seq-len",
+        "--seq_len",
         type=int,
         default=100,
         help="Sequence length (default: 100)",
     )
     parser.add_argument(
-        "--num-seqs",
+        "--num_seqs",
         type=int,
         default=1000,
         help="Number of sequences (default: 1000)",
     )
     parser.add_argument(
-        "--num-mut",
-        type=int,
-        default=2,
-        help="Number of mutations (default: 2)",
+        "--num_mut",
+        type=str,
+        default='None',
+        help="Number of mutations (default: None)",
+    )
+    parser.add_argument(
+        "--mut_rate",
+        type=str,
+        default='None',
+        help="Mutations rate (default: None)",
     )
     parser.add_argument(
         "--output",
@@ -182,7 +188,9 @@ def main():
     if 'num_seqs' in workload_func.__code__.co_varnames:
         kwargs['num_seqs'] = args.num_seqs
     if 'num_mut' in workload_func.__code__.co_varnames:
-        kwargs['num_mut'] = args.num_mut
+        kwargs['num_mut'] = None if args.num_mut=='None' else int(args.num_mut)
+    if 'mut_rate' in workload_func.__code__.co_varnames:
+        kwargs['mut_rate'] = None if args.mut_rate=='None' else float(args.mut_rate)
     
     print(f"Profiling: {args.workload}")
     print(f"Parameters: {kwargs}")
