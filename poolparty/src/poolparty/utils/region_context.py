@@ -1,7 +1,14 @@
 """Helper class for region-based operation logic."""
 from dataclasses import dataclass, field
-from ..types import RegionType, StyleList, SeqStyle, Optional, beartype, Seq, Union
-from .parsing_utils import validate_single_region, validate_single_region_from_list, parse_region, build_region_tags
+from ..types import RegionType, StyleList, SeqStyle, Optional, beartype, Seq, Union, Sequence
+from .parsing_utils import (
+    validate_single_region, 
+    validate_single_region_from_list, 
+    parse_region, 
+    build_region_tags,
+    find_all_regions,
+    ParsedRegion,
+)
 
 
 @beartype
@@ -27,6 +34,10 @@ class RegionContext:
     _suffix_styles: StyleList = field(default_factory=list)
     _prefix_seq_style: Optional[SeqStyle] = field(default=None)
     _suffix_seq_style: Optional[SeqStyle] = field(default=None)
+    
+    # Cached parsed regions (to avoid re-parsing in reassemble methods)
+    _parsed_regions: Sequence[ParsedRegion] = field(default_factory=tuple)
+    _region_obj: Optional[ParsedRegion] = field(default=None)
     
     @classmethod
     def from_sequence(
@@ -54,11 +65,12 @@ class RegionContext:
         seq = seq_obj.string if isinstance(seq_obj, Seq) else seq_obj
         
         if isinstance(region, str):
-            # Named region - parse to get clean parts
-            clean_prefix, content, clean_suffix = parse_region(seq, region)
+            # Named region - parse ONCE and reuse
+            parsed_regions = find_all_regions(seq)
+            region_obj = validate_single_region_from_list(parsed_regions, region, seq)
             
-            # Get bounds for position tracking
-            region_obj = validate_single_region(seq, region)
+            # Extract parts directly from region_obj (no second parse needed)
+            content = region_obj.content
             region_start = region_obj.content_start
             region_end = region_obj.content_end
             
@@ -72,6 +84,8 @@ class RegionContext:
                 strand=None,  # Strand no longer stored in tags
                 remove_tags=remove_tags,
                 _original_seq=seq,
+                _parsed_regions=tuple(parsed_regions),
+                _region_obj=region_obj,
             )
         else:
             # Interval region [start, stop]
@@ -108,13 +122,8 @@ class RegionContext:
             suffix = parent[self.region_end:]
             return prefix, region, suffix
         else:
-            # Named region - need to handle tags
-            # Use the region_obj to get correct boundaries (use pre-parsed regions if available)
-            if parent.regions:
-                region_obj = validate_single_region_from_list(parent.regions, self.region_name, parent.string)
-            else:
-                # Fall back to parsing if regions not available (e.g., from slicing)
-                region_obj = validate_single_region(parent.string, self.region_name)
+            # Named region - use cached region_obj (no re-parsing needed)
+            region_obj = self._region_obj
             
             # Prefix: everything before opening tag
             prefix = parent[:region_obj.start]
@@ -146,9 +155,10 @@ class RegionContext:
             # Interval region - simple concatenation
             return self.prefix + output_string + self.suffix
         
-        # Named region - get clean parts (prefix/suffix without tags)
-        from .parsing_utils import parse_region
-        clean_prefix, _, clean_suffix = parse_region(self._original_seq, self.region_name)
+        # Named region - use cached region_obj for clean parts
+        region_obj = self._region_obj
+        clean_prefix = self._original_seq[:region_obj.start]
+        clean_suffix = self._original_seq[region_obj.end:]
         
         if self.remove_tags:
             # Remove tags
@@ -212,21 +222,18 @@ class RegionContext:
             Reassembled Seq with tags handled appropriately.
         """
         if self.region_name is None:
-            # Interval region - simple join
-            return Seq.join([prefix, output, suffix])
+            # Interval region - sliced parts are tag-free, use fast join
+            return Seq._join_fast([prefix, output, suffix])
         
-        # Named region - handle tags
+        # Named region - use cached region_obj (no re-parsing needed)
+        region_obj = self._region_obj
+        
         if self.remove_tags:
-            # Remove tags - join clean parts
-            # Get clean prefix/suffix (without tags)
-            clean_prefix, _, clean_suffix = parse_region(self._original_seq, self.region_name)
-            region_obj = validate_single_region(self._original_seq, self.region_name)
-            
-            # Create clean prefix/suffix Seq objects by slicing to exclude tags
+            # Remove tags - join clean parts (result is tag-free, use fast join)
             clean_prefix_seq = prefix[:region_obj.start]
             clean_suffix_seq = suffix
             
-            return Seq.join([clean_prefix_seq, output, clean_suffix_seq])
+            return Seq._join_fast([clean_prefix_seq, output, clean_suffix_seq])
         else:
             # Keep tags - wrap output with region tags
             wrapped_string = build_region_tags(
@@ -251,12 +258,10 @@ class RegionContext:
             
             wrapped_seq = Seq(wrapped_string, wrapped_style)
             
-            # Get clean parts
-            clean_prefix, _, clean_suffix = parse_region(self._original_seq, self.region_name)
-            region_obj = validate_single_region(self._original_seq, self.region_name)
-            
+            # Use cached region_obj for clean prefix
             clean_prefix_seq = prefix[:region_obj.start]
             
+            # Result has tags, use regular join to parse them
             return Seq.join([clean_prefix_seq, wrapped_seq, suffix])
     
     def reassemble_style(
@@ -291,17 +296,14 @@ class RegionContext:
             )
             return SeqStyle.join([prefix_seq_style, output_style, suffix_seq_style])
         
-        # Named region - complex tag handling
-        # Use original sequence for parsing (don't reconstruct, as zero-length regions differ)
-        region_obj = validate_single_region(self._original_seq, self.region_name)
+        # Named region - use cached region_obj (no re-parsing needed)
+        region_obj = self._region_obj
         
-        # Calculate clean lengths
-        clean_prefix, _, clean_suffix = parse_region(
-            self._original_seq,
-            self.region_name
-        )
-        clean_prefix_len = len(clean_prefix)
-        clean_suffix_len = len(clean_suffix)
+        # Calculate clean lengths from cached data
+        # clean_prefix is everything before the opening tag
+        clean_prefix_len = region_obj.start
+        # clean_suffix is everything after the closing tag
+        clean_suffix_len = len(self._original_seq) - region_obj.end
         
         if self.remove_tags:
             # When tags removed: slice prefix/suffix to exclude tag positions
