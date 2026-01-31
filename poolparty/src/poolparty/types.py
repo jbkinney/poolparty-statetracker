@@ -37,7 +37,7 @@ StyleTuple: TypeAlias = tuple[str, np.ndarray]
 StyleList: TypeAlias = list[StyleTuple]
 
 # Import SeqStyle and Seq classes for convenience
-from .utils.seq import Seq
+from .utils.seq import NullSeq, Seq, is_null_seq
 from .utils.style_utils import SeqStyle
 
 __all__ = [
@@ -64,4 +64,6 @@ __all__ = [
     "StyleList",
     "SeqStyle",
     "Seq",
+    "NullSeq",
+    "is_null_seq",
 ]

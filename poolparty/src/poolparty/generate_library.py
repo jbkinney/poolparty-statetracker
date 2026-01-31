@@ -9,7 +9,9 @@ import pandas as pd
 
 import statetracker as st
 
-from .types import Literal, Optional, Pool_type, Seq, Sequence, Union, beartype
+import warnings
+
+from .types import Literal, Optional, Pool_type, Seq, Sequence, Union, beartype, is_null_seq
 from .utils.df_utils import counter_col_name, finalize_generate_df, organize_columns
 from .utils.utils import clean_df_int_columns
 
@@ -27,6 +29,10 @@ def generate_library(
     pools_to_report: Union[str, Sequence[Pool_type]] = "all",
     organize_columns_by: Literal["pool", "type"] = "type",
     _include_inline_styles: bool = False,
+    discard_null_seqs: bool = False,
+    max_iterations: Optional[int] = None,
+    min_acceptance_rate: Optional[float] = None,
+    attempts_per_rate_assessment: int = 100,
 ) -> Union[pd.DataFrame, list[str]]:
     """Generate sequences from a pool.
 
@@ -43,6 +49,13 @@ def generate_library(
         aux_pools: Additional pools to include in output.
         pools_to_report: Which pools to report ('all', 'self', or list of pools).
         organize_columns_by: Column organization ('pool' or 'type').
+        discard_null_seqs: If True, keep iterating until num_seqs valid (non-null)
+            sequences are generated. Requires num_seqs to be specified.
+        max_iterations: Maximum iterations before stopping. Default: state space
+            size for sequential mode, or num_seqs * 100 for random mode.
+        min_acceptance_rate: Minimum fraction of sequences that must pass filters.
+            If actual rate falls below this, generation stops with a warning.
+        attempts_per_rate_assessment: Iterations between acceptance rate checks.
 
     Returns:
         DataFrame with generated sequences, or list of sequences if seqs_only=True.
@@ -54,6 +67,11 @@ def generate_library(
         pool._master_seed = None
 
     # Validate arguments
+    if discard_null_seqs and num_seqs is None:
+        raise ValueError(
+            "num_seqs must be specified when discard_null_seqs=True. "
+            "Cannot use num_cycles with filtering."
+        )
     if num_seqs is None:
         if pool.state is None:
             raise ValueError(
@@ -67,6 +85,13 @@ def generate_library(
         pool._master_seed = seed
     if pool._master_seed is None:
         pool._master_seed = 0
+
+    # Set default max_iterations
+    if max_iterations is None:
+        if pool.state is not None:
+            max_iterations = pool.state.num_values
+        else:
+            max_iterations = num_seqs * 100
 
     # Get config from active party
     from .party import get_active_party
@@ -117,8 +142,13 @@ def generate_library(
 
     # Generate rows
     rows = []
-    for i in range(num_seqs):
-        global_state = pool._current_state + i
+    state = pool._current_state
+    iterations = 0
+    valid_count = 0
+    seq_col = f"{pool.name}.seq"
+
+    while len(rows) < num_seqs:
+        global_state = state
         row = _compute_one(
             pool,
             sorted_ops,
@@ -130,12 +160,75 @@ def generate_library(
             pools_filter,
             _include_inline_styles,
         )
-        rows.append(row)
 
-    pool._current_state += num_seqs
+        # Check if this row has a null sequence
+        seq_value = row.get(seq_col)
+        is_null = seq_value is None or seq_value == ""
+
+        if discard_null_seqs:
+            if not is_null:
+                rows.append(row)
+                valid_count += 1
+        else:
+            # Include all rows (null sequences show as None in output)
+            if is_null:
+                row[seq_col] = None
+                row["name"] = None
+            rows.append(row)
+            if not is_null:
+                valid_count += 1
+
+        state += 1
+        iterations += 1
+
+        # Check acceptance rate periodically
+        if (
+            discard_null_seqs
+            and min_acceptance_rate is not None
+            and iterations > 0
+            and iterations % attempts_per_rate_assessment == 0
+        ):
+            actual_rate = valid_count / iterations
+            if actual_rate < min_acceptance_rate:
+                warnings.warn(
+                    f"Acceptance rate ({actual_rate:.1%}) below minimum "
+                    f"({min_acceptance_rate:.1%}) after {iterations} iterations. "
+                    f"Generated {valid_count} valid sequences. Stopping early."
+                )
+                break
+
+        # Check max iterations (only relevant when filtering)
+        if discard_null_seqs and iterations >= max_iterations:
+            if len(rows) < num_seqs:
+                warnings.warn(
+                    f"Reached max_iterations ({max_iterations}) with only "
+                    f"{len(rows)} valid sequences (requested {num_seqs}). "
+                    f"Acceptance rate: {valid_count / iterations:.1%}"
+                )
+            break
+
+        # Check state space exhaustion (only for filtering in sequential mode)
+        # When not filtering, allow cycling through states multiple times
+        if discard_null_seqs and pool.state is not None:
+            if state >= pool._current_state + pool.state.num_values:
+                if len(rows) < num_seqs:
+                    warnings.warn(
+                        f"State space exhausted: only {len(rows)} valid sequences "
+                        f"exist (requested {num_seqs}). "
+                        f"Acceptance rate: {valid_count / iterations:.1%}"
+                    )
+                break
+
+    pool._current_state = state
 
     # Build and format DataFrame
     df = pd.DataFrame(rows)
+
+    # Handle empty DataFrame case
+    if len(df) == 0:
+        if seqs_only:
+            return []
+        return pd.DataFrame(columns=["name", "seq"])
 
     if not report_design_cards:
         # Minimal output: just "name" and "seq" columns
@@ -314,7 +407,11 @@ def _compute_one(
             row[output_name] = None
         else:
             seq_obj = seq_cache[output_pool.operation.id]
-            row[output_name] = seq_obj.string
+            # Handle NullSeq - convert to empty string for DataFrame output
+            if is_null_seq(seq_obj):
+                row[output_name] = ""
+            else:
+                row[output_name] = seq_obj.string
 
     # Compute final name from contributions (already in topological order)
     final_name = ".".join(all_contributions) if all_contributions else None

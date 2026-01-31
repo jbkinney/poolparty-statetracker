@@ -11,6 +11,7 @@ import statetracker as st
 
 # Import other operations from base_ops module
 from .base_ops import (
+    FilterOp,
     FromIupacOp,
     FromMotifOp,
     FromSeqsOp,
@@ -18,6 +19,7 @@ from .base_ops import (
     MutagenizeOp,
     RecombineOp,
     SeqShuffleOp,
+    filter_seq,
     from_iupac,
     from_motif,
     from_seqs,
@@ -103,6 +105,7 @@ from .state_ops import (
     state_slice,
     sync,
 )
+from .types import NullSeq, is_null_seq
 from .utils.dna_utils import BASES, COMPLEMENT, IGNORE_CHARS, IUPAC_TO_DNA, VALID_CHARS
 
 # Import styling utilities

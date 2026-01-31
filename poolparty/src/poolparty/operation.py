@@ -7,7 +7,7 @@ import numpy as np
 
 import statetracker as st
 
-from .types import ModeType, Optional, Pool_type, RegionType, Seq, Sequence
+from .types import ModeType, NullSeq, Optional, Pool_type, RegionType, Seq, Sequence, is_null_seq
 from .utils import dna_utils
 
 logger = logging.getLogger(__name__)
@@ -257,6 +257,11 @@ class Operation:
         4. Removes region tags if remove_tags=True and region is a region name
         """
         logger.debug("Computing operation=%s with %d parent(s)", self.name, len(parents))
+
+        # Propagate NullSeq: if any parent is null, output is null
+        if any(is_null_seq(p) for p in parents):
+            return NullSeq(), {}
+
         if self._region is None:
             output_seq, card = self._compute_core(parents, rng)
         else:

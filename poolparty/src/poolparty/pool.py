@@ -256,6 +256,10 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
         pools_to_report: Union[str, Sequence[Pool_type]] = "all",
         organize_columns_by: Literal["pool", "type"] = "type",
         _include_inline_styles: bool = False,
+        discard_null_seqs: bool = False,
+        max_iterations: Optional[int] = None,
+        min_acceptance_rate: Optional[float] = None,
+        attempts_per_rate_assessment: int = 100,
         # Deprecated parameters (for backwards compatibility)
         report_seq: Optional[bool] = None,
         report_pool_seqs: Optional[bool] = None,
@@ -323,6 +327,10 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
                     pools_to_report=pools_to_report,
                     organize_columns_by=organize_columns_by,
                     _include_inline_styles=_include_inline_styles,
+                    discard_null_seqs=discard_null_seqs,
+                    max_iterations=max_iterations,
+                    min_acceptance_rate=min_acceptance_rate,
+                    attempts_per_rate_assessment=attempts_per_rate_assessment,
                 )
             finally:
                 # Restore original config values
@@ -344,6 +352,10 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
                 pools_to_report=pools_to_report,
                 organize_columns_by=organize_columns_by,
                 _include_inline_styles=_include_inline_styles,
+                discard_null_seqs=discard_null_seqs,
+                max_iterations=max_iterations,
+                min_acceptance_rate=min_acceptance_rate,
+                attempts_per_rate_assessment=attempts_per_rate_assessment,
             )
 
     def print_library(
@@ -356,6 +368,10 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
         show_seq: bool = True,
         pad_names: bool = True,
         seed: Optional[Integral] = None,
+        discard_null_seqs: bool = False,
+        max_iterations: Optional[int] = None,
+        min_acceptance_rate: Optional[float] = None,
+        attempts_per_rate_assessment: int = 100,
     ) -> Pool_type:
         """Print preview sequences from this pool; returns self for chaining.
 
@@ -368,6 +384,10 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
             show_seq: Whether to show the seq column.
             pad_names: Whether to pad names to align sequences.
             seed: Random seed for reproducibility.
+            discard_null_seqs: If True, only show valid (non-null) sequences.
+            max_iterations: Maximum iterations before stopping.
+            min_acceptance_rate: Minimum fraction of sequences that must pass.
+            attempts_per_rate_assessment: Iterations between acceptance rate checks.
         """
         # Build kwargs for generate_library, only including num_cycles when needed
         gen_kwargs = {
@@ -376,6 +396,10 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
             "init_state": 0,
             "seed": seed,
             "_include_inline_styles": True,
+            "discard_null_seqs": discard_null_seqs,
+            "max_iterations": max_iterations,
+            "min_acceptance_rate": min_acceptance_rate,
+            "attempts_per_rate_assessment": attempts_per_rate_assessment,
         }
         if num_seqs is not None:
             gen_kwargs["num_seqs"] = num_seqs
@@ -406,20 +430,25 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
             if show_state:
                 row_parts.append(f"{row[state_col]:5d}")
             if has_name:
+                name = row['name'] if row['name'] is not None else ""
                 if pad_names:
-                    row_parts.append(f"{row['name']:<{max_name_len}}")
+                    row_parts.append(f"{name:<{max_name_len}}")
                 else:
-                    row_parts.append(f"{row['name']}")
+                    row_parts.append(f"{name}")
             if show_seq:
                 seq = row["seq"]
-                from .utils.style_utils import SeqStyle
+                # Handle None (filtered) sequences
+                if seq is None:
+                    row_parts.append("<filtered>")
+                else:
+                    from .utils.style_utils import SeqStyle
 
-                # Get per-sequence inline styles (from operation style parameters)
-                inline_styles = row.get("_inline_styles", SeqStyle.empty(0))
-                # Apply inline styles if present
-                if inline_styles is not None:
-                    seq = inline_styles.apply(seq)
-                row_parts.append(seq)
+                    # Get per-sequence inline styles (from operation style parameters)
+                    inline_styles = row.get("_inline_styles", SeqStyle.empty(0))
+                    # Apply inline styles if present
+                    if inline_styles is not None:
+                        seq = inline_styles.apply(seq)
+                    row_parts.append(seq)
             print("  ".join(row_parts))
         print("")
         return self  # For chaining

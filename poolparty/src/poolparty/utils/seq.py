@@ -641,3 +641,52 @@ class Seq:
             return self  # If styles suppressed, don't add any
         new_style = self.style.add_style(style_spec, positions)
         return self.with_style(new_style)
+
+
+class NullSeq(Seq):
+    """Singleton sentinel indicating a filtered/rejected sequence.
+
+    NullSeq propagates through the DAG - any operation receiving a NullSeq
+    parent will produce NullSeq output. Used by filter operations to mark
+    sequences that should be excluded from the final library.
+
+    NullSeq is falsy: `if seq:` returns False for NullSeq instances.
+    """
+
+    _instance = None
+
+    def __new__(cls):
+        """Return singleton instance."""
+        if cls._instance is None:
+            inst = object.__new__(cls)
+            # Set frozen dataclass fields via object.__setattr__
+            object.__setattr__(inst, "string", "")
+            object.__setattr__(inst, "style", None)
+            object.__setattr__(inst, "_clean", "")
+            object.__setattr__(inst, "_regions", ())
+            object.__setattr__(inst, "_nontag_to_literal", ())
+            object.__setattr__(inst, "_molecular_to_literal", ())
+            object.__setattr__(inst, "_literal_to_nontag", ())
+            object.__setattr__(inst, "_literal_to_molecular", ())
+            cls._instance = inst
+        return cls._instance
+
+    def __init__(self, string=None, style=None, **kwargs):
+        """Override to prevent dataclass __init__ from running."""
+        # Do nothing - fields are set in __new__
+        pass
+
+    def __bool__(self) -> bool:
+        """NullSeq is falsy."""
+        return False
+
+    def __repr__(self) -> str:
+        return "NullSeq()"
+
+    def __len__(self) -> int:
+        return 0
+
+
+def is_null_seq(seq) -> bool:
+    """Check if a Seq is NullSeq."""
+    return isinstance(seq, NullSeq)

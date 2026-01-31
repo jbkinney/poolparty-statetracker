@@ -5,6 +5,7 @@ from typing import Literal
 import pandas as pd
 
 from ..types import (
+    Callable,
     Integral,
     ModeType,
     Optional,
@@ -167,3 +168,17 @@ class BaseOpsMixin:
             style_by=style_by,
             iter_order=iter_order,
         )
+
+    def filter(
+        self,
+        predicate: Callable[[str], bool],
+        name: Optional[str] = None,
+    ) -> Pool_type:
+        """Filter sequences based on a predicate function.
+
+        Sequences for which the predicate returns False are replaced with NullSeq.
+        Use generate_library with discard_null_seqs=True to exclude them.
+        """
+        from ..base_ops.filter_seq import filter_seq
+
+        return filter_seq(self, predicate=predicate, name=name)
