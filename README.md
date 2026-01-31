@@ -3,7 +3,7 @@
 This monorepo contains two related Python packages:
 
 - **[poolparty](poolparty/)** - A Python package for designing oligonucleotide sequence libraries
-- **[statecounter](statecounter/)** - Composable counters with unidirectional state propagation for enumerating combinatorial spaces
+- **[statetracker](statetracker/)** - Composable states with unidirectional value propagation for enumerating combinatorial spaces
 
 ## Repository Structure
 
@@ -13,8 +13,8 @@ poolparty-repo/
 │   ├── src/poolparty/  # source code
 │   ├── tests/          # tests
 │   └── pyproject.toml
-├── statecounter/       # statecounter package
-│   ├── src/statecounter/
+├── statetracker/       # statetracker package
+│   ├── src/statetracker/
 │   ├── tests/
 │   ├── docs/
 │   └── pyproject.toml
@@ -26,8 +26,8 @@ poolparty-repo/
 Each package can be installed independently. For development, install in editable mode:
 
 ```bash
-# Install statecounter
-cd statecounter
+# Install statetracker
+cd statetracker
 pip install -e ".[dev]"
 
 # Install poolparty
@@ -38,8 +38,8 @@ pip install -e ".[dev]"
 ## Running Tests
 
 ```bash
-# Test statecounter
-cd statecounter
+# Test statetracker
+cd statetracker
 pytest
 
 # Test poolparty
