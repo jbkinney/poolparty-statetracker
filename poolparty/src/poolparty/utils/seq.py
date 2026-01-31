@@ -107,8 +107,15 @@ class Seq:
         return self._regions
 
     def _ensure_coord_maps(self) -> None:
-        """Compute coordinate maps if not already computed (lazy initialization)."""
-        if self._nontag_to_literal is _NOT_COMPUTED:
+        """Compute coordinate maps if not already computed (lazy initialization).
+        
+        Note: We check for both _NOT_COMPUTED sentinel and empty tuple () because
+        Seq objects created via direct constructor Seq(string, style) have empty
+        tuple defaults that need to trigger computation.
+        """
+        if self._nontag_to_literal is _NOT_COMPUTED or (
+            self._nontag_to_literal == () and len(self.string) > 0
+        ):
             from . import dna_utils, parsing_utils
 
             string = self.string

@@ -94,11 +94,15 @@ class TestStylizeOrfBasic:
             with pytest.raises(ValueError, match="must not be empty"):
                 stylize_orf("ACGTAC", style_codons=[])
 
-    def test_region_frame_validation(self):
-        """region_frame must be 0, 1, or 2."""
+    def test_frame_validation(self):
+        """frame must be one of -3, -2, -1, 1, 2, 3."""
         with pp.Party():
-            with pytest.raises(ValueError, match="must be 0, 1, or 2"):
-                stylize_orf("ACGTAC", style_frames=["a", "b", "c"], region_frame=3)
+            with pytest.raises(ValueError, match="frame must be one of"):
+                stylize_orf("ACGTAC", style_frames=["a", "b", "c"], frame=0)
+            with pytest.raises(ValueError, match="frame must be one of"):
+                stylize_orf("ACGTAC", style_frames=["a", "b", "c"], frame=4)
+            with pytest.raises(ValueError, match="frame must be one of"):
+                stylize_orf("ACGTAC", style_frames=["a", "b", "c"], frame=-4)
 
 
 class TestStylizeOrfFramesCycling:
@@ -155,13 +159,13 @@ class TestStylizeOrfFramesCycling:
         assert style_positions.get("blue", set()) == {2, 5, 8}
 
 
-class TestStylizeOrfRegionFrame:
-    """Test region_frame parameter."""
+class TestStylizeOrfFrame:
+    """Test frame parameter (1-indexed, sign indicates direction)."""
 
-    def test_region_frame_0(self):
-        """region_frame=0 starts from frame 0."""
+    def test_frame_1(self):
+        """frame=1 starts from frame position 0 (default)."""
         with pp.Party():
-            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], region_frame=0).named("test")
+            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=1).named("test")
 
         df = pool.generate_library(
             num_seqs=1, report_design_cards=True, _include_inline_styles=True
@@ -173,13 +177,13 @@ class TestStylizeOrfRegionFrame:
             if spec in style_positions:
                 style_positions[spec].update(positions)
 
-        # Frame 0: positions 0, 3
+        # Frame 0 (internally): positions 0, 3
         assert style_positions["red"] == {0, 3}
 
-    def test_region_frame_1(self):
-        """region_frame=1 shifts frame assignment."""
+    def test_frame_2(self):
+        """frame=2 shifts frame assignment (equivalent to old region_frame=1)."""
         with pp.Party():
-            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], region_frame=1).named("test")
+            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=2).named("test")
 
         df = pool.generate_library(
             num_seqs=1, report_design_cards=True, _include_inline_styles=True
@@ -191,7 +195,7 @@ class TestStylizeOrfRegionFrame:
             if spec in style_positions:
                 style_positions[spec].update(positions)
 
-        # With region_frame=1:
+        # With frame=2 (internal region_frame=1):
         # Position 0 -> frame (0 + 1) % 3 = 1 -> green
         # Position 1 -> frame (1 + 1) % 3 = 2 -> blue
         # Position 2 -> frame (2 + 1) % 3 = 0 -> red
@@ -202,10 +206,10 @@ class TestStylizeOrfRegionFrame:
         assert style_positions["green"] == {0, 3}
         assert style_positions["blue"] == {1, 4}
 
-    def test_region_frame_2(self):
-        """region_frame=2 shifts frame assignment."""
+    def test_frame_3(self):
+        """frame=3 shifts frame assignment (equivalent to old region_frame=2)."""
         with pp.Party():
-            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], region_frame=2).named("test")
+            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=3).named("test")
 
         df = pool.generate_library(
             num_seqs=1, report_design_cards=True, _include_inline_styles=True
@@ -217,7 +221,7 @@ class TestStylizeOrfRegionFrame:
             if spec in style_positions:
                 style_positions[spec].update(positions)
 
-        # With region_frame=2:
+        # With frame=3 (internal region_frame=2):
         # Position 0 -> frame (0 + 2) % 3 = 2 -> blue
         # Position 1 -> frame (1 + 2) % 3 = 0 -> red
         # Position 2 -> frame (2 + 2) % 3 = 1 -> green
@@ -225,17 +229,63 @@ class TestStylizeOrfRegionFrame:
         assert style_positions["green"] == {2, 5}
         assert style_positions["blue"] == {0, 3}
 
-
-class TestStylizeOrfReverse:
-    """Test reverse parameter."""
-
-    def test_reverse_style_codons(self):
-        """reverse=True processes codons from end to start."""
+    def test_frame_affects_style_codons(self):
+        """frame parameter affects codon boundaries for style_codons."""
+        # With 9 nucleotides and frame=1 (default):
+        # Codons: [0,1,2], [3,4,5], [6,7,8] -> codon indices 0, 1, 2
+        # With frame=2 (internal region_frame=1):
+        # Adjusted: [0,1] in codon 0, [2,3,4] in codon 1, [5,6,7] in codon 2, [8] in codon 3
         with pp.Party():
-            # Without reverse
-            pool_fwd = stylize_orf("ACGTAC", style_codons=["red", "blue"], reverse=False).named("fwd")
-            # With reverse
-            pool_rev = stylize_orf("ACGTAC", style_codons=["red", "blue"], reverse=True).named("rev")
+            pool_f1 = stylize_orf("ACGTACGTA", style_codons=["red", "blue"], frame=1).named("f1")
+            pool_f2 = stylize_orf("ACGTACGTA", style_codons=["red", "blue"], frame=2).named("f2")
+
+        df_f1 = pool_f1.generate_library(num_seqs=1, report_design_cards=True, _include_inline_styles=True)
+        df_f2 = pool_f2.generate_library(num_seqs=1, report_design_cards=True, _include_inline_styles=True)
+
+        # Collect positions for frame=1
+        f1_red, f1_blue = set(), set()
+        for spec, positions in df_f1["_inline_styles"].iloc[0].style_list:
+            if spec == "red":
+                f1_red.update(positions)
+            elif spec == "blue":
+                f1_blue.update(positions)
+
+        # Collect positions for frame=2
+        f2_red, f2_blue = set(), set()
+        for spec, positions in df_f2["_inline_styles"].iloc[0].style_list:
+            if spec == "red":
+                f2_red.update(positions)
+            elif spec == "blue":
+                f2_blue.update(positions)
+
+        # frame=1: positions 0,1,2 (codon 0)=red, 3,4,5 (codon 1)=blue, 6,7,8 (codon 2)=red
+        assert f1_red == {0, 1, 2, 6, 7, 8}
+        assert f1_blue == {3, 4, 5}
+
+        # frame=2: adjusted_idx = idx + 1
+        # idx 0 -> (0+1)//3=0 -> codon 0 -> red
+        # idx 1 -> (1+1)//3=0 -> codon 0 -> red
+        # idx 2 -> (2+1)//3=1 -> codon 1 -> blue
+        # idx 3 -> (3+1)//3=1 -> codon 1 -> blue
+        # idx 4 -> (4+1)//3=1 -> codon 1 -> blue
+        # idx 5 -> (5+1)//3=2 -> codon 2 -> red
+        # idx 6 -> (6+1)//3=2 -> codon 2 -> red
+        # idx 7 -> (7+1)//3=2 -> codon 2 -> red
+        # idx 8 -> (8+1)//3=3 -> codon 3 -> blue
+        assert f2_red == {0, 1, 5, 6, 7}
+        assert f2_blue == {2, 3, 4, 8}
+
+
+class TestStylizeOrfNegativeFrame:
+    """Test negative frame values (reverse direction)."""
+
+    def test_negative_frame_style_codons(self):
+        """Negative frame processes codons from end to start."""
+        with pp.Party():
+            # Forward direction (frame=1)
+            pool_fwd = stylize_orf("ACGTAC", style_codons=["red", "blue"], frame=1).named("fwd")
+            # Reverse direction (frame=-1)
+            pool_rev = stylize_orf("ACGTAC", style_codons=["red", "blue"], frame=-1).named("rev")
 
         df_fwd = pool_fwd.generate_library(
             num_seqs=1, report_design_cards=True, _include_inline_styles=True
@@ -265,10 +315,10 @@ class TestStylizeOrfReverse:
         # Reverse: processes from end, so codon assignment is reversed
         assert fwd_red != rev_red or fwd_blue != rev_blue  # Styles should differ
 
-    def test_reverse_style_frames(self):
-        """reverse=True processes frames from end to start."""
+    def test_negative_frame_style_frames(self):
+        """Negative frame processes frames from end to start."""
         with pp.Party():
-            pool_rev = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], reverse=True).named("test")
+            pool_rev = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=-1).named("test")
 
         df = pool_rev.generate_library(
             num_seqs=1, report_design_cards=True, _include_inline_styles=True
@@ -280,7 +330,7 @@ class TestStylizeOrfReverse:
             if spec in style_positions:
                 style_positions[spec].update(positions)
 
-        # With reverse=True, processing from position 5 to 0:
+        # With frame=-1, processing from position 5 to 0:
         # Position 5 is idx 0 -> frame 0 -> red
         # Position 4 is idx 1 -> frame 1 -> green
         # Position 3 is idx 2 -> frame 2 -> blue
@@ -290,6 +340,15 @@ class TestStylizeOrfReverse:
         assert style_positions["red"] == {5, 2}
         assert style_positions["green"] == {4, 1}
         assert style_positions["blue"] == {3, 0}
+
+    def test_all_negative_frame_values(self):
+        """Test that all negative frame values work."""
+        seq = "ACGTAC"
+        with pp.Party():
+            for frame in [-1, -2, -3]:
+                pool = stylize_orf(seq, style_codons=["red", "blue"], frame=frame).named(f"test_{frame}")
+                df = pool.generate_library(num_seqs=1, _include_inline_styles=True)
+                assert len(df) == 1
 
 
 class TestStylizeOrfRegion:

@@ -125,26 +125,3 @@ class FixedOpsMixin:
             regex=regex,
             iter_order=iter_order,
         )
-
-    def stylize_orf(
-        self,
-        region: RegionType = None,
-        *,
-        style_codons: Optional[list[str]] = None,
-        style_frames: Optional[list[str]] = None,
-        region_frame: int = 0,
-        reverse: bool = False,
-        iter_order: Optional[Real] = None,
-    ) -> Pool_type:
-        """Apply ORF-aware styling. See stylize_orf() for details."""
-        from ..orf_ops.stylize_orf import stylize_orf
-
-        return stylize_orf(
-            pool=self,
-            region=region,
-            style_codons=style_codons,
-            style_frames=style_frames,
-            region_frame=region_frame,
-            reverse=reverse,
-            iter_order=iter_order,
-        )

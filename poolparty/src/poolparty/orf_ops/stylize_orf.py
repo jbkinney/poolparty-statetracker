@@ -9,6 +9,9 @@ from ..pool import Pool
 from ..types import Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils.dna_utils import VALID_CHARS
 
+# Valid frame values: +1, +2, +3, -1, -2, -3
+VALID_FRAMES = {-3, -2, -1, 1, 2, 3}
+
 
 @beartype
 def stylize_orf(
@@ -17,8 +20,7 @@ def stylize_orf(
     *,
     style_codons: Optional[list[str]] = None,
     style_frames: Optional[list[str]] = None,
-    region_frame: int = 0,
-    reverse: bool = False,
+    frame: int = 1,
     iter_order: Optional[Real] = None,
 ) -> Pool:
     """
@@ -40,10 +42,11 @@ def stylize_orf(
         List of styles with length a multiple of 3. Each group of 3 styles
         is applied to frames 0, 1, 2 of a codon, cycling through groups.
         Mutually exclusive with style_codons.
-    region_frame : int, default=0
-        The frame (0, 1, or 2) of the first nucleotide in the region.
-    reverse : bool, default=False
-        If True, the ORF runs in the opposite direction (3'->5').
+    frame : int, default=1
+        Reading frame and orientation. Valid values: +1, +2, +3, -1, -2, -3.
+        Positive values indicate left-to-right orientation (5'->3'),
+        negative values indicate right-to-left orientation (3'->5').
+        The absolute value indicates the frame of the boundary base (1-indexed).
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
 
@@ -61,8 +64,7 @@ def stylize_orf(
         region=region,
         style_codons=style_codons,
         style_frames=style_frames,
-        region_frame=region_frame,
-        reverse=reverse,
+        frame=frame,
         name=None,
         iter_order=iter_order,
     )
@@ -81,8 +83,7 @@ class StylizeOrfOp(Operation):
         region: RegionType = None,
         style_codons: Optional[list[str]] = None,
         style_frames: Optional[list[str]] = None,
-        region_frame: int = 0,
-        reverse: bool = False,
+        frame: int = 1,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> None:
@@ -90,6 +91,10 @@ class StylizeOrfOp(Operation):
         from ..party import get_active_party
 
         get_active_party()  # Ensure we're in a Party context
+
+        # Validate frame
+        if frame not in VALID_FRAMES:
+            raise ValueError(f"frame must be one of {sorted(VALID_FRAMES)}, got {frame}")
 
         # Validate mutual exclusivity
         if style_codons is not None and style_frames is not None:
@@ -106,18 +111,15 @@ class StylizeOrfOp(Operation):
                     f"style_frames length must be a multiple of 3, got {len(style_frames)}"
                 )
 
-        # Validate region_frame
-        if region_frame not in (0, 1, 2):
-            raise ValueError(f"region_frame must be 0, 1, or 2, got {region_frame}")
-
         # Validate style_codons is non-empty
         if style_codons is not None and len(style_codons) == 0:
             raise ValueError("style_codons must not be empty")
 
         self.style_codons = style_codons
         self.style_frames = style_frames
-        self.region_frame = region_frame
-        self.reverse = reverse
+        self.frame = frame
+        self.reverse = frame < 0  # Derive reverse from frame sign
+        self.region_frame = abs(frame) - 1  # Convert to 0-indexed internally
 
         # Store region locally - we handle it ourselves, not via base class
         self._style_region = region
@@ -199,12 +201,12 @@ class StylizeOrfOp(Operation):
             positions = molecular_positions
 
         # Group positions into codons and assign styles
+        # Apply region_frame offset to determine codon boundaries
         for idx, pos in enumerate(positions):
-            codon_index = idx // 3
+            adjusted_idx = idx + self.region_frame
+            codon_index = adjusted_idx // 3
             style = self.style_codons[codon_index % num_styles]
-            # Use the original position (not reversed index)
-            original_pos = pos if not self.reverse else pos
-            style_positions[style].append(original_pos)
+            style_positions[style].append(pos)
 
         # Build result list
         result = []

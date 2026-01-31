@@ -13,6 +13,7 @@ import statetracker as st
 from .pool_mixins import (
     BaseOpsMixin,
     FixedOpsMixin,
+    OrfOpsMixin,
     RegionOpsMixin,
     ScanOpsMixin,
     StateOpsMixin,
@@ -22,7 +23,7 @@ from .types import Integral, Operation_type, Optional, Pool_type, Real, Sequence
 
 
 @beartype
-class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMixin):
+class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, OrfOpsMixin, StateOpsMixin, RegionOpsMixin):
     """A node in the computation DAG."""
 
     def __init__(

@@ -167,11 +167,18 @@ class TestMutagenizeOrfParameterValidation:
                     "ATGAAATTT", num_mutations=1, mutation_type="synonymous", mode="sequential"
                 )
 
-    def test_orf_length_must_be_divisible_by_3(self):
-        """ORF length must be divisible by 3."""
-        with pp.Party() as party:
-            with pytest.raises(ValueError, match="ORF region length must be divisible by 3"):
-                mutagenize_orf("ATGAA", num_mutations=1)  # 5 bp, not divisible by 3
+    def test_orf_length_not_divisible_by_3_allowed(self):
+        """ORF length not divisible by 3 is allowed - partial codons are not mutable."""
+        with pp.Party():
+            # 5 bp with frame=1 gives (5-0)//3 = 1 complete codon
+            pool = mutagenize_orf("ATGAA", num_mutations=1)
+            assert pool.operation.num_codons == 1
+            # 5 bp with frame=2 gives (5-1)//3 = 1 complete codon
+            pool2 = mutagenize_orf("ATGAA", num_mutations=1, frame=2)
+            assert pool2.operation.num_codons == 1
+            # 5 bp with frame=3 gives (5-2)//3 = 1 complete codon
+            pool3 = mutagenize_orf("ATGAA", num_mutations=1, frame=3)
+            assert pool3.operation.num_codons == 1
 
     def test_num_mutations_exceeds_eligible(self):
         """Error when num_mutations > number of eligible positions."""
@@ -180,15 +187,15 @@ class TestMutagenizeOrfParameterValidation:
                 mutagenize_orf("ATGAAA", num_mutations=3)  # Only 2 codons
 
 
-class TestMutagenizeOrfORFBoundaries:
-    """Test ORF boundary handling."""
+class TestMutagenizeOrfRegion:
+    """Test region parameter handling."""
 
-    def test_orf_extent(self):
-        """Test orf_extent parameter."""
+    def test_region_interval(self):
+        """Test region parameter with [start, end] interval."""
         # Sequence with 5' UTR (GGG) + ORF (ATGAAA) + 3' UTR (CCC)
         seq = "GGGATGAAACCC"
         with pp.Party() as party:
-            pool = mutagenize_orf(seq, num_mutations=1, orf_extent=(3, 9)).named("mutant")
+            pool = mutagenize_orf(seq, [3, 9], num_mutations=1).named("mutant")
 
         df = pool.generate_library(num_seqs=10, seed=42)
         for mutant in df["seq"]:
@@ -198,24 +205,40 @@ class TestMutagenizeOrfORFBoundaries:
             # Total length preserved
             assert len(mutant) == 12
 
-    def test_orf_extent_validation(self):
-        """Test orf_extent validation."""
+    def test_region_marker_name(self):
+        """Test region parameter with marker name."""
+        # Sequence with ORF marked by tags
+        seq = "GGG<orf>ATGAAA</orf>CCC"
         with pp.Party() as party:
-            # orf_extent start out of range
-            with pytest.raises(ValueError, match="orf_extent start must be >= 0"):
-                mutagenize_orf("ATGAAA", num_mutations=1, orf_extent=(-1, 6))
+            pool = mutagenize_orf(seq, "orf", num_mutations=1).named("mutant")
 
-            # orf_extent end exceeds length
-            with pytest.raises(ValueError, match="orf_extent end.*cannot exceed sequence length"):
-                mutagenize_orf("ATGAAA", num_mutations=1, orf_extent=(0, 10))
+        df = pool.generate_library(num_seqs=10, seed=42)
+        for mutant in df["seq"]:
+            # UTRs should be preserved
+            assert mutant[:3] == "GGG"
+            assert mutant.endswith("CCC")
+            # Tags should be preserved
+            assert "<orf>" in mutant
+            assert "</orf>" in mutant
 
-            # orf_extent start >= end
-            with pytest.raises(ValueError, match="orf_extent start.*must be < end"):
-                mutagenize_orf("ATGAAATTT", num_mutations=1, orf_extent=(6, 3))
+    def test_region_validation(self):
+        """Test region validation."""
+        with pp.Party() as party:
+            # region start out of range
+            with pytest.raises(ValueError, match="region start must be >= 0"):
+                mutagenize_orf("ATGAAA", [-1, 6], num_mutations=1)
 
-            # orf_extent must have exactly 2 elements
-            with pytest.raises(ValueError, match="orf_extent must have exactly 2 elements"):
-                mutagenize_orf("ATGAAATTT", num_mutations=1, orf_extent=(0, 3, 6))
+            # region end exceeds length
+            with pytest.raises(ValueError, match="region end.*cannot exceed sequence length"):
+                mutagenize_orf("ATGAAA", [0, 10], num_mutations=1)
+
+            # region start >= end
+            with pytest.raises(ValueError, match="region start.*must be < end"):
+                mutagenize_orf("ATGAAATTT", [6, 3], num_mutations=1)
+
+            # region must have exactly 2 elements
+            with pytest.raises(ValueError, match="region must have exactly 2 elements"):
+                mutagenize_orf("ATGAAATTT", [0, 3, 6], num_mutations=1)
 
 
 class TestMutagenizeOrfCodonPositions:
@@ -520,7 +543,7 @@ class TestMutagenizeOrfPreservesLength:
         """Mutations preserve length with ORF boundaries."""
         seq = "GGGATGAAACCC"  # 3bp UTR + 6bp ORF + 3bp UTR
         with pp.Party() as party:
-            pool = mutagenize_orf(seq, num_mutations=1, orf_extent=(3, 9)).named("mutant")
+            pool = mutagenize_orf(seq, [3, 9], num_mutations=1).named("mutant")
 
         df = pool.generate_library(num_seqs=10, seed=42)
         for mutant in df["seq"]:
@@ -542,3 +565,101 @@ class TestMutagenizeOrfCustomName:
         with pp.Party() as party:
             pool = mutagenize_orf("ATGAAATTT", num_mutations=1).named("my_orf_mutations")
             assert pool.name == "my_orf_mutations"
+
+
+class TestMutagenizeOrfStyle:
+    """Test style parameter."""
+
+    def test_style_applied_to_mutations(self):
+        """Test that style is applied to mutated codons."""
+        with pp.Party() as party:
+            pool = mutagenize_orf("ATGAAATTT", num_mutations=1, style="red").named("mutant")
+
+        df = pool.generate_library(num_seqs=5, seed=42)
+        # Just verify it runs without error - style is applied internally
+        assert len(df) == 5
+
+    def test_style_with_region_marker(self):
+        """Test style with marker-based region."""
+        seq = "GGG<orf>ATGAAA</orf>CCC"
+        with pp.Party() as party:
+            pool = mutagenize_orf(seq, "orf", num_mutations=1, style="cyan").named("mutant")
+
+        df = pool.generate_library(num_seqs=5, seed=42)
+        assert len(df) == 5
+
+
+class TestMutagenizeOrfFrame:
+    """Test frame parameter."""
+
+    def test_frame_negative_one(self):
+        """Test frame=-1 extracts codons from end (reverse direction)."""
+        seq = "ATGAAATTT"  # 3 codons: ATG AAA TTT
+        with pp.Party() as party:
+            # With frame=-1, codons are read from end to start: TTT AAA ATG
+            pool = mutagenize_orf(seq, num_mutations=1, frame=-1).named("mutant")
+
+        df = pool.generate_library(num_seqs=10, seed=42)
+        # Just verify it runs without error
+        assert len(df) == 10
+        for mutant in df["seq"]:
+            assert len(mutant) == 9
+
+    def test_frame_validation_zero(self):
+        """frame=0 is not a valid value."""
+        with pp.Party() as party:
+            with pytest.raises(ValueError, match="frame must be one of"):
+                mutagenize_orf("ATGAAATTT", num_mutations=1, frame=0)
+
+    def test_frame_validation_out_of_range(self):
+        """frame values outside +-3 are invalid."""
+        with pp.Party() as party:
+            with pytest.raises(ValueError, match="frame must be one of"):
+                mutagenize_orf("ATGAAATTT", num_mutations=1, frame=4)
+            with pytest.raises(ValueError, match="frame must be one of"):
+                mutagenize_orf("ATGAAATTT", num_mutations=1, frame=-4)
+
+    def test_frame_positive_values(self):
+        """Test that positive frame values work (forward direction)."""
+        seq = "ATGAAATTT"
+        with pp.Party() as party:
+            for frame in [1, 2, 3]:
+                pool = mutagenize_orf(seq, num_mutations=1, frame=frame).named(f"mutant_{frame}")
+                df = pool.generate_library(num_seqs=3, seed=42)
+                assert len(df) == 3
+
+    def test_frame_negative_values(self):
+        """Test that negative frame values work (reverse direction)."""
+        seq = "ATGAAATTT"
+        with pp.Party() as party:
+            for frame in [-1, -2, -3]:
+                pool = mutagenize_orf(seq, num_mutations=1, frame=frame).named(f"mutant_{frame}")
+                df = pool.generate_library(num_seqs=3, seed=42)
+                assert len(df) == 3
+
+
+class TestMutagenizeOrfPoolMethod:
+    """Test Pool.mutagenize_orf() method."""
+
+    def test_pool_method(self):
+        """Test calling mutagenize_orf as Pool method."""
+        with pp.Party() as party:
+            pool = pp.from_seq("ATGAAATTT").mutagenize_orf(num_mutations=1).named("mutant")
+
+        df = pool.generate_library(num_seqs=5, seed=42)
+        assert len(df) == 5
+
+    def test_pool_method_with_region(self):
+        """Test Pool method with region parameter."""
+        with pp.Party() as party:
+            pool = (
+                pp.from_seq("GGG<orf>ATGAAA</orf>CCC")
+                .mutagenize_orf("orf", num_mutations=1)
+                .named("mutant")
+            )
+
+        df = pool.generate_library(num_seqs=5, seed=42)
+        assert len(df) == 5
+        for mutant in df["seq"]:
+            assert mutant[:3] == "GGG"
+            assert "<orf>" in mutant

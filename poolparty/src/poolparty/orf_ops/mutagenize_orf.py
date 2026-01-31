@@ -10,19 +10,26 @@ from ..codon_table import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
 from ..operation import Operation
 from ..party import get_active_party
 from ..pool import Pool
-from ..types import ModeType, Optional, Seq, Sequence, Union, beartype
-from ..utils.orf_utils import validate_orf_extent
-from ..utils.parsing_utils import find_all_regions, strip_all_tags
+from ..types import ModeType, Optional, RegionType, Seq, Sequence, Union, beartype
+from ..utils.dna_utils import reverse_complement
+from ..utils.parsing_utils import find_all_regions
+
+
+# Valid frame values: +1, +2, +3, -1, -2, -3
+VALID_FRAMES = {-3, -2, -1, 1, 2, 3}
 
 
 @beartype
 def mutagenize_orf(
     pool: Union[Pool, str],
+    region: RegionType = None,
+    *,
     num_mutations: Optional[Integral] = None,
     mutation_rate: Optional[Real] = None,
     mutation_type: str = "missense_only_first",
-    orf_extent: Optional[Sequence[Integral]] = None,
     codon_positions: Union[Sequence[Integral], slice, None] = None,
+    style: Optional[str] = None,
+    frame: int = 1,
     mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
@@ -34,6 +41,9 @@ def mutagenize_orf(
     ----------
     pool : Union[Pool, str]
         Parent pool or sequence string to mutate.
+    region : RegionType, default=None
+        Region to mutate. Can be marker name (e.g., "orf") or [start, stop].
+        If None, mutates the entire sequence.
     num_mutations : Optional[Integral], default=None
         Fixed number of codon mutations (mutually exclusive with mutation_rate).
     mutation_rate : Optional[Real], default=None
@@ -41,10 +51,15 @@ def mutagenize_orf(
     mutation_type : str, default='missense_only_first'
         Type of mutation: 'any_codon', 'nonsynonymous_first', 'nonsynonymous_random',
         'missense_only_first', 'missense_only_random', 'synonymous', 'nonsense'.
-    orf_extent : Optional[Sequence[Integral]], default=None
-        ORF boundaries as (start, end) or None for entire sequence.
     codon_positions : Union[Sequence[Integral], slice, None], default=None
         Eligible codon indices: None (all), list of indices, or slice.
+    style : Optional[str], default=None
+        Style to apply to mutated codon positions (e.g., 'red', 'bold').
+    frame : int, default=1
+        Reading frame and orientation. Valid values: +1, +2, +3, -1, -2, -3.
+        Positive values indicate left-to-right orientation (5'->3'),
+        negative values indicate right-to-left orientation (3'->5').
+        The absolute value indicates the frame of the boundary base (1-indexed).
     mode : ModeType, default='random'
         Selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
@@ -62,11 +77,13 @@ def mutagenize_orf(
     pool = from_seq(pool) if isinstance(pool, str) else pool
     op = MutagenizeOrfOp(
         parent_pool=pool,
+        region=region,
         num_mutations=num_mutations,
         mutation_rate=mutation_rate,
         mutation_type=mutation_type,
-        orf_extent=orf_extent,
         codon_positions=codon_positions,
+        style=style,
+        frame=frame,
         mode=mode,
         num_states=num_states,
         name=None,
@@ -84,11 +101,13 @@ class MutagenizeOrfOp(Operation):
     def __init__(
         self,
         parent_pool: Pool,
+        region: RegionType = None,
         num_mutations: Optional[Integral] = None,
         mutation_rate: Optional[Real] = None,
         mutation_type: str = "missense_only_first",
-        orf_extent: Optional[Sequence[Integral]] = None,
         codon_positions: Union[Sequence[Integral], slice, None] = None,
+        style: Optional[str] = None,
+        frame: int = 1,
         mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         name: Optional[str] = None,
@@ -101,6 +120,8 @@ class MutagenizeOrfOp(Operation):
                 "mutagenize_orf requires an active Party context. "
                 "Use 'with pp.Party() as party:' to create one."
             )
+        if frame not in VALID_FRAMES:
+            raise ValueError(f"frame must be one of {sorted(VALID_FRAMES)}, got {frame}")
         if num_mutations is None and mutation_rate is None:
             raise ValueError("Either num_mutations or mutation_rate must be provided")
         if num_mutations is not None and mutation_rate is not None:
@@ -126,17 +147,44 @@ class MutagenizeOrfOp(Operation):
         self.mutation_type = mutation_type
         self._mode = mode
         self.codon_table = party.codon_table
+        self._orf_region = region  # Store locally, will copy to _region after super().__init__
+        self.style = style
+        self.frame = frame
+        self.reverse = frame < 0  # Derive reverse from frame sign
+        # Calculate bases to skip to reach the first complete codon
+        # frame=1: first base is position 1 in codon → skip 0 bases
+        # frame=2: first base is position 2 in codon → skip 2 bases (partial has 2 bases)
+        # frame=3: first base is position 3 in codon → skip 1 base (partial has 1 base)
+        self.frame_offset = (4 - abs(frame)) % 3
 
         # Use effective seq_length (excluding tags)
         parent_seq_length = parent_pool.seq_length
         if parent_seq_length is None:
             raise ValueError("parent_pool must have a defined seq_length")
 
-        # orf_extent uses logical positions (in marker-free sequence)
-        self.orf_start, self.orf_end, self.num_codons = validate_orf_extent(
-            orf_extent, parent_seq_length
-        )
+        # Validate and parse region - actual bounds determined at compute time for marker names
+        self._validate_orf_region(region, parent_seq_length)
         self._seq_length = parent_seq_length
+
+        # For interval regions, we can compute bounds now; for marker names, defer to compute time
+        if region is None:
+            self.orf_start = 0
+            self.orf_end = parent_seq_length
+        elif not isinstance(region, str):
+            self.orf_start = int(region[0])
+            self.orf_end = int(region[1])
+        else:
+            # Marker name - will be resolved at compute time
+            # For now, set placeholder values; actual values set in _compute_core
+            self.orf_start = 0
+            self.orf_end = parent_seq_length
+
+        # Calculate number of complete codons, accounting for frame offset
+        # For positive frames: skip frame_offset bases at the start
+        # For negative frames: skip frame_offset bases at the end
+        orf_length = self.orf_end - self.orf_start
+        effective_length = orf_length - self.frame_offset
+        self.num_codons = effective_length // 3
 
         if codon_positions is None:
             self.eligible_positions = list(range(self.num_codons))
@@ -180,6 +228,108 @@ class MutagenizeOrfOp(Operation):
             iter_order=iter_order,
         )
 
+    def _validate_orf_region(self, region: RegionType, seq_length: int) -> None:
+        """Validate region parameter for ORF operations."""
+        if region is None:
+            return
+        if isinstance(region, str):
+            # Marker name - validated at compute time
+            return
+        # Interval [start, end]
+        if len(region) != 2:
+            raise ValueError(f"region must have exactly 2 elements, got {len(region)}")
+        start, end = int(region[0]), int(region[1])
+        if start < 0:
+            raise ValueError(f"region start must be >= 0, got {start}")
+        if end > seq_length:
+            raise ValueError(f"region end ({end}) cannot exceed sequence length ({seq_length})")
+        if start >= end:
+            raise ValueError(f"region start ({start}) must be < end ({end})")
+
+    def _get_molecular_region_bounds(self, seq_obj: Seq) -> tuple[int, int]:
+        """Get the start/end positions of the region in molecular coordinates."""
+        mol_length = seq_obj.molecular_length
+
+        if self._orf_region is None:
+            return (0, mol_length)
+
+        # Handle [start, stop] interval - these are molecular coordinates
+        if not isinstance(self._orf_region, str):
+            return (int(self._orf_region[0]), int(self._orf_region[1]))
+
+        # Handle region name - find the region and convert to molecular coordinates
+        try:
+            found_regions = find_all_regions(seq_obj.string)
+        except ValueError:
+            return (0, mol_length)
+
+        for r in found_regions:
+            if r.name == self._orf_region:
+                # Convert content positions to molecular coordinates
+                # content_start and content_end are literal positions
+                mol_start = seq_obj.literal_to_molecular(r.content_start)
+                mol_end_lit = r.content_end - 1  # Last char of content
+                mol_end = seq_obj.literal_to_molecular(mol_end_lit)
+
+                if mol_start is None or mol_end is None:
+                    # Region contains non-molecular characters at boundaries
+                    return (0, mol_length)
+
+                return (mol_start, mol_end + 1)  # +1 to make it exclusive end
+
+        # Region not found - use entire sequence
+        return (0, mol_length)
+
+    def _extract_codons_molecular(
+        self, seq_obj: Seq, mol_start: int, mol_end: int, frame_offset: int
+    ) -> list[str]:
+        """Extract complete codons from a Seq object using molecular coordinates.
+
+        Args:
+            seq_obj: The Seq object.
+            mol_start: Start position in molecular coordinates.
+            mol_end: End position in molecular coordinates (exclusive).
+            frame_offset: Number of bases to skip (0, 1, or 2).
+
+        Returns:
+            List of codon strings. For negative frames (reverse), codons are
+            reverse-complemented so they can be looked up in the codon table.
+        """
+        codons = []
+        orf_length = mol_end - mol_start
+        effective_length = orf_length - frame_offset
+        num_complete_codons = effective_length // 3
+
+        if self.reverse:
+            # For negative frames: skip frame_offset bases at the END
+            # Read codons right-to-left, codon 0 is the rightmost complete codon
+            codon_region_end = mol_end - frame_offset
+            for codon_idx in range(num_complete_codons):
+                codon_chars = []
+                # Codon 0 starts at (codon_region_end - 3), codon 1 at (codon_region_end - 6), etc.
+                codon_start = codon_region_end - (codon_idx + 1) * 3
+                for j in range(3):
+                    mol_pos = codon_start + j
+                    lit_pos = seq_obj.molecular_to_literal(mol_pos)
+                    codon_chars.append(seq_obj.string[lit_pos])
+                # Reverse-complement for codon table lookup
+                codon = "".join(codon_chars)
+                codons.append(reverse_complement(codon))
+        else:
+            # For positive frames: skip frame_offset bases at the START
+            # Read codons left-to-right
+            codon_region_start = mol_start + frame_offset
+            for codon_idx in range(num_complete_codons):
+                codon_chars = []
+                codon_start = codon_region_start + codon_idx * 3
+                for j in range(3):
+                    mol_pos = codon_start + j
+                    lit_pos = seq_obj.molecular_to_literal(mol_pos)
+                    codon_chars.append(seq_obj.string[lit_pos])
+                codons.append("".join(codon_chars))
+
+        return codons
+
     def _build_caches(self) -> int:
         """Build caches for sequential enumeration."""
         if self.num_mutations is None or self.uniform_num_alts is None:
@@ -198,100 +348,26 @@ class MutagenizeOrfOp(Operation):
         self._sequential_cache = cache
         return num_combinations * num_mut_patterns
 
-    def _strip_tags(self, seq: str) -> tuple[str, list[tuple[int, int, str, str]]]:
-        """Strip tags from sequence and record their positions.
-
-        Returns:
-            (clean_seq, tags_info) where tags_info is a list of
-            (clean_content_start, content_length, opening_tag, closing_tag) tuples.
-            For self-closing tags, content_length is 0 and closing_tag is empty.
-        """
-        tags_info = []
-        found_regions = find_all_regions(seq)
-
-        # Calculate clean position for each marker
-        tag_offset = 0  # Cumulative length of tags removed before this marker
-
-        for region in found_regions:
-            # In clean sequence, content starts at region.content_start - tag_offset
-            clean_content_start = region.content_start - tag_offset
-            content_length = region.content_end - region.content_start
-
-            # Extract opening and closing tags
-            opening_tag = seq[region.start : region.content_start]
-            closing_tag = seq[region.content_end : region.end]
-
-            tags_info.append((clean_content_start, content_length, opening_tag, closing_tag))
-
-            # Update offset: tags removed = opening_tag_len + closing_tag_len
-            tag_offset += len(opening_tag) + len(closing_tag)
-
-        # Remove all tags but keep content
-        clean_seq = strip_all_tags(seq)
-        return clean_seq, tags_info
-
-    def _restore_tags(self, seq: str, tags_info: list[tuple[int, int, str, str]]) -> str:
-        """Restore tags to their original positions in the sequence.
-
-        Args:
-            seq: The clean (mutated) sequence with region content but no tags.
-            tags_info: List of (clean_content_start, content_length, opening_tag, closing_tag).
-
-        Returns:
-            Sequence with tags restored around their content.
-        """
-        if not tags_info:
-            return seq
-
-        # Sort by clean position (should already be sorted, but ensure it)
-        sorted_tags = sorted(tags_info, key=lambda x: x[0])
-
-        # Build result by inserting tags, working from start to end
-        result = seq
-        offset = 0  # Track how much we've added
-
-        for clean_content_start, content_length, opening_tag, closing_tag in sorted_tags:
-            # Insert opening tag before content
-            insert_pos = clean_content_start + offset
-            result = result[:insert_pos] + opening_tag + result[insert_pos:]
-            offset += len(opening_tag)
-
-            # Insert closing tag after content (if not self-closing)
-            if closing_tag:
-                close_pos = insert_pos + len(opening_tag) + content_length
-                result = result[:close_pos] + closing_tag + result[close_pos:]
-                offset += len(closing_tag)
-
-        return result
-
-    def _extract_codons(self, seq: str) -> tuple[str, list[str], str]:
-        """Extract (upstream, codons, downstream) from marker-free sequence.
-
-        Uses logical positions (orf_start, orf_end) in the marker-free sequence.
-        """
-        upstream = seq[: self.orf_start]
-        orf_seq = seq[self.orf_start : self.orf_end]
-        downstream = seq[self.orf_end :]
-        codons = [orf_seq[i : i + 3] for i in range(0, len(orf_seq), 3)]
-        return upstream, codons, downstream
-
     def _random_mutation(
         self,
         codons: list[str],
         rng: np.random.Generator,
+        eligible_positions: list[int],
     ) -> tuple[tuple, tuple, tuple, tuple, tuple]:
         """Generate random codon mutations."""
+        num_eligible = len(eligible_positions)
+
         if self.num_mutations is not None:
             num_mut = self.num_mutations
         else:
-            num_mut = rng.binomial(self.num_eligible, self.mutation_rate)
+            num_mut = rng.binomial(num_eligible, self.mutation_rate)
             if num_mut == 0:
                 return tuple(), tuple(), tuple(), tuple(), tuple()
 
-        if num_mut > self.num_eligible:
-            num_mut = self.num_eligible
-        pos_indices = rng.choice(self.num_eligible, size=num_mut, replace=False)
-        positions = tuple(sorted(self.eligible_positions[i] for i in pos_indices))
+        if num_mut > num_eligible:
+            num_mut = num_eligible
+        pos_indices = rng.choice(num_eligible, size=num_mut, replace=False)
+        positions = tuple(sorted(eligible_positions[i] for i in pos_indices))
 
         wt_codons, mut_codons, wt_aas, mut_aas = [], [], [], []
         for pos in positions:
@@ -311,15 +387,35 @@ class MutagenizeOrfOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return mutated Seq and design card."""
-        seq = parents[0].string
-        # Strip tags and record their positions
-        clean_seq, tags = self._strip_tags(seq)
-        _, codons, _ = self._extract_codons(clean_seq)
+        from ..utils.style_utils import styles_suppressed
+
+        parent_seq = parents[0]
+
+        # Get ORF bounds in molecular coordinates
+        mol_start, mol_end = self._get_molecular_region_bounds(parent_seq)
+        orf_length = mol_end - mol_start
+
+        # For marker-based regions, recompute num_codons and eligible_positions
+        # since we only know the actual bounds at compute time
+        if isinstance(self._orf_region, str):
+            effective_length = orf_length - self.frame_offset
+            num_codons = effective_length // 3
+            eligible_positions = list(range(num_codons))
+        else:
+            num_codons = self.num_codons
+            eligible_positions = self.eligible_positions
+
+        # Extract codons using molecular coordinates (with frame offset)
+        codons = self._extract_codons_molecular(
+            parent_seq, mol_start, mol_end, self.frame_offset
+        )
 
         if self.mode in ("random", "hybrid"):
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
-            positions, wt_codons, mut_codons, wt_aas, mut_aas = self._random_mutation(codons, rng)
+            positions, wt_codons, mut_codons, wt_aas, mut_aas = self._random_mutation(
+                codons, rng, eligible_positions
+            )
         else:
             if self._sequential_cache is None:
                 self._build_caches()
@@ -339,20 +435,51 @@ class MutagenizeOrfOp(Operation):
             wt_codons, mut_codons = tuple(wt_codons), tuple(mut_codons)
             wt_aas, mut_aas = tuple(wt_aas), tuple(mut_aas)
 
-        # Apply mutations to codons
-        upstream, codons, downstream = self._extract_codons(clean_seq)
-        mutated_codons = codons.copy()
-        for pos, mut in zip(positions, mut_codons):
-            mutated_codons[pos] = mut
-        mutated_clean_seq = upstream + "".join(mutated_codons) + downstream
+        # Apply mutations at molecular positions -> literal positions
+        result_chars = list(parent_seq.string)
+        for codon_pos, mut_codon in zip(positions, mut_codons):
+            # Convert codon position to molecular position, accounting for frame_offset
+            if self.reverse:
+                # In reverse mode: skip frame_offset at the end, codon 0 is rightmost complete codon
+                codon_region_end = mol_end - self.frame_offset
+                mol_codon_start = codon_region_end - (codon_pos + 1) * 3
+                # Reverse-complement the mutated codon before inserting
+                insert_codon = reverse_complement(mut_codon)
+            else:
+                # In forward mode: skip frame_offset at the start
+                codon_region_start = mol_start + self.frame_offset
+                mol_codon_start = codon_region_start + codon_pos * 3
+                insert_codon = mut_codon
 
-        # Restore tags at original positions
-        result_seq = self._restore_tags(mutated_clean_seq, tags)
+            # Convert molecular positions to literal positions and apply mutation
+            for i, mut_char in enumerate(insert_codon):
+                mol_pos = mol_codon_start + i
+                lit_pos = parent_seq.molecular_to_literal(mol_pos)
+                result_chars[lit_pos] = mut_char
 
-        # Pass through parent styles (mutagenize_orf preserves sequence length)
-        output_style = parents[0].style
+        result_string = "".join(result_chars)
+        output_seq = Seq(result_string, parent_seq.style)
 
-        output_seq = Seq(result_seq, output_style)
+        # Apply style to mutated positions if specified
+        if self.style is not None and not styles_suppressed() and len(positions) > 0:
+            # Convert mutated codon positions to literal positions for styling
+            style_positions = []
+            for codon_pos in positions:
+                if self.reverse:
+                    codon_region_end = mol_end - self.frame_offset
+                    mol_codon_start = codon_region_end - (codon_pos + 1) * 3
+                else:
+                    codon_region_start = mol_start + self.frame_offset
+                    mol_codon_start = codon_region_start + codon_pos * 3
+
+                for i in range(3):
+                    mol_pos = mol_codon_start + i
+                    lit_pos = parent_seq.molecular_to_literal(mol_pos)
+                    style_positions.append(lit_pos)
+
+            output_seq = output_seq.add_style(
+                self.style, np.array(style_positions, dtype=np.int64)
+            )
 
         from ..party import cards_suppressed
 
@@ -370,6 +497,5 @@ class MutagenizeOrfOp(Operation):
     def _get_copy_params(self) -> dict:
         """Return parameters needed to create a copy of this operation."""
         params = super()._get_copy_params()
-        # Build tuple from two separate attributes
-        params["orf_extent"] = (self.orf_start, self.orf_end)
+        params["region"] = self._orf_region
         return params
