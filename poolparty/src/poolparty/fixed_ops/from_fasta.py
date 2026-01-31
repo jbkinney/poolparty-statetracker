@@ -41,7 +41,10 @@ def from_fasta(
 
     # Load FASTA and extract sequence
     fasta = Fasta(fasta_path)
-    seq = str(fasta[chrom][start:end].seq)
+    try:
+        seq = str(fasta[chrom][start:end].seq)
+    finally:
+        fasta.close()  # Ensure file handle is released (critical for Windows)
 
     # Reverse complement if strand is '-'
     if strand == "-":
