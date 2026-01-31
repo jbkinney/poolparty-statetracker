@@ -182,3 +182,36 @@ class BaseOpsMixin:
         from ..base_ops.filter_seq import filter_seq
 
         return filter_seq(self, predicate=predicate, name=name)
+
+    def materialize(
+        self,
+        num_seqs: Optional[Integral] = None,
+        num_cycles: Optional[Integral] = None,
+        seed: Optional[Integral] = None,
+        discard_null_seqs: bool = True,
+        max_iterations: Optional[Integral] = None,
+        min_acceptance_rate: Optional[Real] = None,
+        attempts_per_rate_assessment: Integral = 100,
+        name: Optional[str] = None,
+        prefix: Optional[str] = None,
+    ) -> Pool_type:
+        """Materialize sequences into a new pool with fixed states.
+
+        Generates sequences from this pool and creates a new pool that stores
+        them. The resulting pool has a well-defined num_states and no parent
+        references (severed DAG).
+        """
+        from ..base_ops.materialize import materialize
+
+        return materialize(
+            pool=self,
+            num_seqs=num_seqs,
+            num_cycles=num_cycles,
+            seed=seed,
+            discard_null_seqs=discard_null_seqs,
+            max_iterations=max_iterations,
+            min_acceptance_rate=min_acceptance_rate,
+            attempts_per_rate_assessment=attempts_per_rate_assessment,
+            name=name,
+            prefix=prefix,
+        )

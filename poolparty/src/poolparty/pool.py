@@ -439,7 +439,7 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, StateOpsMixin, RegionOpsMi
                 seq = row["seq"]
                 # Handle None (filtered) sequences
                 if seq is None:
-                    row_parts.append("<filtered>")
+                    row_parts.append("None")
                 else:
                     from .utils.style_utils import SeqStyle
 
