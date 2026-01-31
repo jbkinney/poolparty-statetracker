@@ -61,7 +61,7 @@ def rc(
 
     # Apply style if specified
     if style is not None:
-        from .style import stylize
+        from .stylize import stylize
 
         result_pool = stylize(result_pool, style=style)
 

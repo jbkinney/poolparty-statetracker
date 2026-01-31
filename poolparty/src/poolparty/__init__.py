@@ -59,7 +59,7 @@ from .multiscan_ops import (
 from .operation import Operation
 
 # Import ORF operations from orf_ops module
-from .orf_ops import MutagenizeOrfOp, mutagenize_orf
+from .orf_ops import MutagenizeOrfOp, StylizeOrfOp, mutagenize_orf, stylize_orf
 from .party import (
     Party,
     _init_default_party,
@@ -156,6 +156,8 @@ __all__ = [
     "MutagenizeOp",
     "mutagenize_orf",
     "MutagenizeOrfOp",
+    "stylize_orf",
+    "StylizeOrfOp",
     "recombine",
     "RecombineOp",
     "insertion_scan",

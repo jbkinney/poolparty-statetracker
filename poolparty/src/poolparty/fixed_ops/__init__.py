@@ -9,7 +9,7 @@ from .join import join
 from .lower import lower
 from .rc import rc
 from .slice_seq import slice_seq
-from .style import StylizeOp, stylize
+from .stylize import StylizeOp, stylize
 from .swapcase import swapcase
 from .upper import upper
 
