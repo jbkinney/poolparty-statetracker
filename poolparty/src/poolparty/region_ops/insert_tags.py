@@ -87,7 +87,7 @@ def insert_tags(
     result_pool = fixed_operation(
         parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
-        seq_length_from_pool_lengths_fn=lambda lengths: None,  # Length changes due to region tags
+        seq_length_from_pool_lengths_fn=lambda lengths: lengths[0] if lengths else None,
         iter_order=iter_order,
     )
 
