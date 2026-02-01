@@ -233,7 +233,8 @@ class TestMaterializeEdgeCases:
             filtered = root.filter(lambda s: s.startswith("A"))  # None pass
 
             with pytest.raises(ValueError, match="No sequences were materialized"):
-                filtered.materialize(num_seqs=1, seed=42)
+                with pytest.warns(UserWarning, match="Reached max_iterations"):
+                    filtered.materialize(num_seqs=1, seed=42)
 
     def test_materialize_with_prefix(self):
         """Test materialize with prefix for auto-naming."""

@@ -3,7 +3,7 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import ModeType, Optional, PositionsType, RegionType, Sequence, Tuple, Union, beartype
+from ..types import ModeType, Optional, PositionsType, RegionType, Sequence, Union, beartype
 
 
 @beartype
@@ -15,7 +15,7 @@ def mutagenize_scan(
     positions: PositionsType = None,
     region: RegionType = None,
     prefix: Optional[Union[str, Sequence[str]]] = None,
-    mode: Union[ModeType, Tuple[ModeType, ModeType]] = "random",
+    mode: Union[ModeType, tuple[ModeType, ModeType]] = "random",
     num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
     iter_order: Optional[Union[Real, Sequence[Real]]] = None,
     _factory_name: Optional[str] = "mutagenize_scan",

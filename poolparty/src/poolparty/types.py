@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Sequence
 from numbers import Integral, Real
-from typing import Any, Literal, Optional, Tuple, TypeAlias, Union
+from typing import Any, Literal, Optional, TypeAlias, Union
 
 import numpy as np
 from beartype import beartype
@@ -42,7 +42,6 @@ from .utils.style_utils import SeqStyle
 
 __all__ = [
     "beartype",
-    "Tuple",
     "Union",
     "Optional",
     "Sequence",
