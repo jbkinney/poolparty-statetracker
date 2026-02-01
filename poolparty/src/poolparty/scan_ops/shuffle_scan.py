@@ -119,10 +119,10 @@ def shuffle_scan(
         num_shuffles = int(shuffles_per_position) if shuffles_per_position else 1
 
         def compute_names():
-            # Check if this branch is active - if states are None, return empty list
-            if pos_state is None or pos_state.value is None:
+            # Check if this branch is active
+            if not pos_state.is_active:
                 return []
-            if shuffle_state is not None and shuffle_state.value is None:
+            if shuffle_state is not None and not shuffle_state.is_active:
                 return []
 
             pos_idx = pos_state.value

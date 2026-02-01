@@ -20,12 +20,12 @@ class SynchronizedGroup:
     def __init__(self, state: State_type):
         """Create a sync group containing a single state."""
         self._states: set = {state}
-        self._num_values: int = state.num_values
+        self._num_values: Optional[int] = state.num_values  # Can be None for fixed states
         self._value: Optional[int] = None  # Logical value for the group
 
     @property
-    def num_values(self) -> int:
-        """Number of values for states in this group (max across all states)."""
+    def num_values(self) -> Optional[int]:
+        """Number of values for states in this group (max across all states, None for fixed)."""
         return self._num_values
 
     @property
@@ -34,16 +34,22 @@ class SynchronizedGroup:
         return self._value
 
     def add(self, state: State_type) -> None:
-        """Add a state to this group. Group num_values becomes the max."""
-        self._num_values = max(self._num_values, state.num_values)
+        """Add a state to this group. Group num_values becomes the max (ignoring None)."""
+        if self._num_values is None:
+            self._num_values = state.num_values
+        elif state.num_values is not None:
+            self._num_values = max(self._num_values, state.num_values)
         self._states.add(state)
         state._synced_group = self
 
     def merge(self, other: "SynchronizedGroup") -> None:
-        """Merge another group into this one. num_values becomes the max."""
+        """Merge another group into this one. num_values becomes the max (ignoring None)."""
         if other is self:
             return
-        self._num_values = max(self._num_values, other._num_values)
+        if self._num_values is None:
+            self._num_values = other._num_values
+        elif other._num_values is not None:
+            self._num_values = max(self._num_values, other._num_values)
         for state in other._states:
             state._synced_group = self
         self._states |= other._states
@@ -57,6 +63,7 @@ class SynchronizedGroup:
         self._value = None
         for state in self._states:
             state._value = None
+            state._is_active = False
 
     def set_inactivated_values_in_trees(self, val) -> None:
         """Set group value and propagate to states within their valid ranges."""
@@ -64,14 +71,20 @@ class SynchronizedGroup:
         self._value = val
 
         for state in self._states:
-            # Only set if value is in range for this state
-            state_val = val if (val is not None and val < state.num_values) else None
+            # Determine the value for this state
+            if state._is_fixed:
+                # Fixed states: only 0 or None
+                state_val = 0 if (val is not None and val == 0) else None
+            else:
+                # Only set if value is in range for this state
+                state_val = val if (val is not None and val < state.num_values) else None
 
             match (state._value, state_val):
                 case (None, None):
                     pass
                 case (None, Integral()):
                     state._value = state_val
+                    state._is_active = True
                 case (Integral(), Integral()) if state._value == state_val:
                     pass
                 case (Integral(), None):

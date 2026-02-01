@@ -77,14 +77,12 @@ class Operation:
         # If not provided, defaults to the effective num_states
         self._natural_num_states = _natural_num_states
 
-        if validated_num_states is not None and mode != "fixed":
-            # Non-fixed ops with explicit num_states - create state
-            self.state = st.State(
-                num_values=validated_num_states, name=f"{self._name}.state", iter_order=iter_order
-            )
-        else:
-            # No explicit num_states or fixed mode - no state
-            self.state = None
+        # ALL operations get State objects
+        # num_values=None creates a fixed state (is_fixed=True)
+        # This applies to: mode='fixed', or mode='random' with num_states=None
+        self.state = st.State(
+            num_values=validated_num_states, name=f"{self._name}.state", iter_order=iter_order
+        )
 
         self.rng: np.random.Generator | None = None
         self.num_states = validated_num_states
@@ -114,7 +112,7 @@ class Operation:
     @property
     def iter_order(self) -> Real:
         """Iteration order for this operation."""
-        if self.state is None:
+        if self.state.is_fixed:
             return 0
         return self.state.iter_order
 
@@ -197,36 +195,23 @@ class Operation:
     def build_pool_counter(
         self,
         parent_pools: Sequence[Pool_type],
-    ) -> st.State | None:
+    ) -> st.State:
         """Build the output Pool's state from parent pool states."""
-        # Collect parent states
-        parent_states = [p.state for p in parent_pools if p.state is not None]
+        # Collect all parent states (including fixed states - they participate in the DAG
+        # for activity propagation even though they contribute 1 to the state space)
+        parent_states = [p.state for p in parent_pools]
 
-        if self.mode == "fixed":
-            # Fixed operations: derive pool state from parents only (op.state is None)
-            if not parent_states:
-                # No parents with state - create new state with this op's num_states
-                return st.State(num_values=self.num_states or 1)
-            elif len(parent_states) == 1:
-                # Single parent - create synced state (don't share object to avoid name conflicts)
-                return st.synced_to(parent_states[0])
-            else:
-                # Multiple parents - product
-                return st.ordered_product(states=parent_states)
+        # Always include op.state in the product - even for mode="fixed" operations.
+        # For mode="fixed", op.state has num_values=1 and always gets value=0, but
+        # including it in the DAG ensures it gets activated through propagation.
+        all_states = parent_states + [self.state]
+
+        if len(all_states) == 1:
+            # Single state - synced
+            return st.synced_to(all_states[0])
         else:
-            # Non-fixed: include op.state in the product
-            op_states = [self.state] if self.state is not None else []
-            all_states = parent_states + op_states
-
-            if not all_states:
-                # Fully random DAG - no states
-                return None
-            elif len(all_states) == 1:
-                # Single state - synced
-                return st.synced_to(all_states[0])
-            else:
-                # Multiple states - product
-                return st.ordered_product(states=all_states)
+            # Multiple states - product
+            return st.ordered_product(states=all_states)
 
     def compute(
         self,
@@ -339,15 +324,18 @@ class Operation:
         """
         if self.prefix is None:
             return []
-        if self.state is not None and self.state.value is not None:
-            # Has state: use state value
-            return [f"{self.prefix}_{self.state.value}"]
-        elif self.mode == "random" and self.state is None and global_state is not None:
-            # Truly stateless random (no state object): use global_state
-            # Note: ops with state but inactive (state.value=None) should return []
-            return [f"{self.prefix}_{global_state}"]
+        if not self.state.is_active:
+            return []  # Inactive branch - no name contribution
+        if self.state.is_fixed:
+            # Fixed state - naming depends on mode
+            if self.mode == "random":
+                return [f"{self.prefix}_{global_state}"]  # Stateless random: varies by row
+            elif self.mode == "fixed":
+                return [f"{self.prefix}"]  # Fixed: nothing varies, just prefix
+            else:
+                raise ValueError(f"Unexpected mode '{self.mode}' for fixed state")
         else:
-            return []
+            return [f"{self.prefix}_{self.state.value}"]  # Sequential: varies by state value
 
     def __repr__(self) -> str:
         num_states_str = "None" if self.num_states is None else str(self.num_states)

@@ -52,9 +52,11 @@ class State:
             parent_num_values = tuple(p.num_values for p in _parents)
             self._num_values = _op.compute_num_states(parent_num_values)
         else:
-            if num_values is None:
-                raise ValueError("Leaf states require num_values")
+            # num_values=None is allowed (creates a fixed state)
             self._num_values = num_values
+
+        # Set _is_fixed based on whether num_values is None
+        self._is_fixed = (self._num_values is None)
 
         # Each state starts in its own sync group
         self._synced_group = SynchronizedGroup(self)
@@ -65,10 +67,12 @@ class State:
 
         # Set value: default to None (inactive) unless explicitly provided
         # States become active (value=0) when iteration starts via reset()
+        # _is_active tracks whether the state is on an active branch
         if value is not None:
             self.value = value
         else:
             self._value = None
+            self._is_active = False
 
     @property
     def iter_order(self):
@@ -84,6 +88,11 @@ class State:
     def num_values(self):
         """Number of values this state can take (read-only)."""
         return self._num_values
+
+    @property
+    def is_fixed(self) -> bool:
+        """True if this is a fixed state (no iteration). Read-only."""
+        return self._is_fixed
 
     @property
     def id(self):
@@ -129,6 +138,9 @@ class State:
     def value(self, val: Optional[Integral]):
         """Set value and propagate to parents."""
         logger.debug("Setting value=%s for state id=%s name=%s", val, self._id, self._name)
+        # Validate fixed states: can only be 0 or None
+        if self._is_fixed and val is not None and val != 0:
+            raise ValueError("Fixed states can only have value 0 or None")
         if val is None:
             self._synced_group.inactivate_trees()
         elif any(s._parents for s in self._synced_group._states):
@@ -139,10 +151,17 @@ class State:
             # All states are leaves: set sync group value directly (no propagation needed)
             self._synced_group._value = val
             for state in self._synced_group._states:
-                state._value = val if val < state.num_values else None
+                if state._is_fixed:
+                    # Fixed states: only 0 or None
+                    state._value = 0 if val == 0 else None
+                else:
+                    state._value = val if val < state.num_values else None
+                state._is_active = (state._value is not None)
 
     def advance(self):
         """Advance to next value (wraps around using this state's num_values)."""
+        if self._is_fixed:
+            raise RuntimeError("Cannot advance a fixed state")
         if self._synced_group._value is None:
             logger.warning(
                 "Attempting to advance inactive state id=%s name=%s", self._id, self._name
@@ -156,12 +175,25 @@ class State:
         """Reset to specified value (default 0)."""
         self.value = value
 
-    def is_active(self):
-        """Return True if state is active (value is not None)."""
-        return self._value is not None
+    @property
+    def is_active(self) -> bool:
+        """True if state is active (on an active branch). Settable."""
+        return self._is_active
+
+    @is_active.setter
+    def is_active(self, val: bool):
+        """Set active state and sync _value accordingly."""
+        self._is_active = val
+        if val:
+            if self._value is None:
+                self._value = 0
+        else:
+            self._value = None
 
     def __iter__(self):
         """Iterate through all values of this state."""
+        if self._is_fixed:
+            raise RuntimeError("Cannot iterate a fixed state")
         self.reset()
         for _ in range(self._num_values):
             yield self._value
@@ -170,6 +202,8 @@ class State:
 
     def __getitem__(self, key: Union[Integral, slice]):
         """Create sliced state: B = A[1:5] or A[::2] or A[::-1]."""
+        if self._is_fixed:
+            raise RuntimeError("Cannot slice a fixed state")
         from .ops import SliceOp
 
         # If key is an int, convert it to a slice for that single value

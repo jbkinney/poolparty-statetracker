@@ -470,6 +470,7 @@ class MutagenizeOrfOp(Operation):
         else:
             if self._sequential_cache is None:
                 self._build_caches()
+            # Use state 0 when inactive (state is None)
             state = self.state.value
             cache_idx = (0 if state is None else state) % len(self._sequential_cache)
             positions, mut_indices = self._sequential_cache[cache_idx]

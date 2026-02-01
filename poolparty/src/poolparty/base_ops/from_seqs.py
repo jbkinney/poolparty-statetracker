@@ -183,7 +183,7 @@ class FromSeqsOp(Operation):
                     f"{self.mode.capitalize()} mode requires RNG - use Party.generate(seed=...)"
                 )
             idx = int(rng.integers(0, len(self.seqs)))
-        elif self.state is None:
+        elif self.state.is_fixed:
             # Fixed mode - always use index 0
             idx = 0
         else:
@@ -217,7 +217,7 @@ class FromSeqsOp(Operation):
     def compute_name_contributions(self, global_state=None) -> list[str]:
         """Compute name contributions - explicit seq_names or prefix pattern."""
         # Check if state is inactive (for branch selection)
-        if self.state is not None and self.state.value is None:
+        if not self.state.is_active:
             return []
         if self._seq_names_explicit:
             # Use explicit seq_name for current index

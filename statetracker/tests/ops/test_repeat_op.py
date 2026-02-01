@@ -69,7 +69,7 @@ class TestRepeatState:
 
             for _ in B:
                 assert A.value is not None
-                assert A.is_active()
+                assert A.is_active
 
     def test_repeat_state_times_one(self):
         """repeat_state(A, 1) works correctly."""

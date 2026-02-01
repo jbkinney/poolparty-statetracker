@@ -77,6 +77,7 @@ class RepeatOp(Operation):
         """Return parent Seq and design card."""
         from ..party import cards_suppressed
 
+        # Use state 0 when inactive (state is None)
         state = self.state.value
         repeat_index = 0 if state is None else state
 

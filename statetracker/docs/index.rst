@@ -101,7 +101,7 @@ Create states and combine them to enumerate a combinatorial space:
 
         # Iterate through all samples
         for value in randomized:
-            if control.is_active():
+            if control.is_active:
                 print(f"Control sample {control.value}")
             else:
                 print(f"Treatment sample {treatment.value}")

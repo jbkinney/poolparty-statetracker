@@ -42,10 +42,10 @@ def state_slice(
     ValueError
         If the input pool has no state (mode='random' with num_states=None).
     """
-    # Check for stateless pool
-    if pool.state is None:
+    # Check for fixed/stateless pool
+    if pool.state.is_fixed:
         raise ValueError(
-            f"Cannot slice stateless pool '{pool.name}'. "
+            f"Cannot slice fixed/stateless pool '{pool.name}'. "
             f"Pools with mode='random' and num_states=None have no state to slice. "
             f"Use num_states=N to create a pool with explicit states."
         )

@@ -124,7 +124,7 @@ class MaterializeOp(Operation):
         from ..party import cards_suppressed
 
         # Get index from state (cycling if needed)
-        if self.state is None:
+        if self.state.is_fixed:
             idx = 0
         else:
             state = self.state.value
@@ -146,7 +146,7 @@ class MaterializeOp(Operation):
     def compute_name_contributions(self, global_state=None) -> list[str]:
         """Compute name contributions - use stored names or prefix pattern."""
         # Check if state is inactive
-        if self.state is not None and self.state.value is None:
+        if not self.state.is_active:
             return []
         if self._names_explicit and self._names[self._current_idx]:
             # Use stored name for current index

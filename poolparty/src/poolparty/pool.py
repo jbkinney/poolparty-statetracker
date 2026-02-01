@@ -49,8 +49,8 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, OrfOpsMixin, StateOpsMixin
         if state is not None:
             self.state = state
         else:
-            self.state: st.State | None = operation.build_pool_counter(operation.parent_pools)
-        if iter_order is not None and self.state is not None:
+            self.state: st.State = operation.build_pool_counter(operation.parent_pools)
+        if iter_order is not None:
             self.state.iter_order = iter_order
         self._name: str = ""
         self.name = name if name is not None else f"pool[{self._id}]"
@@ -78,15 +78,14 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, OrfOpsMixin, StateOpsMixin
     @property
     def iter_order(self) -> Real:
         """Iteration order for this pool."""
-        if self.state is None:
+        if self.state.is_fixed:
             return 0
         return self.state.iter_order
 
     @iter_order.setter
     def iter_order(self, value: Real) -> None:
         """Set iteration order for this pool."""
-        if self.state is not None:
-            self.state.iter_order = value
+        self.state.iter_order = value
 
     @property
     def name(self) -> str:
@@ -109,21 +108,20 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, OrfOpsMixin, StateOpsMixin
         # When pool.state is the same as operation.state (source operations),
         # preserve operation state name if operation has explicit name (not default)
         # Otherwise, use pool state name
-        if self.state is not None:
-            if self.state is self.operation.state:
-                # Check if operation has explicit name (not default like "op[0]:from_seqs")
-                op_name = self.operation.name
-                is_default_op_name = op_name.startswith("op[") and "]:" in op_name
-                if not is_default_op_name:
-                    # Operation has explicit name, preserve it
-                    # State name should already be set to operation name
-                    pass
-                else:
-                    # Operation has default name, use pool name
-                    self.state.name = f"{value}.state"
+        if self.state is self.operation.state:
+            # Check if operation has explicit name (not default like "op[0]:from_seqs")
+            op_name = self.operation.name
+            is_default_op_name = op_name.startswith("op[") and "]:" in op_name
+            if not is_default_op_name:
+                # Operation has explicit name, preserve it
+                # State name should already be set to operation name
+                pass
             else:
-                # Different states, set pool state name normally
+                # Operation has default name, use pool name
                 self.state.name = f"{value}.state"
+        else:
+            # Different states, set pool state name normally
+            self.state.name = f"{value}.state"
         # Update party's name tracking if this is a rename (not initial set)
         if old_name:
             self._party._update_pool_name(self, old_name, value)
@@ -131,7 +129,7 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, OrfOpsMixin, StateOpsMixin
     @property
     def num_states(self) -> int | None:
         """Number of states for this pool."""
-        if self.state is None:
+        if self.state.is_fixed:
             return None
         return self.state.num_values
 

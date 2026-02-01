@@ -67,6 +67,7 @@ class Manager:
         seen_groups = set()
         for state in self._states:
             state._value = None
+            state._is_active = False
             group = state._synced_group
             if id(group) not in seen_groups:
                 group._value = None

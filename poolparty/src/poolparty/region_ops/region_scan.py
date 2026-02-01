@@ -240,6 +240,7 @@ class RegionScanOp(Operation):
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
             position_index = int(rng.integers(0, len(valid_indices)))
         else:
+            # Use state 0 when inactive (state is None)
             state = self.state.value
             state = 0 if state is None else state
             position_index = state % len(valid_indices)

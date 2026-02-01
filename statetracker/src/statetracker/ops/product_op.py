@@ -134,14 +134,23 @@ def product(states: Sequence[State_type], name: Optional[str] = None):
 class ProductOp(Operation):
     """Cartesian product of N states."""
 
-    def compute_num_states(self, parent_num_values: Sequence[Integral]):
-        return math.prod(parent_num_values)
+    def compute_num_states(self, parent_num_values: Sequence):
+        # If ALL parents are fixed (None), result is fixed (None)
+        # Otherwise, treat None as 1 in the product
+        non_none = [n for n in parent_num_values if n is not None]
+        if not non_none:
+            return None  # All fixed -> fixed
+        return math.prod(non_none)
 
     def decompose(self, value, parent_num_values):
         if value is None:
             return tuple(None for _ in parent_num_values)
         result = []
         for n in parent_num_values:
-            result.append(value % n)
-            value //= n
+            if n is None:
+                # Fixed state: always 0 when active
+                result.append(0)
+            else:
+                result.append(value % n)
+                value //= n
         return tuple(result)

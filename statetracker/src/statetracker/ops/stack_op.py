@@ -33,16 +33,18 @@ def stack(states: Sequence[State_type], name: Optional[str] = None):
 @beartype
 class StackOp(Operation):
     def compute_num_states(self, parent_num_values):
-        return sum(parent_num_values)
+        # Treat None (fixed states) as 1
+        return sum(n if n is not None else 1 for n in parent_num_values)
 
     def decompose(self, value, parent_num_values):
         if value is None:
             return tuple(None for _ in parent_num_values)
         cumsum = 0
         for i, n in enumerate(parent_num_values):
-            if value < cumsum + n:
+            effective_n = n if n is not None else 1
+            if value < cumsum + effective_n:
                 return tuple(
                     value - cumsum if j == i else None for j in range(len(parent_num_values))
                 )
-            cumsum += n
+            cumsum += effective_n
         raise ValueError(f"Invalid value {value}")

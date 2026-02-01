@@ -40,11 +40,11 @@ def stack(
     ValueError
         If any input pool has no state (mode='random' with num_states=None).
     """
-    # Check for stateless pools
+    # Check for fixed/stateless pools
     for i, pool in enumerate(pools):
-        if pool.state is None:
+        if pool.state.is_fixed:
             raise ValueError(
-                f"Cannot stack stateless pool '{pool.name}' (index {i}). "
+                f"Cannot stack fixed/stateless pool '{pool.name}' (index {i}). "
                 f"Pools with mode='random' and num_states=None have no state to stack. "
                 f"Use num_states=N to create a pool with explicit states."
             )

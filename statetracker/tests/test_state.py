@@ -22,10 +22,12 @@ class TestStateCreation:
             # Auto-named when registered
             assert A.name == "State[0]"
 
-    def test_leaf_state_requires_num_values(self):
+    def test_leaf_state_with_none_num_values_creates_fixed(self):
+        """Creating State with num_values=None creates a fixed state."""
         with Manager():
-            with pytest.raises(ValueError, match="require num_values"):
-                State()
+            A = State()  # No num_values = fixed state
+            assert A.is_fixed is True
+            assert A.num_values is None
 
     def test_name_setter(self):
         with Manager():
@@ -225,30 +227,30 @@ class TestInactiveState:
             assert A.value is None
 
     def test_is_active_true(self):
-        """is_active() returns True for active states."""
+        """is_active returns True for active states."""
         with Manager():
             A = State(num_values=3, name="A")
-            assert A.is_active() is False  # States default to inactive
+            assert A.is_active is False  # States default to inactive
             A.reset()  # Activate at value 0
-            assert A.is_active() is True
+            assert A.is_active is True
             A.value = 2
-            assert A.is_active() is True
+            assert A.is_active is True
 
     def test_is_active_false(self):
-        """is_active() returns False for inactive states."""
+        """is_active returns False for inactive states."""
         with Manager():
             A = State(num_values=3, name="A")
             A.value = None
-            assert A.is_active() is False
+            assert A.is_active is False
 
     def test_is_active_after_inactive_method(self):
-        """is_active() returns False after setting to None."""
+        """is_active returns False after setting to None."""
         with Manager():
             A = State(num_values=3, name="A")
             A.reset()  # Activate first
-            assert A.is_active() is True
+            assert A.is_active is True
             A.value = None
-            assert A.is_active() is False
+            assert A.is_active is False
 
     def test_stack_iteration_with_inactive(self):
         """Iterate sum shows None for inactive branch."""
@@ -259,7 +261,7 @@ class TestInactiveState:
 
             results = []
             for _ in C:
-                results.append((A.value, B.value, A.is_active(), B.is_active()))
+                results.append((A.value, B.value, A.is_active, B.is_active))
 
             expected = [
                 (0, None, True, False),  # A active
@@ -338,7 +340,7 @@ class TestCopy:
             A.value = None
             B = A.copy()
             assert B.value is None
-            assert not B.is_active()
+            assert not B.is_active
 
     def test_copy_with_name(self):
         """Copy with name parameter sets the new name."""
@@ -440,7 +442,7 @@ class TestDeepcopy:
             A.value = None
             B = A.deepcopy()
             assert B.value is None
-            assert not B.is_active()
+            assert not B.is_active
 
     def test_deepcopy_with_name(self):
         """Deepcopy with name parameter sets the new name."""

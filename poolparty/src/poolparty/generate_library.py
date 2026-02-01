@@ -73,10 +73,10 @@ def generate_library(
             "Cannot use num_cycles with filtering."
         )
     if num_seqs is None:
-        if pool.state is None:
+        if pool.state.is_fixed:
             raise ValueError(
-                "num_seqs must be specified when pool has no state (mode='random' with num_states=None). "
-                "Cannot use num_cycles for stateless pools."
+                "num_seqs must be specified when pool has a fixed state (mode='random' with num_states=None). "
+                "Cannot use num_cycles for fixed/stateless pools."
             )
         num_seqs = num_cycles * pool.state.num_values
     if init_state is not None:
@@ -88,16 +88,13 @@ def generate_library(
 
     # Set default max_iterations
     if max_iterations is None:
-        if pool.state is not None:
+        if not pool.state.is_fixed:
             max_iterations = pool.state.num_values
         else:
             max_iterations = num_seqs * 100
 
-    # Get config from active party
-    from .party import get_active_party
-
-    party = get_active_party()
-    config = party._config if party else None
+    # Get config from pool's party (not active party, which may be different)
+    config = pool._party._config if hasattr(pool, "_party") and pool._party else None
     suppress_cards = config.suppress_cards if config else False
 
     logger.info(
@@ -209,7 +206,7 @@ def generate_library(
 
         # Check state space exhaustion (only for filtering in sequential mode)
         # When not filtering, allow cycling through states multiple times
-        if discard_null_seqs and pool.state is not None:
+        if discard_null_seqs and not pool.state.is_fixed:
             if state >= pool._current_state + pool.state.num_values:
                 if len(rows) < num_seqs:
                     warnings.warn(
@@ -314,12 +311,12 @@ def _collect_counters(
     visited: set[int] = set()
     result: list[st.State] = []
     for pool in pools_filter:
-        if include_pool_states and pool.state is not None:
+        if include_pool_states:
             counter_id = id(pool.state)
             if counter_id not in visited:
                 visited.add(counter_id)
                 result.append(pool.state)
-        if include_op_states and pool.operation.state is not None:
+        if include_op_states:
             op_counter = pool.operation.state
             op_counter_id = id(op_counter)
             if op_counter_id not in visited:
@@ -346,10 +343,13 @@ def _compute_one(
     card_cache: dict[int, dict] = {}
     row: dict = {}
 
-    # Sets the value of the pool state and, in doing so, the value
-    # of all pool and operation states that affect this state.
-    # Skip if pool has no state (fully random DAG)
-    if pool.state is not None:
+    # Sets the value of the pool state and, in doing so, propagates values
+    # to all parent pool and operation states in the DAG.
+    # For fixed states: set value=0 to trigger propagation (fixed states accept 0 or None).
+    # For non-fixed states: set value to trigger propagation.
+    if pool.state.is_fixed:
+        pool.state.value = 0
+    else:
         pool.state.value = global_state % pool.state.num_values
 
     # Collect all name contributions from operations in topological order
@@ -363,11 +363,11 @@ def _compute_one(
 
         # Determine RNG for this operation
         if op.mode == "random":
-            if op.state is not None:
+            if not op.state.is_fixed:
                 # Explicit num_states: use state value
                 state = op.state.value if op.state.value is not None else 0
             else:
-                # Stateless random: use global_state (row number)
+                # Fixed/stateless random: use global_state (row number)
                 state = global_state
             seed_seq = np.random.SeedSequence([pool._master_seed, op.id, state])
             op_rng = np.random.default_rng(seed_seq)
@@ -387,9 +387,8 @@ def _compute_one(
         # Design cards are already filtered in Operation.compute()
         if report_design_cards and (ops_to_report is None or op.id in ops_to_report):
             for key, value in card.items():
-                # For ops with state: return None if state is inactive (value=None)
-                # For stateless ops (state=None): always report design card
-                if op.state is not None and op.state.value is None:
+                # Return None if state is inactive (on an inactive branch)
+                if not op.state.is_active:
                     row[f"{op.name}.key.{key}"] = None
                 else:
                     row[f"{op.name}.key.{key}"] = value
@@ -401,9 +400,8 @@ def _compute_one(
         row[col_name] = state.value
 
     for output_name, output_pool in outputs.items():
-        # For pools with state: return None if state is inactive (value=None)
-        # For stateless pools (state=None): always generate sequences
-        if output_pool.state is not None and output_pool.state.value is None:
+        # Return None if pool state is inactive (on an inactive branch)
+        if not output_pool.state.is_active:
             row[output_name] = None
         else:
             seq_obj = seq_cache[output_pool.operation.id]

@@ -128,10 +128,10 @@ def insertion_scan(
         num_sites = ins_pool_num_states or 1
 
         def compute_names():
-            # Check if this branch is active - if states are None, return empty list
-            if pos_state is None or pos_state.value is None:
+            # Check if this branch is active
+            if not pos_state.is_active:
                 return []
-            if ins_pool_state is not None and ins_pool_state.value is None:
+            if ins_pool_state is not None and not ins_pool_state.is_active:
                 return []
 
             pos_idx = pos_state.value
