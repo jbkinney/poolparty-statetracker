@@ -1,5 +1,6 @@
 """Fixed operations for poolparty - deterministic transformations using FixedOp."""
 
+from .add_prefix import AddPrefixOp, add_prefix
 from .clear_annotation import clear_annotation
 from .clear_gaps import clear_gaps
 from .fixed import FixedOp, fixed_operation
@@ -14,6 +15,8 @@ from .swapcase import swapcase
 from .upper import upper
 
 __all__ = [
+    "add_prefix",
+    "AddPrefixOp",
     "fixed_operation",
     "FixedOp",
     "from_seq",

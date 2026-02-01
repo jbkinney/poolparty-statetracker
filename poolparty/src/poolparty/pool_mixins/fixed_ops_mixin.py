@@ -8,6 +8,20 @@ from ..types import Optional, Pool_type, Real, RegionType
 class FixedOpsMixin:
     """Mixin providing fixed operation methods for Pool."""
 
+    def add_prefix(
+        self,
+        prefix: str,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        """Add a prefix to sequence names without modifying sequences."""
+        from ..fixed_ops.add_prefix import add_prefix
+
+        return add_prefix(
+            pool=self,
+            prefix=prefix,
+            iter_order=iter_order,
+        )
+
     def rc(
         self,
         region: RegionType = None,

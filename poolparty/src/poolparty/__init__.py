@@ -34,8 +34,10 @@ from .base_ops import (
 
 # Import fixed operations from fixed_ops module
 from .fixed_ops import (
+    AddPrefixOp,
     FixedOp,
     StylizeOp,
+    add_prefix,
     clear_annotation,
     clear_gaps,
     fixed_operation,
@@ -139,6 +141,8 @@ __all__ = [
     "IUPAC_TO_DNA",
     "IGNORE_CHARS",
     "VALID_CHARS",
+    "add_prefix",
+    "AddPrefixOp",
     "fixed_operation",
     "FixedOp",
     "from_seq",
