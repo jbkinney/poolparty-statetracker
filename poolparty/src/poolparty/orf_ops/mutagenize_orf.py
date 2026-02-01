@@ -65,6 +65,7 @@ def mutagenize_orf(
     codon_positions: Union[Sequence[Integral], slice, None] = None,
     style: Optional[str] = None,
     frame: Optional[int] = None,
+    prefix: Optional[str] = None,
     mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
@@ -96,6 +97,8 @@ def mutagenize_orf(
         negative values indicate right-to-left orientation (3'->5').
         The absolute value indicates the frame of the boundary base (1-indexed).
         If None and region is a named OrfRegion, uses the OrfRegion's frame.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
         Selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
@@ -129,6 +132,7 @@ def mutagenize_orf(
         codon_positions=codon_positions,
         style=style,
         frame=resolved_frame,
+        prefix=prefix,
         mode=mode,
         num_states=num_states,
         name=None,
@@ -153,6 +157,7 @@ class MutagenizeOrfOp(Operation):
         codon_positions: Union[Sequence[Integral], slice, None] = None,
         style: Optional[str] = None,
         frame: int = 1,
+        prefix: Optional[str] = None,
         mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         name: Optional[str] = None,
@@ -271,6 +276,7 @@ class MutagenizeOrfOp(Operation):
             seq_length=self._seq_length,
             name=name,
             iter_order=iter_order,
+            prefix=prefix,
         )
 
     def _validate_orf_region(self, region: RegionType, seq_length: int) -> None:
