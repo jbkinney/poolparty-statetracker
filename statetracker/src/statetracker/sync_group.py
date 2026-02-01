@@ -63,7 +63,6 @@ class SynchronizedGroup:
         self._value = None
         for state in self._states:
             state._value = None
-            state._is_active = False
 
     def set_inactivated_values_in_trees(self, val) -> None:
         """Set group value and propagate to states within their valid ranges."""
@@ -79,7 +78,6 @@ class SynchronizedGroup:
                     pass
                 case (None, Integral()):
                     state._value = state_val
-                    state._is_active = True
                 case (Integral(), Integral()) if state._value == state_val:
                     pass
                 case (Integral(), None):

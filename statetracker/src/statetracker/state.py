@@ -64,12 +64,10 @@ class State:
 
         # Set value: default to None (inactive) unless explicitly provided
         # States become active (value=0) when iteration starts via reset()
-        # _is_active tracks whether the state is on an active branch
         if value is not None:
             self.value = value
         else:
             self._value = None
-            self._is_active = False
 
     @property
     def iter_order(self):
@@ -141,7 +139,6 @@ class State:
             self._synced_group._value = val
             for state in self._synced_group._states:
                 state._value = val if val < state.num_values else None
-                state._is_active = (state._value is not None)
 
     def advance(self):
         """Advance to next value (wraps around using this state's num_values)."""
@@ -160,18 +157,8 @@ class State:
 
     @property
     def is_active(self) -> bool:
-        """True if state is active (on an active branch). Settable."""
-        return self._is_active
-
-    @is_active.setter
-    def is_active(self, val: bool):
-        """Set active state and sync _value accordingly."""
-        self._is_active = val
-        if val:
-            if self._value is None:
-                self._value = 0
-        else:
-            self._value = None
+        """True if state is active (value is not None). Read-only."""
+        return self._value is not None
 
     def __iter__(self):
         """Iterate through all values of this state."""
