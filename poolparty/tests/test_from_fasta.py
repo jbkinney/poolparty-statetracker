@@ -6,7 +6,6 @@ import tempfile
 import time
 
 import pytest
-
 from poolparty.fixed_ops.fixed import FixedOp
 from poolparty.fixed_ops.from_fasta import from_fasta
 

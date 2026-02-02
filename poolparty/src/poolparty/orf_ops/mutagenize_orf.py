@@ -7,15 +7,15 @@ from numbers import Integral, Real
 import numpy as np
 
 from ..codon_table import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
+from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..party import get_active_party
-from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..region import VALID_FRAMES, OrfRegion
 from ..types import ModeType, Optional, RegionType, Seq, Sequence, Union, beartype
+from ..utils.dna_seq import DnaSeq
 from ..utils.dna_utils import reverse_complement
 from ..utils.parsing_utils import find_all_regions
-from ..utils.dna_seq import DnaSeq
 
 
 def _resolve_frame(region: RegionType, frame: Optional[int]) -> int:
@@ -459,9 +459,7 @@ class MutagenizeOrfOp(Operation):
             eligible_positions = self.eligible_positions
 
         # Extract codons using molecular coordinates (with frame offset)
-        codons = self._extract_codons_molecular(
-            parent_seq, mol_start, mol_end, self.frame_offset
-        )
+        codons = self._extract_codons_molecular(parent_seq, mol_start, mol_end, self.frame_offset)
 
         if self.mode in ("random", "hybrid"):
             if rng is None:
@@ -531,9 +529,7 @@ class MutagenizeOrfOp(Operation):
                     lit_pos = parent_seq.molecular_to_literal(mol_pos)
                     style_positions.append(lit_pos)
 
-            output_seq = output_seq.add_style(
-                self.style, np.array(style_positions, dtype=np.int64)
-            )
+            output_seq = output_seq.add_style(self.style, np.array(style_positions, dtype=np.int64))
 
         from ..party import cards_suppressed
 

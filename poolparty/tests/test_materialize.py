@@ -2,9 +2,9 @@
 
 import pandas as pd
 import pytest
+from poolparty.base_ops.materialize import MaterializeOp, materialize
 
 import poolparty as pp
-from poolparty.base_ops.materialize import MaterializeOp, materialize
 
 
 class TestMaterializeBasic:
@@ -61,9 +61,7 @@ class TestMaterializeWithFilter:
     def test_materialize_with_filter_discard(self):
         """Test materialize with discard_null_seqs=True."""
         with pp.Party():
-            root = pp.from_seqs(
-                ["AAAA", "CCCC", "GGGG", "ACGT", "TGCA"], mode="sequential"
-            )
+            root = pp.from_seqs(["AAAA", "CCCC", "GGGG", "ACGT", "TGCA"], mode="sequential")
             filtered = root.filter(lambda s: s.startswith("A"))
             # Only AAAA and ACGT pass the filter
             materialized = filtered.materialize(num_seqs=2, seed=42)
@@ -90,17 +88,13 @@ class TestMaterializeSeed:
     def test_materialize_seed_reproducible(self):
         """Test that same seed produces same sequences."""
         with pp.Party():
-            root = pp.from_seqs(
-                ["AAA", "CCC", "GGG", "TTT"], mode="random", num_states=4
-            )
+            root = pp.from_seqs(["AAA", "CCC", "GGG", "TTT"], mode="random", num_states=4)
 
             m1 = root.materialize(num_seqs=4, seed=42)
             df1 = m1.generate_library(num_seqs=4)
 
         with pp.Party():
-            root = pp.from_seqs(
-                ["AAA", "CCC", "GGG", "TTT"], mode="random", num_states=4
-            )
+            root = pp.from_seqs(["AAA", "CCC", "GGG", "TTT"], mode="random", num_states=4)
 
             m2 = root.materialize(num_seqs=4, seed=42)
             df2 = m2.generate_library(num_seqs=4)
@@ -110,9 +104,7 @@ class TestMaterializeSeed:
     def test_materialize_different_seeds_different_results(self):
         """Test that different seeds can produce different results."""
         with pp.Party():
-            root = pp.from_seqs(
-                ["AAA", "CCC", "GGG", "TTT"], mode="random", num_states=100
-            )
+            root = pp.from_seqs(["AAA", "CCC", "GGG", "TTT"], mode="random", num_states=100)
 
             m1 = root.materialize(num_seqs=10, seed=42)
             m2 = root.materialize(num_seqs=10, seed=123)
@@ -258,9 +250,7 @@ class TestMaterializeDiscardNullSeqs:
             filtered = root.filter(lambda s: s == "AAA")
             # With discard_null_seqs=False, NullSeq objects are included
             # Request 3 seqs - only 1 will be valid, 2 will be NullSeq
-            materialized = filtered.materialize(
-                num_seqs=3, seed=42, discard_null_seqs=False
-            )
+            materialized = filtered.materialize(num_seqs=3, seed=42, discard_null_seqs=False)
 
             # num_states includes the NullSeq entries
             assert materialized.num_states == 3
@@ -268,9 +258,7 @@ class TestMaterializeDiscardNullSeqs:
     def test_discard_null_seqs_true_default(self):
         """Test that discard_null_seqs=True is the default."""
         with pp.Party():
-            root = pp.from_seqs(
-                ["AAA", "CCC", "GGG", "TTT", "ACG"], mode="sequential"
-            )
+            root = pp.from_seqs(["AAA", "CCC", "GGG", "TTT", "ACG"], mode="sequential")
             filtered = root.filter(lambda s: s.startswith("A"))
             # Only AAA and ACG pass - request 2
             materialized = filtered.materialize(num_seqs=2, seed=42)
@@ -304,9 +292,7 @@ class TestMaterializeNumCycles:
     def test_num_cycles_with_filter(self):
         """Test num_cycles with filter counts only valid sequences."""
         with pp.Party():
-            root = pp.from_seqs(
-                ["AAA", "CCC", "GGG", "TTT", "ACG"], mode="sequential"
-            )
+            root = pp.from_seqs(["AAA", "CCC", "GGG", "TTT", "ACG"], mode="sequential")
             filtered = root.filter(lambda s: s.startswith("A"))
             # Only AAA and ACG pass out of 5
             materialized = filtered.materialize(num_cycles=1, seed=42)

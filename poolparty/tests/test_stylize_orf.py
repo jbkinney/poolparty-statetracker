@@ -1,10 +1,9 @@
 """Tests for stylize_orf functionality."""
 
-import numpy as np
 import pytest
+from poolparty.orf_ops.stylize_orf import stylize_orf
 
 import poolparty as pp
-from poolparty.orf_ops.stylize_orf import stylize_orf
 
 
 class TestStylizeOrfBasic:
@@ -116,8 +115,7 @@ class TestStylizeOrfFramesCycling:
             # Group 1 (codon 1): cyan, magenta, yellow
             # Group 0 (codon 2): red, green, blue (cycles back)
             pool = stylize_orf(
-                "ACGTACGTA",
-                style_frames=["red", "green", "blue", "cyan", "magenta", "yellow"]
+                "ACGTACGTA", style_frames=["red", "green", "blue", "cyan", "magenta", "yellow"]
             ).named("test")
 
         df = pool.generate_library(
@@ -165,7 +163,9 @@ class TestStylizeOrfFrame:
     def test_frame_1(self):
         """frame=1 starts from frame position 0 (default)."""
         with pp.Party():
-            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=1).named("test")
+            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=1).named(
+                "test"
+            )
 
         df = pool.generate_library(
             num_seqs=1, report_design_cards=True, _include_inline_styles=True
@@ -183,7 +183,9 @@ class TestStylizeOrfFrame:
     def test_frame_2(self):
         """frame=2 shifts frame assignment (equivalent to old region_frame=1)."""
         with pp.Party():
-            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=2).named("test")
+            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=2).named(
+                "test"
+            )
 
         df = pool.generate_library(
             num_seqs=1, report_design_cards=True, _include_inline_styles=True
@@ -209,7 +211,9 @@ class TestStylizeOrfFrame:
     def test_frame_3(self):
         """frame=3 shifts frame assignment (equivalent to old region_frame=2)."""
         with pp.Party():
-            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=3).named("test")
+            pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=3).named(
+                "test"
+            )
 
         df = pool.generate_library(
             num_seqs=1, report_design_cards=True, _include_inline_styles=True
@@ -239,8 +243,12 @@ class TestStylizeOrfFrame:
             pool_f1 = stylize_orf("ACGTACGTA", style_codons=["red", "blue"], frame=1).named("f1")
             pool_f2 = stylize_orf("ACGTACGTA", style_codons=["red", "blue"], frame=2).named("f2")
 
-        df_f1 = pool_f1.generate_library(num_seqs=1, report_design_cards=True, _include_inline_styles=True)
-        df_f2 = pool_f2.generate_library(num_seqs=1, report_design_cards=True, _include_inline_styles=True)
+        df_f1 = pool_f1.generate_library(
+            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+        )
+        df_f2 = pool_f2.generate_library(
+            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+        )
 
         # Collect positions for frame=1
         f1_red, f1_blue = set(), set()
@@ -318,7 +326,9 @@ class TestStylizeOrfNegativeFrame:
     def test_negative_frame_style_frames(self):
         """Negative frame processes frames from end to start."""
         with pp.Party():
-            pool_rev = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=-1).named("test")
+            pool_rev = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=-1).named(
+                "test"
+            )
 
         df = pool_rev.generate_library(
             num_seqs=1, report_design_cards=True, _include_inline_styles=True
@@ -346,7 +356,9 @@ class TestStylizeOrfNegativeFrame:
         seq = "ACGTAC"
         with pp.Party():
             for frame in [-1, -2, -3]:
-                pool = stylize_orf(seq, style_codons=["red", "blue"], frame=frame).named(f"test_{frame}")
+                pool = stylize_orf(seq, style_codons=["red", "blue"], frame=frame).named(
+                    f"test_{frame}"
+                )
                 df = pool.generate_library(num_seqs=1, _include_inline_styles=True)
                 assert len(df) == 1
 
@@ -390,7 +402,7 @@ class TestStylizeOrfRegion:
             pool = stylize_orf(
                 "AAACGTACTT",
                 region=[2, 8],  # ACGTAC
-                style_frames=["red", "green", "blue"]
+                style_frames=["red", "green", "blue"],
             ).named("test")
 
         df = pool.generate_library(
@@ -493,11 +505,7 @@ class TestStylizeOrfChain:
     def test_chain_with_other_ops(self):
         """stylize_orf works in operation chains."""
         with pp.Party():
-            pool = (
-                pp.from_seq("ACGTACGTAC")
-                .stylize_orf(style_codons=["red", "blue"])
-                .named("test")
-            )
+            pool = pp.from_seq("ACGTACGTAC").stylize_orf(style_codons=["red", "blue"]).named("test")
 
         df = pool.generate_library(
             num_seqs=1, report_design_cards=True, _include_inline_styles=True

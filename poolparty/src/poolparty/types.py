@@ -8,7 +8,9 @@ import numpy as np
 from beartype import beartype
 
 # Forward reference type aliases (resolve circular imports)
-Pool_type: TypeAlias = Union["poolparty.pool.Pool", "poolparty.dna_pool.DnaPool", "poolparty.protein_pool.ProteinPool"]
+Pool_type: TypeAlias = Union[
+    "poolparty.pool.Pool", "poolparty.dna_pool.DnaPool", "poolparty.protein_pool.ProteinPool"
+]
 Operation_type: TypeAlias = "poolparty.operation.Operation"
 State_type: TypeAlias = "statetracker.state.State"
 
@@ -37,10 +39,10 @@ StyleTuple: TypeAlias = tuple[str, np.ndarray]
 StyleList: TypeAlias = list[StyleTuple]
 
 # Import SeqStyle and Seq classes for convenience
+from .utils.dna_seq import DnaSeq
+from .utils.protein_seq import VALID_PROTEIN_CHARS, ProteinSeq
 from .utils.seq import NullSeq, Seq, is_null_seq
 from .utils.style_utils import SeqStyle
-from .utils.dna_seq import DnaSeq
-from .utils.protein_seq import ProteinSeq, VALID_PROTEIN_CHARS
 
 __all__ = [
     "beartype",

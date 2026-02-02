@@ -2,18 +2,17 @@
 
 import numpy as np
 import pytest
-
-import poolparty as pp
-from poolparty.orf_ops.translate import TranslateOp, translate, _resolve_frame, _get_shared_styles
+from poolparty.orf_ops.translate import TranslateOp, _get_shared_styles, _resolve_frame, translate
 from poolparty.utils.protein_seq import (
-    ProteinSeq,
-    VALID_PROTEIN_CHARS,
     AA_THREE_LETTER,
-    to_three_letter,
+    VALID_PROTEIN_CHARS,
+    ProteinSeq,
     map_style_positions_to_three_letter,
+    to_three_letter,
 )
 from poolparty.utils.style_utils import SeqStyle
-from poolparty.codon_table import CodonTable
+
+import poolparty as pp
 
 
 class TestProteinSeq:

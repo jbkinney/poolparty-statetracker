@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 
 from poolparty.types import Optional
 
-
 # Valid frame values for ORF regions
 VALID_FRAMES = {-3, -2, -1, 1, 2, 3}
 
@@ -93,6 +92,4 @@ class OrfRegion(Region):
         super().__post_init__()
         # Validate frame
         if self.frame not in VALID_FRAMES:
-            raise ValueError(
-                f"frame must be one of {sorted(VALID_FRAMES)}, got {self.frame}"
-            )
+            raise ValueError(f"frame must be one of {sorted(VALID_FRAMES)}, got {self.frame}")

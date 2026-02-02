@@ -1,9 +1,9 @@
 """Tests for annotate_region and annotate_orf functions."""
 
 import pytest
+from poolparty.region import OrfRegion
 
 import poolparty as pp
-from poolparty.region import OrfRegion, Region
 
 
 class TestAnnotateRegion:
@@ -209,7 +209,9 @@ class TestAnnotateOrf:
                 pool.annotate_orf("orf", style="red", style_frames=["blue", "green", "red"])
 
             with pytest.raises(ValueError, match="At most one"):
-                pool.annotate_orf("orf", style_codons=["red"], style_frames=["blue", "green", "red"])
+                pool.annotate_orf(
+                    "orf", style_codons=["red"], style_frames=["blue", "green", "red"]
+                )
 
 
 class TestStylizeOrfFrameLookup:

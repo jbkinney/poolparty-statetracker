@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
+from poolparty.base_ops.mutagenize import MutagenizeOp, mutagenize
 
 import poolparty as pp
-from poolparty.base_ops.mutagenize import MutagenizeOp, mutagenize
 
 
 class TestMutagenizeFactory:

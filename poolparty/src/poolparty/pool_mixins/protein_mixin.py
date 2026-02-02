@@ -1,7 +1,5 @@
 """Protein-specific operation mixins for ProteinPool class."""
 
-from ..types import Optional, Pool_type, Real
-
 
 class ProteinMixin:
     """Mixin providing protein-specific operation methods for ProteinPool.

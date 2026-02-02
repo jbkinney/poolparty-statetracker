@@ -7,8 +7,8 @@ import numpy as np
 from poolparty.types import Literal, Optional, Seq, Sequence, Union
 
 from ..operation import Operation
-from ..utils.parsing_utils import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos
 from ..utils.dna_seq import DnaSeq
+from ..utils.parsing_utils import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos
 
 # Type aliases
 PositionsType = Union[list[int], tuple[int, ...], slice, None]
@@ -81,7 +81,6 @@ def region_multiscan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..party import get_active_party
-    from ..dna_pool import DnaPool
 
     pool = from_seq(pool) if isinstance(pool, str) else pool
 

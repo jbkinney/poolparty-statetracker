@@ -5,9 +5,8 @@ from numbers import Real
 import numpy as np
 import pandas as pd
 
-from ..operation import Operation
 from ..dna_pool import DnaPool
-from ..pool import Pool
+from ..operation import Operation
 from ..types import Optional, Pool_type, Seq, Sequence, beartype
 from ..utils import dna_utils
 from ..utils.dna_seq import DnaSeq
@@ -89,6 +88,7 @@ class MaterializeOp(Operation):
             else:
                 # Handle None/nan sequences (when discard_null_seqs=False)
                 from ..types import NullSeq
+
                 self._seqs.append(NullSeq())
                 self._names.append("")
 

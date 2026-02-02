@@ -31,6 +31,7 @@ from .base_ops import (
     recombine,
     shuffle_seq,
 )
+from .dna_pool import DnaPool
 
 # Import fixed operations from fixed_ops module
 from .fixed_ops import (
@@ -73,7 +74,6 @@ from .party import (
     init,
     load_config,
 )
-from .dna_pool import DnaPool
 from .pool import Pool
 from .protein_pool import ProteinPool
 from .region import OrfRegion, Region
@@ -335,4 +335,6 @@ for _method_name, _factory_fn in _POOL_FACTORY_MAP.items():
 # Copy filtered docstrings from factory functions to DnaPool methods
 for _method_name, _factory_fn in _DNAPOOL_FACTORY_MAP.items():
     if hasattr(DnaPool, _method_name) and _factory_fn.__doc__:
-        getattr(DnaPool, _method_name).__doc__ = _remove_pool_param_from_docstring(_factory_fn.__doc__)
+        getattr(DnaPool, _method_name).__doc__ = _remove_pool_param_from_docstring(
+            _factory_fn.__doc__
+        )

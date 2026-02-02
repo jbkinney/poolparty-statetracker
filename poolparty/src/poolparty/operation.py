@@ -21,9 +21,7 @@ class Operation:
     factory_name: str = "op"
 
     @classmethod
-    def validate_num_states(
-        cls, num_states: int | float | None, mode: ModeType
-    ) -> int | float:
+    def validate_num_states(cls, num_states: int | float | None, mode: ModeType) -> int | float:
         """Validate num_states against max_num_sequential_states."""
         if num_states is None:
             return 1
@@ -79,9 +77,7 @@ class Operation:
             self._action_uniquely_determined_by_state = True
         else:  # mode == "random"
             # False if num_states is None or 1 (stateless random)
-            self._action_uniquely_determined_by_state = (
-                num_states is not None and num_states > 1
-            )
+            self._action_uniquely_determined_by_state = num_states is not None and num_states > 1
 
         validated_num_states = self.validate_num_states(num_states, mode)
 

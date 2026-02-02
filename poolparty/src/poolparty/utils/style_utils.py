@@ -275,8 +275,7 @@ def _resolve_styles(styles_with_priority: dict[str, int]) -> list[str]:
     fg_codes = {c: p for c, p in styles_with_priority.items() if _is_foreground_code(c)}
     bg_codes = {c: p for c, p in styles_with_priority.items() if _is_background_code(c)}
     other_codes = sorted(
-        c for c in styles_with_priority
-        if not _is_foreground_code(c) and not _is_background_code(c)
+        c for c in styles_with_priority if not _is_foreground_code(c) and not _is_background_code(c)
     )
 
     # Build result with FG COLOR first, then BG COLOR, then modifiers

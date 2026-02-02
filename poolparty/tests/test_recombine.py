@@ -1,9 +1,9 @@
 """Tests for the Recombine operation."""
 
 import pytest
+from poolparty.base_ops.recombine import RecombineOp, recombine
 
 import poolparty as pp
-from poolparty.base_ops.recombine import RecombineOp, recombine
 
 
 class TestRecombineFactory:

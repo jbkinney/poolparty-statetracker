@@ -1,9 +1,9 @@
 """Tests for the deletion_multiscan function."""
 
 import pytest
+from poolparty.multiscan_ops import deletion_multiscan
 
 import poolparty as pp
-from poolparty.multiscan_ops import deletion_multiscan
 
 
 class TestDeletionMultiscanBasics:

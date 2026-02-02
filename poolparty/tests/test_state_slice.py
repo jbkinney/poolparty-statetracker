@@ -1,7 +1,8 @@
 """Tests for state_slice - STATE slicing (selecting subset of states)."""
 
-import poolparty as pp
 from poolparty.state_ops.state_slice import StateSliceOp, state_slice
+
+import poolparty as pp
 
 
 class TestStateSliceFactory:

@@ -2,10 +2,10 @@
 
 import pandas as pd
 import pytest
-
-import poolparty as pp
 from poolparty.base_ops.filter_seq import FilterOp, filter_seq
 from poolparty.types import NullSeq, is_null_seq
+
+import poolparty as pp
 
 
 class TestNullSeq:
@@ -59,9 +59,7 @@ class TestFilterBasic:
     def test_filter_with_discard(self):
         """Test discard_null_seqs=True removes filtered rows."""
         with pp.Party():
-            root = pp.from_seqs(
-                ["AAAA", "CCCC", "GGGG", "ACGT", "TGCA"], mode="sequential"
-            )
+            root = pp.from_seqs(["AAAA", "CCCC", "GGGG", "ACGT", "TGCA"], mode="sequential")
             # Keep sequences starting with A (indices 0, 3)
             filtered = root.filter(lambda s: s.startswith("A"))
             df = filtered.generate_library(num_seqs=2, discard_null_seqs=True)
@@ -211,9 +209,7 @@ class TestFilterDesignCards:
     def test_null_rows_have_none_name(self):
         """Test that filtered rows have None as name."""
         with pp.Party():
-            root = pp.from_seqs(
-                ["AAAA", "CCCC"], mode="sequential", prefix="seq"
-            )
+            root = pp.from_seqs(["AAAA", "CCCC"], mode="sequential", prefix="seq")
             filtered = root.filter(lambda s: s.startswith("A"))
 
             df = filtered.generate_library(num_seqs=2)

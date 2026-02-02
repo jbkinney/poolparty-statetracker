@@ -5,7 +5,6 @@ from numbers import Real
 import numpy as np
 
 from ..operation import Operation
-from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils.dna_seq import DnaSeq

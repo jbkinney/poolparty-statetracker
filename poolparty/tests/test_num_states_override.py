@@ -1,11 +1,12 @@
 """Tests for num_states override functionality in sequential mode operations."""
 
-import poolparty as pp
 from poolparty.base_ops.from_iupac import from_iupac
 from poolparty.base_ops.from_seqs import from_seqs
 from poolparty.base_ops.get_kmers import get_kmers
 from poolparty.base_ops.mutagenize import mutagenize
 from poolparty.base_ops.recombine import recombine
+
+import poolparty as pp
 
 
 class TestFromSeqsNumStatesOverride:

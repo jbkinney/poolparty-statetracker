@@ -18,7 +18,9 @@ def test_simple_operation_naming():
     for idx, name in enumerate(df["name"]):
         # Match mut_ followed by zero-padded number
         pattern = rf"^mut_0*{idx}$"
-        assert re.match(pattern, name), f"Expected name matching 'mut_{{zero-padded idx}}', got '{name}'"
+        assert re.match(pattern, name), (
+            f"Expected name matching 'mut_{{zero-padded idx}}', got '{name}'"
+        )
 
     # Verify no duplicate segments
     for name in df["name"]:
@@ -376,9 +378,8 @@ def test_fixed_and_variable_ops_prefix():
 def test_filter_with_prefix():
     """Test that filter operation can have a prefix."""
     with pp.Party():
-        pool = (
-            pp.from_seqs(["AAAA", "CCCC", "GGGG"], mode="sequential", prefix="seq")
-            .filter(lambda s: s.startswith("A"), prefix="filtered")
+        pool = pp.from_seqs(["AAAA", "CCCC", "GGGG"], mode="sequential", prefix="seq").filter(
+            lambda s: s.startswith("A"), prefix="filtered"
         )
 
     df = pool.generate_library(num_seqs=3)

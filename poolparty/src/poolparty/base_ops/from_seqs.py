@@ -4,8 +4,8 @@ from numbers import Real
 
 import numpy as np
 
-from ..operation import Operation
 from ..dna_pool import DnaPool
+from ..operation import Operation
 from ..pool import Pool
 from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Sequence, Union, beartype
 from ..utils import dna_utils

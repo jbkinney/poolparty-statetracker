@@ -6,10 +6,10 @@ from ..codon_table import CodonTable
 from ..operation import Operation
 from ..party import get_active_party
 from ..pool import Pool
-from ..region import OrfRegion, VALID_FRAMES
+from ..region import VALID_FRAMES, OrfRegion
 from ..types import NullSeq, Optional, RegionType, Seq, Union, beartype, is_null_seq
 from ..utils.dna_utils import reverse_complement
-from ..utils.protein_seq import ProteinSeq, VALID_PROTEIN_CHARS
+from ..utils.protein_seq import ProteinSeq
 from ..utils.style_utils import SeqStyle
 
 
@@ -136,7 +136,9 @@ class TranslateOp(Operation):
         self._include_stop = include_stop
         self._preserve_codon_styles = preserve_codon_styles
         self._genetic_code = genetic_code
-        self._translate_region = region  # Store region separately (don't use base class region handling)
+        self._translate_region = (
+            region  # Store region separately (don't use base class region handling)
+        )
         self.codon_table = CodonTable(genetic_code)
 
         # Calculate output sequence length if possible
@@ -177,6 +179,7 @@ class TranslateOp(Operation):
         # Extract region if specified
         if self._translate_region is not None:
             from ..utils.region_context import RegionContext
+
             ctx = RegionContext.from_sequence(parent_seq, self._translate_region, remove_tags=False)
             _, parent_seq, _ = ctx.split_parent_seq(parent_seq)
 
@@ -194,6 +197,7 @@ class TranslateOp(Operation):
         # Validate no IUPAC ambiguity codes in region (codon table requires ACGT only)
         # Strip tags to get actual sequence content
         from ..utils.parsing_utils import strip_all_tags
+
         clean_content = strip_all_tags(parent_seq.string)
         iupac_ambiguity = set("RYSWKMBDHVNryswkmbdhvn")
         invalid_chars = set(clean_content) & iupac_ambiguity

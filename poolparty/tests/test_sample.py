@@ -1,9 +1,9 @@
 """Tests for sample operation - sample states from a pool."""
 
 import pytest
+from poolparty.state_ops.sample import SampleOp, sample
 
 import poolparty as pp
-from poolparty.state_ops.sample import SampleOp, sample
 
 
 class TestSampleFactory:
@@ -173,9 +173,7 @@ class TestSampleWithReplacement:
         """Test that with_replacement=True allows sampling more states."""
         with pp.Party() as party:
             pool = pp.from_seqs(["A", "B", "C"], mode="sequential")
-            sampled = sample(pool, num_seqs=10, seed=42, with_replacement=True).named(
-                "samp"
-            )
+            sampled = sample(pool, num_seqs=10, seed=42, with_replacement=True).named("samp")
 
         assert sampled.num_states == 10
         df = sampled.generate_library(num_cycles=1)
@@ -185,9 +183,7 @@ class TestSampleWithReplacement:
         """Test that with_replacement=False works when num_states <= parent."""
         with pp.Party() as party:
             pool = pp.from_seqs(["A", "B", "C", "D", "E"], mode="sequential")
-            sampled = sample(pool, num_seqs=3, seed=42, with_replacement=False).named(
-                "samp"
-            )
+            sampled = sample(pool, num_seqs=3, seed=42, with_replacement=False).named("samp")
 
         assert sampled.num_states == 3
         df = sampled.generate_library(num_cycles=1)

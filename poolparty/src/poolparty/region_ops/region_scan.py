@@ -8,8 +8,8 @@ from poolparty.types import Literal, Optional, RegionType, Seq, SeqStyle, Union
 
 from ..operation import Operation
 from ..utils import build_scan_cache, validate_positions
-from ..utils.parsing_utils import build_region_tags, get_nontag_positions
 from ..utils.dna_seq import DnaSeq
+from ..utils.parsing_utils import build_region_tags, get_nontag_positions
 
 # Type aliases
 PositionsType = Union[list[int], tuple[int, ...], slice, None]
@@ -60,7 +60,6 @@ def region_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..party import get_active_party
-    from ..dna_pool import DnaPool
 
     # Convert string input to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool

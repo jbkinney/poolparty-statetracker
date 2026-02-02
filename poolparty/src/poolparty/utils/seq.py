@@ -1,12 +1,10 @@
 """Seq class for bundling sequence string and style."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-
-import numpy as np
-
 from typing import ClassVar, Literal
 
-from collections.abc import Sequence
+import numpy as np
 
 from .style_utils import SeqStyle
 
@@ -115,11 +113,11 @@ class Seq:
 
     def _ensure_coord_maps(self) -> None:
         """Compute coordinate maps if not already computed (lazy initialization).
-        
+
         Note: We check for both _NOT_COMPUTED sentinel and empty tuple () because
         Seq objects created via direct constructor Seq(string, style) have empty
         tuple defaults that need to trigger computation.
-        
+
         Subclasses define VALID_CHARS for their alphabet. If VALID_CHARS is empty,
         all non-tag characters are considered molecular positions.
         """

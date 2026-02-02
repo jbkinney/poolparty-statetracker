@@ -1,7 +1,8 @@
 """Tests for the shuffle_scan operation."""
 
-import poolparty as pp
 from poolparty.scan_ops import shuffle_scan
+
+import poolparty as pp
 
 
 class TestShuffleScanBasics:

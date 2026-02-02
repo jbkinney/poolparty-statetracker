@@ -2,8 +2,8 @@
 
 from numbers import Real
 
-from ..operation import Operation
 from ..dna_pool import DnaPool
+from ..operation import Operation
 from ..pool import Pool
 from ..types import Callable, Optional, Pool_type, RegionType, Seq, Sequence, Union, beartype
 from ..utils.dna_seq import DnaSeq
@@ -51,8 +51,9 @@ def fixed_operation(
     """
     # Convert string inputs to pools
     from .from_seq import from_seq
+
     parent_pools_resolved = [from_seq(p) if isinstance(p, str) else p for p in parent_pools]
-    
+
     op = FixedOp(
         parent_pools=parent_pools_resolved,
         seq_from_seqs_fn=seq_from_seqs_fn,

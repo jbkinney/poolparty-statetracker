@@ -2,8 +2,9 @@
 
 import re
 
-import poolparty as pp
 from poolparty.fixed_ops.add_prefix import AddPrefixOp, add_prefix
+
+import poolparty as pp
 
 
 class TestAddPrefixBasic:
@@ -75,12 +76,7 @@ class TestAddPrefixChaining:
     def test_multiple_add_prefix_calls(self):
         """Test multiple add_prefix calls in sequence."""
         with pp.Party():
-            pool = (
-                pp.from_seq("ACGT")
-                .add_prefix("first")
-                .add_prefix("second")
-                .add_prefix("third")
-            )
+            pool = pp.from_seq("ACGT").add_prefix("first").add_prefix("second").add_prefix("third")
 
         df = pool.generate_library(num_cycles=1)
         name = df.loc[0, "name"]
@@ -95,9 +91,9 @@ class TestAddPrefixWithVariableOps:
     def test_with_from_seqs(self):
         """Test add_prefix with from_seqs."""
         with pp.Party():
-            pool = pp.from_seqs(
-                ["AAA", "CCC", "GGG"], mode="sequential", prefix="seq"
-            ).add_prefix("tagged")
+            pool = pp.from_seqs(["AAA", "CCC", "GGG"], mode="sequential", prefix="seq").add_prefix(
+                "tagged"
+            )
 
         df = pool.generate_library(num_cycles=1)
 

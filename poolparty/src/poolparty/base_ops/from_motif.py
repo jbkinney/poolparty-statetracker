@@ -5,9 +5,9 @@ from numbers import Real
 import numpy as np
 import pandas as pd
 
+from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..party import get_active_party
-from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils import dna_utils

@@ -4,9 +4,9 @@ from numbers import Real
 
 import numpy as np
 
+from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..party import get_active_party
-from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import (
     Integral,

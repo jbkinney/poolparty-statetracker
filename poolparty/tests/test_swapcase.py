@@ -1,8 +1,9 @@
 """Tests for the swapcase operation."""
 
-import poolparty as pp
 from poolparty.fixed_ops.fixed import FixedOp
 from poolparty.fixed_ops.swapcase import swapcase
+
+import poolparty as pp
 
 
 class TestSwapCaseBasics:

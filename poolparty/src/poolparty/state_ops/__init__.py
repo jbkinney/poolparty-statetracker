@@ -1,8 +1,8 @@
 """State operations for poolparty."""
 
 from .repeat import RepeatOp, repeat
-from .stack import StackOp, stack
 from .sample import SampleOp, sample
+from .stack import StackOp, stack
 from .state_shuffle import StateShuffleOp, state_shuffle
 from .state_slice import StateSliceOp, state_slice
 from .sync import sync

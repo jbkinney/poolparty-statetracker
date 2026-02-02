@@ -4,8 +4,8 @@ from numbers import Real
 
 import numpy as np
 
-from ..operation import Operation
 from ..dna_pool import DnaPool
+from ..operation import Operation
 from ..pool import Pool
 from ..region import VALID_FRAMES, OrfRegion
 from ..types import Optional, Pool_type, RegionType, Seq, Union, beartype
@@ -223,7 +223,7 @@ class StylizeOrfOp(Operation):
         self, seq: str, region_start: int, region_end: int
     ) -> np.ndarray:
         """Get molecular positions within the region bounds.
-        
+
         Only includes positions with valid DNA characters (ACGTacgt).
         Tag characters and non-molecular characters (gaps, etc.) are skipped.
         """
@@ -272,7 +272,7 @@ class StylizeOrfOp(Operation):
         self, molecular_positions: np.ndarray
     ) -> list[tuple[str, np.ndarray]]:
         """Compute styles for frame-based styling.
-        
+
         Cycles through groups of 3 styles per codon. For example, with 6 styles:
         - Codon 0: frames 0,1,2 get styles[0,1,2]
         - Codon 1: frames 0,1,2 get styles[3,4,5]
@@ -297,7 +297,7 @@ class StylizeOrfOp(Operation):
             # Select which group of 3 styles to use, cycling through groups
             style_group = codon_index % num_style_groups
             style = self.style_frames[style_group * 3 + frame]
-            
+
             if style not in style_positions:
                 style_positions[style] = []
             style_positions[style].append(pos)

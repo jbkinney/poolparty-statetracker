@@ -1,10 +1,10 @@
 """Tests for the MutagenizeOrf operation."""
 
 import pytest
-
-import poolparty as pp
 from poolparty.codon_table import CodonTable
 from poolparty.orf_ops.mutagenize_orf import MutagenizeOrfOp, mutagenize_orf
+
+import poolparty as pp
 
 
 class TestCodonTable:
@@ -583,7 +583,9 @@ class TestMutagenizeOrfStyle:
         """Test style with marker-based region."""
         seq = "GGG<orf>ATGAAA</orf>CCC"
         with pp.Party() as party:
-            pool = mutagenize_orf(seq, "orf", num_mutations=1, style="cyan", frame=1).named("mutant")
+            pool = mutagenize_orf(seq, "orf", num_mutations=1, style="cyan", frame=1).named(
+                "mutant"
+            )
 
         df = pool.generate_library(num_seqs=5, seed=42)
         assert len(df) == 5

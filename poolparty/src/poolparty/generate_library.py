@@ -4,12 +4,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import warnings
+
 import numpy as np
 import pandas as pd
 
 import statetracker as st
-
-import warnings
 
 from .types import Literal, Optional, Pool_type, Seq, Sequence, Union, beartype, is_null_seq
 from .utils.df_utils import counter_col_name, finalize_generate_df, organize_columns
@@ -187,7 +187,8 @@ def generate_library(
                 warnings.warn(
                     f"Acceptance rate ({actual_rate:.1%}) below minimum "
                     f"({min_acceptance_rate:.1%}) after {iterations} iterations. "
-                    f"Generated {valid_count} valid sequences. Stopping early."
+                    f"Generated {valid_count} valid sequences. Stopping early.",
+                    stacklevel=2,
                 )
                 break
 
@@ -197,7 +198,8 @@ def generate_library(
                 warnings.warn(
                     f"Reached max_iterations ({max_iterations}) with only "
                     f"{len(rows)} valid sequences (requested {num_seqs}). "
-                    f"Acceptance rate: {valid_count / iterations:.1%}"
+                    f"Acceptance rate: {valid_count / iterations:.1%}",
+                    stacklevel=2,
                 )
             break
 
@@ -209,7 +211,8 @@ def generate_library(
                     warnings.warn(
                         f"State space exhausted: only {len(rows)} valid sequences "
                         f"exist (requested {num_seqs}). "
-                        f"Acceptance rate: {valid_count / iterations:.1%}"
+                        f"Acceptance rate: {valid_count / iterations:.1%}",
+                        stacklevel=2,
                     )
                 break
 

@@ -24,7 +24,7 @@ from .types import Integral, Operation_type, Optional, Pool_type, Real, Sequence
 @beartype
 class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, RegionOpsMixin):
     """Base pool class - a node in the computation DAG.
-    
+
     Pool provides generic operations that work on any sequence type.
     For DNA-specific operations, use DnaPool. For protein-specific
     operations, use ProteinPool.
@@ -433,7 +433,7 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
             if show_state:
                 row_parts.append(f"{row[state_col]:5d}")
             if has_name:
-                name = row['name'] if row['name'] is not None else ""
+                name = row["name"] if row["name"] is not None else ""
                 if pad_names:
                     row_parts.append(f"{name:<{max_name_len}}")
                 else:

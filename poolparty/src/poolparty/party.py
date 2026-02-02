@@ -480,9 +480,7 @@ class Party:
                 self._regions_by_id[i] = orf_region
                 break
 
-        logger.debug(
-            "Upgraded region '%s' to OrfRegion with frame=%s", name, frame
-        )
+        logger.debug("Upgraded region '%s' to OrfRegion with frame=%s", name, frame)
         return orf_region
 
     def get_region_by_id(self, id_: int) -> Region:

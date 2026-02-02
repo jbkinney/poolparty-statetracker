@@ -3,9 +3,9 @@
 from dataclasses import dataclass
 from typing import ClassVar
 
-from .seq import Seq, _NOT_COMPUTED
-from .style_utils import SeqStyle, styles_suppressed
 from . import dna_utils
+from .seq import _NOT_COMPUTED, Seq
+from .style_utils import SeqStyle, styles_suppressed
 
 
 @dataclass(frozen=True)

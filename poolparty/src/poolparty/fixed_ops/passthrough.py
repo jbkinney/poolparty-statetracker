@@ -2,8 +2,8 @@
 
 from numbers import Real
 
-from ..operation import Operation
 from ..dna_pool import DnaPool
+from ..operation import Operation
 from ..pool import Pool
 from ..types import Callable, Optional, beartype
 

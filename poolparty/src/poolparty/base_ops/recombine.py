@@ -5,8 +5,8 @@ from math import comb
 
 import numpy as np
 
-from ..operation import Operation
 from ..dna_pool import DnaPool
+from ..operation import Operation
 from ..pool import Pool
 from ..types import (
     Integral,

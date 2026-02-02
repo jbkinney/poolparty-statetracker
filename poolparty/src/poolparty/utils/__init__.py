@@ -7,6 +7,7 @@ from .df_utils import (
     get_pools_reverse_topo,
     organize_columns,
 )
+from .dna_seq import DnaSeq
 from .dna_utils import (
     BASES,
     COMPLEMENT,
@@ -23,11 +24,10 @@ from .dna_utils import (
     reverse_complement,
 )
 from .orf_utils import validate_orf_extent
-from .scan_utils import build_scan_cache
-from .seq_utils import validate_positions
-from .dna_seq import DnaSeq
-from .seq import Seq
 from .protein_seq import ProteinSeq
+from .scan_utils import build_scan_cache
+from .seq import Seq
+from .seq_utils import validate_positions
 from .style_utils import (
     ANSI_ESCAPE_PATTERN,
     CSS_COLORS,

@@ -1,8 +1,6 @@
 """Tests for poolparty DNA utilities."""
 
 import pytest
-
-import poolparty as pp
 from poolparty.utils.dna_utils import (
     BASES,
     COMPLEMENT,
@@ -17,6 +15,8 @@ from poolparty.utils.dna_utils import (
     get_seq_length,
     reverse_complement,
 )
+
+import poolparty as pp
 
 
 class TestConstants:
@@ -297,18 +297,21 @@ class TestDnaSeqIupacSupport:
     def test_dnaseq_valid_chars_includes_iupac(self):
         """Test DnaSeq.VALID_CHARS includes IUPAC codes."""
         from poolparty.types import DnaSeq
+
         for char in "ACGTRYSWKMBDHVNacgtryswkmbdhvn":
             assert char in DnaSeq.VALID_CHARS
 
     def test_dnaseq_rc_with_iupac(self):
         """Test DnaSeq.rc() works with IUPAC codes."""
         from poolparty.types import DnaSeq
+
         seq = DnaSeq.from_string("ACGTN")
         assert seq.rc().string == "NACGT"
 
     def test_dnaseq_rc_with_iupac_ambiguity(self):
         """Test DnaSeq.rc() handles IUPAC ambiguity codes correctly."""
         from poolparty.types import DnaSeq
+
         seq = DnaSeq.from_string("ACRY")
         assert seq.rc().string == "RYGT"
 
@@ -333,5 +336,7 @@ class TestDnaSeqIupacSupport:
     def test_mutagenize_accepts_acgt_only(self):
         """Test mutagenize() works with ACGT only."""
         pool = pp.from_seq("ACGT")
-        df = pool.mutagenize(num_mutations=1, num_states=3, mode="sequential").generate_library(num_cycles=1)
+        df = pool.mutagenize(num_mutations=1, num_states=3, mode="sequential").generate_library(
+            num_cycles=1
+        )
         assert len(df) == 3

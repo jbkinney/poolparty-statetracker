@@ -7,8 +7,8 @@ import numpy as np
 from poolparty.types import Optional, Seq
 
 from ..operation import Operation
-from ..utils.parsing_utils import validate_single_region_from_list
 from ..utils.dna_seq import DnaSeq
+from ..utils.parsing_utils import validate_single_region_from_list
 
 
 def replace_region(
@@ -64,7 +64,6 @@ def replace_region(
     ...     # Result: 'ACGTTTTTTTT' (TTT is reverse complement of AAA)
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..dna_pool import DnaPool
 
     # Convert strings to pools if needed
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool

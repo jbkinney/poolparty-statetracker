@@ -8,7 +8,6 @@ import numpy as np
 
 from ..operation import Operation
 from ..party import get_active_party
-from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import Integral, ModeType, Optional, Real, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
@@ -499,6 +498,7 @@ class MutagenizeOp(Operation):
         # Validate no IUPAC ambiguity codes in region (mutations require ACGT only)
         # Strip tags to get actual sequence content (e.g., "<bc/>" should not trigger error)
         from ..utils.parsing_utils import strip_all_tags
+
         clean_content = strip_all_tags(seq)
         iupac_ambiguity = set("RYSWKMBDHVNryswkmbdhvn")
         invalid_chars = set(clean_content) & iupac_ambiguity

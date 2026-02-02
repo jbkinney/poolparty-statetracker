@@ -1,14 +1,14 @@
 """Tests for DataFrame formatting utilities."""
 
 import pandas as pd
-
-import poolparty as pp
 from poolparty.utils.df_utils import (
     counter_col_name,
     finalize_generate_df,
     get_pools_reverse_topo,
     organize_columns,
 )
+
+import poolparty as pp
 
 
 class TestStateColName:

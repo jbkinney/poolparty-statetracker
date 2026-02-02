@@ -5,7 +5,7 @@ from typing import ClassVar
 
 import numpy as np
 
-from .seq import Seq, _NOT_COMPUTED
+from .seq import _NOT_COMPUTED, Seq
 from .style_utils import SeqStyle, styles_suppressed
 
 # Valid amino acid characters (single-letter codes + stop codon)
@@ -13,16 +13,48 @@ VALID_PROTEIN_CHARS = frozenset("ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy*")
 
 # 1-letter to 3-letter amino acid code mapping
 AA_THREE_LETTER = {
-    "A": "Ala", "C": "Cys", "D": "Asp", "E": "Glu", "F": "Phe",
-    "G": "Gly", "H": "His", "I": "Ile", "K": "Lys", "L": "Leu",
-    "M": "Met", "N": "Asn", "P": "Pro", "Q": "Gln", "R": "Arg",
-    "S": "Ser", "T": "Thr", "V": "Val", "W": "Trp", "Y": "Tyr",
+    "A": "Ala",
+    "C": "Cys",
+    "D": "Asp",
+    "E": "Glu",
+    "F": "Phe",
+    "G": "Gly",
+    "H": "His",
+    "I": "Ile",
+    "K": "Lys",
+    "L": "Leu",
+    "M": "Met",
+    "N": "Asn",
+    "P": "Pro",
+    "Q": "Gln",
+    "R": "Arg",
+    "S": "Ser",
+    "T": "Thr",
+    "V": "Val",
+    "W": "Trp",
+    "Y": "Tyr",
     "*": "***",  # Stop codon
     # Lowercase versions
-    "a": "ala", "c": "cys", "d": "asp", "e": "glu", "f": "phe",
-    "g": "gly", "h": "his", "i": "ile", "k": "lys", "l": "leu",
-    "m": "met", "n": "asn", "p": "pro", "q": "gln", "r": "arg",
-    "s": "ser", "t": "thr", "v": "val", "w": "trp", "y": "tyr",
+    "a": "ala",
+    "c": "cys",
+    "d": "asp",
+    "e": "glu",
+    "f": "phe",
+    "g": "gly",
+    "h": "his",
+    "i": "ile",
+    "k": "lys",
+    "l": "leu",
+    "m": "met",
+    "n": "asn",
+    "p": "pro",
+    "q": "gln",
+    "r": "arg",
+    "s": "ser",
+    "t": "thr",
+    "v": "val",
+    "w": "trp",
+    "y": "tyr",
 }
 
 

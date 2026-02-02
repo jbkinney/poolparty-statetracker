@@ -81,9 +81,7 @@ def annotate_orf(
     # Validate style exclusivity
     style_count = sum(x is not None for x in [style, style_codons, style_frames])
     if style_count > 1:
-        raise ValueError(
-            "At most one of style, style_codons, or style_frames can be provided"
-        )
+        raise ValueError("At most one of style, style_codons, or style_frames can be provided")
 
     party = get_active_party()
     if party is None:
@@ -124,11 +122,10 @@ def annotate_orf(
         else:
             start, stop = extent
 
-        # Calculate region length
-        region_length = stop - start
-
         # Insert tags to create the region
-        result_pool = insert_tags(pool, name, start=start, stop=stop, iter_order=iter_order, prefix=prefix)
+        result_pool = insert_tags(
+            pool, name, start=start, stop=stop, iter_order=iter_order, prefix=prefix
+        )
 
         # Register as OrfRegion with Party (need to replace the plain Region that insert_tags created)
         # First get the region that was just registered

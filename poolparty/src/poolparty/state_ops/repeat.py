@@ -5,7 +5,6 @@ from numbers import Real
 import numpy as np
 
 from ..operation import Operation
-from ..pool import Pool
 from ..types import Optional, Pool_type, Seq, beartype
 
 

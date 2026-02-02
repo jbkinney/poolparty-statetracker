@@ -1,8 +1,9 @@
 """Tests for slice_seq - SEQUENCE slicing (slicing characters in a sequence)."""
 
-import poolparty as pp
 from poolparty.fixed_ops.fixed import FixedOp
 from poolparty.fixed_ops.slice_seq import slice_seq
+
+import poolparty as pp
 
 
 class TestSliceSeqFactory:

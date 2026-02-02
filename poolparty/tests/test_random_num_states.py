@@ -1,9 +1,10 @@
 """Tests for random mode with num_states across operations."""
 
-import poolparty as pp
 from poolparty.base_ops.from_seqs import from_seqs
 from poolparty.base_ops.get_kmers import get_kmers
 from poolparty.base_ops.mutagenize import mutagenize
+
+import poolparty as pp
 
 
 class TestRandomNumStatesBasic:

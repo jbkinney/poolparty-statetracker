@@ -4,8 +4,8 @@ from numbers import Real
 
 import numpy as np
 
-from ..operation import Operation
 from ..dna_pool import DnaPool
+from ..operation import Operation
 from ..pool import Pool
 from ..types import Callable, NullSeq, Optional, Pool_type, Seq, Sequence, beartype
 

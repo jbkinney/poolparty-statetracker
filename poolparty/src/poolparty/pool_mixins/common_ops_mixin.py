@@ -1,9 +1,5 @@
 """Common operation mixins for Pool class - generic operations that work on any sequence type."""
 
-from typing import Literal
-
-import pandas as pd
-
 from ..types import (
     Callable,
     Integral,

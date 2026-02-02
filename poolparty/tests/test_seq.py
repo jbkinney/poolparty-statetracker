@@ -2,8 +2,7 @@
 
 import numpy as np
 import pytest
-
-from poolparty.types import Seq, DnaSeq
+from poolparty.types import DnaSeq, Seq
 from poolparty.utils.style_utils import SeqStyle
 
 

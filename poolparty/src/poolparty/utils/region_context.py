@@ -3,13 +3,13 @@
 from dataclasses import dataclass, field
 
 from ..types import Optional, RegionType, Seq, SeqStyle, Sequence, StyleList, Union, beartype
+from .dna_seq import DnaSeq
 from .parsing_utils import (
     ParsedRegion,
     build_region_tags,
     find_all_regions,
     validate_single_region_from_list,
 )
-from .dna_seq import DnaSeq
 
 
 @beartype

@@ -2,8 +2,6 @@
 
 import numpy as np
 import pytest
-
-import poolparty as pp
 from poolparty.base_ops.mutagenize import mutagenize
 from poolparty.utils.style_utils import (
     SeqStyle,
@@ -11,6 +9,8 @@ from poolparty.utils.style_utils import (
     reset,
     validate_style_positions,
 )
+
+import poolparty as pp
 
 
 class TestInlineStylesBasic:

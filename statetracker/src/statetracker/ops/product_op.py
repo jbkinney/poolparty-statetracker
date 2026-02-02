@@ -1,6 +1,6 @@
 """ProductOp - Cartesian product of N states."""
 
-from ..imports import Integral, Literal, Optional, Sequence, State_type, beartype, math
+from ..imports import Literal, Optional, Sequence, State_type, beartype, math
 from ..operation import Operation
 
 # Module-level flag for product ordering mode

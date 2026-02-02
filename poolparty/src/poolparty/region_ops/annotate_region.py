@@ -80,7 +80,9 @@ def annotate_region(
             start, stop = extent
 
         # Insert tags to create the region
-        result_pool = insert_tags(pool, name, start=start, stop=stop, iter_order=iter_order, prefix=prefix)
+        result_pool = insert_tags(
+            pool, name, start=start, stop=stop, iter_order=iter_order, prefix=prefix
+        )
 
     # Apply styling if requested
     if style is not None:
