@@ -80,7 +80,7 @@ def region_multiscan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..party import get_active_party
-    from ..pool import Pool
+    from ..dna_pool import DnaPool
 
     pool = from_seq(pool) if isinstance(pool, str) else pool
 
@@ -105,7 +105,9 @@ def region_multiscan(
         name=None,
         iter_order=iter_order,
     )
-    result_pool = Pool(operation=op)
+    # Preserve the pool type from the input
+    pool_class = type(pool)
+    result_pool = pool_class(operation=op)
 
     # Add all registered regions to the pool
     for registered_region in registered_regions:

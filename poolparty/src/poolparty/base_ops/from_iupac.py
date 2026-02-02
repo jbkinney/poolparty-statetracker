@@ -5,6 +5,7 @@ from numbers import Real
 import numpy as np
 
 from ..operation import Operation
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
@@ -72,7 +73,7 @@ def from_iupac(
         iter_order=iter_order,
         style=style,
     )
-    result_pool = Pool(operation=op)
+    result_pool = DnaPool(operation=op)
     return result_pool
 
 

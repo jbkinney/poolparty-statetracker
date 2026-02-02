@@ -59,7 +59,7 @@ def region_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..party import get_active_party
-    from ..pool import Pool
+    from ..dna_pool import DnaPool
 
     # Convert string input to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
@@ -86,7 +86,9 @@ def region_scan(
         iter_order=iter_order,
         _factory_name=_factory_name,
     )
-    result_pool = Pool(operation=op)
+    # Preserve the pool type from the input
+    pool_class = type(pool)
+    result_pool = pool_class(operation=op)
 
     # Add the region to the pool's region set
     result_pool.add_region(registered_region)

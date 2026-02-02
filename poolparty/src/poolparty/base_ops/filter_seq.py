@@ -5,6 +5,7 @@ from numbers import Real
 import numpy as np
 
 from ..operation import Operation
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import Callable, NullSeq, Optional, Pool_type, Seq, Sequence, beartype
 
@@ -87,7 +88,7 @@ def filter(
         New pool that may contain NullSeq for filtered sequences.
     """
     op = FilterOp(parent_pool=pool, predicate=predicate, name=name, prefix=prefix)
-    return Pool(op)
+    return DnaPool(op)
 
 
 # Backward compatibility alias

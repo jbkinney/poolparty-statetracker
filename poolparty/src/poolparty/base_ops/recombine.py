@@ -6,6 +6,7 @@ from math import comb
 import numpy as np
 
 from ..operation import Operation
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import (
     Integral,
@@ -121,7 +122,9 @@ def recombine(
         _factory_name=_factory_name,
     )
 
-    result_pool = Pool(operation=op)
+    # Preserve the pool type from the first source
+    pool_class = type(sources[0]) if sources else DnaPool
+    result_pool = pool_class(operation=op)
     return result_pool
 
 

@@ -11,9 +11,8 @@ import pandas as pd
 import statetracker as st
 
 from .pool_mixins import (
-    BaseOpsMixin,
-    FixedOpsMixin,
-    OrfOpsMixin,
+    CommonOpsMixin,
+    GenericFixedOpsMixin,
     RegionOpsMixin,
     ScanOpsMixin,
     StateOpsMixin,
@@ -23,8 +22,13 @@ from .types import Integral, Operation_type, Optional, Pool_type, Real, Sequence
 
 
 @beartype
-class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, OrfOpsMixin, StateOpsMixin, RegionOpsMixin):
-    """A node in the computation DAG."""
+class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, RegionOpsMixin):
+    """Base pool class - a node in the computation DAG.
+    
+    Pool provides generic operations that work on any sequence type.
+    For DNA-specific operations, use DnaPool. For protein-specific
+    operations, use ProteinPool.
+    """
 
     def __init__(
         self,
@@ -211,7 +215,8 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, OrfOpsMixin, StateOpsMixin
             A new Pool backed by a copied Operation.
         """
         new_op = self.operation.copy()
-        new_pool = Pool(operation=new_op)
+        pool_class = type(self)
+        new_pool = pool_class(operation=new_op)
         if name is not None:
             new_pool.name = name
         else:
@@ -234,7 +239,8 @@ class Pool(BaseOpsMixin, ScanOpsMixin, FixedOpsMixin, OrfOpsMixin, StateOpsMixin
             A new Pool backed by a recursively copied Operation.
         """
         new_op = self.operation.deepcopy()
-        new_pool = Pool(operation=new_op, name=name)
+        pool_class = type(self)
+        new_pool = pool_class(operation=new_op, name=name)
         return new_pool
 
     #########################################################################

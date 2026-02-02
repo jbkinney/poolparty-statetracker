@@ -3,6 +3,7 @@
 from numbers import Real
 
 from ..operation import Operation
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import Callable, Optional, Pool_type, RegionType, Seq, Sequence, Union, beartype
 
@@ -47,8 +48,12 @@ def fixed_operation(
     Pool
         A Pool yielding sequences computed from parent sequences.
     """
+    # Convert string inputs to pools
+    from .from_seq import from_seq
+    parent_pools_resolved = [from_seq(p) if isinstance(p, str) else p for p in parent_pools]
+    
     op = FixedOp(
-        parent_pools=parent_pools,
+        parent_pools=parent_pools_resolved,
         seq_from_seqs_fn=seq_from_seqs_fn,
         seq_length_from_pool_lengths_fn=seq_length_from_pool_lengths_fn,
         region=region,
@@ -59,7 +64,9 @@ def fixed_operation(
         _factory_name=_factory_name,
         _pass_through_styles=_pass_through_styles,
     )
-    pool = Pool(operation=op)
+    # Preserve the pool type from the first parent
+    pool_class = type(parent_pools_resolved[0]) if parent_pools_resolved else DnaPool
+    pool = pool_class(operation=op)
     return pool
 
 

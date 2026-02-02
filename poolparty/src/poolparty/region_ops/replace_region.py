@@ -63,7 +63,7 @@ def replace_region(
     ...     # Result: 'ACGTTTTTTTT' (TTT is reverse complement of AAA)
     """
     from ..fixed_ops.from_seq import from_seq
-    from ..pool import Pool
+    from ..dna_pool import DnaPool
 
     # Convert strings to pools if needed
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
@@ -80,7 +80,9 @@ def replace_region(
         _factory_name=_factory_name,
         _style=_style,
     )
-    result_pool = Pool(operation=op)
+    # Preserve the pool type from the first parent
+    pool_class = type(pool_obj)
+    result_pool = pool_class(operation=op)
 
     # The region is replaced, so remove it from the pool's region set
     result_pool._untrack_region(region_name)

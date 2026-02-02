@@ -5,6 +5,7 @@ from numbers import Real
 import numpy as np
 
 from ..operation import Operation
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..region import VALID_FRAMES, OrfRegion
 from ..types import Optional, Pool_type, RegionType, Seq, Union, beartype
@@ -117,7 +118,7 @@ def stylize_orf(
         iter_order=iter_order,
         prefix=prefix,
     )
-    return Pool(operation=op)
+    return DnaPool(operation=op)
 
 
 class StylizeOrfOp(Operation):

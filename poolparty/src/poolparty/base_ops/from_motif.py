@@ -7,6 +7,7 @@ import pandas as pd
 
 from ..operation import Operation
 from ..party import get_active_party
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
@@ -78,7 +79,7 @@ def from_motif(
         iter_order=iter_order,
         style=style,
     )
-    result_pool = Pool(operation=op)
+    result_pool = DnaPool(operation=op)
     return result_pool
 
 

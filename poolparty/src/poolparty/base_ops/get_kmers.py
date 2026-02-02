@@ -6,6 +6,7 @@ import numpy as np
 
 from ..operation import Operation
 from ..party import get_active_party
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import (
     Integral,
@@ -87,7 +88,7 @@ def get_kmers(
         name=None,
         iter_order=iter_order,
     )
-    pool = Pool(operation=op)
+    pool = DnaPool(operation=op)
     return pool
 
 

@@ -567,8 +567,8 @@ class TestPrintGraph:
 
         captured = capsys.readouterr()
 
-        # Should start with Pool repr
-        assert captured.out.startswith("Pool(")
+        # Should start with Pool or DnaPool repr
+        assert captured.out.startswith("Pool(") or captured.out.startswith("DnaPool(")
         assert "num_states=3" in captured.out
 
     def test_operation_print_dag(self, capsys):

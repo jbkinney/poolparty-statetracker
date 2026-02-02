@@ -73,6 +73,7 @@ from .party import (
     init,
     load_config,
 )
+from .dna_pool import DnaPool
 from .pool import Pool
 from .protein_pool import ProteinPool
 from .region import OrfRegion, Region
@@ -132,6 +133,7 @@ __all__ = [
     "toggle_styles",
     "toggle_cards",
     "Pool",
+    "DnaPool",
     "ProteinPool",
     "Operation",
     "Region",
@@ -274,52 +276,63 @@ def _remove_pool_param_from_docstring(docstring: str) -> str:
     return re.sub(pattern, "", docstring, flags=re.MULTILINE)
 
 
-# Map Pool method names to their factory functions
+# Map method names to their factory functions - generic methods on Pool
 _POOL_FACTORY_MAP = {
-    # Base ops
+    # Common ops (generic)
     "mutagenize": mutagenize,
     "shuffle_seq": shuffle_seq,
-    "insert_from_iupac": from_iupac,
-    "insert_from_motif": from_motif,
-    "insert_kmers": get_kmers,
     "recombine": recombine,
     "materialize": materialize,
-    # Scan ops
+    "filter": filter,
+    # Scan ops (generic)
     "mutagenize_scan": mutagenize_scan,
     "deletion_scan": deletion_scan,
     "insertion_scan": insertion_scan,
     "replacement_scan": replacement_scan,
     "shuffle_scan": shuffle_scan,
-    # Fixed ops
-    "rc": rc,
+    # Fixed ops (generic)
     "swapcase": swapcase,
     "upper": upper,
     "lower": lower,
     "clear_gaps": clear_gaps,
     "clear_annotation": clear_annotation,
-    "filter": filter,
     "stylize": stylize,
-    # State ops
+    # State ops (generic)
     "repeat": repeat,
     "sample": sample,
     "shuffle_states": state_shuffle,
     "slice_states": state_slice,
-    # Region ops
+    # Region ops (generic)
     "annotate_region": annotate_region,
     "apply_at_region": apply_at_region,
     "insert_tags": insert_tags,
     "remove_tags": remove_tags,
     "replace_region": replace_region,
-    # ORF ops
+    # Generation
+    "generate_library": generate_library,
+}
+
+# Map method names to their factory functions - DNA-specific methods on DnaPool
+_DNAPOOL_FACTORY_MAP = {
+    # DNA-specific base ops
+    "insert_from_iupac": from_iupac,
+    "insert_from_motif": from_motif,
+    "insert_kmers": get_kmers,
+    # DNA-specific fixed ops
+    "rc": rc,
+    # ORF ops (DNA-specific)
     "annotate_orf": annotate_orf,
     "mutagenize_orf": mutagenize_orf,
     "stylize_orf": stylize_orf,
     "translate": translate,
-    # Generation
-    "generate_library": generate_library,
 }
 
 # Copy filtered docstrings from factory functions to Pool methods
 for _method_name, _factory_fn in _POOL_FACTORY_MAP.items():
     if hasattr(Pool, _method_name) and _factory_fn.__doc__:
         getattr(Pool, _method_name).__doc__ = _remove_pool_param_from_docstring(_factory_fn.__doc__)
+
+# Copy filtered docstrings from factory functions to DnaPool methods
+for _method_name, _factory_fn in _DNAPOOL_FACTORY_MAP.items():
+    if hasattr(DnaPool, _method_name) and _factory_fn.__doc__:
+        getattr(DnaPool, _method_name).__doc__ = _remove_pool_param_from_docstring(_factory_fn.__doc__)

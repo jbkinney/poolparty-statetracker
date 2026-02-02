@@ -5,6 +5,7 @@ from numbers import Real
 import numpy as np
 
 from ..operation import Operation
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 
@@ -62,7 +63,9 @@ def shuffle_seq(
         style=style,
         _factory_name=_factory_name,
     )
-    result_pool = Pool(operation=op)
+    # Preserve the pool type from the input
+    pool_class = type(pool_obj)
+    result_pool = pool_class(operation=op)
     return result_pool
 
 

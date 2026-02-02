@@ -9,6 +9,7 @@ import numpy as np
 from ..codon_table import UNIFORM_MUTATION_TYPES, VALID_MUTATION_TYPES
 from ..operation import Operation
 from ..party import get_active_party
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..region import VALID_FRAMES, OrfRegion
 from ..types import ModeType, Optional, RegionType, Seq, Sequence, Union, beartype
@@ -138,7 +139,7 @@ def mutagenize_orf(
         name=None,
         iter_order=iter_order,
     )
-    return Pool(operation=op)
+    return DnaPool(operation=op)
 
 
 class MutagenizeOrfOp(Operation):

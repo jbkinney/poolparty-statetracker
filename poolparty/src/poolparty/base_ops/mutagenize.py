@@ -8,6 +8,7 @@ import numpy as np
 
 from ..operation import Operation
 from ..party import get_active_party
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import Integral, ModeType, Optional, Real, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
@@ -84,8 +85,10 @@ def mutagenize(
         iter_order=iter_order,
         _factory_name=_factory_name,
     )
-    pool = Pool(operation=op)
-    return pool
+    # Preserve the pool type from the input
+    pool_class = type(pool)
+    result_pool = pool_class(operation=op)
+    return result_pool
 
 
 class MutagenizeOp(Operation):

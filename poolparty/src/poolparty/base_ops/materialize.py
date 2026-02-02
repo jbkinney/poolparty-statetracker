@@ -5,6 +5,7 @@ from numbers import Real
 import numpy as np
 
 from ..operation import Operation
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import Optional, Pool_type, Seq, Sequence, beartype
 from ..utils import dna_utils
@@ -233,4 +234,4 @@ def materialize(
         name=name,
         prefix=prefix,
     )
-    return Pool(operation=op)
+    return DnaPool(operation=op)

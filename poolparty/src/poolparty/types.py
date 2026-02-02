@@ -8,7 +8,7 @@ import numpy as np
 from beartype import beartype
 
 # Forward reference type aliases (resolve circular imports)
-Pool_type: TypeAlias = Union["poolparty.pool.Pool", "poolparty.protein_pool.ProteinPool"]
+Pool_type: TypeAlias = Union["poolparty.pool.Pool", "poolparty.dna_pool.DnaPool", "poolparty.protein_pool.ProteinPool"]
 Operation_type: TypeAlias = "poolparty.operation.Operation"
 State_type: TypeAlias = "statetracker.state.State"
 
