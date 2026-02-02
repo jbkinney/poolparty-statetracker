@@ -1,21 +1,52 @@
-"""FromFasta operation - create a pool from a genomic region in a FASTA file."""
+"""FromFasta operation - create a pool from genomic region(s) in a FASTA file."""
 
 from numbers import Real
 
 from pyfaidx import Fasta
 
 from ..pool import Pool
-from ..types import Literal, Optional, Pool_type, RegionType, Union, beartype
+from ..types import Literal, Optional, Pool_type, RegionType, Sequence, Union, beartype
 from ..utils import dna_utils
+
+# Type alias for a single coordinate tuple: (chrom, start, stop, strand)
+Coordinate = tuple[str, int, int, Literal["+", "-"]]
+
+
+def _extract_sequence(
+    fasta: Fasta,
+    chrom: str,
+    start: int,
+    stop: int,
+    strand: Literal["+", "-"],
+) -> str:
+    """Extract a single sequence from FASTA, handling circular genome wrap-around."""
+    if start <= stop:
+        seq = str(fasta[chrom][start:stop].seq)
+    else:
+        # Circular wrap-around: start > stop means sequence crosses origin
+        chrom_len = len(fasta[chrom])
+        seq = str(fasta[chrom][start:chrom_len].seq) + str(fasta[chrom][0:stop].seq)
+
+    if strand == "-":
+        seq = dna_utils.reverse_complement(seq)
+
+    return seq
+
+
+def _is_single_coordinate(coordinates) -> bool:
+    """Check if coordinates is a single (chrom, start, stop, strand) tuple."""
+    if not isinstance(coordinates, (tuple, list)):
+        return False
+    if len(coordinates) != 4:
+        return False
+    # Single coordinate: first element is string (chrom), rest are int/int/str
+    return isinstance(coordinates[0], str) and isinstance(coordinates[1], int)
 
 
 @beartype
 def from_fasta(
     fasta_path: str,
-    chrom: str,
-    start: int,
-    end: int,
-    strand: Literal["+", "-"] = "+",
+    coordinates: Union[Coordinate, Sequence[Coordinate]],
     pool: Optional[Union[Pool, str]] = None,
     region: RegionType = None,
     remove_tags: Optional[bool] = None,
@@ -24,12 +55,21 @@ def from_fasta(
     style: Optional[str] = None,
 ) -> Pool_type:
     """
-    Extract a genomic region from a FASTA file and create a Pool.
+    Extract genomic region(s) from a FASTA file and create a Pool.
 
-    Uses pyfaidx for indexed access. Coordinates are 0-based [start, end).
-    If strand='-', the sequence is reverse complemented.
-    Additional parameters (pool, region, etc.) are passed to from_seq().
+    Parameters
+    ----------
+    fasta_path : str
+        Path to the FASTA file (will be indexed with pyfaidx).
+    coordinates : tuple or list of tuples
+        Single coordinate as (chrom, start, stop, strand) or list of such tuples.
+        Coordinates are 0-based [start, stop). If strand='-', sequence is reverse
+        complemented. For circular genomes, start > stop indicates wrap-around.
+    prefix : str, optional
+        Prefix for sequence names. Names are "{prefix}_{chrom}:{start}-{stop}({strand})"
+        or "{chrom}:{start}-{stop}({strand})" if no prefix.
     """
+    from ..base_ops.from_seqs import from_seqs
     from ..party import get_active_party
     from .from_seq import from_seq
 
@@ -40,22 +80,64 @@ def from_fasta(
             "Use 'with pp.Party() as party:' to create one."
         )
 
-    # Load FASTA and extract sequence (context manager ensures file handle is released)
-    with Fasta(fasta_path) as fasta:
-        seq = str(fasta[chrom][start:end].seq)
+    # Check if single coordinate or batch
+    is_single = _is_single_coordinate(coordinates)
 
-    # Reverse complement if strand is '-'
-    if strand == "-":
-        seq = dna_utils.reverse_complement(seq)
+    if is_single:
+        # Single region mode
+        chrom, start, stop, strand = coordinates
 
-    # Delegate to from_seq with appropriate factory name
-    return from_seq(
-        seq=seq,
-        pool=pool,
-        region=region,
-        remove_tags=remove_tags,
-        iter_order=iter_order,
-        prefix=prefix,
-        style=style,
-        _factory_name="from_fasta",
-    )
+        with Fasta(fasta_path) as fasta:
+            seq = _extract_sequence(fasta, chrom, start, stop, strand)
+
+        return from_seq(
+            seq=seq,
+            pool=pool,
+            region=region,
+            remove_tags=remove_tags,
+            iter_order=iter_order,
+            prefix=prefix,
+            style=style,
+            _factory_name="from_fasta",
+        )
+    else:
+        # Batch mode: list of coordinate tuples
+        coords_list = list(coordinates)
+
+        # Validate all tuples have 4 elements
+        for i, coord in enumerate(coords_list):
+            if len(coord) != 4:
+                raise ValueError(
+                    f"Coordinate at index {i} must be (chrom, start, stop, strand), "
+                    f"got {len(coord)} elements"
+                )
+
+        # Extract all sequences
+        with Fasta(fasta_path) as fasta:
+            seqs = [
+                _extract_sequence(fasta, chrom, start, stop, strand)
+                for chrom, start, stop, strand in coords_list
+            ]
+
+        # Generate names: "{prefix}_{chrom}:{start}-{stop}({strand})" or "{chrom}:{start}-{stop}({strand})"
+        if prefix:
+            seq_names = [
+                f"{prefix}_{chrom}:{start}-{stop}({strand})"
+                for chrom, start, stop, strand in coords_list
+            ]
+        else:
+            seq_names = [
+                f"{chrom}:{start}-{stop}({strand})"
+                for chrom, start, stop, strand in coords_list
+            ]
+
+        return from_seqs(
+            seqs=seqs,
+            pool=pool,
+            region=region,
+            style=style,
+            seq_names=seq_names,
+            mode="sequential",
+            iter_order=iter_order,
+            _factory_name="from_fasta",
+        )
