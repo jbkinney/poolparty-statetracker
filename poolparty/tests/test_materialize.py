@@ -1,5 +1,6 @@
 """Tests for materialize operations."""
 
+import pandas as pd
 import pytest
 
 import poolparty as pp
@@ -148,8 +149,8 @@ class TestMaterializeChaining:
             filtered = materialized.filter(lambda s: s.startswith("A"))
 
             df = filtered.generate_library(num_seqs=3)
-            # AAAA and ACGT should pass, CCCC should be None
-            valid_seqs = [s for s in df["seq"] if s is not None]
+            # AAAA and ACGT should pass, CCCC should be None/nan
+            valid_seqs = [s for s in df["seq"] if pd.notna(s)]
             assert len(valid_seqs) == 2
 
     def test_materialize_preserves_downstream_dag(self):
@@ -277,7 +278,7 @@ class TestMaterializeDiscardNullSeqs:
             # Should have exactly 2 valid sequences
             assert materialized.num_states == 2
             df = materialized.generate_library(num_seqs=2)
-            assert all(s is not None for s in df["seq"])
+            assert all(pd.notna(s) for s in df["seq"])
 
 
 class TestMaterializeNumCycles:

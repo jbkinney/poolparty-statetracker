@@ -1,5 +1,6 @@
 """Tests for filter operations."""
 
+import pandas as pd
 import pytest
 
 import poolparty as pp
@@ -52,8 +53,8 @@ class TestFilterBasic:
             df = filtered.generate_library(num_seqs=3)
 
             assert df.loc[0, "seq"] == "AAAA"
-            assert df.loc[1, "seq"] is None
-            assert df.loc[2, "seq"] is None
+            assert pd.isna(df.loc[1, "seq"])
+            assert pd.isna(df.loc[2, "seq"])
 
     def test_filter_with_discard(self):
         """Test discard_null_seqs=True removes filtered rows."""
@@ -87,8 +88,8 @@ class TestFilterBasic:
             df = filtered.generate_library(num_seqs=3)
 
             assert df.loc[0, "seq"] == "AAA"
-            assert df.loc[1, "seq"] is None
-            assert df.loc[2, "seq"] is None
+            assert pd.isna(df.loc[1, "seq"])
+            assert pd.isna(df.loc[2, "seq"])
 
 
 class TestFilterPropagation:
@@ -106,8 +107,8 @@ class TestFilterPropagation:
 
             # Only first row should have valid sequence
             assert df.loc[0, "seq"] == "AAAA"
-            assert df.loc[1, "seq"] is None
-            assert df.loc[2, "seq"] is None
+            assert pd.isna(df.loc[1, "seq"])
+            assert pd.isna(df.loc[2, "seq"])
 
     def test_chained_filters(self):
         """Test multiple filters in sequence."""
@@ -217,9 +218,9 @@ class TestFilterDesignCards:
 
             df = filtered.generate_library(num_seqs=2)
 
-            # First row should have name, second should be None
-            assert df.loc[0, "name"] is not None or df.loc[0, "name"] == "seq_0"
-            assert df.loc[1, "name"] is None
+            # First row should have name, second should be None/nan
+            assert pd.notna(df.loc[0, "name"]) or df.loc[0, "name"] == "seq_0"
+            assert pd.isna(df.loc[1, "name"])
 
     def test_filter_design_card_reports_passed(self):
         """Test that filter operation reports passed status in design card."""

@@ -2,6 +2,8 @@
 
 import re
 
+import pandas as pd
+
 import poolparty as pp
 
 
@@ -387,6 +389,6 @@ def test_filter_with_prefix():
     assert "seq_0" in name, f"Name should contain 'seq_0': {name}"
     assert "filtered" in name, f"Name should contain 'filtered': {name}"
 
-    # Filtered rows have None name
-    assert df.loc[1, "name"] is None
-    assert df.loc[2, "name"] is None
+    # Filtered rows have None/nan name
+    assert pd.isna(df.loc[1, "name"])
+    assert pd.isna(df.loc[2, "name"])

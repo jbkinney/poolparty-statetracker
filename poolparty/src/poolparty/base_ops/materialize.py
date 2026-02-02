@@ -3,6 +3,7 @@
 from numbers import Real
 
 import numpy as np
+import pandas as pd
 
 from ..operation import Operation
 from ..dna_pool import DnaPool
@@ -81,11 +82,12 @@ class MaterializeOp(Operation):
 
         for _, row in df.iterrows():
             seq_str = row["seq"]
-            if seq_str is not None:
+            # Use pd.notna() for cross-platform compatibility (None vs nan)
+            if pd.notna(seq_str):
                 self._seqs.append(DnaSeq.from_string(seq_str))
-                self._names.append(row["name"] if row["name"] is not None else "")
+                self._names.append(row["name"] if pd.notna(row["name"]) else "")
             else:
-                # Handle None sequences (when discard_null_seqs=False)
+                # Handle None/nan sequences (when discard_null_seqs=False)
                 from ..types import NullSeq
                 self._seqs.append(NullSeq())
                 self._names.append("")
