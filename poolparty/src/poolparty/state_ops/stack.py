@@ -9,6 +9,7 @@ import statetracker as st
 from ..operation import Operation
 from ..pool import Pool
 from ..types import Optional, Pool_type, Real, Seq, Sequence, beartype
+from ..utils.dna_seq import DnaSeq
 
 
 @beartype
@@ -102,7 +103,7 @@ class StackOp(Operation):
         # No active parent
         self.state.value = None
         active = None
-        output_seq = parents[0] if parents else Seq.empty()
+        output_seq = parents[0] if parents else DnaSeq.empty()
         if cards_suppressed():
             return output_seq, {}
         return output_seq, {"active_parent": active}

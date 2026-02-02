@@ -12,6 +12,7 @@ from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import Integral, ModeType, Optional, Real, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
+from ..utils.dna_seq import DnaSeq
 
 
 @beartype
@@ -495,6 +496,18 @@ class MutagenizeOp(Operation):
         """
         seq = parents[0].string
 
+        # Validate no IUPAC ambiguity codes in region (mutations require ACGT only)
+        # Strip tags to get actual sequence content (e.g., "<bc/>" should not trigger error)
+        from ..utils.parsing_utils import strip_all_tags
+        clean_content = strip_all_tags(seq)
+        iupac_ambiguity = set("RYSWKMBDHVNryswkmbdhvn")
+        invalid_chars = set(clean_content) & iupac_ambiguity
+        if invalid_chars:
+            raise ValueError(
+                f"mutagenize() cannot mutate IUPAC ambiguity codes: {sorted(invalid_chars)}. "
+                "Region must contain only A, C, G, T."
+            )
+
         # Use cached position computation (includes pre-converted numpy arrays)
         (
             valid_char_positions,
@@ -572,7 +585,7 @@ class MutagenizeOp(Operation):
             raw_positions = valid_char_positions_arr[positions].astype(np.int64)
             output_style = output_style.add_style(self._style, raw_positions)
 
-        output_seq = Seq(result_seq, output_style)
+        output_seq = DnaSeq(result_seq, output_style)
 
         # Only convert bytes to chars for design cards (if not suppressed)
         if self._party.suppress_cards:

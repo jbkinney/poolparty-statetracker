@@ -20,6 +20,7 @@ from ..types import (
     Union,
     beartype,
 )
+from ..utils.dna_seq import DnaSeq
 
 
 @beartype
@@ -423,13 +424,13 @@ class RecombineOp(Operation):
             seg_style = None if _suppress_styles else SeqStyle.empty(len(segment))
         segment_styles.append(seg_style)
 
-        # Build segments as Seq objects
+        # Build segments as DnaSeq objects
         seq_segments = []
         for seg, seg_style in zip(segments, segment_styles):
-            seq_segments.append(Seq(seg, seg_style))
+            seq_segments.append(DnaSeq(seg, seg_style))
 
         # Join segments (use fast path since segments are tag-free)
-        output_seq = Seq._join_fast(seq_segments)
+        output_seq = DnaSeq._join_fast(seq_segments)
 
         # Overlay additional styles if provided
         if self._styles is not None:

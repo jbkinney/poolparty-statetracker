@@ -1,6 +1,7 @@
 """ProteinSeq class for protein sequences with styling support."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
 import numpy as np
 
@@ -83,6 +84,8 @@ class ProteinSeq(Seq):
     Subclass of Seq specialized for amino acid sequences. Uses protein alphabet
     for molecular coordinate computation instead of DNA alphabet.
     """
+
+    VALID_CHARS: ClassVar[frozenset] = VALID_PROTEIN_CHARS
 
     def __repr__(self) -> str:
         """String representation."""

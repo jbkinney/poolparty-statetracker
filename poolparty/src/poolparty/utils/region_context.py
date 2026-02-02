@@ -9,6 +9,7 @@ from .parsing_utils import (
     find_all_regions,
     validate_single_region_from_list,
 )
+from .dna_seq import DnaSeq
 
 
 @beartype
@@ -136,7 +137,7 @@ class RegionContext:
                 if parent.style is not None
                 else None
             )
-            region = Seq(region_string, region_style)
+            region = DnaSeq(region_string, region_style)
 
             # Suffix: everything after closing tag
             suffix = parent[region_obj.end :]
@@ -264,13 +265,13 @@ class RegionContext:
                     ]
                 )
 
-            wrapped_seq = Seq(wrapped_string, wrapped_style)
+            wrapped_seq = DnaSeq(wrapped_string, wrapped_style)
 
             # Use cached region_obj for clean prefix
             clean_prefix_seq = prefix[: region_obj.start]
 
             # Result has tags, use regular join to parse them
-            return Seq.join([clean_prefix_seq, wrapped_seq, suffix])
+            return DnaSeq.join([clean_prefix_seq, wrapped_seq, suffix])
 
     def reassemble_style(
         self,

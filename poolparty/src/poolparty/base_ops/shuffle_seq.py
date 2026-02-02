@@ -8,6 +8,7 @@ from ..operation import Operation
 from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
+from ..utils.dna_seq import DnaSeq
 
 
 @beartype
@@ -174,7 +175,7 @@ class SeqShuffleOp(Operation):
                 self._style, np.array(molecular_positions, dtype=np.int64)
             )
 
-        output_seq = Seq(shuffled_seq, output_style)
+        output_seq = DnaSeq(shuffled_seq, output_style)
 
         from ..party import cards_suppressed
 

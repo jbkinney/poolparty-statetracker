@@ -9,6 +9,7 @@ from poolparty.types import Literal, Optional, RegionType, Seq, SeqStyle, Union
 from ..operation import Operation
 from ..utils import build_scan_cache, validate_positions
 from ..utils.parsing_utils import build_region_tags, get_nontag_positions
+from ..utils.dna_seq import DnaSeq
 
 # Type aliases
 PositionsType = Union[list[int], tuple[int, ...], slice, None]
@@ -329,7 +330,7 @@ class RegionScanOp(Operation):
                 ]
             )
 
-        output_seq = Seq(result_seq, output_style)
+        output_seq = DnaSeq(result_seq, output_style)
 
         from ..party import cards_suppressed
 

@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from poolparty.types import Seq
+from poolparty.types import Seq, DnaSeq
 from poolparty.utils.style_utils import SeqStyle
 
 
@@ -84,9 +84,9 @@ def test_seq_insert():
 
 
 def test_seq_reversed():
-    """Test reversing a Seq."""
+    """Test reversing a DnaSeq (reverse complement)."""
     style = SeqStyle.full(4, "red")
-    seq = Seq("ACGT", style)
+    seq = DnaSeq("ACGT", style)
 
     rev = seq.reversed()
     assert rev.string == "ACGT"  # reverse_complement of ACGT
@@ -95,7 +95,7 @@ def test_seq_reversed():
 
 def test_seq_reversed_conditional():
     """Test conditional reversal."""
-    seq = Seq.from_string("ACGT")
+    seq = DnaSeq.from_string("ACGT")
 
     not_reversed = seq.reversed(do_reverse=False)
     assert not_reversed.string == "ACGT"

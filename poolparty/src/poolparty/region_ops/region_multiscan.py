@@ -8,6 +8,7 @@ from poolparty.types import Literal, Optional, Seq, Sequence, Union
 
 from ..operation import Operation
 from ..utils.parsing_utils import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos
+from ..utils.dna_seq import DnaSeq
 
 # Type aliases
 PositionsType = Union[list[int], tuple[int, ...], slice, None]
@@ -365,9 +366,9 @@ class RegionMultiScanOp(Operation):
                 "region_tags": region_tags_list,
             }
 
-        # Create output Seq
+        # Create output DnaSeq
         from ..utils.style_utils import SeqStyle
 
-        output_seq = Seq(result_seq, SeqStyle.empty(len(result_seq)))
+        output_seq = DnaSeq(result_seq, SeqStyle.empty(len(result_seq)))
 
         return output_seq, card

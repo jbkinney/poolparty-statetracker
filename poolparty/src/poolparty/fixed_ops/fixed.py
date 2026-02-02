@@ -6,6 +6,7 @@ from ..operation import Operation
 from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import Callable, Optional, Pool_type, RegionType, Seq, Sequence, Union, beartype
+from ..utils.dna_seq import DnaSeq
 
 
 @beartype
@@ -160,5 +161,5 @@ class FixedOp(Operation):
                 None if self._party.suppress_styles else SeqStyle.empty(len(result_string))
             )
 
-        output_seq = Seq(result_string, output_style)
+        output_seq = DnaSeq(result_string, output_style)
         return output_seq, {}

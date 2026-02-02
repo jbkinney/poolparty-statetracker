@@ -8,6 +8,7 @@ from poolparty.types import Optional, Seq
 
 from ..operation import Operation
 from ..utils.parsing_utils import validate_single_region_from_list
+from ..utils.dna_seq import DnaSeq
 
 
 def replace_region(
@@ -160,7 +161,7 @@ class ReplaceRegionOp(Operation):
         suffix_seq = parents[0][region.end :]
 
         # Join with content (from_string in join will parse the final result)
-        output_seq = Seq.join([prefix_seq, content_seq_obj, suffix_seq])
+        output_seq = DnaSeq.join([prefix_seq, content_seq_obj, suffix_seq])
 
         # Apply style to all inserted content positions
         if self._style is not None:

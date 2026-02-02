@@ -9,6 +9,7 @@ from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import Optional, Pool_type, Seq, Sequence, beartype
 from ..utils import dna_utils
+from ..utils.dna_seq import DnaSeq
 
 
 class MaterializeOp(Operation):
@@ -81,7 +82,7 @@ class MaterializeOp(Operation):
         for _, row in df.iterrows():
             seq_str = row["seq"]
             if seq_str is not None:
-                self._seqs.append(Seq.from_string(seq_str))
+                self._seqs.append(DnaSeq.from_string(seq_str))
                 self._names.append(row["name"] if row["name"] is not None else "")
             else:
                 # Handle None sequences (when discard_null_seqs=False)

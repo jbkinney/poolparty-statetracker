@@ -39,6 +39,7 @@ StyleList: TypeAlias = list[StyleTuple]
 # Import SeqStyle and Seq classes for convenience
 from .utils.seq import NullSeq, Seq, is_null_seq
 from .utils.style_utils import SeqStyle
+from .utils.dna_seq import DnaSeq
 from .utils.protein_seq import ProteinSeq, VALID_PROTEIN_CHARS
 
 __all__ = [
@@ -64,6 +65,7 @@ __all__ = [
     "StyleList",
     "SeqStyle",
     "Seq",
+    "DnaSeq",
     "NullSeq",
     "is_null_seq",
     "ProteinSeq",

@@ -9,6 +9,7 @@ from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Sequence, Union, beartype
 from ..utils import dna_utils
+from ..utils.dna_seq import DnaSeq
 
 
 @beartype
@@ -202,10 +203,10 @@ class FromSeqsOp(Operation):
         from ..utils.style_utils import SeqStyle, styles_suppressed
 
         if styles_suppressed():
-            output_seq = Seq(seq_string, None)
+            output_seq = DnaSeq(seq_string, None)
         else:
             output_style = SeqStyle.full(len(seq_string), self._style)
-            output_seq = Seq(seq_string, output_style)
+            output_seq = DnaSeq(seq_string, output_style)
 
         if cards_suppressed():
             return output_seq, {}

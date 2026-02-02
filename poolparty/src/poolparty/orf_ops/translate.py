@@ -191,6 +191,18 @@ class TranslateOp(Operation):
         # Calculate frame offset (frame +1 = skip 0, frame +2 = skip 1, frame +3 = skip 2)
         frame_offset = abs(frame) - 1
 
+        # Validate no IUPAC ambiguity codes in region (codon table requires ACGT only)
+        # Strip tags to get actual sequence content
+        from ..utils.parsing_utils import strip_all_tags
+        clean_content = strip_all_tags(parent_seq.string)
+        iupac_ambiguity = set("RYSWKMBDHVNryswkmbdhvn")
+        invalid_chars = set(clean_content) & iupac_ambiguity
+        if invalid_chars:
+            raise ValueError(
+                f"translate() cannot handle IUPAC ambiguity codes: {sorted(invalid_chars)}. "
+                "Region must contain only A, C, G, T."
+            )
+
         # Check if we have enough bases for at least one codon
         if mol_length < frame_offset + 3:
             return ProteinSeq.empty(), {}

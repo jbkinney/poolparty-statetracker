@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from collections.abc import Sequence
 
@@ -18,23 +18,26 @@ _NOT_COMPUTED = object()
 
 @dataclass(frozen=True)
 class Seq:
-    """Immutable container bundling DNA sequence string, style, and region metadata.
+    """Immutable container bundling sequence string, style, and region metadata.
+
+    This is a generic base class for sequences. Subclasses (DnaSeq, ProteinSeq)
+    define their own VALID_CHARS for molecular coordinate computation.
 
     Coordinate Systems
     ------------------
     Seq provides three coordinate systems for indexing positions:
 
     **literal** - Raw string indices (0 to len(string)-1)
-        Includes all characters: DNA bases, gaps, AND region tag characters.
+        Includes all characters: sequence chars, gaps, AND region tag characters.
         Use for direct string indexing: `seq.string[literal_pos]`
 
     **nontag** - Indices excluding region tag characters `<...>`
-        Includes DNA bases AND gap/annotation characters, but NOT tag markup.
+        Includes sequence chars AND gap/annotation characters, but NOT tag markup.
         Length: `seq.nontag_length`
         Use when working with sequence content ignoring tag syntax.
 
-    **molecular** - Only valid DNA characters (A, C, G, T and lowercase)
-        Excludes tags, gaps, punctuation, and all non-DNA characters.
+    **molecular** - Only valid sequence characters (defined by VALID_CHARS)
+        Excludes tags, gaps, punctuation, and non-alphabet characters.
         Length: `seq.molecular_length`
         Use for biological position references (e.g., "mutate position 5").
 
@@ -58,6 +61,10 @@ class Seq:
     Returns None if the position doesn't exist in the target system
     (e.g., a gap character has no molecular position).
     """
+
+    # Subclasses override this to define their alphabet for molecular coordinates.
+    # Empty frozenset means all non-tag characters are considered molecular.
+    VALID_CHARS: ClassVar[frozenset] = frozenset()
 
     string: str  # Literal string WITH tags
     style: SeqStyle | None  # Per-position styling (None if suppressed)
@@ -112,28 +119,37 @@ class Seq:
         Note: We check for both _NOT_COMPUTED sentinel and empty tuple () because
         Seq objects created via direct constructor Seq(string, style) have empty
         tuple defaults that need to trigger computation.
+        
+        Subclasses define VALID_CHARS for their alphabet. If VALID_CHARS is empty,
+        all non-tag characters are considered molecular positions.
         """
         if self._nontag_to_literal is _NOT_COMPUTED or (
             self._nontag_to_literal == () and len(self.string) > 0
         ):
-            from . import dna_utils, parsing_utils
+            from . import parsing_utils
 
             string = self.string
             n = len(string)
+            valid_chars = self.VALID_CHARS
 
             # Fast path: no tags possible if no '<' character
             if "<" not in string:
                 # For tag-free strings: nontag coords == literal coords
                 identity_map = tuple(range(n))
 
-                # molecular_to_literal: only DNA characters (ACGTacgt)
+                # molecular_to_literal: only valid alphabet characters
                 molecular_positions = []
-                for i, c in enumerate(string):
-                    if c in dna_utils.VALID_CHARS:
-                        molecular_positions.append(i)
+                if valid_chars:
+                    # Use subclass-defined alphabet
+                    for i, c in enumerate(string):
+                        if c in valid_chars:
+                            molecular_positions.append(i)
+                else:
+                    # Empty VALID_CHARS: all characters are molecular
+                    molecular_positions = list(range(n))
                 molecular_to_literal = tuple(molecular_positions)
 
-                # literal_to_molecular: reverse mapping (None for non-DNA chars)
+                # literal_to_molecular: reverse mapping (None for non-alphabet chars)
                 literal_to_molecular_list = [None] * n
                 for mol_idx, lit_pos in enumerate(molecular_to_literal):
                     literal_to_molecular_list[lit_pos] = mol_idx
@@ -149,12 +165,17 @@ class Seq:
                 nontag_positions = parsing_utils.get_nontag_positions(string)
                 nontag_to_literal = tuple(nontag_positions)
 
-                # 2. molecular_to_literal: map molecular (DNA only) positions to literal
+                # 2. molecular_to_literal: map molecular positions to literal
                 molecular_positions = []
-                for lit_pos in nontag_positions:
-                    char = string[lit_pos]
-                    if char in dna_utils.VALID_CHARS:
-                        molecular_positions.append(lit_pos)
+                if valid_chars:
+                    # Use subclass-defined alphabet
+                    for lit_pos in nontag_positions:
+                        char = string[lit_pos]
+                        if char in valid_chars:
+                            molecular_positions.append(lit_pos)
+                else:
+                    # Empty VALID_CHARS: all nontag characters are molecular
+                    molecular_positions = list(nontag_positions)
                 molecular_to_literal = tuple(molecular_positions)
 
                 # 3. literal_to_nontag: map literal positions to nontag (None for tag chars)
@@ -163,7 +184,7 @@ class Seq:
                     literal_to_nontag_list[lit_pos] = nontag_idx
                 literal_to_nontag = tuple(literal_to_nontag_list)
 
-                # 4. literal_to_molecular: map literal positions to molecular (None for non-DNA)
+                # 4. literal_to_molecular: map literal positions to molecular
                 literal_to_molecular_list = [None] * n
                 for mol_idx, lit_pos in enumerate(molecular_to_literal):
                     literal_to_molecular_list[lit_pos] = mol_idx
@@ -580,29 +601,6 @@ class Seq:
             New Seq with content inserted.
         """
         return Seq.join([self[:pos], content, self[pos:]])
-
-    def reversed(self, do_reverse: bool = True) -> "Seq":
-        """Reverse sequence and mirror style positions.
-
-        Parameters
-        ----------
-        do_reverse : bool, default=True
-            If False, returns self unchanged (convenient for conditional reversal).
-
-        Returns
-        -------
-        Seq
-            New Seq with reversed string and mirrored style positions.
-        """
-        if not do_reverse:
-            return self
-
-        from ..utils import dna_utils
-
-        reversed_string = dna_utils.reverse_complement(self.string)
-        reversed_style = self.style.reversed(do_reverse=True)
-
-        return Seq.from_string(reversed_string, reversed_style)
 
     def with_style(self, style: SeqStyle | None) -> "Seq":
         """Return copy with updated style (preserves coordinate maps).

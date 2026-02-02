@@ -20,6 +20,7 @@ from ..types import (
     beartype,
 )
 from ..utils import dna_utils
+from ..utils.dna_seq import DnaSeq
 
 
 @beartype
@@ -234,10 +235,10 @@ class GetKmersOp(Operation):
         from ..utils.style_utils import SeqStyle, styles_suppressed
 
         if styles_suppressed():
-            output_seq = Seq(kmer, None)
+            output_seq = DnaSeq(kmer, None)
         else:
             output_style = SeqStyle.full(len(kmer), self._style)
-            output_seq = Seq(kmer, output_style)
+            output_seq = DnaSeq(kmer, output_style)
 
         if cards_suppressed():
             return output_seq, {}

@@ -25,6 +25,9 @@ from .dna_utils import (
 from .orf_utils import validate_orf_extent
 from .scan_utils import build_scan_cache
 from .seq_utils import validate_positions
+from .dna_seq import DnaSeq
+from .seq import Seq
+from .protein_seq import ProteinSeq
 from .style_utils import (
     ANSI_ESCAPE_PATTERN,
     CSS_COLORS,
@@ -77,4 +80,8 @@ __all__ = [
     "validate_positions",
     # scan_utils
     "build_scan_cache",
+    # seq classes
+    "Seq",
+    "DnaSeq",
+    "ProteinSeq",
 ]

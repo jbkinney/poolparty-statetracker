@@ -15,6 +15,7 @@ from ..region import VALID_FRAMES, OrfRegion
 from ..types import ModeType, Optional, RegionType, Seq, Sequence, Union, beartype
 from ..utils.dna_utils import reverse_complement
 from ..utils.parsing_utils import find_all_regions
+from ..utils.dna_seq import DnaSeq
 
 
 def _resolve_frame(region: RegionType, frame: Optional[int]) -> int:
@@ -511,7 +512,7 @@ class MutagenizeOrfOp(Operation):
                 result_chars[lit_pos] = mut_char
 
         result_string = "".join(result_chars)
-        output_seq = Seq(result_string, parent_seq.style)
+        output_seq = DnaSeq(result_string, parent_seq.style)
 
         # Apply style to mutated positions if specified
         if self.style is not None and not styles_suppressed() and len(positions) > 0:
