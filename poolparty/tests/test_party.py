@@ -207,7 +207,7 @@ class TestSliceSeqOp:
         """Test sequence slicing with a range."""
         with pp.Party() as party:
             pool = pp.from_seqs(["ACGTACGT"])
-            sliced = slice_seq(pool, slice(0, 4)).named("sliced")
+            sliced = slice_seq(pool, start=0, stop=4).named("sliced")
 
         df = sliced.generate_library(num_seqs=1)
         assert df["seq"].iloc[0] == "ACGT"
@@ -216,7 +216,7 @@ class TestSliceSeqOp:
         """Test sequence slicing with negative index."""
         with pp.Party() as party:
             pool = pp.from_seqs(["ACGTACGT"])
-            last = slice_seq(pool, -1).named("last")
+            last = slice_seq(pool, start=-1).named("last")
 
         df = last.generate_library(num_seqs=1)
         assert df["seq"].iloc[0] == "T"
@@ -225,7 +225,7 @@ class TestSliceSeqOp:
         """Test sequence slicing with step."""
         with pp.Party() as party:
             pool = pp.from_seqs(["ABCDEFGH"])
-            every_other = slice_seq(pool, slice(None, None, 2)).named("every_other")
+            every_other = slice_seq(pool, step=2).named("every_other")
 
         df = every_other.generate_library(num_seqs=1)
         assert df["seq"].iloc[0] == "ACEG"
@@ -234,7 +234,7 @@ class TestSliceSeqOp:
         """Test reversing a sequence with slice."""
         with pp.Party() as party:
             pool = pp.from_seqs(["ACGT"])
-            reversed_seq = slice_seq(pool, slice(None, None, -1)).named("reversed")
+            reversed_seq = slice_seq(pool, step=-1).named("reversed")
 
         df = reversed_seq.generate_library(num_seqs=1)
         assert df["seq"].iloc[0] == "TGCA"
@@ -243,7 +243,7 @@ class TestSliceSeqOp:
         """Test combining slice_seq with mutation."""
         with pp.Party() as party:
             pool = pp.from_seqs(["ACGTACGT"])
-            first_half = slice_seq(pool, slice(0, 4))
+            first_half = slice_seq(pool, start=0, stop=4)
             mutated = pp.mutagenize(first_half, num_mutations=1, mode="sequential").named("mutated")
 
         df = mutated.generate_library(num_seqs=3)

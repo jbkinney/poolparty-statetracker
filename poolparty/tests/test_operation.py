@@ -394,7 +394,7 @@ class TestOperationCopy:
             from poolparty.fixed_ops.slice_seq import slice_seq
 
             pool = pp.from_seqs(["ACGT"])
-            sliced = slice_seq(pool, slice(1, 3))
+            sliced = slice_seq(pool, start=1, stop=3)
             copied_op = sliced.operation.copy()
 
             assert copied_op.parent_pools == sliced.operation.parent_pools

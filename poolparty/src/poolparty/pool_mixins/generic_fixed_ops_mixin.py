@@ -1,5 +1,6 @@
 """Generic fixed operation mixins for Pool class - operations that work on any sequence type."""
 
+from numbers import Integral
 from typing import Literal
 
 from ..types import Optional, Pool_type, Real, RegionType
@@ -7,6 +8,32 @@ from ..types import Optional, Pool_type, Real, RegionType
 
 class GenericFixedOpsMixin:
     """Mixin providing generic fixed operation methods for Pool."""
+
+    def slice_seq(
+        self,
+        region: RegionType = None,
+        start: Optional[Integral] = None,
+        stop: Optional[Integral] = None,
+        step: Optional[Integral] = None,
+        keep_context: bool = False,
+        iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
+        style: Optional[str] = None,
+    ) -> Pool_type:
+        """Slice sequences. See slice_seq() for details."""
+        from ..fixed_ops.slice_seq import slice_seq
+
+        return slice_seq(
+            pool=self,
+            region=region,
+            start=start,
+            stop=stop,
+            step=step,
+            keep_context=keep_context,
+            iter_order=iter_order,
+            prefix=prefix,
+            style=style,
+        )
 
     def add_prefix(
         self,

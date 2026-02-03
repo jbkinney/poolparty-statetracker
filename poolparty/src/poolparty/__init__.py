@@ -320,6 +320,7 @@ _POOL_FACTORY_MAP = {
     "replacement_scan": replacement_scan,
     "shuffle_scan": shuffle_scan,
     # Fixed ops (generic)
+    "slice_seq": slice_seq,
     "swapcase": swapcase,
     "upper": upper,
     "lower": lower,
