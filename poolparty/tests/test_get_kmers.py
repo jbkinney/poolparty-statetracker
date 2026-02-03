@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
-from poolparty.base_ops.get_kmers import GetKmersOp, get_kmers
 
 import poolparty as pp
+from poolparty.base_ops.get_kmers import GetKmersOp, get_kmers
 
 
 class TestGetKmersFactory:

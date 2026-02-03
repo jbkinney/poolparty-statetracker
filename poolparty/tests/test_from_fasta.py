@@ -6,6 +6,7 @@ import tempfile
 import time
 
 import pytest
+
 from poolparty.fixed_ops.fixed import FixedOp
 from poolparty.fixed_ops.from_fasta import from_fasta
 
@@ -163,11 +164,14 @@ class TestFromFastaBatchMode:
 
     def test_batch_extracts_multiple_sequences(self, test_fasta):
         """Test extracting multiple regions at once."""
-        pool = from_fasta(test_fasta, [
-            ("chr1", 0, 4, "+"),
-            ("chr1", 4, 8, "+"),
-            ("chr1", 8, 12, "+"),
-        ])
+        pool = from_fasta(
+            test_fasta,
+            [
+                ("chr1", 0, 4, "+"),
+                ("chr1", 4, 8, "+"),
+                ("chr1", 8, 12, "+"),
+            ],
+        )
         df = pool.generate_library(num_seqs=3)
         assert len(df) == 3
         seqs = set(df["seq"])
@@ -175,10 +179,13 @@ class TestFromFastaBatchMode:
 
     def test_batch_with_different_strands(self, test_fasta):
         """Test batch extraction with mixed strands."""
-        pool = from_fasta(test_fasta, [
-            ("chr2", 0, 4, "+"),
-            ("chr2", 0, 4, "-"),
-        ])
+        pool = from_fasta(
+            test_fasta,
+            [
+                ("chr2", 0, 4, "+"),
+                ("chr2", 0, 4, "-"),
+            ],
+        )
         # Sequential mode iterates through sequences
         df = pool.generate_library(num_seqs=2)
         seqs = set(df["seq"])
@@ -187,10 +194,13 @@ class TestFromFastaBatchMode:
 
     def test_batch_with_different_chroms(self, test_fasta):
         """Test batch extraction from different chromosomes."""
-        pool = from_fasta(test_fasta, [
-            ("chr1", 0, 4, "+"),
-            ("chr2", 0, 4, "+"),
-        ])
+        pool = from_fasta(
+            test_fasta,
+            [
+                ("chr1", 0, 4, "+"),
+                ("chr2", 0, 4, "+"),
+            ],
+        )
         df = pool.generate_library(num_seqs=2)
         seqs = set(df["seq"])
         assert "ACGT" in seqs
@@ -198,10 +208,13 @@ class TestFromFastaBatchMode:
 
     def test_batch_generates_correct_names(self, test_fasta):
         """Test that batch mode generates chrom:start-stop(strand) names."""
-        pool = from_fasta(test_fasta, [
-            ("chr1", 0, 4, "+"),
-            ("chr1", 4, 8, "-"),
-        ])
+        pool = from_fasta(
+            test_fasta,
+            [
+                ("chr1", 0, 4, "+"),
+                ("chr1", 4, 8, "-"),
+            ],
+        )
         # Sequential mode cycles through sequences
         df = pool.generate_library(num_seqs=2)
         assert "name" in df.columns
@@ -211,11 +224,7 @@ class TestFromFastaBatchMode:
 
     def test_batch_with_prefix(self, test_fasta):
         """Test that prefix is prepended to names."""
-        pool = from_fasta(
-            test_fasta,
-            [("chr1", 0, 4, "+"), ("chr1", 4, 8, "+")],
-            prefix="myprefix"
-        )
+        pool = from_fasta(test_fasta, [("chr1", 0, 4, "+"), ("chr1", 4, 8, "+")], prefix="myprefix")
         df = pool.generate_library(num_seqs=2)
         names = set(df["name"])
         assert "myprefix_chr1:0-4(+)" in names
@@ -223,10 +232,13 @@ class TestFromFastaBatchMode:
 
     def test_batch_sequential_mode(self, test_fasta):
         """Test that batch mode uses sequential mode (names cycle in order)."""
-        pool = from_fasta(test_fasta, [
-            ("chr1", 0, 4, "+"),
-            ("chr1", 4, 8, "+"),
-        ])
+        pool = from_fasta(
+            test_fasta,
+            [
+                ("chr1", 0, 4, "+"),
+                ("chr1", 4, 8, "+"),
+            ],
+        )
         df = pool.generate_library(num_seqs=4)
         # Should cycle through sequences in order: 0, 1, 0, 1
         names = df["name"].tolist()
@@ -256,10 +268,13 @@ class TestFromFastaCircular:
 
     def test_batch_with_wrap_around(self, circular_fasta):
         """Test batch mode with mix of normal and wrap-around regions."""
-        pool = from_fasta(circular_fasta, [
-            ("circ", 0, 4, "+"),   # Normal
-            ("circ", 16, 4, "+"),  # Wrap-around
-        ])
+        pool = from_fasta(
+            circular_fasta,
+            [
+                ("circ", 0, 4, "+"),  # Normal
+                ("circ", 16, 4, "+"),  # Wrap-around
+            ],
+        )
         # Sequential mode iterates through sequences
         df = pool.generate_library(num_seqs=2)
         seqs = set(df["seq"])

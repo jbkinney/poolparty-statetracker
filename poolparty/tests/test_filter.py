@@ -2,10 +2,10 @@
 
 import pandas as pd
 import pytest
-from poolparty.base_ops.filter_seq import FilterOp, filter_seq
-from poolparty.types import NullSeq, is_null_seq
 
 import poolparty as pp
+from poolparty.base_ops.filter_seq import FilterOp, filter_seq
+from poolparty.types import NullSeq, is_null_seq
 
 
 class TestNullSeq:

@@ -1,6 +1,8 @@
 """Tests for poolparty DNA utilities."""
 
 import pytest
+
+import poolparty as pp
 from poolparty.utils.dna_utils import (
     BASES,
     COMPLEMENT,
@@ -15,8 +17,6 @@ from poolparty.utils.dna_utils import (
     get_seq_length,
     reverse_complement,
 )
-
-import poolparty as pp
 
 
 class TestConstants:

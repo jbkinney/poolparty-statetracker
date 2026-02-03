@@ -1,9 +1,9 @@
 """Tests for the FromIupac operation."""
 
 import pytest
-from poolparty.base_ops.from_iupac import FromIupacOp, from_iupac
 
 import poolparty as pp
+from poolparty.base_ops.from_iupac import FromIupacOp, from_iupac
 
 
 class TestFromIupacFactory:

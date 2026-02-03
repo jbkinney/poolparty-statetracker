@@ -1,9 +1,9 @@
 """Tests for annotate_region and annotate_orf functions."""
 
 import pytest
-from poolparty.region import OrfRegion
 
 import poolparty as pp
+from poolparty.region import OrfRegion
 
 
 class TestAnnotateRegion:

@@ -9,11 +9,11 @@ For sequence operations, use join(), slice_seq(), etc.
 """
 
 import pytest
-from poolparty.fixed_ops.slice_seq import slice_seq
 
 import poolparty as pp
 import statetracker as st
 from poolparty import join
+from poolparty.fixed_ops.slice_seq import slice_seq
 
 
 class TestBasicUsage:

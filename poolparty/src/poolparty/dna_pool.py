@@ -1,10 +1,10 @@
 """DnaPool class for DNA sequence pools."""
 
 from .pool import Pool
-from .pool_mixins import DnaMixin
+from .pool_mixins import DnaMixin, FilterMixin
 
 
-class DnaPool(Pool, DnaMixin):
+class DnaPool(Pool, DnaMixin, FilterMixin):
     """Pool specialized for DNA sequences.
 
     Inherits all generic operations from Pool and adds DNA-specific
@@ -17,6 +17,13 @@ class DnaPool(Pool, DnaMixin):
     - annotate_orf() - annotate an ORF region
     - stylize_orf() - apply ORF-aware styling
     - mutagenize_orf() - apply codon-level mutations
+
+    And filtering operations via FilterMixin:
+    - filter_gc() - filter by GC content
+    - filter_homopolymer() - filter out long homopolymer runs
+    - filter_complexity() - filter by linguistic complexity
+    - filter_dust() - filter by DUST complexity score
+    - filter_restriction_sites() - filter out sequences with restriction sites
     """
 
     def __repr__(self) -> str:

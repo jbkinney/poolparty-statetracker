@@ -1,9 +1,9 @@
 """Tests for stylize_orf functionality."""
 
 import pytest
-from poolparty.orf_ops.stylize_orf import stylize_orf
 
 import poolparty as pp
+from poolparty.orf_ops.stylize_orf import stylize_orf
 
 
 class TestStylizeOrfBasic:

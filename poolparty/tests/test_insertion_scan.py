@@ -1,9 +1,9 @@
 """Tests for the insertion_scan wrapper function."""
 
 import pytest
-from poolparty.scan_ops import insertion_scan
 
 import poolparty as pp
+from poolparty.scan_ops import insertion_scan
 
 
 class TestInsertionScanBasics:

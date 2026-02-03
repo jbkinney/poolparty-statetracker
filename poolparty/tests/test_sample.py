@@ -1,9 +1,9 @@
 """Tests for sample operation - sample states from a pool."""
 
 import pytest
-from poolparty.state_ops.sample import SampleOp, sample
 
 import poolparty as pp
+from poolparty.state_ops.sample import SampleOp, sample
 
 
 class TestSampleFactory:

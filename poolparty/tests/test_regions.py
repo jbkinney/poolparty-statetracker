@@ -1,6 +1,8 @@
 """Tests for the new XML-style region system."""
 
 import pytest
+
+import poolparty as pp
 from poolparty.region_ops import (
     TAG_PATTERN,
     build_region_tags,
@@ -14,8 +16,6 @@ from poolparty.region_ops import (
     strip_all_tags,
     validate_single_region,
 )
-
-import poolparty as pp
 
 
 class TestRegionParsing:

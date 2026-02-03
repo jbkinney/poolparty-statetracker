@@ -1,9 +1,9 @@
 """Tests for the replacement_multiscan function."""
 
 import pytest
-from poolparty.multiscan_ops import replacement_multiscan
 
 import poolparty as pp
+from poolparty.multiscan_ops import replacement_multiscan
 
 
 class TestReplacementMultiscanBasics:

@@ -35,7 +35,7 @@ def _extract_sequence(
 
 def _is_single_coordinate(coordinates) -> bool:
     """Check if coordinates is a single (chrom, start, stop, strand) tuple."""
-    if not isinstance(coordinates, (tuple, list)):
+    if not isinstance(coordinates, tuple | list):
         return False
     if len(coordinates) != 4:
         return False
@@ -127,8 +127,7 @@ def from_fasta(
             ]
         else:
             seq_names = [
-                f"{chrom}:{start}-{stop}({strand})"
-                for chrom, start, stop, strand in coords_list
+                f"{chrom}:{start}-{stop}({strand})" for chrom, start, stop, strand in coords_list
             ]
 
         return from_seqs(

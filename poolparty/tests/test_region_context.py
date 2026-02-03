@@ -1,6 +1,7 @@
 """Tests for RegionContext helper class."""
 
 import numpy as np
+
 from poolparty.utils.region_context import RegionContext
 from poolparty.utils.style_utils import SeqStyle
 

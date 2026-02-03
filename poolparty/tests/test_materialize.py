@@ -2,9 +2,9 @@
 
 import pandas as pd
 import pytest
-from poolparty.base_ops.materialize import MaterializeOp, materialize
 
 import poolparty as pp
+from poolparty.base_ops.materialize import MaterializeOp, materialize
 
 
 class TestMaterializeBasic:
