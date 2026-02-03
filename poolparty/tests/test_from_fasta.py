@@ -1,9 +1,25 @@
 """Tests for the from_fasta operation."""
 
+import gc
 import os
 import tempfile
+import time
 
 import pytest
+
+
+def _remove_file_with_retry(path, max_retries=3, delay=0.1):
+    """Remove a file with retry logic for Windows file locking issues."""
+    for i in range(max_retries):
+        try:
+            if os.path.exists(path):
+                os.unlink(path)
+            return
+        except PermissionError:
+            if i < max_retries - 1:
+                time.sleep(delay)
+            else:
+                raise
 
 from poolparty.fixed_ops.fixed import FixedOp
 from poolparty.fixed_ops.from_fasta import from_fasta
