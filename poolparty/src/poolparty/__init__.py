@@ -72,6 +72,7 @@ from .operation import Operation
 
 # Import ORF operations from orf_ops module
 from .orf_ops import MutagenizeOrfOp, StylizeOrfOp, annotate_orf, mutagenize_orf, stylize_orf
+from .orf_ops.reverse_translate import ReverseTranslateOp, reverse_translate
 from .orf_ops.translate import TranslateOp, translate
 from .party import (
     Party,
