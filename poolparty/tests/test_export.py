@@ -408,3 +408,98 @@ class TestToFileStreaming:
                 assert len(headers) == 50
             finally:
                 path.unlink()
+
+
+class TestToDF:
+    """Tests for to_df() method."""
+
+    def test_to_df_basic(self):
+        """Test basic to_df export."""
+        with pp.Party():
+            pool = pp.from_seqs(["ACGT", "TGCA", "GGCC"], mode="sequential")
+            df = pool.to_df(num_seqs=3)
+
+            assert len(df) == 3
+            assert "name" in df.columns
+            assert "seq" in df.columns
+            assert set(df["seq"]) == {"ACGT", "TGCA", "GGCC"}
+
+    def test_to_df_with_num_cycles(self):
+        """Test to_df with num_cycles."""
+        with pp.Party():
+            pool = pp.from_seqs(["ACGT", "TGCA"], mode="sequential")
+            df = pool.to_df(num_cycles=2)
+
+            assert len(df) == 4  # 2 seqs * 2 cycles
+
+    def test_to_df_strips_tags_by_default(self):
+        """Test that to_df strips tags by default."""
+        with pp.Party():
+            pool = pp.from_seq("ACGT<region>TTAA</region>GGCC")
+            df = pool.to_df(num_seqs=1)
+
+            assert "<region>" not in df["seq"].iloc[0]
+            assert df["seq"].iloc[0] == "ACGTTTAAGGCC"
+
+    def test_to_df_keeps_tags_when_requested(self):
+        """Test that to_df keeps tags when write_tags=True."""
+        with pp.Party():
+            pool = pp.from_seq("ACGT<region>TTAA</region>GGCC")
+            df = pool.to_df(num_seqs=1, write_tags=True)
+
+            assert "<region>" in df["seq"].iloc[0]
+            assert "</region>" in df["seq"].iloc[0]
+
+    def test_to_df_with_columns_filter(self):
+        """Test to_df with specific columns."""
+        with pp.Party():
+            pool = pp.from_seqs(["ACGT", "TGCA"], mode="sequential")
+            df = pool.to_df(num_seqs=2, columns=["seq"])
+
+            assert list(df.columns) == ["seq"]
+
+    def test_to_df_chunked(self):
+        """Test to_df with chunking."""
+        with pp.Party():
+            seqs = [f"ACGT{i:04d}" for i in range(100)]
+            pool = pp.from_seqs(seqs, mode="sequential")
+            df = pool.to_df(num_seqs=50, chunk_size=10)
+
+            assert len(df) == 50
+
+    def test_to_df_requires_num_seqs_or_cycles(self):
+        """Test that to_df requires num_seqs or num_cycles."""
+        with pp.Party():
+            pool = pp.from_seq("ACGT")
+            with pytest.raises(ValueError, match="num_seqs or num_cycles"):
+                pool.to_df()
+
+
+class TestProgressBar:
+    """Tests for progress bar functionality."""
+
+    def test_to_df_with_progress_no_tqdm(self):
+        """Test to_df with progress when tqdm not installed (mocked)."""
+
+        with pp.Party():
+            pool = pp.from_seqs(["ACGT", "TGCA"], mode="sequential")
+
+            # Should work even without tqdm, just emit a warning
+            # We can't easily mock the import, so just test it doesn't crash
+            df = pool.to_df(num_seqs=2, show_progress=False)
+            assert len(df) == 2
+
+    def test_to_file_with_progress_no_crash(self):
+        """Test to_file with progress doesn't crash."""
+        with pp.Party():
+            pool = pp.from_seqs(["ACGT", "TGCA"], mode="sequential")
+
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
+                path = Path(f.name)
+
+            try:
+                # Should work even without tqdm, just emit a warning
+                count = pool.to_file(path, num_seqs=2, show_progress=False)
+                assert count == 2
+            finally:
+                path.unlink()

@@ -5,6 +5,8 @@ import json
 import re
 from pathlib import Path
 
+import pandas as pd
+
 from ..types import Callable, Integral, Literal, Optional, Union
 
 # Regex to strip region tags from sequences
@@ -23,11 +25,162 @@ def _open_file(path: Path, mode: str):
     return open(path, mode, encoding="utf-8")
 
 
+def _get_progress_bar(iterable, total, desc, show_progress):
+    """Get a progress bar wrapper if requested and tqdm is available."""
+    if not show_progress:
+        return iterable
+
+    try:
+        from tqdm import tqdm
+
+        return tqdm(iterable, total=total, desc=desc, unit="seq")
+    except ImportError:
+        import warnings
+
+        warnings.warn(
+            "tqdm not installed. Install with 'pip install tqdm' for progress bars.",
+            stacklevel=3,
+        )
+        return iterable
+
+
 class ExportMixin:
     """Mixin providing file export methods for Pool.
 
     Supports streaming export to avoid loading entire libraries into memory.
     """
+
+    def to_df(
+        self,
+        num_seqs: Optional[Integral] = None,
+        num_cycles: Optional[Integral] = None,
+        chunk_size: Integral = 10000,
+        write_tags: bool = False,
+        write_style: bool = False,
+        seed: Optional[Integral] = None,
+        discard_null_seqs: bool = True,
+        include_design_cards: bool = False,
+        columns: Optional[list[str]] = None,
+        show_progress: bool = False,
+    ) -> pd.DataFrame:
+        """Generate library as a pandas DataFrame with optional streaming.
+
+        Generates sequences in chunks and concatenates them into a single
+        DataFrame. For very large libraries, consider using to_file() instead
+        to avoid memory issues.
+
+        Parameters
+        ----------
+        num_seqs : int, optional
+            Number of sequences to generate. Required if num_cycles not specified.
+        num_cycles : int, optional
+            Number of complete cycles through state space.
+        chunk_size : int, default 10000
+            Number of sequences to generate per chunk. Larger values may be
+            faster but use more memory during generation.
+        write_tags : bool, default False
+            If True, include region tags (e.g., <region>...</region>) in output.
+            If False (default), strip all tags from sequences.
+        write_style : bool, default False
+            If True, include inline style annotations in sequences.
+            If False (default), output plain sequences without styles.
+        seed : int, optional
+            Random seed for reproducibility.
+        discard_null_seqs : bool, default True
+            If True, skip sequences that were filtered out (NullSeq).
+        include_design_cards : bool, default False
+            Include design card columns in output.
+        columns : list[str], optional
+            Specific columns to include. Default is all columns.
+        show_progress : bool, default False
+            If True, show a tqdm progress bar during generation.
+            Requires tqdm to be installed.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing the generated library.
+
+        Examples
+        --------
+        >>> df = pool.to_df(num_seqs=1000)
+        >>> df = pool.to_df(num_cycles=2, include_design_cards=True)
+        >>> df = pool.to_df(num_seqs=100000, show_progress=True)
+        """
+        # Validate arguments
+        if num_seqs is None and num_cycles is None:
+            raise ValueError("Either num_seqs or num_cycles must be specified")
+
+        # Determine target count
+        if num_seqs is not None:
+            target_count = int(num_seqs)
+        else:
+            target_count = int(num_cycles) * self.state.num_values
+
+        chunks = []
+        generated = 0
+
+        # Create progress tracking
+        if show_progress:
+            try:
+                from tqdm import tqdm
+
+                pbar = tqdm(total=target_count, desc="Generating", unit="seq")
+            except ImportError:
+                import warnings
+
+                warnings.warn(
+                    "tqdm not installed. Install with 'pip install tqdm' for progress bars.",
+                    stacklevel=2,
+                )
+                pbar = None
+        else:
+            pbar = None
+
+        try:
+            while generated < target_count:
+                remaining = target_count - generated
+                this_chunk = min(int(chunk_size), remaining)
+
+                df = self.generate_library(
+                    num_seqs=this_chunk,
+                    seed=seed,
+                    discard_null_seqs=discard_null_seqs,
+                    report_design_cards=include_design_cards,
+                    _include_inline_styles=write_style,
+                )
+
+                if len(df) == 0:
+                    break
+
+                # Strip tags if requested
+                if not write_tags and "seq" in df.columns:
+                    df = df.copy()
+                    df["seq"] = df["seq"].apply(_strip_tags)
+
+                # Filter columns if specified
+                if columns is not None:
+                    available = [c for c in columns if c in df.columns]
+                    df = df[available]
+
+                chunks.append(df)
+                generated += len(df)
+
+                if pbar is not None:
+                    pbar.update(len(df))
+
+                # Increment seed for next chunk to get different sequences
+                if seed is not None:
+                    seed += this_chunk
+        finally:
+            if pbar is not None:
+                pbar.close()
+
+        if not chunks:
+            # Return empty DataFrame with expected columns
+            return pd.DataFrame(columns=columns if columns else ["name", "seq"])
+
+        return pd.concat(chunks, ignore_index=True)
 
     def to_file(
         self,
@@ -46,6 +199,8 @@ class ExportMixin:
         # FASTA options
         line_width: Optional[Integral] = 60,
         description: Optional[Union[str, Callable]] = None,
+        # Progress bar
+        show_progress: bool = False,
         # Additional CSV options
         **csv_kwargs,
     ) -> int:
@@ -91,6 +246,9 @@ class ExportMixin:
             For FASTA: additional description after sequence name.
             If str, used as format template with row dict (e.g., "GC={gc:.2f}").
             If callable, called with row dict, should return string.
+        show_progress : bool, default False
+            If True, show a tqdm progress bar during export.
+            Requires tqdm to be installed.
         **csv_kwargs
             Additional arguments passed to DataFrame.to_csv() for CSV/TSV format.
 
@@ -123,6 +281,10 @@ class ExportMixin:
         ...     description=lambda row: f"length={len(row['seq'])}",
         ... )
         1000
+
+        >>> # With progress bar
+        >>> pool.to_file("library.csv", num_seqs=100000, show_progress=True)
+        100000
         """
         path = Path(path)
 
@@ -154,6 +316,7 @@ class ExportMixin:
                 include_design_cards=include_design_cards,
                 columns=columns,
                 sep=",",
+                show_progress=show_progress,
                 **csv_kwargs,
             )
         elif file_type == "tsv":
@@ -168,6 +331,7 @@ class ExportMixin:
                 include_design_cards=include_design_cards,
                 columns=columns,
                 sep="\t",
+                show_progress=show_progress,
                 **csv_kwargs,
             )
         elif file_type == "fasta":
@@ -181,6 +345,7 @@ class ExportMixin:
                 discard_null_seqs=discard_null_seqs,
                 line_width=line_width,
                 description=description,
+                show_progress=show_progress,
             )
         else:  # jsonl
             return self._export_jsonl(
@@ -192,6 +357,7 @@ class ExportMixin:
                 seed=seed,
                 discard_null_seqs=discard_null_seqs,
                 include_design_cards=include_design_cards,
+                show_progress=show_progress,
             )
 
     def _export_csv(
@@ -206,53 +372,78 @@ class ExportMixin:
         include_design_cards: bool,
         columns: Optional[list[str]],
         sep: str,
+        show_progress: bool = False,
         **csv_kwargs,
     ) -> int:
         """Export to CSV/TSV format."""
         written = 0
         first_chunk = True
 
-        while written < target_count:
-            remaining = target_count - written
-            this_chunk = min(chunk_size, remaining)
+        # Create progress bar if requested
+        if show_progress:
+            try:
+                from tqdm import tqdm
 
-            df = self.generate_library(
-                num_seqs=this_chunk,
-                seed=seed,
-                discard_null_seqs=discard_null_seqs,
-                report_design_cards=include_design_cards,
-                _include_inline_styles=write_style,
-            )
+                pbar = tqdm(total=target_count, desc="Exporting", unit="seq")
+            except ImportError:
+                import warnings
 
-            if len(df) == 0:
-                break
+                warnings.warn(
+                    "tqdm not installed. Install with 'pip install tqdm' for progress bars.",
+                    stacklevel=3,
+                )
+                pbar = None
+        else:
+            pbar = None
 
-            # Strip tags if requested
-            if not write_tags and "seq" in df.columns:
-                df = df.copy()
-                df["seq"] = df["seq"].apply(_strip_tags)
+        try:
+            while written < target_count:
+                remaining = target_count - written
+                this_chunk = min(chunk_size, remaining)
 
-            # Filter columns if specified
-            if columns is not None:
-                available = [c for c in columns if c in df.columns]
-                df = df[available]
-
-            # Write to file
-            with _open_file(path, "w" if first_chunk else "a") as f:
-                df.to_csv(
-                    f,
-                    sep=sep,
-                    index=False,
-                    header=first_chunk,
-                    **csv_kwargs,
+                df = self.generate_library(
+                    num_seqs=this_chunk,
+                    seed=seed,
+                    discard_null_seqs=discard_null_seqs,
+                    report_design_cards=include_design_cards,
+                    _include_inline_styles=write_style,
                 )
 
-            written += len(df)
-            first_chunk = False
+                if len(df) == 0:
+                    break
 
-            # Increment seed for next chunk to get different sequences
-            if seed is not None:
-                seed += this_chunk
+                # Strip tags if requested
+                if not write_tags and "seq" in df.columns:
+                    df = df.copy()
+                    df["seq"] = df["seq"].apply(_strip_tags)
+
+                # Filter columns if specified
+                if columns is not None:
+                    available = [c for c in columns if c in df.columns]
+                    df = df[available]
+
+                # Write to file
+                with _open_file(path, "w" if first_chunk else "a") as f:
+                    df.to_csv(
+                        f,
+                        sep=sep,
+                        index=False,
+                        header=first_chunk,
+                        **csv_kwargs,
+                    )
+
+                written += len(df)
+                first_chunk = False
+
+                if pbar is not None:
+                    pbar.update(len(df))
+
+                # Increment seed for next chunk to get different sequences
+                if seed is not None:
+                    seed += this_chunk
+        finally:
+            if pbar is not None:
+                pbar.close()
 
         return written
 
@@ -267,64 +458,91 @@ class ExportMixin:
         discard_null_seqs: bool,
         line_width: Optional[int],
         description: Optional[Union[str, Callable]],
+        show_progress: bool = False,
     ) -> int:
         """Export to FASTA format."""
         written = 0
         first_chunk = True
 
-        while written < target_count:
-            remaining = target_count - written
-            this_chunk = min(chunk_size, remaining)
+        # Create progress bar if requested
+        if show_progress:
+            try:
+                from tqdm import tqdm
 
-            df = self.generate_library(
-                num_seqs=this_chunk,
-                seed=seed,
-                discard_null_seqs=discard_null_seqs,
-                report_design_cards=False,
-                _include_inline_styles=write_style,
-            )
+                pbar = tqdm(total=target_count, desc="Exporting", unit="seq")
+            except ImportError:
+                import warnings
 
-            if len(df) == 0:
-                break
+                warnings.warn(
+                    "tqdm not installed. Install with 'pip install tqdm' for progress bars.",
+                    stacklevel=3,
+                )
+                pbar = None
+        else:
+            pbar = None
 
-            # Write FASTA entries
-            with _open_file(path, "w" if first_chunk else "a") as f:
-                for _, row in df.iterrows():
-                    name = row.get("name", f"seq_{written}")
-                    seq = row.get("seq", "")
+        try:
+            while written < target_count:
+                remaining = target_count - written
+                this_chunk = min(chunk_size, remaining)
 
-                    if seq is None:
-                        continue
+                df = self.generate_library(
+                    num_seqs=this_chunk,
+                    seed=seed,
+                    discard_null_seqs=discard_null_seqs,
+                    report_design_cards=False,
+                    _include_inline_styles=write_style,
+                )
 
-                    # Strip tags if requested
-                    if not write_tags:
-                        seq = _strip_tags(seq)
+                if len(df) == 0:
+                    break
 
-                    # Build header line
-                    header = f">{name}"
-                    if description is not None:
-                        if callable(description):
-                            desc_str = description(row.to_dict())
+                chunk_written = 0
+                # Write FASTA entries
+                with _open_file(path, "w" if first_chunk else "a") as f:
+                    for _, row in df.iterrows():
+                        name = row.get("name", f"seq_{written}")
+                        seq = row.get("seq", "")
+
+                        if seq is None:
+                            continue
+
+                        # Strip tags if requested
+                        if not write_tags:
+                            seq = _strip_tags(seq)
+
+                        # Build header line
+                        header = f">{name}"
+                        if description is not None:
+                            if callable(description):
+                                desc_str = description(row.to_dict())
+                            else:
+                                desc_str = description.format(**row.to_dict())
+                            header = f"{header} {desc_str}"
+
+                        f.write(header + "\n")
+
+                        # Write sequence with optional line wrapping
+                        if line_width is not None and line_width > 0:
+                            for i in range(0, len(seq), line_width):
+                                f.write(seq[i : i + line_width] + "\n")
                         else:
-                            desc_str = description.format(**row.to_dict())
-                        header = f"{header} {desc_str}"
+                            f.write(seq + "\n")
 
-                    f.write(header + "\n")
+                        written += 1
+                        chunk_written += 1
 
-                    # Write sequence with optional line wrapping
-                    if line_width is not None and line_width > 0:
-                        for i in range(0, len(seq), line_width):
-                            f.write(seq[i : i + line_width] + "\n")
-                    else:
-                        f.write(seq + "\n")
+                first_chunk = False
 
-                    written += 1
+                if pbar is not None:
+                    pbar.update(chunk_written)
 
-            first_chunk = False
-
-            # Increment seed for next chunk
-            if seed is not None:
-                seed += this_chunk
+                # Increment seed for next chunk
+                if seed is not None:
+                    seed += this_chunk
+        finally:
+            if pbar is not None:
+                pbar.close()
 
         return written
 
@@ -338,49 +556,78 @@ class ExportMixin:
         seed: Optional[int],
         discard_null_seqs: bool,
         include_design_cards: bool,
+        show_progress: bool = False,
     ) -> int:
         """Export to JSON Lines format."""
         written = 0
         first_chunk = True
 
-        while written < target_count:
-            remaining = target_count - written
-            this_chunk = min(chunk_size, remaining)
+        # Create progress bar if requested
+        if show_progress:
+            try:
+                from tqdm import tqdm
 
-            df = self.generate_library(
-                num_seqs=this_chunk,
-                seed=seed,
-                discard_null_seqs=discard_null_seqs,
-                report_design_cards=include_design_cards,
-                _include_inline_styles=write_style,
-            )
+                pbar = tqdm(total=target_count, desc="Exporting", unit="seq")
+            except ImportError:
+                import warnings
 
-            if len(df) == 0:
-                break
+                warnings.warn(
+                    "tqdm not installed. Install with 'pip install tqdm' for progress bars.",
+                    stacklevel=3,
+                )
+                pbar = None
+        else:
+            pbar = None
 
-            # Write JSONL entries
-            with _open_file(path, "w" if first_chunk else "a") as f:
-                for _, row in df.iterrows():
-                    record = row.to_dict()
+        try:
+            while written < target_count:
+                remaining = target_count - written
+                this_chunk = min(chunk_size, remaining)
 
-                    # Strip tags if requested
-                    if not write_tags and "seq" in record and record["seq"] is not None:
-                        record["seq"] = _strip_tags(record["seq"])
+                df = self.generate_library(
+                    num_seqs=this_chunk,
+                    seed=seed,
+                    discard_null_seqs=discard_null_seqs,
+                    report_design_cards=include_design_cards,
+                    _include_inline_styles=write_style,
+                )
 
-                    # Convert numpy types to Python types for JSON serialization
-                    for key, value in record.items():
-                        if hasattr(value, "item"):  # numpy scalar
-                            record[key] = value.item()
-                        elif value is None or (hasattr(value, "__len__") and len(str(value)) == 0):
-                            record[key] = None
+                if len(df) == 0:
+                    break
 
-                    f.write(json.dumps(record) + "\n")
-                    written += 1
+                chunk_written = 0
+                # Write JSONL entries
+                with _open_file(path, "w" if first_chunk else "a") as f:
+                    for _, row in df.iterrows():
+                        record = row.to_dict()
 
-            first_chunk = False
+                        # Strip tags if requested
+                        if not write_tags and "seq" in record and record["seq"] is not None:
+                            record["seq"] = _strip_tags(record["seq"])
 
-            # Increment seed for next chunk
-            if seed is not None:
-                seed += this_chunk
+                        # Convert numpy types to Python types for JSON serialization
+                        for key, value in record.items():
+                            if hasattr(value, "item"):  # numpy scalar
+                                record[key] = value.item()
+                            elif value is None or (
+                                hasattr(value, "__len__") and len(str(value)) == 0
+                            ):
+                                record[key] = None
+
+                        f.write(json.dumps(record) + "\n")
+                        written += 1
+                        chunk_written += 1
+
+                first_chunk = False
+
+                if pbar is not None:
+                    pbar.update(chunk_written)
+
+                # Increment seed for next chunk
+                if seed is not None:
+                    seed += this_chunk
+        finally:
+            if pbar is not None:
+                pbar.close()
 
         return written
