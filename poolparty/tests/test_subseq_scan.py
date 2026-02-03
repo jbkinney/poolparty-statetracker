@@ -1,9 +1,9 @@
 """Tests for the subseq_scan function."""
 
 import pytest
-from poolparty.scan_ops import subseq_scan
 
 import poolparty as pp
+from poolparty.scan_ops import subseq_scan
 
 
 class TestSubseqScanBasics:

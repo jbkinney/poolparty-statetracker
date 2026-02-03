@@ -1,9 +1,9 @@
 """Tests for state_shuffle operation - randomly permute pool states."""
 
 import pytest
-from poolparty.state_ops.state_shuffle import StateShuffleOp, state_shuffle
 
 import poolparty as pp
+from poolparty.state_ops.state_shuffle import StateShuffleOp, state_shuffle
 
 
 class TestStateShuffleFactory:

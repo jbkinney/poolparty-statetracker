@@ -1,10 +1,10 @@
 """Tests for the MutagenizeOrf operation."""
 
 import pytest
-from poolparty.codon_table import CodonTable
-from poolparty.orf_ops.mutagenize_orf import MutagenizeOrfOp, mutagenize_orf
 
 import poolparty as pp
+from poolparty.codon_table import CodonTable
+from poolparty.orf_ops.mutagenize_orf import MutagenizeOrfOp, mutagenize_orf
 
 
 class TestCodonTable:

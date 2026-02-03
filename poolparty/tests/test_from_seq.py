@@ -1,9 +1,8 @@
 """Tests for the FromSeq operation."""
 
+import poolparty as pp
 from poolparty.fixed_ops.fixed import FixedOp
 from poolparty.fixed_ops.from_seq import from_seq
-
-import poolparty as pp
 
 
 class TestFromSeqFactory:

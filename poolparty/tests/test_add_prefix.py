@@ -2,9 +2,8 @@
 
 import re
 
-from poolparty.fixed_ops.add_prefix import AddPrefixOp, add_prefix
-
 import poolparty as pp
+from poolparty.fixed_ops.add_prefix import AddPrefixOp, add_prefix
 
 
 class TestAddPrefixBasic:

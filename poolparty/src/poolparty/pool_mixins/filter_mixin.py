@@ -139,9 +139,7 @@ class FilterMixin:
         from ..utils.seq_properties import calc_complexity
 
         if not 0.0 <= min_complexity <= 1.0:
-            raise ValueError(
-                f"min_complexity must be between 0.0 and 1.0, got {min_complexity}"
-            )
+            raise ValueError(f"min_complexity must be between 0.0 and 1.0, got {min_complexity}")
 
         def predicate(seq: str) -> bool:
             return calc_complexity(seq, k_range) >= min_complexity

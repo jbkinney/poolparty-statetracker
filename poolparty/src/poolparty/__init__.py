@@ -31,6 +31,14 @@ from .base_ops import (
     recombine,
     shuffle_seq,
 )
+
+# Import restriction enzyme data
+from .data.restriction_enzymes import (
+    ENZYME_PRESETS,
+    ENZYME_SITES,
+    get_enzyme_site,
+    get_preset_enzymes,
+)
 from .dna_pool import DnaPool
 
 # Import fixed operations from fixed_ops module
@@ -117,25 +125,17 @@ from .state_ops import (
 from .types import NullSeq, is_null_seq
 from .utils.dna_utils import BASES, COMPLEMENT, IGNORE_CHARS, IUPAC_TO_DNA, VALID_CHARS
 
-# Import styling utilities
-from .utils.style_utils import print_named_colors
-
 # Import sequence property functions
 from .utils.seq_properties import (
-    calc_gc,
     calc_complexity,
     calc_dust,
+    calc_gc,
     has_homopolymer,
     has_restriction_site,
 )
 
-# Import restriction enzyme data
-from .data.restriction_enzymes import (
-    ENZYME_SITES,
-    ENZYME_PRESETS,
-    get_enzyme_site,
-    get_preset_enzymes,
-)
+# Import styling utilities
+from .utils.style_utils import print_named_colors
 
 __all__ = [
     "__version__",

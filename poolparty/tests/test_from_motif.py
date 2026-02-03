@@ -3,9 +3,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-from poolparty.base_ops.from_motif import FromMotifOp, from_motif
 
 import poolparty as pp
+from poolparty.base_ops.from_motif import FromMotifOp, from_motif
 
 
 class TestFromMotifFactory:

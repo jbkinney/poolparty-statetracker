@@ -1,9 +1,9 @@
 """Tests for the deletion_scan wrapper function."""
 
 import pytest
-from poolparty.scan_ops import deletion_scan
 
 import poolparty as pp
+from poolparty.scan_ops import deletion_scan
 
 
 class TestDeletionScanBasics:

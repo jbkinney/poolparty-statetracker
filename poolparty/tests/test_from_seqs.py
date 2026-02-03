@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
-from poolparty.base_ops.from_seqs import FromSeqsOp, from_seqs
 
 import poolparty as pp
+from poolparty.base_ops.from_seqs import FromSeqsOp, from_seqs
 
 
 class TestFromSeqsFactory:

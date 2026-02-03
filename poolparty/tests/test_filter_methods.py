@@ -1,6 +1,5 @@
 """Tests for filter convenience methods on DnaPool."""
 
-import pandas as pd
 import pytest
 
 import poolparty as pp

@@ -109,19 +109,9 @@ ENZYME_SITES: dict[str, str] = {
     "NlaIII": "CATG",
     "CviAII": "CATG",
     # ==========================================================================
-    # Blunt-end cutters
+    # Additional blunt-end cutters (not already listed above)
     # ==========================================================================
-    "EcoRV": "GATATC",
-    "SmaI": "CCCGGG",
-    "StuI": "AGGCCT",
-    "ScaI": "AGTACT",
-    "PvuII": "CAGCTG",
-    "HpaI": "GTTAAC",
-    "NruI": "TCGCGA",
-    "SnaBI": "TACGTA",
     "HincII": "GTYRAC",  # Degenerate blunt cutter
-    "AluI": "AGCT",
-    "HaeIII": "GGCC",
     "BalI": "TGGCCA",
     "DraI": "TTTAAA",
     "EcoICRI": "GAGCTC",

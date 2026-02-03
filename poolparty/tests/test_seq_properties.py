@@ -3,13 +3,13 @@
 import pytest
 
 from poolparty.utils.seq_properties import (
-    calc_gc,
+    _expand_iupac,
     calc_complexity,
     calc_dust,
+    calc_gc,
+    get_sites_for_enzymes,
     has_homopolymer,
     has_restriction_site,
-    get_sites_for_enzymes,
-    _expand_iupac,
 )
 
 

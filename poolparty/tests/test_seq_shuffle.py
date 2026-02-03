@@ -1,9 +1,9 @@
 """Tests for the SeqShuffle operation."""
 
 import numpy as np
-from poolparty.base_ops.shuffle_seq import SeqShuffleOp, shuffle_seq
 
 import poolparty as pp
+from poolparty.base_ops.shuffle_seq import SeqShuffleOp, shuffle_seq
 
 
 class TestSeqShuffleFactory:

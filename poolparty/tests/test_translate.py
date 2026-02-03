@@ -2,6 +2,8 @@
 
 import numpy as np
 import pytest
+
+import poolparty as pp
 from poolparty.orf_ops.translate import TranslateOp, _get_shared_styles, _resolve_frame, translate
 from poolparty.utils.protein_seq import (
     AA_THREE_LETTER,
@@ -11,8 +13,6 @@ from poolparty.utils.protein_seq import (
     to_three_letter,
 )
 from poolparty.utils.style_utils import SeqStyle
-
-import poolparty as pp
 
 
 class TestProteinSeq:

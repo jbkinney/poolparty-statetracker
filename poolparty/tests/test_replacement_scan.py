@@ -1,9 +1,9 @@
 """Tests for the replacement_scan wrapper function."""
 
 import pytest
-from poolparty.scan_ops import replacement_scan
 
 import poolparty as pp
+from poolparty.scan_ops import replacement_scan
 
 
 class TestReplacementScanBasics:

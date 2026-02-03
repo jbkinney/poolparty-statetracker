@@ -4,10 +4,9 @@ Note: The + operator on Pools now does stacking (union of states), not joining.
 Use join() for sequence joining.
 """
 
+import poolparty as pp
 from poolparty.fixed_ops.fixed import FixedOp
 from poolparty.fixed_ops.join import join
-
-import poolparty as pp
 
 
 class TestJoinFactory:

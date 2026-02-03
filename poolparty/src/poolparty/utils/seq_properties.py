@@ -38,10 +38,7 @@ def calc_gc(seq: str) -> float:
     seq_upper = seq.upper()
     gc_count = seq_upper.count("G") + seq_upper.count("C")
     total = (
-        seq_upper.count("A")
-        + seq_upper.count("C")
-        + seq_upper.count("G")
-        + seq_upper.count("T")
+        seq_upper.count("A") + seq_upper.count("C") + seq_upper.count("G") + seq_upper.count("T")
     )
     if total == 0:
         return 0.0
@@ -337,9 +334,7 @@ def get_sites_for_enzymes(
     if enzymes:
         for name in enzymes:
             # Check if it's a preset name
-            if name in ENZYME_PRESETS or name.lower() in [
-                p.lower() for p in ENZYME_PRESETS
-            ]:
+            if name in ENZYME_PRESETS or name.lower() in [p.lower() for p in ENZYME_PRESETS]:
                 try:
                     preset_enzymes = get_preset_enzymes(name)
                     for enzyme in preset_enzymes:

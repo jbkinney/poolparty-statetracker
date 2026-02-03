@@ -2,10 +2,10 @@
 
 import numpy as np
 import pytest
-from poolparty.operation import Operation
 
 import poolparty as pp
 from poolparty import join
+from poolparty.operation import Operation
 
 
 class TestOperationIdState:

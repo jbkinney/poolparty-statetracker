@@ -1,8 +1,7 @@
 """Tests for stylize operation."""
 
-from poolparty.fixed_ops.stylize import stylize
-
 import poolparty as pp
+from poolparty.fixed_ops.stylize import stylize
 
 
 class TestStylizeBasic:

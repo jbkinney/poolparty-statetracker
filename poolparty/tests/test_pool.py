@@ -9,13 +9,13 @@ For sequence operations, use join(), slice_seq(), etc.
 """
 
 import pytest
+
+import poolparty as pp
+from poolparty import join
 from poolparty.pool import Pool
 from poolparty.state_ops.repeat import RepeatOp
 from poolparty.state_ops.stack import StackOp
 from poolparty.state_ops.state_slice import StateSliceOp
-
-import poolparty as pp
-from poolparty import join
 
 
 class TestPoolCreation:
