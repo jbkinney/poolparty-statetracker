@@ -8,7 +8,7 @@
 
 ## Why StateTracker?
 
-StateTracker was developed to support the design of complex DNA sequence libraries (see [PoolParty]([https://github.com/jbkinney/poolparty](https://github.com/jbkinney/poolparty-statetracker/tree/main/poolparty))), but it solves a general problem: **random access to combinatorial spaces**.
+StateTracker was developed to support the design of complex DNA sequence libraries (see [PoolParty](https://github.com/jbkinney/poolparty-statetracker/tree/main/poolparty)), but it solves a general problem: **random access to combinatorial spaces**.
 
 If you've ever written nested loops to enumerate a Cartesian product and then wished you could shuffle the order, sample a subset, or split into train/test sets—all while tracking which component indices correspond to each item—StateTracker is for you. Build your combinatorial structure once using state algebra, and StateTracker handles the index math automatically.
 
