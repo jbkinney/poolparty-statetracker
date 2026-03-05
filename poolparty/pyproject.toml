@@ -44,10 +44,10 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jbkinney/poolparty-statecounter"
+Homepage = "https://github.com/jbkinney/poolparty-statetracker"
 Documentation = "https://poolparty.readthedocs.io"
-Repository = "https://github.com/jbkinney/poolparty-statecounter/tree/main/poolparty"
-Issues = "https://github.com/jbkinney/poolparty-statecounter/issues"
+Repository = "https://github.com/jbkinney/poolparty-statetracker/tree/main/poolparty"
+Issues = "https://github.com/jbkinney/poolparty-statetracker/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

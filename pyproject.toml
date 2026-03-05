@@ -85,3 +85,6 @@ ignore = [
 "**/region_ops/*.py" = ["F841"]  # Allow unused intermediates for debugging
 "**/docs/*.ipynb" = ["F841"]  # Allow unused vars in notebook examples
 "**/benchmarks/*" = ["E402"]  # Allow imports not at top
+
+[tool.setuptools]
+py-modules = []
