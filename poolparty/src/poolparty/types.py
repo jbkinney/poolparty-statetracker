@@ -26,6 +26,9 @@ FilterFunc: TypeAlias = Callable[[str, list[str] | None], bool]
 # Positions type for scan operations
 PositionsType: TypeAlias = Sequence[Integral] | slice | None
 
+# Positions type for multiscan operations (also allows per-insert list-of-lists)
+MultiPositionsType: TypeAlias = Sequence[Integral] | Sequence[Sequence[Integral]] | slice | None
+
 # Region type for operations that can target a subsequence
 # str = marker name, Sequence[Integral] = [start, stop] interval, None = full sequence
 RegionType: TypeAlias = str | Sequence[Integral] | None
@@ -61,6 +64,7 @@ __all__ = [
     "AlphabetType",
     "FilterFunc",
     "PositionsType",
+    "MultiPositionsType",
     "RegionType",
     "StyleByForRecombineType",
     "StyleTuple",

@@ -3,7 +3,8 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import Literal, Optional, PositionsType, Sequence, Union, beartype
+from ..types import Literal, MultiPositionsType, Optional, RegionType, Sequence, Union, beartype
+from ..region_ops.region_multiscan import _is_per_insert_positions
 from ..utils import validate_positions
 
 
@@ -12,8 +13,12 @@ def replacement_multiscan(
     pool: Union[Pool, str],
     num_replacements: Integral,
     replacement_pools: Union[Pool, Sequence[Pool]],
-    positions: PositionsType = None,
+    positions: MultiPositionsType = None,
+    region: RegionType = None,
+    names: Optional[Sequence[str]] = None,
     insertion_mode: Literal["ordered", "unordered"] = "ordered",
+    min_spacing: Optional[Integral] = None,
+    max_spacing: Optional[Integral] = None,
     prefix: Optional[str] = None,
     mode: str = "random",
     num_states: Optional[Integral] = None,
@@ -21,9 +26,6 @@ def replacement_multiscan(
 ) -> Pool:
     """
     Replace segments at multiple positions simultaneously.
-
-    Uses region_multiscan() to insert markers at multiple positions, then
-    replaces each marker's content with sequences from replacement pools.
 
     Parameters
     ----------
@@ -36,26 +38,24 @@ def replacement_multiscan(
         it will be deepcopied num_replacements-1 times. If a Sequence of Pools
         is provided, its length must equal num_replacements.
     positions : PositionsType, default=None
-        Valid positions for replacement starts (0-based). If None, all valid
-        positions are used.
-    spacer_str : str, default=''
-        String to insert as a spacer around replacement sites.
+        Valid positions for replacement starts (0-based).
+    region : RegionType, default=None
+        Region to constrain the scan to.
+    names : Optional[Sequence[str]], default=None
+        Custom names for the replacement regions. If None, auto-generated
+        (_rep_0, _rep_1, ...).
     insertion_mode : Literal['ordered', 'unordered'], default='ordered'
-        How to assign replacement pools to positions:
-        - 'ordered': pools[i] goes to the i-th selected position (left to right)
-        - 'unordered': randomly assign pools to positions
+        How to assign replacement pools to positions.
+    min_spacing : Optional[Integral], default=None
+        Minimum gap between end of one replacement and start of next.
+    max_spacing : Optional[Integral], default=None
+        Maximum gap between adjacent replacements. None = unbounded.
     mode : str, default='random'
-        Position selection mode: 'random'.
+        Position selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
-    name : Optional[str], default=None
-        Name for the resulting Pool.
-    op_name : Optional[str], default=None
-        Name for the underlying Operations.
+        Number of states. If None, auto-determined for sequential mode.
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    op_iter_order : Optional[Real], default=None
-        Iteration order priority for the underlying Operations.
+        Iteration order priority for the Operation.
 
     Returns
     -------
@@ -65,30 +65,20 @@ def replacement_multiscan(
     from ..fixed_ops.from_seq import from_seq
     from ..region_ops import region_multiscan, replace_region
 
-    # Validate mode
-    if mode != "random":
-        raise ValueError(f"replacement_multiscan supports only mode='random', got '{mode}'")
-
-    # Validate num_replacements
     if num_replacements < 1:
         raise ValueError(f"num_replacements must be >= 1, got {num_replacements}")
 
-    # Convert string inputs to pools if needed
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
 
-    # Validate pool has defined seq_length
     bg_length = pool_obj.seq_length
-    if bg_length is None:
+    if bg_length is None and region is None:
         raise ValueError("pool must have a defined seq_length")
 
-    # Handle replacement_pools: single Pool vs Sequence of Pools
     if isinstance(replacement_pools, Pool):
-        # Single pool: create deepcopies
         pools_list = [replacement_pools]
         for i in range(num_replacements - 1):
             pools_list.append(replacement_pools.deepcopy(name=f"_rep_pool_{i + 1}"))
     else:
-        # Sequence of pools: validate length
         pools_list = list(replacement_pools)
         if len(pools_list) != num_replacements:
             raise ValueError(
@@ -96,59 +86,59 @@ def replacement_multiscan(
                 f"num_replacements ({num_replacements})"
             )
 
-    # Validate all replacement pools have defined seq_length
     replacement_lengths = []
     for i, pool in enumerate(pools_list):
         if pool.seq_length is None:
             raise ValueError(f"replacement_pools[{i}] must have a defined seq_length")
         replacement_lengths.append(pool.seq_length)
 
-    # All replacement pools must have the same seq_length
-    replacement_length = replacement_lengths[0]
-    if not all(length == replacement_length for length in replacement_lengths):
+    if bg_length is not None:
+        min_required_length = sum(replacement_lengths)
+        if min_required_length > bg_length:
+            raise ValueError(
+                f"Cannot fit {num_replacements} non-overlapping replacements of lengths "
+                f"{replacement_lengths} in sequence of length {bg_length}"
+            )
+
+    markers = list(names) if names is not None else [f"_rep_{i}" for i in range(num_replacements)]
+    if len(markers) != num_replacements:
         raise ValueError(
-            f"All replacement pools must have the same seq_length, got {replacement_lengths}"
+            f"len(names) ({len(markers)}) must equal num_replacements ({num_replacements})"
         )
 
-    # Check if there's room for num_replacements non-overlapping regions
-    min_required_length = num_replacements * replacement_length
-    if min_required_length > bg_length:
-        raise ValueError(
-            f"Cannot fit {num_replacements} non-overlapping replacements of length "
-            f"{replacement_length} in sequence of length {bg_length}"
-        )
+    # Per-region lengths for region_multiscan
+    marker_lengths = replacement_lengths if len(set(replacement_lengths)) > 1 else replacement_lengths[0]
 
-    # Generate auto-indexed marker names
-    markers = [f"_rep_{i}" for i in range(num_replacements)]
-    marker_length = int(replacement_length)
-    max_position = bg_length - replacement_length
+    if _is_per_insert_positions(positions) or region is not None:
+        validated_positions = positions
+    elif bg_length is not None:
+        max_rl = max(replacement_lengths)
+        max_position = bg_length - max_rl
+        validated_positions = validate_positions(positions, max_position, min_position=0)
+    else:
+        validated_positions = positions
 
-    # Validate positions
-    validated_positions = validate_positions(positions, max_position, min_position=0)
-
-    # 1. Insert markers at multiple positions using region_multiscan
     marked = region_multiscan(
         pool_obj,
         regions=markers,
         num_insertions=int(num_replacements),
         positions=validated_positions,
-        region_length=marker_length,
+        region=region,
+        region_length=marker_lengths,
         insertion_mode=insertion_mode,
+        min_spacing=min_spacing,
+        max_spacing=max_spacing,
         prefix=prefix,
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
     )
 
-    # 2. Build replacement content for each pool
     result = marked
     for region_name, rep_pool in zip(markers, pools_list):
-        content = rep_pool
-
-        # Replace marker with content
         result = replace_region(
             result,
-            content,
+            rep_pool,
             region_name,
             iter_order=iter_order,
         )

@@ -200,13 +200,14 @@ class MutagenizeOp(Operation):
         if mode == "sequential":
             # Sequential mode only available with num_mutations
             effective_length = self._seq_length
-            # If seq_length is unknown but region is a marker, try to get marker's seq_length
-            if effective_length is None and isinstance(region, str):
+            # If region is specified, use the region's length instead of full sequence
+            if isinstance(region, str):
                 try:
                     region_obj = party.get_region_by_name(region)
-                    effective_length = region_obj.seq_length
+                    if region_obj.seq_length is not None:
+                        effective_length = region_obj.seq_length
                 except ValueError:
-                    pass  # Region not found, stay with None
+                    pass  # Region not found, fall back to full sequence length
 
             # If allowed_chars is provided, use its length and pre-computed mutation counts
             if self._mutation_counts_from_allowed is not None:

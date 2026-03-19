@@ -319,6 +319,10 @@ _POOL_FACTORY_MAP = {
     "insertion_scan": insertion_scan,
     "replacement_scan": replacement_scan,
     "shuffle_scan": shuffle_scan,
+    # Multiscan ops (generic)
+    "deletion_multiscan": deletion_multiscan,
+    "insertion_multiscan": insertion_multiscan,
+    "replacement_multiscan": replacement_multiscan,
     # Fixed ops (generic)
     "slice_seq": slice_seq,
     "swapcase": swapcase,

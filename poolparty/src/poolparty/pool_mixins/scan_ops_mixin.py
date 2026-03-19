@@ -2,7 +2,9 @@
 
 from ..types import (
     Integral,
+    Literal,
     ModeType,
+    MultiPositionsType,
     Optional,
     Pool_type,
     PositionsType,
@@ -158,5 +160,104 @@ class ScanOpsMixin:
             mode=mode,
             num_states=num_states,
             style=style,
+            iter_order=iter_order,
+        )
+
+    def deletion_multiscan(
+        self,
+        deletion_length: Integral,
+        num_deletions: Integral,
+        deletion_marker: Optional[str] = "-",
+        positions: MultiPositionsType = None,
+        region: RegionType = None,
+        names: Optional[Sequence[str]] = None,
+        min_spacing: Optional[Integral] = None,
+        max_spacing: Optional[Integral] = None,
+        prefix: Optional[str] = None,
+        mode: str = "random",
+        num_states: Optional[Integral] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        from ..multiscan_ops.deletion_multiscan import deletion_multiscan
+
+        return deletion_multiscan(
+            pool=self,
+            deletion_length=deletion_length,
+            num_deletions=num_deletions,
+            deletion_marker=deletion_marker,
+            positions=positions,
+            region=region,
+            names=names,
+            min_spacing=min_spacing,
+            max_spacing=max_spacing,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+        )
+
+    def insertion_multiscan(
+        self,
+        num_insertions: Integral,
+        insertion_pools: Union[Pool_type, Sequence[Pool_type]],
+        positions: MultiPositionsType = None,
+        region: RegionType = None,
+        names: Optional[Sequence[str]] = None,
+        insertion_mode: Literal["ordered", "unordered"] = "ordered",
+        min_spacing: Optional[Integral] = None,
+        max_spacing: Optional[Integral] = None,
+        prefix: Optional[str] = None,
+        mode: str = "random",
+        num_states: Optional[Integral] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        from ..multiscan_ops.insertion_multiscan import insertion_multiscan
+
+        return insertion_multiscan(
+            pool=self,
+            num_insertions=num_insertions,
+            insertion_pools=insertion_pools,
+            positions=positions,
+            region=region,
+            names=names,
+            insertion_mode=insertion_mode,
+            min_spacing=min_spacing,
+            max_spacing=max_spacing,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+        )
+
+    def replacement_multiscan(
+        self,
+        num_replacements: Integral,
+        replacement_pools: Union[Pool_type, Sequence[Pool_type]],
+        positions: MultiPositionsType = None,
+        region: RegionType = None,
+        names: Optional[Sequence[str]] = None,
+        insertion_mode: Literal["ordered", "unordered"] = "ordered",
+        min_spacing: Optional[Integral] = None,
+        max_spacing: Optional[Integral] = None,
+        prefix: Optional[str] = None,
+        mode: str = "random",
+        num_states: Optional[Integral] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        from ..multiscan_ops.replacement_multiscan import replacement_multiscan
+
+        return replacement_multiscan(
+            pool=self,
+            num_replacements=num_replacements,
+            replacement_pools=replacement_pools,
+            positions=positions,
+            region=region,
+            names=names,
+            insertion_mode=insertion_mode,
+            min_spacing=min_spacing,
+            max_spacing=max_spacing,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
             iter_order=iter_order,
         )

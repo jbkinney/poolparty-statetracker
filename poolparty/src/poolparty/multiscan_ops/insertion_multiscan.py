@@ -3,7 +3,8 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import Literal, Optional, PositionsType, Sequence, Union, beartype
+from ..types import Literal, MultiPositionsType, Optional, RegionType, Sequence, Union, beartype
+from ..region_ops.region_multiscan import _is_per_insert_positions
 from ..utils import validate_positions
 
 
@@ -12,8 +13,12 @@ def insertion_multiscan(
     pool: Union[Pool, str],
     num_insertions: Integral,
     insertion_pools: Union[Pool, Sequence[Pool]],
-    positions: PositionsType = None,
+    positions: MultiPositionsType = None,
+    region: RegionType = None,
+    names: Optional[Sequence[str]] = None,
     insertion_mode: Literal["ordered", "unordered"] = "ordered",
+    min_spacing: Optional[Integral] = None,
+    max_spacing: Optional[Integral] = None,
     prefix: Optional[str] = None,
     mode: str = "random",
     num_states: Optional[Integral] = None,
@@ -21,9 +26,6 @@ def insertion_multiscan(
 ) -> Pool:
     """
     Insert sequences at multiple positions simultaneously.
-
-    Uses region_multiscan() to insert zero-length markers at multiple positions,
-    then replaces each marker's content with sequences from insertion pools.
 
     Parameters
     ----------
@@ -36,20 +38,22 @@ def insertion_multiscan(
         it will be deepcopied num_insertions-1 times. If a Sequence of Pools
         is provided, its length must equal num_insertions.
     positions : PositionsType, default=None
-        Valid positions for insertions (0-based). If None, all valid
-        positions are used (0 to bg_length inclusive).
-    spacer_str : str, default=''
-        String to insert as a spacer around insertion sites.
+        Valid positions for insertions (0-based).
+    region : RegionType, default=None
+        Region to constrain the scan to.
+    names : Optional[Sequence[str]], default=None
+        Custom names for the insertion regions. If None, auto-generated
+        (_ins_0, _ins_1, ...).
     insertion_mode : Literal['ordered', 'unordered'], default='ordered'
-        How to assign insertion pools to positions:
-        - 'ordered': pools[i] goes to the i-th selected position (left to right)
-        - 'unordered': randomly assign pools to positions
-    prefix : Optional[str], default=None
-        Prefix for sequence names in the resulting Pool.
+        How to assign insertion pools to positions.
+    min_spacing : Optional[Integral], default=None
+        Minimum gap between adjacent insertion positions.
+    max_spacing : Optional[Integral], default=None
+        Maximum gap between adjacent insertion positions. None = unbounded.
     mode : str, default='random'
-        Position selection mode: 'random'.
+        Position selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. If None, auto-determined for sequential mode.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
 
@@ -61,30 +65,20 @@ def insertion_multiscan(
     from ..fixed_ops.from_seq import from_seq
     from ..region_ops import region_multiscan, replace_region
 
-    # Validate mode
-    if mode != "random":
-        raise ValueError(f"insertion_multiscan supports only mode='random', got '{mode}'")
-
-    # Validate num_insertions
     if num_insertions < 1:
         raise ValueError(f"num_insertions must be >= 1, got {num_insertions}")
 
-    # Convert string inputs to pools if needed
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
 
-    # Validate pool has defined seq_length
     bg_length = pool_obj.seq_length
-    if bg_length is None:
+    if bg_length is None and region is None:
         raise ValueError("pool must have a defined seq_length")
 
-    # Handle insertion_pools: single Pool vs Sequence of Pools
     if isinstance(insertion_pools, Pool):
-        # Single pool: create deepcopies
         pools_list = [insertion_pools]
         for i in range(num_insertions - 1):
             pools_list.append(insertion_pools.deepcopy(name=f"_ins_pool_{i + 1}"))
     else:
-        # Sequence of pools: validate length
         pools_list = list(insertion_pools)
         if len(pools_list) != num_insertions:
             raise ValueError(
@@ -92,44 +86,44 @@ def insertion_multiscan(
                 f"num_insertions ({num_insertions})"
             )
 
-    # Validate all insertion pools have defined seq_length
     for i, pool in enumerate(pools_list):
         if pool.seq_length is None:
             raise ValueError(f"insertion_pools[{i}] must have a defined seq_length")
 
-    # Generate auto-indexed marker names
-    markers = [f"_ins_{i}" for i in range(num_insertions)]
-    # Zero-length markers for insertions
+    markers = list(names) if names is not None else [f"_ins_{i}" for i in range(num_insertions)]
+    if len(markers) != num_insertions:
+        raise ValueError(f"len(names) ({len(markers)}) must equal num_insertions ({num_insertions})")
     marker_length = 0
-    # Can insert at any position from 0 to bg_length (inclusive)
-    max_position = bg_length
 
-    # Validate positions
-    validated_positions = validate_positions(positions, max_position, min_position=0)
+    if _is_per_insert_positions(positions) or region is not None:
+        validated_positions = positions
+    elif bg_length is not None:
+        max_position = bg_length
+        validated_positions = validate_positions(positions, max_position, min_position=0)
+    else:
+        validated_positions = positions
 
-    # 1. Insert zero-length markers at multiple positions using region_multiscan
     marked = region_multiscan(
         pool_obj,
         regions=markers,
         num_insertions=int(num_insertions),
         positions=validated_positions,
+        region=region,
         region_length=marker_length,
         insertion_mode=insertion_mode,
+        min_spacing=min_spacing,
+        max_spacing=max_spacing,
         prefix=prefix,
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
     )
 
-    # 2. Build insertion content for each pool
     result = marked
     for region_name, ins_pool in zip(markers, pools_list):
-        content = ins_pool
-
-        # Replace marker with content
         result = replace_region(
             result,
-            content,
+            ins_pool,
             region_name,
             iter_order=iter_order,
         )

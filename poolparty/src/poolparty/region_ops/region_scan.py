@@ -104,9 +104,7 @@ class RegionScanOp(Operation):
         "position_index",
         "start",
         "stop",
-        "length",
-        "region_name",
-        "region_content",
+        "name",
         "region_seq",
     ]
 
@@ -340,8 +338,6 @@ class RegionScanOp(Operation):
             "position_index": position_index,
             "start": start,
             "stop": stop,
-            "length": self._region_length,
-            "region_name": self.region_name,
-            "region_content": marked_seq,
+            "name": self.region_name,
             "region_seq": region_tag,
         }

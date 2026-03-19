@@ -1,46 +1,40 @@
 """Insert multiple XML region tags into a sequence."""
 
+from math import factorial, perm
 from numbers import Real
 
 import numpy as np
 
-from poolparty.types import Literal, Optional, Seq, Sequence, Union
+from poolparty.types import Literal, Optional, RegionType, Seq, Sequence, Union
 
 from ..operation import Operation
 from ..utils.dna_seq import DnaSeq
-from ..utils.parsing_utils import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos
+from ..utils.parsing_utils import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos, strip_all_tags
+from ..utils.scan_utils import _is_valid_combo, _normalize_region_lengths, enumerate_multiscan_combinations
+from ..utils.seq_utils import validate_positions
 
-# Type aliases
 PositionsType = Union[list[int], tuple[int, ...], slice, None]
 
 
-def _validate_positions(
-    positions: PositionsType, max_position: int, min_position: int = 0
-) -> list[int]:
-    """Validate and normalize position specification."""
-    if positions is None:
-        return list(range(min_position, max_position + 1))
-
-    if isinstance(positions, slice):
-        start = positions.start if positions.start is not None else min_position
-        stop = positions.stop if positions.stop is not None else max_position + 1
-        step = positions.step if positions.step is not None else 1
-        return list(range(start, stop, step))
-
-    positions_list = list(positions)
-    for p in positions_list:
-        if p < min_position or p > max_position:
-            raise ValueError(f"Position {p} out of range [{min_position}, {max_position}]")
-    return positions_list
+def _is_per_insert_positions(positions) -> bool:
+    """Detect whether positions is per-insert (list of lists) vs shared."""
+    if positions is None or isinstance(positions, slice):
+        return False
+    if isinstance(positions, (list, tuple)) and len(positions) > 0:
+        return isinstance(positions[0], (list, tuple))
+    return False
 
 
 def region_multiscan(
     pool,
     regions,
     num_insertions: int,
-    positions: PositionsType = None,
-    region_length: int = 0,
+    positions=None,
+    region: RegionType = None,
+    region_length: int | Sequence[int] = 0,
     insertion_mode: Literal["ordered", "unordered"] = "ordered",
+    min_spacing: Optional[int] = None,
+    max_spacing: Optional[int] = None,
     prefix: Optional[str] = None,
     mode: str = "random",
     num_states: Optional[int] = None,
@@ -57,20 +51,29 @@ def region_multiscan(
         Region name(s) to insert. If a single string, used for all insertions.
     num_insertions : Integral
         Number of region tags to insert.
-    positions : PositionsType, default=None
-        Valid insertion positions (0-based). If None, all positions are valid.
-    region_length : Integral, default=0
-        Length of sequence to encompass per region. 0 for zero-length regions.
+    positions : PositionsType or list[PositionsType], default=None
+        Valid insertion positions (0-based, nontag-relative). Flat list/slice/None
+        for shared positions; list-of-lists for per-insert positions (one per insert).
+    region : RegionType, default=None
+        Region to constrain the scan to. Can be region name (str) or [start, stop].
+    region_length : int or Sequence[int], default=0
+        Length of sequence to encompass per region. Single int for uniform length,
+        or a sequence of ints for per-region lengths (one per insertion).
     insertion_mode : str, default='ordered'
         How to assign regions to positions:
-        - 'ordered': regions[i] goes to the i-th selected position
-        - 'unordered': randomly assign regions to positions
+        - 'ordered': regions[i] goes to the i-th selected position (left to right)
+        - 'unordered': all valid assignments of regions to positions are enumerated
+    min_spacing : Optional[int], default=None
+        Minimum gap between end of one region and start of next.
+        Default: 0 (non-overlapping, touching OK).
+    max_spacing : Optional[int], default=None
+        Maximum gap between adjacent regions. None = unbounded.
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
-        Position selection mode: 'random'.
+        Position selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. If None, auto-determined for sequential mode.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
 
@@ -84,12 +87,14 @@ def region_multiscan(
 
     pool = from_seq(pool) if isinstance(pool, str) else pool
 
-    # Register all regions with the Party
     party = get_active_party()
     region_names = [regions] if isinstance(regions, str) else list(regions)
+    region_lengths = _normalize_region_lengths(region_length, num_insertions)
+
     registered_regions = []
-    for region_name in region_names:
-        registered_region = party.register_region(region_name, region_length)
+    for i, region_name in enumerate(region_names):
+        rl = region_lengths[i] if i < len(region_lengths) else region_lengths[0]
+        registered_region = party.register_region(region_name, rl)
         registered_regions.append(registered_region)
 
     op = RegionMultiScanOp(
@@ -97,19 +102,20 @@ def region_multiscan(
         regions=regions,
         num_insertions=int(num_insertions),
         positions=positions,
-        region_length=int(region_length),
+        region_constraint=region,
+        region_length=region_length,
         insertion_mode=insertion_mode,
+        min_spacing=min_spacing,
+        max_spacing=max_spacing,
         prefix=prefix,
         mode=mode,
         num_states=num_states,
         name=None,
         iter_order=iter_order,
     )
-    # Preserve the pool type from the input
     pool_class = type(pool)
     result_pool = pool_class(operation=op)
 
-    # Add all registered regions to the pool
     for registered_region in registered_regions:
         result_pool.add_region(registered_region)
 
@@ -120,16 +126,19 @@ class RegionMultiScanOp(Operation):
     """Insert multiple XML region tags at selected positions."""
 
     factory_name = "region_multiscan"
-    design_card_keys = ["indices", "region_tags"]
+    design_card_keys = ["combination_index", "positions", "names", "region_seqs"]
 
     def __init__(
         self,
         parent_pool,
         regions,
         num_insertions: int,
-        positions: PositionsType = None,
-        region_length: int = 0,
+        positions=None,
+        region_constraint: RegionType = None,
+        region_length: int | Sequence[int] = 0,
         insertion_mode: str = "ordered",
+        min_spacing: Optional[int] = None,
+        max_spacing: Optional[int] = None,
         prefix: Optional[str] = None,
         mode: str = "random",
         num_states: Optional[int] = None,
@@ -138,21 +147,46 @@ class RegionMultiScanOp(Operation):
     ) -> None:
         if num_insertions < 1:
             raise ValueError(f"num_insertions must be >= 1, got {num_insertions}")
-        if mode != "random":
-            raise ValueError("region_multiscan supports only mode='random'")
-        if region_length < 0:
-            raise ValueError(f"region_length must be >= 0, got {region_length}")
+        if mode not in ("random", "sequential"):
+            raise ValueError(f"mode must be 'random' or 'sequential', got '{mode}'")
+
+        self._region_lengths = _normalize_region_lengths(region_length, num_insertions)
+        for rl in self._region_lengths:
+            if rl < 0:
+                raise ValueError(f"region_length must be >= 0, got {rl}")
 
         self._positions = positions
+        self._is_per_insert = _is_per_insert_positions(positions)
         self._mode = mode
-        self._region_length = region_length
-        self._seq_length = parent_pool.seq_length
+        self._min_spacing = min_spacing if min_spacing is not None else 0
+        self._max_spacing = max_spacing
         self.num_insertions = num_insertions
         self.insertion_mode = insertion_mode
         self._region_names = self._coerce_regions(regions)
         self._validate_region_counts()
 
-        # num_states stays None for pure random mode
+        self._sequential_cache: list[tuple[int, ...]] | None = None
+
+        # Resolve effective seq_length for cache building (same as RegionScanOp)
+        if isinstance(region_constraint, str):
+            from ..party import get_active_party
+
+            party = get_active_party()
+            try:
+                constraint_region = party.get_region_by_name(region_constraint)
+                self._seq_length = constraint_region.seq_length
+            except (ValueError, KeyError):
+                self._seq_length = parent_pool.seq_length
+        else:
+            self._seq_length = parent_pool.seq_length
+
+        natural_num_states = None
+        if mode == "sequential":
+            if self._seq_length is not None:
+                natural_num_states = self._build_caches()
+                if num_states is None:
+                    num_states = natural_num_states
+
         super().__init__(
             parent_pools=[parent_pool],
             num_states=num_states,
@@ -161,6 +195,8 @@ class RegionMultiScanOp(Operation):
             name=name,
             iter_order=iter_order,
             prefix=prefix,
+            region=region_constraint,
+            _natural_num_states=natural_num_states,
         )
 
     def _coerce_regions(self, regions: Union[Sequence[str], str]) -> list[str]:
@@ -175,123 +211,153 @@ class RegionMultiScanOp(Operation):
         """Validate region counts against insertion_mode."""
         if self.insertion_mode not in ("ordered", "unordered"):
             raise ValueError("insertion_mode must be one of 'ordered', 'unordered'")
-        if self.insertion_mode == "ordered" and len(self._region_names) != self.num_insertions:
-            raise ValueError("insertion_mode='ordered' requires len(regions) == num_insertions")
-        if self.insertion_mode == "unordered" and len(self._region_names) < self.num_insertions:
-            raise ValueError("insertion_mode='unordered' requires len(regions) >= num_insertions")
+        if len(self._region_names) != self.num_insertions:
+            raise ValueError(
+                f"len(regions) ({len(self._region_names)}) must equal "
+                f"num_insertions ({self.num_insertions})"
+            )
 
-    def _get_valid_region_indices(self, seq: str) -> list[int]:
-        """Return valid nontag indices (0 to n-1) for region tag insertion.
+    def _compute_valid_positions_for_insert(self, seq_length: int, insert_idx: int) -> list[int]:
+        """Compute all valid start positions for a specific insert based on its region length."""
+        rl = self._region_lengths[insert_idx]
+        if rl > 0:
+            max_start = seq_length - rl
+            if max_start < 0:
+                return []
+            return list(range(max_start + 1))
+        else:
+            return list(range(seq_length + 1))
 
-        Returns logical indices into the non-tag character positions,
-        not literal string positions. This allows proper handling of
-        multiple tag insertions without position corruption.
-        """
+    def _build_per_insert_positions(self, seq_length: int) -> list[list[int]]:
+        """Build per-insert valid position lists from seq_length and user positions."""
+        result: list[list[int]] = []
+        for i in range(self.num_insertions):
+            all_valid_i = self._compute_valid_positions_for_insert(seq_length, i)
+            if self._is_per_insert:
+                p_list = list(self._positions[i])
+                validated = validate_positions(
+                    p_list, max_position=len(all_valid_i) - 1, min_position=0
+                )
+                result.append([all_valid_i[j] for j in validated])
+            elif self._positions is not None:
+                validated = validate_positions(
+                    self._positions, max_position=len(all_valid_i) - 1, min_position=0
+                )
+                result.append([all_valid_i[j] for j in validated])
+            else:
+                result.append(all_valid_i)
+        return result
+
+    def _build_caches(self) -> int:
+        """Enumerate valid combinations for sequential mode. Returns num_states."""
+        seq_length = self._seq_length
+        if seq_length is None:
+            return 1
+
+        valid = self._build_per_insert_positions(seq_length)
+
+        self._sequential_cache = enumerate_multiscan_combinations(
+            valid_positions=valid,
+            num_insertions=self.num_insertions,
+            region_length=self._region_lengths,
+            insertion_mode=self.insertion_mode,
+            min_spacing=self._min_spacing,
+            max_spacing=self._max_spacing,
+        )
+
+        return len(self._sequential_cache)
+
+    def _get_valid_region_indices(self, seq: str) -> list[list[int]]:
+        """Return per-insert valid nontag indices for region tag insertion."""
         nontag_positions = get_nontag_positions(seq)
         num_nontag = len(nontag_positions)
 
-        if self._region_length > 0:
-            # For region tags, ensure room for content
-            # Valid indices are 0 to (num_nontag - region_length)
-            max_valid_idx = num_nontag - self._region_length
-            if max_valid_idx < 0:
-                return []
-            all_valid = list(range(max_valid_idx + 1))
-        else:
-            # For zero-length regions, can insert at any position including end
-            all_valid = list(range(num_nontag + 1))
+        result: list[list[int]] = []
+        for i in range(self.num_insertions):
+            rl = self._region_lengths[i]
+            if rl > 0:
+                max_valid_idx = num_nontag - rl
+                if max_valid_idx < 0:
+                    result.append([])
+                    continue
+                all_valid_i = list(range(max_valid_idx + 1))
+            else:
+                all_valid_i = list(range(num_nontag + 1))
 
-        if self._positions is not None:
-            indices = _validate_positions(
-                self._positions,
-                max_position=len(all_valid) - 1,
-                min_position=0,
-            )
-            return [all_valid[i] for i in indices]
-
-        return all_valid
-
-    def _select_indices(self, valid_indices: list[int], rng: np.random.Generator) -> list[int]:
-        """Select nontag indices for region tag insertion.
-
-        For region tags (region_length > 0), ensures selected indices
-        are at least region_length apart to prevent overlapping regions.
-        """
-        if len(valid_indices) < self.num_insertions:
-            raise ValueError(
-                f"Not enough valid positions ({len(valid_indices)}) "
-                f"for {self.num_insertions} insertions"
-            )
-
-        if self._region_length > 0:
-            # For region tags, need non-overlapping selection
-            # Use greedy algorithm with random shuffling
-            shuffled = list(valid_indices)
-            rng.shuffle(shuffled)
-
-            chosen = []
-            for idx in shuffled:
-                # Check if this idx overlaps with any already chosen
-                overlaps = False
-                for c in chosen:
-                    if abs(idx - c) < self._region_length:
-                        overlaps = True
-                        break
-                if not overlaps:
-                    chosen.append(idx)
-                    if len(chosen) == self.num_insertions:
-                        break
-
-            if len(chosen) < self.num_insertions:
-                raise ValueError(
-                    f"Cannot select {self.num_insertions} non-overlapping positions "
-                    f"with region_length={self._region_length} from "
-                    f"{len(valid_indices)} valid positions"
+            if self._is_per_insert:
+                p_list = list(self._positions[i])
+                validated = validate_positions(
+                    p_list, max_position=len(all_valid_i) - 1, min_position=0
                 )
-            return sorted(chosen)
-        else:
-            # Zero-length regions don't overlap
-            chosen = rng.choice(
-                valid_indices,
-                size=self.num_insertions,
-                replace=False,
-            )
-            return sorted(int(x) for x in chosen)
+                result.append([all_valid_i[j] for j in validated])
+            elif self._positions is not None:
+                validated = validate_positions(
+                    self._positions, max_position=len(all_valid_i) - 1, min_position=0
+                )
+                result.append([all_valid_i[j] for j in validated])
+            else:
+                result.append(all_valid_i)
+        return result
 
-    def _select_region_tags(
-        self, seq: str, indices: list[int], rng: np.random.Generator
-    ) -> list[str]:
-        """Build region tags for each nontag index.
+    def _select_indices_random(
+        self, valid_indices: list[list[int]], rng: np.random.Generator
+    ) -> tuple[int, ...]:
+        """Select an assignment tuple for random mode.
 
-        Args:
-            seq: The original sequence string.
-            indices: Nontag indices (logical positions, not literal).
-            rng: Random number generator.
-
-        Returns:
-            List of region tag strings.
+        Returns an assignment tuple where result[i] is the position for insert i.
         """
-        if self.insertion_mode == "ordered":
-            names = self._region_names
-        else:
-            # unordered: randomly select from available regions
-            idxs = rng.choice(len(self._region_names), size=self.num_insertions, replace=False)
-            names = [self._region_names[int(i)] for i in idxs]
+        has_varying = len(set(self._region_lengths)) > 1
+        valid_sets: list[set[int]] | None = None
+        if has_varying:
+            valid_sets = [set(vl) for vl in valid_indices]
 
+        max_attempts = 1000
+        for _ in range(max_attempts):
+            combo = tuple(
+                p_list[int(rng.integers(0, len(p_list)))]
+                for p_list in valid_indices
+            )
+
+            if len(set(combo)) < self.num_insertions:
+                continue
+
+            if self.insertion_mode == "ordered":
+                combo = tuple(sorted(combo))
+                if has_varying and valid_sets is not None:
+                    if not all(pos in valid_sets[i] for i, pos in enumerate(combo)):
+                        continue
+
+            if _is_valid_combo(combo, self._region_lengths, self._min_spacing, self._max_spacing):
+                return combo
+
+        raise ValueError(
+            f"Cannot find valid {self.num_insertions}-position selection after "
+            f"{max_attempts} attempts with min_spacing={self._min_spacing}, "
+            f"max_spacing={self._max_spacing}"
+        )
+
+    def _get_names_for_combo(self, combo: tuple[int, ...]) -> list[str]:
+        """Return region names for a given assignment combo.
+
+        In ordered mode, names follow the original region order.
+        In unordered mode, names follow the original region order too — the
+        combo itself encodes which position each insert gets.
+        """
+        return list(self._region_names)
+
+    def _build_tags(self, seq: str, combo: tuple[int, ...], names: list[str]) -> list[str]:
+        """Build region tag strings for given assignment combo and names."""
         tags = []
-        for idx, name in zip(indices, names):
-            if self._region_length > 0:
-                # Convert nontag index to literal positions for content extraction
+        for i, (idx, tag_name) in enumerate(zip(combo, names)):
+            rl = self._region_lengths[i]
+            if rl > 0:
                 literal_start = nontag_pos_to_literal_pos(seq, idx)
-                literal_end = nontag_pos_to_literal_pos(seq, idx + self._region_length)
+                literal_end = nontag_pos_to_literal_pos(seq, idx + rl)
                 content = seq[literal_start:literal_end]
-                # Strip any existing tags from content (keep only actual characters)
-                from ..utils.parsing_utils import strip_all_tags
-
                 content = strip_all_tags(content)
             else:
                 content = ""
-            tags.append(build_region_tags(name, content))
+            tags.append(build_region_tags(tag_name, content))
         return tags
 
     def _compute_core(
@@ -300,74 +366,110 @@ class RegionMultiScanOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return Seq with region tags inserted and design card."""
+        from ..utils.style_utils import SeqStyle
+
         seq = parents[0].string
-        if rng is None:
-            raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
+        input_style = parents[0].style
 
-        valid_indices = self._get_valid_region_indices(seq)
-        indices = self._select_indices(valid_indices, rng)
-        region_tags = self._select_region_tags(seq, indices, rng)
+        combination_index = None
 
-        # Build result sequence with tags inserted at nontag indices
-        # Uses single-pass construction to avoid position corruption issues
-        # when inserting multiple overlapping tags
-        indices_list = list(indices)
-        region_tags_list = list(region_tags)
+        if self._mode == "sequential":
+            state = self.state.value
+            state = 0 if state is None else state
 
-        # Sort by index ascending for left-to-right processing
-        inserts = sorted(zip(indices_list, region_tags_list), key=lambda x: x[0])
+            cache = self._sequential_cache
+            if cache is None:
+                valid = self._get_valid_region_indices(seq)
+                cache = enumerate_multiscan_combinations(
+                    valid_positions=valid,
+                    num_insertions=self.num_insertions,
+                    region_length=self._region_lengths,
+                    insertion_mode=self.insertion_mode,
+                    min_spacing=self._min_spacing,
+                    max_spacing=self._max_spacing,
+                )
 
-        # Build result string from left to right
-        result_parts = []
-        prev_end_idx = 0  # Next nontag index to copy from
+            combo_idx = state % len(cache)
+            combination_index = combo_idx
+            combo = cache[combo_idx]
+            names = self._get_names_for_combo(combo)
+        else:
+            if rng is None:
+                raise RuntimeError(f"{self._mode.capitalize()} mode requires RNG")
+            valid = self._get_valid_region_indices(seq)
+            combo = self._select_indices_random(valid, rng)
+            names = self._get_names_for_combo(combo)
 
-        for nt_idx, tag in inserts:
-            # Copy characters from prev_end_idx to nt_idx (exclusive)
+        tags = self._build_tags(seq, combo, names)
+
+        # Build (position, tag, name, region_length, insert_index) tuples
+        # sorted by position for left-to-right output construction
+        inserts = sorted(
+            zip(combo, tags, names, self._region_lengths, range(self.num_insertions)),
+            key=lambda x: x[0],
+        )
+
+        result_parts: list[str] = []
+        style_parts: list[SeqStyle] = []
+        prev_end_idx = 0
+
+        for nt_idx, tag, _, rl, _ in inserts:
             if prev_end_idx < nt_idx:
                 start_literal = nontag_pos_to_literal_pos(seq, prev_end_idx)
                 end_literal = nontag_pos_to_literal_pos(seq, nt_idx)
                 result_parts.append(seq[start_literal:end_literal])
+                if input_style is not None:
+                    style_parts.append(input_style[start_literal:end_literal])
 
-            # Add the region tag (which contains content for region tags)
             result_parts.append(tag)
 
-            # Update prev_end_idx based on region type
-            if self._region_length > 0:
-                # Region tags: skip the characters that are now inside the tag
-                prev_end_idx = nt_idx + self._region_length
+            if input_style is not None:
+                if rl > 0:
+                    opening_tag_len = tag.index(">") + 1
+                    closing_tag_len = len(f"</{tag[1:tag.index('>')]}>")
+                    content_start = nontag_pos_to_literal_pos(seq, nt_idx)
+                    content_end = nontag_pos_to_literal_pos(seq, nt_idx + rl)
+                    style_parts.append(SeqStyle.empty(opening_tag_len))
+                    style_parts.append(input_style[content_start:content_end])
+                    style_parts.append(SeqStyle.empty(closing_tag_len))
+                else:
+                    style_parts.append(SeqStyle.empty(len(tag)))
+
+            if rl > 0:
+                prev_end_idx = nt_idx + rl
             else:
-                # Zero-length region: don't skip any characters
                 prev_end_idx = nt_idx
 
-        # Add remaining characters after the last tag
         nontag_positions = get_nontag_positions(seq)
         if prev_end_idx < len(nontag_positions):
             start_literal = nontag_pos_to_literal_pos(seq, prev_end_idx)
             result_parts.append(seq[start_literal:])
+            if input_style is not None:
+                style_parts.append(input_style[start_literal:])
         elif prev_end_idx == len(nontag_positions):
-            # Edge case: last tag ends exactly at end of sequence
-            # There might be trailing tags to preserve
             last_nontag_literal = nontag_positions[-1] if nontag_positions else 0
             if last_nontag_literal + 1 < len(seq):
-                result_parts.append(seq[last_nontag_literal + 1 :])
+                result_parts.append(seq[last_nontag_literal + 1:])
+                if input_style is not None:
+                    style_parts.append(input_style[last_nontag_literal + 1:])
 
         result_seq = "".join(result_parts)
+        output_style = SeqStyle.join(style_parts) if input_style is not None else None
 
-        # Region multiscan modifies sequence structure, so styles not meaningful
-        # Return empty SeqStyle for consistency
         from ..party import cards_suppressed
 
         if cards_suppressed():
             card = {}
         else:
+            sorted_names = [n for _, _, n, _, _ in inserts]
+            sorted_region_seqs = [t for _, t, _, _, _ in inserts]
+            sorted_positions = [pos for pos, _, _, _, _ in inserts]
             card = {
-                "indices": indices_list,  # nontag indices, not literal positions
-                "region_tags": region_tags_list,
+                "combination_index": combination_index,
+                "positions": sorted_positions,
+                "names": sorted_names,
+                "region_seqs": sorted_region_seqs,
             }
 
-        # Create output DnaSeq
-        from ..utils.style_utils import SeqStyle
-
-        output_seq = DnaSeq(result_seq, SeqStyle.empty(len(result_seq)))
-
+        output_seq = DnaSeq(result_seq, output_style)
         return output_seq, card
