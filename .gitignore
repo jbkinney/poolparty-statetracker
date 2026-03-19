@@ -57,3 +57,4 @@ _minted-*/
 # Legacy code (archived, not part of release)
 **/legacy/
 notebooks/legacy/
+.cursor/
