@@ -7,10 +7,23 @@ import numpy as np
 
 import statetracker as st
 
-from .types import ModeType, NullSeq, Optional, Pool_type, RegionType, Seq, Sequence, is_null_seq
+from .types import (
+    CardsType,
+    ModeType,
+    NullSeq,
+    Optional,
+    Pool_type,
+    RegionType,
+    Seq,
+    Sequence,
+    is_null_seq,
+)
 from .utils import dna_utils
 
 logger = logging.getLogger(__name__)
+
+# Universal card keys available on all operations
+UNIVERSAL_CARD_KEYS = {"seq", "state"}
 
 
 class Operation:
@@ -52,6 +65,7 @@ class Operation:
         region: RegionType = None,
         remove_tags: bool = False,
         _natural_num_states: Optional[int] = None,
+        cards: CardsType = None,
     ) -> None:
         """Initialize Operation."""
         from .party import get_active_party
@@ -69,6 +83,10 @@ class Operation:
         # Set _name directly during init (state doesn't exist yet)
         self._name = name if name is not None else f"op[{self._id}]:{self.factory_name}"
         self._seq_length = seq_length
+
+        # Store and validate cards specification
+        self._cards = cards
+        self._validate_cards(cards)
 
         # Compute before validation loses the None vs 1 distinction
         if mode == "fixed":
@@ -173,6 +191,41 @@ class Operation:
                 raise ValueError(f"region start must be >= 0, got {region[0]}")
             if region[1] < region[0]:
                 raise ValueError(f"region stop must be >= start, got [{region[0]}, {region[1]}]")
+
+    def _validate_cards(self, cards: CardsType) -> None:
+        """Validate that requested card keys are valid for this operation.
+
+        Valid keys are: universal keys (seq, state) + operation-specific design_card_keys.
+        """
+        if cards is None:
+            return
+
+        # Get the requested keys
+        if isinstance(cards, list):
+            requested_keys = set(cards)
+        else:
+            requested_keys = set(cards.keys())
+
+        # Valid keys = universal + operation-specific
+        valid_keys = UNIVERSAL_CARD_KEYS | set(self.design_card_keys)
+
+        # Check for invalid keys
+        invalid_keys = requested_keys - valid_keys
+        if invalid_keys:
+            raise ValueError(
+                f"Invalid card key(s) {sorted(invalid_keys)} for {self.factory_name}. "
+                f"Valid keys: {sorted(valid_keys)}"
+            )
+
+    @property
+    def has_cards(self) -> bool:
+        """True if this operation has any cards requested."""
+        return self._cards is not None
+
+    @property
+    def uses_custom_column_names(self) -> bool:
+        """True if this operation uses dict-style custom column names."""
+        return isinstance(self._cards, dict)
 
     @property
     def id(self) -> int:
@@ -279,18 +332,58 @@ class Operation:
             # Reassemble with prefix and suffix
             output_seq = ctx.reassemble_seq(prefix_seq, output_seq, suffix_seq)
 
-        # Filter design card based on config
-        card = self._filter_design_card(card)
-
+        # Return raw card - filtering happens in generate_library where we have seq/state values
         return output_seq, card
 
-    def _filter_design_card(self, card: dict) -> dict:
-        """Filter design card to only include enabled keys based on config."""
+    def _filter_design_card(
+        self, card: dict, seq_value: Optional[str] = None, state_value: Optional[int] = None
+    ) -> dict:
+        """Filter and transform design card based on _cards spec.
+
+        Args:
+            card: Operation-specific card dict from _compute_core()
+            seq_value: The sequence string produced by this operation (for universal 'seq' key)
+            state_value: The state value for this operation (for universal 'state' key)
+
+        Returns:
+            Filtered card dict. Keys are either:
+            - Original keys (for list-style cards) - will be prefixed with op.name in generate_library
+            - Custom column names (for dict-style cards) - used directly without prefix
+        """
+        # Global override still respected
         config = self._party._config
-        if config is None or config.suppress_cards:
+        if config is not None and config.suppress_cards:
             return {}
-        enabled = config.get_enabled_keys(self.factory_name, list(self.design_card_keys))
-        return {k: v for k, v in card.items() if k in enabled}
+
+        # Opt-in: no cards by default
+        if self._cards is None:
+            return {}
+
+        # Determine requested keys and key mapping
+        if isinstance(self._cards, list):
+            requested_keys = set(self._cards)
+            key_mapping = {k: k for k in self._cards}  # identity mapping
+        else:
+            requested_keys = set(self._cards.keys())
+            key_mapping = self._cards  # custom naming
+
+        result = {}
+
+        # Handle universal keys
+        if "seq" in requested_keys and seq_value is not None:
+            col_name = key_mapping.get("seq", "seq")
+            result[col_name] = seq_value
+        if "state" in requested_keys and state_value is not None:
+            col_name = key_mapping.get("state", "state")
+            result[col_name] = state_value
+
+        # Handle operation-specific keys
+        for key, value in card.items():
+            if key in requested_keys:
+                col_name = key_mapping.get(key, key)
+                result[col_name] = value
+
+        return result
 
     def _compute_core(
         self,

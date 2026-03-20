@@ -186,12 +186,12 @@ class TestJoinDesignCards:
     def test_parent_design_cards_preserved(self):
         """Test that parent design cards are still included."""
         with pp.Party() as party:
-            a = pp.from_seqs(["AAA"], seq_names=["seq_a"])
-            b = pp.from_seqs(["TTT"], seq_names=["seq_b"])
+            a = pp.from_seqs(["AAA"], seq_names=["seq_a"], cards=["seq_name"])
+            b = pp.from_seqs(["TTT"], seq_names=["seq_b"], cards=["seq_name"])
             combined = join([a, b]).named("seq")
 
-        df = combined.generate_library(num_seqs=1, report_design_cards=True)
-        # Parent design cards should be present
+        df = combined.generate_library(num_seqs=1)
+        # Parent design cards should be present when cards requested
         assert (
             "from_seqs.seq_name" in df.columns
             or len([c for c in df.columns if "seq_name" in c]) > 0
@@ -488,17 +488,17 @@ class TestStackBranchIndex:
     """Test that stack operation counter tracks the active branch index."""
 
     def test_stack_state_matches_branch_index(self):
-        """Test that op[X]:stack.state matches the active branch (0, 1, 2...)."""
+        """Test that stack.state matches the active branch (0, 1, 2...) when cards requested."""
         with pp.Party() as party:
             a = pp.from_seqs(["A1", "A2", "A3"], mode="sequential").named("A")
             b = pp.from_seqs(["B1", "B2"], mode="sequential").named("B")
             c = pp.from_seqs(["C1", "C2", "C3", "C4"], mode="sequential").named("C")
-            stacked = pp.stack([a, b, c]).named("stacked")
+            stacked = pp.stack([a, b, c], cards=["state"]).named("stacked")
 
-        df = stacked.generate_library(num_cycles=1, report_design_cards=True)
+        df = stacked.generate_library(num_cycles=1)
 
         # Find the stack state column
-        stack_state_col = [c for c in df.columns if "stack.state" in c][0]
+        stack_state_col = [c for c in df.columns if "stack" in c and "state" in c][0]
 
         # A has 3 states (indices 0-2), B has 2 states (indices 3-4), C has 4 states (indices 5-8)
         # Stack state should be: 0,0,0, 1,1, 2,2,2,2
@@ -508,15 +508,15 @@ class TestStackBranchIndex:
         assert actual_branch_indices == expected_branch_indices
 
     def test_stack_state_two_branches(self):
-        """Test stack state with two branches."""
+        """Test stack state with two branches when cards requested."""
         with pp.Party() as party:
             a = pp.from_seqs(["A1", "A2"], mode="sequential").named("A")
             b = pp.from_seqs(["B1", "B2", "B3"], mode="sequential").named("B")
-            stacked = pp.stack([a, b]).named("stacked")
+            stacked = pp.stack([a, b], cards=["state"]).named("stacked")
 
-        df = stacked.generate_library(num_cycles=1, report_design_cards=True)
+        df = stacked.generate_library(num_cycles=1)
 
-        stack_state_col = [c for c in df.columns if "stack.state" in c][0]
+        stack_state_col = [c for c in df.columns if "stack" in c and "state" in c][0]
 
         # A has 2 states (branch 0), B has 3 states (branch 1)
         expected = [0, 0, 1, 1, 1]
@@ -525,17 +525,17 @@ class TestStackBranchIndex:
         assert actual == expected
 
     def test_stack_state_matches_active_parent(self):
-        """Test that stack state equals active_parent design card key."""
+        """Test that stack state equals active_parent design card key when cards requested."""
         with pp.Party() as party:
             a = pp.from_seqs(["A1", "A2"], mode="sequential").named("A")
             b = pp.from_seqs(["B1"], mode="sequential").named("B")
             c = pp.from_seqs(["C1", "C2", "C3"], mode="sequential").named("C")
-            stacked = pp.stack([a, b, c]).named("stacked")
+            stacked = pp.stack([a, b, c], cards=["state", "active_parent"]).named("stacked")
 
-        df = stacked.generate_library(num_cycles=1, report_design_cards=True)
+        df = stacked.generate_library(num_cycles=1)
 
-        stack_state_col = [c for c in df.columns if "stack.state" in c][0]
-        active_parent_col = [c for c in df.columns if "stack.key.active_parent" in c][0]
+        stack_state_col = [c for c in df.columns if "stack" in c and ".state" in c][0]
+        active_parent_col = [c for c in df.columns if "active_parent" in c][0]
 
         # Both should have the same values
         assert list(df[stack_state_col]) == list(df[active_parent_col])

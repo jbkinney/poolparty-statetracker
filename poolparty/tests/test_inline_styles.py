@@ -117,7 +117,7 @@ class TestInlineStylesGeneration:
             )
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         assert "_inline_styles" in df.columns
 
@@ -132,7 +132,7 @@ class TestInlineStylesGeneration:
             pool = mutagenize("ACGT", num_mutations=1, mode="sequential").named("mutant")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         assert "_inline_styles" in df.columns
 
@@ -150,7 +150,7 @@ class TestInlineStylesChain:
             repeated = pool.repeat(2).named("repeated")
 
         df = repeated.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
 
         # Styles should have passed through repeat
@@ -166,7 +166,7 @@ class TestInlineStylesChain:
             stacked = pp.stack([pool1, pool2]).named("stacked")
 
         df = stacked.generate_library(
-            num_seqs=2, report_design_cards=True, _include_inline_styles=True
+            num_seqs=2, _include_inline_styles=True
         )
 
         # First row from pool1 should have red style
@@ -189,7 +189,7 @@ class TestInlineStylesPositionAdjustment:
             ).named("mutated")
 
         df = mutated.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
 
         # Check that style positions are adjusted to full sequence positions
@@ -269,7 +269,7 @@ class TestPositionAdjustmentWithMarkers:
             ).named("mutated")
 
         df = mutated.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -297,7 +297,7 @@ class TestPositionAdjustmentWithMarkers:
             ).named("mutated")
 
         df = mutated.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -325,7 +325,7 @@ class TestPositionAdjustmentWithMarkers:
             ).named("mutated")
 
         df = mutated.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -623,7 +623,7 @@ class TestDeletionScanStylePropagation:
             )
 
         df = deleted.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -646,7 +646,7 @@ class TestDeletionScanStylePropagation:
             )
 
         df = deleted.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -668,7 +668,7 @@ class TestDeletionScanStylePropagation:
             )
 
         df = deleted.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -693,7 +693,7 @@ class TestDeletionScanStylePropagation:
             ).named("deleted")
 
         df = deleted.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -722,7 +722,7 @@ class TestDeletionScanStylePropagation:
             ).named("deleted")
 
         df = deleted.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -753,7 +753,7 @@ class TestDeletionScanStylePropagation:
             ).named("deleted")
 
         df = deleted.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -783,7 +783,7 @@ class TestInsertionScanStylePropagation:
             ).named("inserted")
 
         df = inserted.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -807,7 +807,7 @@ class TestInsertionScanStylePropagation:
             ).named("inserted")
 
         df = inserted.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -833,7 +833,7 @@ class TestInsertionScanStylePropagation:
             ).named("inserted")
 
         df = inserted.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -860,7 +860,7 @@ class TestInsertionScanStylePropagation:
             ).named("inserted")
 
         df = inserted.generate_library(
-            num_seqs=2, report_design_cards=True, _include_inline_styles=True
+            num_seqs=2, _include_inline_styles=True
         )
 
         # Both sequences should have cyan styles from the insert pool
@@ -916,7 +916,7 @@ class TestInsertionScanStyleInsertion:
             )
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
         seq = df["seq"].iloc[0]
@@ -942,7 +942,7 @@ class TestInsertionScanStyleInsertion:
             )
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -962,7 +962,7 @@ class TestInsertionScanStyleInsertion:
             ).named("result")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -982,7 +982,7 @@ class TestInsertionScanStyleInsertion:
             ).named("result")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -1011,7 +1011,7 @@ class TestInsertionScanStyleInsertion:
             pool = pp.insertion_scan(bg, ins, positions=[5], mode="sequential").named("result")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -1029,7 +1029,7 @@ class TestInsertionScanStyleInsertion:
             )
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -1052,7 +1052,7 @@ class TestInsertKmersStylePropagation:
             result = bg.insert_kmers(region="bc", length=3, mode="sequential").named("result")
 
         df = result.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -1072,7 +1072,7 @@ class TestInsertKmersStylePropagation:
             result = bg.insert_kmers(region="bc", length=3, mode="sequential").named("result")
 
         df = result.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -1098,7 +1098,7 @@ class TestInsertKmersStylePropagation:
             result = bg.insert_kmers(region="bc", length=3, mode="sequential").named("result")
 
         df = result.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -1144,7 +1144,7 @@ class TestStackRepeatStylePropagation:
             stacked = pp.stack([pool1, pool2]).named("stacked")
 
         df = stacked.generate_library(
-            num_seqs=2, report_design_cards=True, _include_inline_styles=True
+            num_seqs=2, _include_inline_styles=True
         )
 
         # First row from pool1 should have red style
@@ -1164,7 +1164,7 @@ class TestStackRepeatStylePropagation:
             repeated = pool.repeat(3).named("repeated")
 
         df = repeated.generate_library(
-            num_seqs=3, report_design_cards=True, _include_inline_styles=True
+            num_seqs=3, _include_inline_styles=True
         )
 
         # All rows should have the green style
@@ -1187,7 +1187,7 @@ class TestCompositeOperationsStyleChain:
             stacked = pp.stack([mutated]).named("stacked")
 
         df = stacked.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -1208,7 +1208,7 @@ class TestCompositeOperationsStyleChain:
             stacked = pp.stack([repeated, pool2]).named("stacked")
 
         df = stacked.generate_library(
-            num_seqs=3, report_design_cards=True, _include_inline_styles=True
+            num_seqs=3, _include_inline_styles=True
         )
 
         # All rows should have styles
@@ -1226,7 +1226,7 @@ class TestFromSeqStyle:
             pool = pp.from_seq("ACGT", style="red").named("result")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -1241,7 +1241,7 @@ class TestFromSeqStyle:
             pool = pp.from_seq("ACGT").named("result")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
         assert not seq_style
@@ -1256,7 +1256,7 @@ class TestFromSeqsStyle:
             pool = pp.from_seqs(["ACGT", "TTTT"], mode="sequential", style="blue").named("result")
 
         df = pool.generate_library(
-            num_seqs=2, report_design_cards=True, _include_inline_styles=True
+            num_seqs=2, _include_inline_styles=True
         )
 
         for i in range(2):
@@ -1283,7 +1283,7 @@ class TestGetKmersStyle:
             pool = pp.get_kmers(length=3, mode="sequential", style="green").named("result")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -1312,7 +1312,7 @@ class TestInsertKmersStyleParams:
             )
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -1332,7 +1332,7 @@ class TestInsertKmersStyleParams:
             )
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -1359,7 +1359,7 @@ class TestInsertKmersStyleParams:
             )
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -1757,7 +1757,7 @@ class TestShuffleScanStylePropagation:
             )
 
         df = pool.generate_library(
-            num_cycles=1, seed=42, report_design_cards=True, _include_inline_styles=True
+            num_cycles=1, seed=42, _include_inline_styles=True
         )
         # Verify purple style is present on CRE positions
         assert "_inline_styles" in df.columns
@@ -1779,7 +1779,7 @@ class TestShuffleScanStylePropagation:
             ).named("test")
 
         df = pool.generate_library(
-            num_cycles=1, seed=42, report_design_cards=True, _include_inline_styles=True
+            num_cycles=1, seed=42, _include_inline_styles=True
         )
         assert "_inline_styles" in df.columns
         for _, row in df.iterrows():
@@ -1802,7 +1802,7 @@ class TestStyleSuppression:
             pp.toggle_styles(on=False)
             pool = pp.from_seqs(["ACGT", "TTTT"], mode="sequential").named("test")
             df = pool.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
+                num_seqs=2, _include_inline_styles=True
             )
 
             # Check that styles are None
@@ -1817,7 +1817,7 @@ class TestStyleSuppression:
             pool = pp.from_seqs(["ACGT", "TTTT"], mode="sequential", style="red").named("test")
 
         df = pool.generate_library(
-            num_seqs=2, report_design_cards=True, _include_inline_styles=True
+            num_seqs=2, _include_inline_styles=True
         )
 
         # Check that styles are present
@@ -1833,7 +1833,7 @@ class TestStyleSuppression:
             pp.toggle_styles(on=False)
             pool = pp.from_seq("ACGT").stylize(style="red").named("test")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             assert seq_style is None, "stylize should be no-op when suppressed"
@@ -1846,7 +1846,7 @@ class TestStyleSuppression:
                 "test"
             )
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             assert seq_style is None
@@ -1857,7 +1857,7 @@ class TestStyleSuppression:
             pp.toggle_styles(on=False)
             pool = pp.from_seq("ACGT").mutagenize(num_mutations=1, mode="sequential").named("test")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             assert seq_style is None
@@ -1874,7 +1874,7 @@ class TestStyleSuppression:
                 .named("test")
             )
             df = pool.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
+                num_seqs=2, _include_inline_styles=True
             )
             for i in range(2):
                 seq_style = df["_inline_styles"].iloc[i]
@@ -1889,7 +1889,7 @@ class TestStyleSuppression:
                 "mutated"
             )
             df = mutated.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             assert seq_style is None
@@ -1904,7 +1904,7 @@ class TestStyleSuppression:
                 sources=[pool1, pool2], num_breakpoints=2, mode="sequential"
             ).named("recombined")
             df = recombined.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             assert seq_style is None
@@ -1918,7 +1918,7 @@ class TestStyleSuppression:
                 "with_kmers"
             )
             df = pool_with_kmers.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             assert seq_style is None
@@ -1931,229 +1931,98 @@ class TestStyleSuppression:
             assert seq.endswith("TT")
 
 
-class TestCardSuppression:
-    """Test design card suppression via toggle_cards()."""
+class TestDesignCardsOptIn:
+    """Test that design cards are opt-in via cards parameter (new API)."""
 
-    def test_toggle_cards_off_suppresses_keys(self):
-        """toggle_cards(on=False) prevents design card keys from being added."""
+    def test_default_output_has_no_design_cards(self):
+        """Without cards param, output only has name and seq columns."""
         with pp.Party():
-            pp.toggle_cards(on=False)
             pool = pp.from_seqs(["ACGT", "TTTT"], mode="sequential").named("test")
-            df = pool.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
+            df = pool.generate_library(num_seqs=2)
 
-            # Check that design card keys are not in columns
-            assert "op[0]:from_seqs.key.seq_name" not in df.columns
-            assert "op[0]:from_seqs.key.seq_index" not in df.columns
+            # Check that design card keys are not in columns by default
+            seq_name_cols = [c for c in df.columns if "seq_name" in c]
+            seq_index_cols = [c for c in df.columns if "seq_index" in c]
+            assert len(seq_name_cols) == 0
+            assert len(seq_index_cols) == 0
 
-            # Seq should still be present (in full design card mode, it's the main seq column)
+            # name and seq should be present
+            assert "name" in df.columns
             assert "seq" in df.columns
 
-    def test_toggle_cards_off_preserves_styles(self):
-        """toggle_cards(on=False) preserves inline styles."""
+    def test_cards_list_adds_columns(self):
+        """cards=["key"] adds the specified design card column."""
         with pp.Party():
-            pp.toggle_cards(on=False)
+            pool = pp.from_seqs(["ACGT", "TTTT"], mode="sequential", cards=["seq_name"]).named("test")
+            df = pool.generate_library(num_seqs=2)
+
+            # Find seq_name column (operation name is auto-generated)
+            seq_name_cols = [c for c in df.columns if "seq_name" in c]
+            assert len(seq_name_cols) > 0
+
+    def test_cards_dict_custom_naming(self):
+        """cards={"key": "custom"} uses custom column name."""
+        with pp.Party():
+            pool = pp.from_seqs(["ACGT", "TTTT"], mode="sequential", cards={"seq_index": "my_idx"}).named("test")
+            df = pool.generate_library(num_seqs=2)
+
+            # Custom column name should be present
+            assert "my_idx" in df.columns
+            # Default naming should not be used
+            default_cols = [c for c in df.columns if "from_seqs.seq_index" in c]
+            assert len(default_cols) == 0
+
+    def test_styles_preserved_without_cards(self):
+        """Inline styles work independently of cards parameter."""
+        with pp.Party():
             pool = pp.from_seqs(["ACGT", "TTTT"], mode="sequential", style="red").named("test")
             df = pool.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
+                num_seqs=2, _include_inline_styles=True
             )
 
-            # Check that styles are still present
+            # Check that styles are present
             for i in range(2):
                 seq_style = df["_inline_styles"].iloc[i]
-                assert seq_style is not None, f"Row {i} should have style when cards suppressed"
+                assert seq_style is not None, f"Row {i} should have style"
                 assert len(seq_style.style_list) == 1
                 assert seq_style.style_list[0][0] == "red"
 
-    def test_toggle_cards_on_restores_cards(self):
-        """toggle_cards(on=True) restores normal design card behavior."""
-        with pp.Party():
-            pp.toggle_cards(on=True)
-            pool = pp.from_seqs(["ACGT", "TTTT"], mode="sequential").named("test")
-            df = pool.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
+            # But no design card columns
+            seq_name_cols = [c for c in df.columns if "seq_name" in c]
+            assert len(seq_name_cols) == 0
 
-            # Check that design card keys are present
-            assert "op[0]:from_seqs.key.seq_name" in df.columns
-            assert "op[0]:from_seqs.key.seq_index" in df.columns
-
-    def test_cards_and_styles_independent(self):
-        """Can suppress cards while keeping styles, and vice versa."""
-        # Suppress cards, keep styles
+    def test_mutagenize_cards_opt_in(self):
+        """mutagenize design cards require cards parameter."""
         with pp.Party():
-            pp.toggle_cards(on=False)
-            pp.toggle_styles(on=True)
-            pool = pp.from_seqs(["ACGT"], style="red").named("test")
-            df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
-            )
+            # Without cards
+            pool = pp.mutagenize("ACGT", num_mutations=1, mode="sequential").named("test")
+            df = pool.generate_library(num_seqs=1)
 
             # No design card keys
-            assert "op[0]:from_seqs.key.seq_name" not in df.columns
-            # But styles are present
-            assert df["_inline_styles"].iloc[0] is not None
+            positions_cols = [c for c in df.columns if "positions" in c]
+            assert len(positions_cols) == 0
 
-        # Suppress styles, keep cards
+            # With cards
+            pool2 = pp.mutagenize("ACGT", num_mutations=1, mode="sequential", cards=["positions"]).named("test2")
+            df2 = pool2.generate_library(num_seqs=1)
+
+            positions_cols2 = [c for c in df2.columns if "positions" in c]
+            assert len(positions_cols2) > 0
+
+    def test_toggle_styles_still_works(self):
+        """toggle_styles(on=False) still suppresses styles."""
         with pp.Party():
-            pp.toggle_cards(on=True)
             pp.toggle_styles(on=False)
             pool = pp.from_seqs(["ACGT"], style="red").named("test")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
 
-            # Design card keys present
-            assert "op[0]:from_seqs.key.seq_name" in df.columns
-            # But styles are None
+            # Styles should be None
             assert df["_inline_styles"].iloc[0] is None
 
-    def test_mutagenize_no_cards_when_suppressed(self):
-        """mutagenize doesn't create design cards when suppressed."""
-        with pp.Party():
-            pp.toggle_cards(on=False)
-            pool = pp.mutagenize("ACGT", num_mutations=1, mode="sequential").named("test")
-            df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
-            )
-
-            # No design card keys
-            assert "op[0]:mutagenize.key.positions" not in df.columns
-            assert "op[0]:mutagenize.key.wt_chars" not in df.columns
-            assert "op[0]:mutagenize.key.mut_chars" not in df.columns
-
-    def test_recombine_no_cards_when_suppressed(self):
-        """recombine doesn't create design cards when suppressed."""
-        with pp.Party():
-            pp.toggle_cards(on=False)
-            pool1 = pp.from_seq("AAAAAAAAAA").named("pool1")
-            pool2 = pp.from_seq("TTTTTTTTTT").named("pool2")
-            recombined = pp.recombine(
-                sources=[pool1, pool2], num_breakpoints=2, mode="sequential"
-            ).named("recombined")
-            df = recombined.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
-            )
-
-            # No design card keys
-            assert "op[2]:recombine.key.breakpoints" not in df.columns
-            assert "op[2]:recombine.key.pool_assignments" not in df.columns
-
-    def test_toggle_persists_through_operations(self):
-        """Card suppression persists through operation chains."""
-        with pp.Party():
-            pp.toggle_cards(on=False)
-            pool = (
-                pp.from_seq("ACGTACGT")
-                .mutagenize(num_mutations=1, mode="sequential")
-                .repeat(2)
-                .named("test")
-            )
-            df = pool.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
-
-            # No design card keys from any operation
-            assert "op[0]:mutagenize.key.positions" not in df.columns
-            assert "op[1]:repeat.key.repeat_index" not in df.columns
-
-    def test_toggle_cards_suppresses_pool_sequences(self):
-        """toggle_cards(on=False) suppresses extra pool sequences."""
-        with pp.Party():
-            pool1 = pp.from_seq("AAAA").named("pool1")
-            pool2 = pool1.mutagenize(num_mutations=1, mode="sequential").named("pool2")
-            pool3 = pool2.repeat(2).named("pool3")
-
-            # Without suppression - all pool sequences reported
-            df_with = pool3.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
-            assert "pool1.seq" in df_with.columns
-            assert "pool2.seq" in df_with.columns
-            assert "pool3.seq" in df_with.columns
-
-            # With suppression - no pool-specific sequences (only 'seq')
-            pp.toggle_cards(on=False)
-            df_without = pool3.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
-            assert "pool1.seq" not in df_without.columns
-            assert "pool2.seq" not in df_without.columns
-            assert "pool3.seq" not in df_without.columns  # Pool-specific column removed
-            assert "seq" in df_without.columns  # Generic seq column present
-
-    def test_toggle_cards_suppresses_pool_states(self):
-        """toggle_cards(on=False) suppresses pool state columns."""
-        with pp.Party():
-            pool = (
-                pp.from_seq("ACGT")
-                .mutagenize(num_mutations=1, mode="sequential")
-                .repeat(2)
-                .named("test")
-            )
-
-            # Without suppression - pool states reported
-            df_with = pool.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
-            pool_state_cols = [c for c in df_with.columns if ".state" in c and "pool" in c]
-            assert len(pool_state_cols) > 0, "Should have pool state columns"
-
-            # With suppression - no pool states
-            pp.toggle_cards(on=False)
-            df_without = pool.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
-            pool_state_cols = [c for c in df_without.columns if ".state" in c and "pool" in c]
-            assert len(pool_state_cols) == 0, "Should have no pool state columns"
-
-    def test_toggle_cards_suppresses_op_states(self):
-        """toggle_cards(on=False) suppresses operation state columns."""
-        with pp.Party():
-            pool = (
-                pp.from_seq("ACGT")
-                .mutagenize(num_mutations=1, mode="sequential")
-                .repeat(2)
-                .named("test")
-            )
-
-            # Without suppression - op states reported
-            df_with = pool.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
-            op_state_cols = [c for c in df_with.columns if ".state" in c and "op[" in c]
-            assert len(op_state_cols) > 0, "Should have op state columns"
-
-            # With suppression - no op states
-            pp.toggle_cards(on=False)
-            df_without = pool.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
-            op_state_cols = [c for c in df_without.columns if ".state" in c and "op[" in c]
-            assert len(op_state_cols) == 0, "Should have no op state columns"
-
-    def test_toggle_cards_full_suppression(self):
-        """toggle_cards(on=False) only leaves seq and _inline_styles."""
-        with pp.Party():
-            pp.toggle_cards(on=False)
-            pool = (
-                pp.from_seq("ACGTACGT")
-                .mutagenize(num_mutations=1, mode="sequential")
-                .repeat(2)
-                .named("final_pool")
-            )
-            df = pool.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
-
-            # Should only have these columns
-            expected_cols = {"seq", "_inline_styles"}
-            actual_cols = set(df.columns)
-            assert actual_cols == expected_cols, f"Expected {expected_cols}, got {actual_cols}"
-
-    def test_toggle_cards_with_complex_dag(self):
-        """toggle_cards(on=False) suppresses all metadata in complex DAG."""
+    def test_complex_dag_minimal_output(self):
+        """Complex DAG has minimal output without cards param."""
         with pp.Party():
             pool1 = pp.from_seq("AAAA").named("pool1")
             pool2 = pp.from_seq("TTTT").named("pool2")
@@ -2163,60 +2032,9 @@ class TestCardSuppression:
             mutated = recomb.mutagenize(num_mutations=1, mode="sequential").named("mutated")
             final = mutated.repeat(2).named("final")
 
-            # Without suppression - many columns
-            df_with = final.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
-            assert len(df_with.columns) > 10, "Should have many columns"
+            df = final.generate_library(num_seqs=2)
 
-            # With suppression - minimal columns
-            pp.toggle_cards(on=False)
-            df_without = final.generate_library(
-                num_seqs=2, report_design_cards=True, _include_inline_styles=True
-            )
-            expected_cols = {"seq", "_inline_styles"}
-            actual_cols = set(df_without.columns)
+            # Should only have name and seq columns
+            expected_cols = {"name", "seq"}
+            actual_cols = set(df.columns)
             assert actual_cols == expected_cols, f"Expected {expected_cols}, got {actual_cols}"
-
-    def test_toggle_cards_with_aux_pools(self):
-        """toggle_cards(on=False) suppresses aux pool sequences."""
-        with pp.Party():
-            pool1 = pp.from_seq("AAAA").named("pool1")
-            pool2 = pp.from_seq("TTTT").named("pool2")
-
-            # Without suppression - aux pools reported
-            df_with = pool1.generate_library(
-                num_seqs=1, report_design_cards=True, aux_pools=[pool2]
-            )
-            assert "pool2.seq" in df_with.columns
-
-            # With suppression - no aux pools
-            pp.toggle_cards(on=False)
-            df_without = pool1.generate_library(
-                num_seqs=1, report_design_cards=True, aux_pools=[pool2]
-            )
-            assert "pool2.seq" not in df_without.columns
-
-    def test_toggle_cards_removes_pool_specific_seq_column(self):
-        """toggle_cards(on=False) removes the pool-specific .seq column."""
-        with pp.Party():
-            pool = (
-                pp.from_seq("ACGT").mutagenize(num_mutations=1, mode="sequential").named("my_pool")
-            )
-
-            # Without suppression - pool-specific seq column present
-            df_with = pool.generate_library(num_seqs=2, report_design_cards=True, seed=42)
-            assert "my_pool.seq" in df_with.columns
-            assert "seq" in df_with.columns
-
-            # With suppression - only generic 'seq' column, no pool-specific
-            pp.toggle_cards(on=False)
-            df_without = pool.generate_library(num_seqs=2, report_design_cards=True, seed=42)
-            assert "my_pool.seq" not in df_without.columns
-            assert "seq" in df_without.columns
-
-            # Verify both have valid sequences
-            assert len(df_with["seq"]) == 2
-            assert len(df_without["seq"]) == 2
-            assert all(len(s) == 4 for s in df_with["seq"])
-            assert all(len(s) == 4 for s in df_without["seq"])

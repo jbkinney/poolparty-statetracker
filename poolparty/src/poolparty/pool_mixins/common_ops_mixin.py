@@ -2,6 +2,7 @@
 
 from ..types import (
     Callable,
+    CardsType,
     Integral,
     ModeType,
     Optional,
@@ -28,6 +29,7 @@ class CommonOpsMixin:
         mode: ModeType = "random",
         num_states: Optional[int] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..base_ops.mutagenize import mutagenize
 
@@ -42,6 +44,7 @@ class CommonOpsMixin:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
+            cards=cards,
         )
 
     def shuffle_seq(
@@ -52,6 +55,7 @@ class CommonOpsMixin:
         num_states: Optional[int] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..base_ops.shuffle_seq import shuffle_seq
 
@@ -63,6 +67,7 @@ class CommonOpsMixin:
             num_states=num_states,
             iter_order=iter_order,
             style=style,
+            cards=cards,
         )
 
     def recombine(
@@ -99,6 +104,7 @@ class CommonOpsMixin:
         predicate: Callable[[str], bool],
         name: Optional[str] = None,
         prefix: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         """Filter sequences based on a predicate function.
 
@@ -107,7 +113,7 @@ class CommonOpsMixin:
         """
         from ..base_ops.filter_seq import filter
 
-        return filter(self, predicate=predicate, name=name, prefix=prefix)
+        return filter(self, predicate=predicate, name=name, prefix=prefix, cards=cards)
 
     def materialize(
         self,
@@ -120,6 +126,7 @@ class CommonOpsMixin:
         attempts_per_rate_assessment: Integral = 100,
         name: Optional[str] = None,
         prefix: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         """Materialize sequences into a new pool with fixed states.
 
@@ -140,4 +147,5 @@ class CommonOpsMixin:
             attempts_per_rate_assessment=attempts_per_rate_assessment,
             name=name,
             prefix=prefix,
+            cards=cards,
         )

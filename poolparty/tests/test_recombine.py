@@ -204,15 +204,15 @@ class TestRecombineSequentialMode:
     def test_no_self_recombination(self):
         """Consecutive segments must come from different pools."""
         with pp.Party() as party:
-            pool = recombine(sources=["AAAA", "TTTT"], num_breakpoints=1, mode="sequential").named(
+            pool = recombine(sources=["AAAA", "TTTT"], num_breakpoints=1, mode="sequential", cards=["pool_assignments"]).named(
                 "recombined"
             )
 
         op_name = pool.operation.name
-        df = pool.generate_library(report_design_cards=True)
+        df = pool.generate_library()
 
         # Check that no pool_assignments have consecutive identical values
-        for assignments in df[f"{op_name}.key.pool_assignments"]:
+        for assignments in df[f"{op_name}.pool_assignments"]:
             for i in range(1, len(assignments)):
                 assert assignments[i] != assignments[i - 1], (
                     f"Self-recombination detected: {assignments}"
@@ -345,28 +345,28 @@ class TestRecombineDesignCard:
     """Test design card generation."""
 
     def test_design_card_has_breakpoints(self):
-        """Design card includes breakpoints."""
+        """Design card includes breakpoints when cards requested."""
         with pp.Party() as party:
             pool = recombine(
-                sources=["AAAA", "TTTT"], num_breakpoints=1, positions=[1], mode="fixed"
+                sources=["AAAA", "TTTT"], num_breakpoints=1, positions=[1], mode="fixed", cards=["breakpoints"]
             ).named("recombined")
 
         op_name = pool.operation.name
-        df = pool.generate_library(report_design_cards=True)
-        assert f"{op_name}.key.breakpoints" in df.columns
-        assert df[f"{op_name}.key.breakpoints"].iloc[0] == (1,)
+        df = pool.generate_library()
+        assert f"{op_name}.breakpoints" in df.columns
+        assert df[f"{op_name}.breakpoints"].iloc[0] == (1,)
 
     def test_design_card_has_pool_assignments(self):
-        """Design card includes pool_assignments."""
+        """Design card includes pool_assignments when cards requested."""
         with pp.Party() as party:
             pool = recombine(
-                sources=["AAAA", "TTTT"], num_breakpoints=1, positions=[1], mode="fixed"
+                sources=["AAAA", "TTTT"], num_breakpoints=1, positions=[1], mode="fixed", cards=["pool_assignments"]
             ).named("recombined")
 
         op_name = pool.operation.name
-        df = pool.generate_library(report_design_cards=True)
-        assert f"{op_name}.key.pool_assignments" in df.columns
-        assert df[f"{op_name}.key.pool_assignments"].iloc[0] == (0, 1)
+        df = pool.generate_library()
+        assert f"{op_name}.pool_assignments" in df.columns
+        assert df[f"{op_name}.pool_assignments"].iloc[0] == (0, 1)
 
 
 class TestRecombineMixinMethod:
@@ -524,13 +524,14 @@ class TestRecombineStyleBy:
                 mode="fixed",
                 styles=["red", "blue"],  # red for pool 0, blue for pool 1
                 style_by="source",
+                cards=["pool_assignments"],
             ).named("recombined")
 
             op_name = pool.operation.name
-            df = pool.generate_library(report_design_cards=True)
+            df = pool.generate_library()
 
             # Fixed mode: segment 0 from pool 0, segment 1 from pool 1
-            pool_assignments = df[f"{op_name}.key.pool_assignments"].iloc[0]
+            pool_assignments = df[f"{op_name}.pool_assignments"].iloc[0]
             assert pool_assignments == (0, 1)
 
             # Both segments should have styles from their source pools
@@ -604,13 +605,14 @@ class TestRecombineStyleBy:
                 mode="fixed",
                 styles=["red", "blue", "green"],  # One style per source pool
                 style_by="source",
+                cards=["pool_assignments"],
             ).named("recombined")
 
             op_name = pool.operation.name
-            df = pool.generate_library(report_design_cards=True)
+            df = pool.generate_library()
 
             # Check the pool assignments
-            pool_assignments = df[f"{op_name}.key.pool_assignments"].iloc[0]
+            pool_assignments = df[f"{op_name}.pool_assignments"].iloc[0]
             # Fixed mode alternates: 0, 1, 0
             assert pool_assignments[0] != pool_assignments[1]
 
@@ -628,14 +630,15 @@ class TestRecombineStyleBy:
                 mode="fixed",
                 styles=["red", "blue"],  # 2 styles for 3 sources
                 style_by="source",
+                cards=["pool_assignments"],
             ).named("recombined")
 
             op_name = pool.operation.name
-            df = pool.generate_library(report_design_cards=True)
+            df = pool.generate_library()
 
             # Fixed mode: pool assignments are (0, 1, 0)
             # Styles should be: source[0]→style[0]=red, source[1]→style[1]=blue, source[0]→style[0]=red
-            pool_assignments = df[f"{op_name}.key.pool_assignments"].iloc[0]
+            pool_assignments = df[f"{op_name}.pool_assignments"].iloc[0]
             assert pool_assignments == (0, 1, 0)
 
             assert len(df) == 1

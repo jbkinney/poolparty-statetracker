@@ -15,7 +15,7 @@ class TestStylizeOrfBasic:
             pool = stylize_orf("ACGTACGTAC", style_codons=["red", "blue"]).named("test")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -44,7 +44,7 @@ class TestStylizeOrfBasic:
             pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"]).named("test")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -119,7 +119,7 @@ class TestStylizeOrfFramesCycling:
             ).named("test")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -143,7 +143,7 @@ class TestStylizeOrfFramesCycling:
             pool = stylize_orf("ACGTACGTA", style_frames=["red", "green", "blue"]).named("test")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -168,7 +168,7 @@ class TestStylizeOrfFrame:
             )
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -188,7 +188,7 @@ class TestStylizeOrfFrame:
             )
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -216,7 +216,7 @@ class TestStylizeOrfFrame:
             )
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -244,10 +244,10 @@ class TestStylizeOrfFrame:
             pool_f2 = stylize_orf("ACGTACGTA", style_codons=["red", "blue"], frame=2).named("f2")
 
         df_f1 = pool_f1.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         df_f2 = pool_f2.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
 
         # Collect positions for frame=1
@@ -296,10 +296,10 @@ class TestStylizeOrfNegativeFrame:
             pool_rev = stylize_orf("ACGTAC", style_codons=["red", "blue"], frame=-1).named("rev")
 
         df_fwd = pool_fwd.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         df_rev = pool_rev.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
 
         # Collect positions
@@ -331,7 +331,7 @@ class TestStylizeOrfNegativeFrame:
             )
 
         df = pool_rev.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -377,7 +377,7 @@ class TestStylizeOrfRegion:
             ).named("test")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq = df["seq"].iloc[0]
         seq_style = df["_inline_styles"].iloc[0]
@@ -406,7 +406,7 @@ class TestStylizeOrfRegion:
             ).named("test")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -429,7 +429,7 @@ class TestStylizeOrfSkipNonMolecular:
             pool = stylize_orf("ACG-TAC", style_frames=["red", "green", "blue"]).named("test")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -457,7 +457,7 @@ class TestStylizeOrfSkipNonMolecular:
             pool = stylize_orf("<x>ACGTAC</x>", style_frames=["red", "green", "blue"]).named("test")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -478,7 +478,7 @@ class TestStylizeOrfSkipNonMolecular:
             pool = stylize_orf("ACG--TACGTA", style_codons=["red", "blue"]).named("test")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -508,7 +508,7 @@ class TestStylizeOrfChain:
             pool = pp.from_seq("ACGTACGTAC").stylize_orf(style_codons=["red", "blue"]).named("test")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 
@@ -521,7 +521,7 @@ class TestStylizeOrfChain:
             pool = stylize_orf("ACGTAC", style_codons=["red"]).named("test")
 
         df = pool.generate_library(
-            num_seqs=1, report_design_cards=True, _include_inline_styles=True
+            num_seqs=1, _include_inline_styles=True
         )
         seq_style = df["_inline_styles"].iloc[0]
 

@@ -25,7 +25,7 @@ class TestStylizeBasic:
         with pp.Party():
             pool = stylize("ACGT", style="red").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             assert len(seq_style.style_list) == 1
@@ -36,7 +36,7 @@ class TestStylizeBasic:
         with pp.Party():
             pool = stylize("ACGT", style="blue").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             spec, positions = seq_style.style_list[0]
@@ -53,7 +53,7 @@ class TestStylizeWhichParameter:
         with pp.Party():
             pool = stylize("AcGt", style="red", which="upper").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             spec, positions = seq_style.style_list[0]
@@ -65,7 +65,7 @@ class TestStylizeWhichParameter:
         with pp.Party():
             pool = stylize("AcGt", style="blue", which="lower").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             spec, positions = seq_style.style_list[0]
@@ -77,7 +77,7 @@ class TestStylizeWhichParameter:
         with pp.Party():
             pool = stylize("A-C.G T", style="gray", which="gap").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             spec, positions = seq_style.style_list[0]
@@ -89,7 +89,7 @@ class TestStylizeWhichParameter:
         with pp.Party():
             pool = stylize("<m>AC</m>", style="cyan", which="all").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             spec, positions = seq_style.style_list[0]
@@ -101,7 +101,7 @@ class TestStylizeWhichParameter:
         with pp.Party():
             pool = stylize("<m>AC</m>", style="gray", which="tags").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             spec, positions = seq_style.style_list[0]
@@ -117,7 +117,7 @@ class TestStylizeWithRegion:
         with pp.Party():
             pool = stylize("AA<test>CCCC</test>GG", "test", style="red").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             spec, positions = seq_style.style_list[0]
@@ -130,7 +130,7 @@ class TestStylizeWithRegion:
         with pp.Party():
             pool = stylize("AACCCCGG", [2, 6], style="blue").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             spec, positions = seq_style.style_list[0]
@@ -142,7 +142,7 @@ class TestStylizeWithRegion:
         with pp.Party():
             pool = stylize("ACGT", "nonexistent", style="red").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             assert not seq_style
@@ -156,7 +156,7 @@ class TestStylizeWithRegex:
         with pp.Party():
             pool = stylize("ACGTACGT", style="red", regex=r"ACG").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             spec, positions = seq_style.style_list[0]
@@ -168,7 +168,7 @@ class TestStylizeWithRegex:
         with pp.Party():
             pool = stylize("AcGt", style="blue", which="upper", regex=r"[a-z]").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             spec, positions = seq_style.style_list[0]
@@ -183,11 +183,11 @@ class TestStylizeCaseTransforms:
         """Style spec with 'lower' transforms to lowercase."""
         with pp.Party():
             pool = stylize("ACGT", style="lower cyan").named("styled")
-            pool.print_library()
+            pool.print_library(show_state=False)
             # The actual case transform happens at render time
             # Just verify the style is stored correctly
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             assert seq_style.style_list[0][0] == "lower cyan"
@@ -197,7 +197,7 @@ class TestStylizeCaseTransforms:
         with pp.Party():
             pool = stylize("acgt", style="upper red bold").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             assert seq_style.style_list[0][0] == "upper red bold"
@@ -214,7 +214,7 @@ class TestStylizeChaining:
             styled2 = styled1.stylize(style="blue", which="lower").named("both_styled")
 
             df = styled2.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
 
@@ -231,7 +231,7 @@ class TestStylizeChaining:
             styled = mutated.stylize(style="cyan", which="lower").named("styled")
 
             df = styled.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             # Should have style for lowercase (mutations)
             assert "_inline_styles" in df.columns
@@ -283,7 +283,7 @@ class TestStylizeEdgeCases:
         with pp.Party():
             pool = stylize("", style="red").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             styles = df["_inline_styles"].iloc[0]
             assert len(styles) == 0
@@ -293,7 +293,7 @@ class TestStylizeEdgeCases:
         with pp.Party():
             pool = stylize("ACGT", style="red", which="lower").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             assert not seq_style
@@ -303,7 +303,7 @@ class TestStylizeEdgeCases:
         with pp.Party():
             pool = stylize("<m>AC</m>", style="red").named("styled")
             df = pool.generate_library(
-                num_seqs=1, report_design_cards=True, _include_inline_styles=True
+                num_seqs=1, _include_inline_styles=True
             )
             seq_style = df["_inline_styles"].iloc[0]
             spec, positions = seq_style.style_list[0]

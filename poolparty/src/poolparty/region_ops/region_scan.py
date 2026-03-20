@@ -4,7 +4,7 @@ from numbers import Real
 
 import numpy as np
 
-from poolparty.types import Literal, Optional, RegionType, Seq, SeqStyle, Union
+from poolparty.types import CardsType, Literal, Optional, RegionType, Seq, SeqStyle, Union
 
 from ..operation import Operation
 from ..utils import build_scan_cache, validate_positions
@@ -28,6 +28,7 @@ def region_scan(
     mode: str = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
     _factory_name: Optional[str] = None,
 ):
     """
@@ -84,6 +85,7 @@ def region_scan(
         num_states=num_states,
         name=None,
         iter_order=iter_order,
+        cards=cards,
         _factory_name=_factory_name,
     )
     # Preserve the pool type from the input
@@ -124,6 +126,7 @@ class RegionScanOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
         _factory_name: Optional[str] = None,
     ) -> None:
         """Initialize RegionScanOp."""
@@ -178,6 +181,7 @@ class RegionScanOp(Operation):
             prefix=prefix,
             region=region,
             remove_tags=remove_tags,
+            cards=cards,
         )
 
     def _build_caches(self) -> int:
@@ -330,11 +334,6 @@ class RegionScanOp(Operation):
             )
 
         output_seq = DnaSeq(result_seq, output_style)
-
-        from ..party import cards_suppressed
-
-        if cards_suppressed():
-            return output_seq, {}
 
         return output_seq, {
             "position_index": position_index,

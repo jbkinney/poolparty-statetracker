@@ -150,6 +150,7 @@ __all__ = [
     "configure_logging",
     "toggle_styles",
     "toggle_cards",
+    "set_text_progress",
     "Pool",
     "DnaPool",
     "ProteinPool",
@@ -288,6 +289,17 @@ def toggle_cards(on: bool = True) -> None:
     """
     party = get_active_party()
     party._config.suppress_cards = not on
+
+
+def set_text_progress(on: bool = True) -> None:
+    """Set text-based progress bars on/off for the active Party.
+
+    When on (on=True), progress bars use text output instead of notebook widgets.
+    This is useful when the notebook widget doesn't display properly.
+    Can also be set via config.toml: [general] text_progress = true
+    """
+    party = get_active_party()
+    party._config.text_progress = on
 
 
 # === Copy factory docstrings to Pool methods ===

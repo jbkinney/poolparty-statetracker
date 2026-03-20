@@ -9,6 +9,7 @@ from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..pool import Pool
 from ..types import (
+    CardsType,
     Integral,
     ModeType,
     Optional,
@@ -36,6 +37,7 @@ def recombine(
     styles: Optional[list[str]] = None,
     style_by: StyleByForRecombineType = "order",
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
     _factory_name: Optional[str] = "recombine",
 ) -> Pool:
     """
@@ -120,6 +122,7 @@ def recombine(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        cards=cards,
         _factory_name=_factory_name,
     )
 
@@ -153,6 +156,7 @@ class RecombineOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
         _factory_name: Optional[str] = "recombine",
     ) -> None:
         # Set factory name if provided
@@ -262,6 +266,7 @@ class RecombineOp(Operation):
             prefix=prefix,
             region=region,
             _natural_num_states=natural_num_states,
+            cards=cards,
         )
 
     def _build_cache(self) -> None:

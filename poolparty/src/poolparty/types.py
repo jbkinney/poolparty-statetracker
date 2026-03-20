@@ -33,6 +33,10 @@ RegionType: TypeAlias = str | Sequence[Integral] | None
 # Style assignment mode for recombination
 StyleByForRecombineType: TypeAlias = Literal["source", "order"]
 
+# Design cards type for opt-in card reporting
+# None = no cards, list[str] = card keys with default names, dict[str,str] = key->column_name mapping
+CardsType: TypeAlias = None | list[str] | dict[str, str]
+
 # Inline styling types for per-sequence style tracking
 # StyleTuple: (style_spec, positions) where style_spec is parsed like highlighter.py
 StyleTuple: TypeAlias = tuple[str, np.ndarray]
@@ -63,6 +67,7 @@ __all__ = [
     "PositionsType",
     "RegionType",
     "StyleByForRecombineType",
+    "CardsType",
     "StyleTuple",
     "StyleList",
     "SeqStyle",

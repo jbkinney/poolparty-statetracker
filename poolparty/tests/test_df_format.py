@@ -5,9 +5,7 @@ import pandas as pd
 import poolparty as pp
 from poolparty.utils.df_utils import (
     counter_col_name,
-    finalize_generate_df,
     get_pools_reverse_topo,
-    organize_columns,
 )
 
 
@@ -86,164 +84,34 @@ class TestGetPoolsReverseTopo:
             assert result.index(p2) < result.index(p1)
 
 
-class TestOrganizeColumns:
-    """Test organize_columns function."""
-
-    def test_organize_by_type(self):
-        """Test organizing columns by type."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(["AAA", "TTT"])
-            pool.name = "test"
-
-            df = pd.DataFrame(
-                {
-                    "test.seq": ["AAA", "TTT"],
-                    "test.state": [0, 1],
-                    "extra": [1, 2],
-                }
-            )
-
-            result = organize_columns(df, {pool}, "type")
-
-            # seq columns should come first
-            cols = list(result.columns)
-            assert cols[0] == "test.seq"
-
-    def test_organize_by_pool(self):
-        """Test organizing columns by pool."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(["AAA", "TTT"])
-            pool.name = "test"
-            pool.operation.name = "test.op"
-
-            df = pd.DataFrame(
-                {
-                    "test.seq": ["AAA", "TTT"],
-                    "test.state": [0, 1],
-                    "extra": [1, 2],
-                }
-            )
-
-            result = organize_columns(df, {pool}, "pool")
-
-            # Columns should be grouped by pool
-            cols = list(result.columns)
-            # test.seq and test.state should be grouped together
-            seq_idx = cols.index("test.seq")
-            state_idx = cols.index("test.state")
-            assert abs(seq_idx - state_idx) == 1
-
-    def test_remaining_columns_appended(self):
-        """Test that columns not matching any pool are appended at end."""
-        with pp.Party() as party:
-            pool = pp.from_seqs(["AAA"])
-            pool.name = "test"
-
-            df = pd.DataFrame(
-                {
-                    "test.seq": ["AAA"],
-                    "unrelated": [42],
-                }
-            )
-
-            result = organize_columns(df, {pool}, "type")
-
-            cols = list(result.columns)
-            assert "unrelated" in cols
-            # 'unrelated' should be at the end
-            assert cols[-1] == "unrelated"
-
-
-class TestFinalizeGenerateDf:
-    """Test finalize_generate_df function."""
-
-    def test_adds_seq_column_when_report_seq_true(self):
-        """Test that 'seq' column is added when report_seq=True."""
-        df = pd.DataFrame(
-            {
-                "mypool.seq": ["AAA", "TTT"],
-                "other": [1, 2],
-            }
-        )
-
-        result = finalize_generate_df(df, "mypool", report_seq=True, report_pool_seqs=True)
-
-        assert "seq" in result.columns
-        assert list(result.columns)[0] == "seq"
-        assert list(result["seq"]) == ["AAA", "TTT"]
-
-    def test_no_seq_column_when_report_seq_false(self):
-        """Test that 'seq' column is not added when report_seq=False."""
-        df = pd.DataFrame(
-            {
-                "mypool.seq": ["AAA", "TTT"],
-            }
-        )
-
-        result = finalize_generate_df(df, "mypool", report_seq=False, report_pool_seqs=True)
-
-        assert "seq" not in result.columns
-
-    def test_drops_pool_seqs_when_report_pool_seqs_false(self):
-        """Test that pool seq columns are dropped when report_pool_seqs=False."""
-        df = pd.DataFrame(
-            {
-                "seq": ["AAA", "TTT"],
-                "pool1.seq": ["AAA", "TTT"],
-                "pool2.seq": ["GGG", "CCC"],
-                "other": [1, 2],
-            }
-        )
-
-        result = finalize_generate_df(df, "pool1", report_seq=False, report_pool_seqs=False)
-
-        # All .seq columns should be dropped
-        assert "pool1.seq" not in result.columns
-        assert "pool2.seq" not in result.columns
-        assert "other" in result.columns
-
-    def test_keeps_pool_seqs_when_report_pool_seqs_true(self):
-        """Test that pool seq columns are kept when report_pool_seqs=True."""
-        df = pd.DataFrame(
-            {
-                "pool1.seq": ["AAA", "TTT"],
-                "other": [1, 2],
-            }
-        )
-
-        result = finalize_generate_df(df, "pool1", report_seq=False, report_pool_seqs=True)
-
-        assert "pool1.seq" in result.columns
-
-
 class TestIntegrationWithGenerate:
-    """Test that df_utils functions work correctly with Pool.generate_library()."""
+    """Test that generate_library produces correctly formatted output."""
 
-    def test_generate_uses_df_utils_functions(self):
-        """Test that generate() produces correctly formatted output."""
+    def test_generate_basic_output(self):
+        """Test that generate_library produces name and seq columns."""
         with pp.Party() as party:
             pool = pp.from_seqs(["AAA", "TTT", "GGG"], mode="sequential")
             pool.name = "test_pool"
 
-            df = pool.generate_library(num_cycles=1, report_design_cards=True)
+            df = pool.generate_library(num_cycles=1)
 
-            # Should have 'seq' as first column
-            assert list(df.columns)[0] == "seq"
+            # Should have 'name' and 'seq' columns by default
+            assert "name" in df.columns
+            assert "seq" in df.columns
             # Should have the sequences
             assert list(df["seq"]) == ["AAA", "TTT", "GGG"]
 
-    def test_generate_with_organize_by_pool(self):
-        """Test generate with organize_columns_by='pool'."""
+    def test_generate_with_cards(self):
+        """Test generate with cards parameter on operation."""
         with pp.Party() as party:
-            parent = pp.from_seqs(["AAA", "TTT"]).named("parent")
-            child = pp.mutagenize(parent, num_mutations=1).named("child")
-
-            df = child.generate_library(
-                num_seqs=5,
-                report_design_cards=True,
-                organize_columns_by="pool",
+            pool = pp.from_seqs(
+                ["AAA", "TTT"], 
+                mode="sequential",
+                cards=["seq_index"]
             )
 
-            # Should have properly organized columns
-            assert "seq" in df.columns
-            assert "child.seq" in df.columns
+            df = pool.generate_library(num_cycles=1)
+
+            # Should have design card column with op name prefix
+            seq_index_cols = [c for c in df.columns if "seq_index" in c]
+            assert len(seq_index_cols) == 1

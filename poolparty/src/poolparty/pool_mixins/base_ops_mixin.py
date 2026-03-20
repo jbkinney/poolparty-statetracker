@@ -6,6 +6,7 @@ import pandas as pd
 
 from ..types import (
     Callable,
+    CardsType,
     Integral,
     ModeType,
     Optional,
@@ -174,6 +175,7 @@ class BaseOpsMixin:
         predicate: Callable[[str], bool],
         name: Optional[str] = None,
         prefix: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         """Filter sequences based on a predicate function.
 
@@ -182,7 +184,7 @@ class BaseOpsMixin:
         """
         from ..base_ops.filter_seq import filter
 
-        return filter(self, predicate=predicate, name=name, prefix=prefix)
+        return filter(self, predicate=predicate, name=name, prefix=prefix, cards=cards)
 
     def materialize(
         self,
@@ -195,6 +197,7 @@ class BaseOpsMixin:
         attempts_per_rate_assessment: Integral = 100,
         name: Optional[str] = None,
         prefix: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         """Materialize sequences into a new pool with fixed states.
 
@@ -215,4 +218,5 @@ class BaseOpsMixin:
             attempts_per_rate_assessment=attempts_per_rate_assessment,
             name=name,
             prefix=prefix,
+            cards=cards,
         )

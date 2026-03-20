@@ -5,7 +5,7 @@ from numbers import Real
 import numpy as np
 
 from ..operation import Operation
-from ..types import Optional, Pool_type, Seq, beartype
+from ..types import CardsType, Optional, Pool_type, Seq, beartype
 
 
 @beartype
@@ -14,6 +14,7 @@ def repeat(
     times: int,
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ) -> Pool_type:
     """
     Repeat the states of a pool a specified number of times, producing a new pool with
@@ -35,7 +36,7 @@ def repeat(
     Pool_type
         A new Pool with `times` as many states as the input pool has.
     """
-    op = RepeatOp(pool, times=times, prefix=prefix, name=None, iter_order=iter_order)
+    op = RepeatOp(pool, times=times, prefix=prefix, name=None, iter_order=iter_order, cards=cards)
     # Return same type as input
     pool_class = type(pool)
     result_pool = pool_class(operation=op)
@@ -55,6 +56,7 @@ class RepeatOp(Operation):
         prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> None:
         """Initialize RepeatOp."""
         if times < 1:
@@ -68,6 +70,7 @@ class RepeatOp(Operation):
             name=name,
             iter_order=iter_order,
             prefix=prefix,
+            cards=cards,
         )
 
     def _compute_core(
@@ -76,13 +79,9 @@ class RepeatOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return parent Seq and design card."""
-        from ..party import cards_suppressed
-
         # Use state 0 when inactive (state is None)
         state = self.state.value
         repeat_index = 0 if state is None else state
 
         # Pass through parent Seq
-        if cards_suppressed():
-            return parents[0], {}
         return parents[0], {"repeat_index": repeat_index}

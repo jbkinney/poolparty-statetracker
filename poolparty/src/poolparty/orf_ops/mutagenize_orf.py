@@ -12,7 +12,7 @@ from ..operation import Operation
 from ..party import get_active_party
 from ..pool import Pool
 from ..region import VALID_FRAMES, OrfRegion
-from ..types import ModeType, Optional, RegionType, Seq, Sequence, Union, beartype
+from ..types import CardsType, ModeType, Optional, RegionType, Seq, Sequence, Union, beartype
 from ..utils.dna_seq import DnaSeq
 from ..utils.dna_utils import reverse_complement
 from ..utils.parsing_utils import find_all_regions
@@ -71,6 +71,7 @@ def mutagenize_orf(
     mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ) -> Pool:
     """
     Apply codon-level mutations to an ORF sequence. Requires active Party context.
@@ -139,6 +140,7 @@ def mutagenize_orf(
         num_states=num_states,
         name=None,
         iter_order=iter_order,
+        cards=cards,
     )
     return DnaPool(operation=op)
 
@@ -164,6 +166,7 @@ class MutagenizeOrfOp(Operation):
         num_states: Optional[Integral] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> None:
         """Initialize MutagenizeOrfOp."""
         party = get_active_party()
@@ -279,6 +282,7 @@ class MutagenizeOrfOp(Operation):
             name=name,
             iter_order=iter_order,
             prefix=prefix,
+            cards=cards,
         )
 
     def _validate_orf_region(self, region: RegionType, seq_length: int) -> None:
@@ -530,11 +534,6 @@ class MutagenizeOrfOp(Operation):
                     style_positions.append(lit_pos)
 
             output_seq = output_seq.add_style(self.style, np.array(style_positions, dtype=np.int64))
-
-        from ..party import cards_suppressed
-
-        if cards_suppressed():
-            return output_seq, {}
 
         return output_seq, {
             "codon_positions": positions,

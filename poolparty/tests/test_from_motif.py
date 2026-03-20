@@ -30,9 +30,9 @@ class TestFromMotifFactory:
         """Test from_motif with custom names."""
         prob_df = pd.DataFrame({"A": [1.0], "C": [0.0], "G": [0.0], "T": [0.0]})
         with pp.Party() as party:
-            pool = from_motif(prob_df).named("mypool")
+            pool = from_motif(prob_df, cards=["prob_state"]).named("mypool")
 
-        df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
+        df = pool.generate_library(num_seqs=1, seed=42)
         # Check for prob_state in design card columns (operation name is auto-generated)
         prob_cols = [c for c in df.columns if "prob_state" in c]
         assert len(prob_cols) > 0
@@ -211,12 +211,12 @@ class TestFromMotifDesignCards:
     """Test FromMotif design card output."""
 
     def test_prob_state_in_output(self):
-        """Test prob_state is in output."""
+        """Test prob_state is in output when requested via cards."""
         prob_df = pd.DataFrame({"A": [1.0], "C": [0.0], "G": [0.0], "T": [0.0]})
         with pp.Party() as party:
-            pool = from_motif(prob_df).named("mypool")
+            pool = from_motif(prob_df, cards=["prob_state"]).named("mypool")
 
-        df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
+        df = pool.generate_library(num_seqs=1, seed=42)
         # Check for prob_state in design card columns (operation name is auto-generated)
         prob_cols = [c for c in df.columns if "prob_state" in c]
         assert len(prob_cols) > 0
@@ -226,9 +226,9 @@ class TestFromMotifDesignCards:
         # 100% A, so index should always be 0
         prob_df = pd.DataFrame({"A": [1.0, 1.0]})
         with pp.Party() as party:
-            pool = from_motif(prob_df).named("mypool")
+            pool = from_motif(prob_df, cards=["prob_state"]).named("mypool")
 
-        df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
+        df = pool.generate_library(num_seqs=1, seed=42)
         # Find prob_state column (operation name is auto-generated)
         prob_cols = [c for c in df.columns if "prob_state" in c]
         assert len(prob_cols) > 0

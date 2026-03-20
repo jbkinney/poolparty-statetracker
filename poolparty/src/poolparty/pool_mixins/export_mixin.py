@@ -25,23 +25,52 @@ def _open_file(path: Path, mode: str):
     return open(path, mode, encoding="utf-8")
 
 
-def _get_progress_bar(iterable, total, desc, show_progress):
-    """Get a progress bar wrapper if requested and tqdm is available."""
-    if not show_progress:
-        return iterable
-
+def _make_progress_bar(total, desc="Generating"):
+    """Create a tqdm progress bar, or return None if tqdm unavailable."""
     try:
-        from tqdm import tqdm
+        # Check config for text_progress setting
+        from ..party import get_active_party
 
-        return tqdm(iterable, total=total, desc=desc, unit="seq")
+        party = get_active_party()
+        text_mode = party._config.text_progress if party else False
+
+        if text_mode:
+            import tqdm as tqdm_module
+
+            tqdm_class = tqdm_module.tqdm
+        else:
+            import tqdm.auto as tqdm_auto
+
+            tqdm_class = tqdm_auto.tqdm
+
+        pbar = tqdm_class(total=total, desc=desc, unit="seq", mininterval=0)
+        pbar.refresh()
+        return pbar
     except ImportError:
-        import warnings
+        return None
 
-        warnings.warn(
-            "tqdm not installed. Install with 'pip install tqdm' for progress bars.",
-            stacklevel=3,
-        )
-        return iterable
+
+def _detect_file_type(path: Path) -> str:
+    """Detect file type from extension, stripping .gz if present."""
+    suffixes = path.suffixes  # e.g., ['.csv', '.gz'] or ['.fasta']
+    # Remove .gz to get the actual format extension
+    if suffixes and suffixes[-1].lower() == ".gz":
+        suffixes = suffixes[:-1]
+
+    if not suffixes:
+        raise ValueError(f"Cannot detect file type from '{path}'. Specify file_type explicitly.")
+
+    ext = suffixes[-1].lower()
+    mapping = {
+        ".csv": "csv",
+        ".tsv": "tsv",
+        ".fasta": "fasta",
+        ".fa": "fasta",
+        ".fna": "fasta",
+        ".jsonl": "jsonl",
+    }
+    # Default to csv for unknown extensions
+    return mapping.get(ext, "csv")
 
 
 class ExportMixin:
@@ -54,14 +83,14 @@ class ExportMixin:
         self,
         num_seqs: Optional[Integral] = None,
         num_cycles: Optional[Integral] = None,
-        chunk_size: Integral = 10000,
+        chunk_size: Integral = 1000,
         write_tags: bool = False,
         write_style: bool = False,
         seed: Optional[Integral] = None,
         discard_null_seqs: bool = True,
         include_design_cards: bool = False,
         columns: Optional[list[str]] = None,
-        show_progress: bool = False,
+        show_progress: bool = True,
     ) -> pd.DataFrame:
         """Generate library as a pandas DataFrame with optional streaming.
 
@@ -75,7 +104,7 @@ class ExportMixin:
             Number of sequences to generate. Required if num_cycles not specified.
         num_cycles : int, optional
             Number of complete cycles through state space.
-        chunk_size : int, default 10000
+        chunk_size : int, default 1000
             Number of sequences to generate per chunk. Larger values may be
             faster but use more memory during generation.
         write_tags : bool, default False
@@ -92,7 +121,7 @@ class ExportMixin:
             Include design card columns in output.
         columns : list[str], optional
             Specific columns to include. Default is all columns.
-        show_progress : bool, default False
+        show_progress : bool, default True
             If True, show a tqdm progress bar during generation.
             Requires tqdm to be installed.
 
@@ -120,22 +149,11 @@ class ExportMixin:
         chunks = []
         generated = 0
 
-        # Create progress tracking
+        # Print export message
         if show_progress:
-            try:
-                from tqdm import tqdm
+            print("Exporting to pandas dataframe ...")
 
-                pbar = tqdm(total=target_count, desc="Generating", unit="seq")
-            except ImportError:
-                import warnings
-
-                warnings.warn(
-                    "tqdm not installed. Install with 'pip install tqdm' for progress bars.",
-                    stacklevel=2,
-                )
-                pbar = None
-        else:
-            pbar = None
+        pbar = _make_progress_bar(target_count, "Generating sequences") if show_progress else None
 
         try:
             while generated < target_count:
@@ -146,7 +164,6 @@ class ExportMixin:
                     num_seqs=this_chunk,
                     seed=seed,
                     discard_null_seqs=discard_null_seqs,
-                    report_design_cards=include_design_cards,
                     _include_inline_styles=write_style,
                 )
 
@@ -185,10 +202,10 @@ class ExportMixin:
     def to_file(
         self,
         path: Union[str, Path],
-        file_type: Literal["csv", "fasta", "tsv", "jsonl"] = "csv",
+        file_type: Optional[Literal["csv", "fasta", "tsv", "jsonl"]] = None,
         num_seqs: Optional[Integral] = None,
         num_cycles: Optional[Integral] = None,
-        chunk_size: Integral = 10000,
+        chunk_size: Integral = 1000,
         write_tags: bool = False,
         write_style: bool = False,
         seed: Optional[Integral] = None,
@@ -200,7 +217,7 @@ class ExportMixin:
         line_width: Optional[Integral] = 60,
         description: Optional[Union[str, Callable]] = None,
         # Progress bar
-        show_progress: bool = False,
+        show_progress: bool = True,
         # Additional CSV options
         **csv_kwargs,
     ) -> int:
@@ -213,17 +230,18 @@ class ExportMixin:
         ----------
         path : str or Path
             Output file path. Supports .gz extension for gzip compression.
-        file_type : {'csv', 'fasta', 'tsv', 'jsonl'}, default 'csv'
-            Output format:
-            - 'csv': Comma-separated values
-            - 'tsv': Tab-separated values
-            - 'fasta': FASTA format (sequence name and sequence)
-            - 'jsonl': JSON Lines (one JSON object per line)
+        file_type : {'csv', 'fasta', 'tsv', 'jsonl'}, optional
+            Output format. Auto-detected from file extension if not specified:
+            - '.csv' -> 'csv': Comma-separated values
+            - '.tsv' -> 'tsv': Tab-separated values
+            - '.fasta', '.fa', '.fna' -> 'fasta': FASTA format
+            - '.jsonl' -> 'jsonl': JSON Lines format
+            Gzip extensions (e.g., '.csv.gz') are handled automatically.
         num_seqs : int, optional
             Number of sequences to export. Required if num_cycles not specified.
         num_cycles : int, optional
             Number of complete cycles through state space.
-        chunk_size : int, default 10000
+        chunk_size : int, default 1000
             Number of sequences to generate per chunk. Larger values use more
             memory but may be faster.
         write_tags : bool, default False
@@ -246,7 +264,7 @@ class ExportMixin:
             For FASTA: additional description after sequence name.
             If str, used as format template with row dict (e.g., "GC={gc:.2f}").
             If callable, called with row dict, should return string.
-        show_progress : bool, default False
+        show_progress : bool, default True
             If True, show a tqdm progress bar during export.
             Requires tqdm to be installed.
         **csv_kwargs
@@ -292,7 +310,10 @@ class ExportMixin:
         if num_seqs is None and num_cycles is None:
             raise ValueError("Either num_seqs or num_cycles must be specified")
 
-        if file_type not in ("csv", "fasta", "tsv", "jsonl"):
+        # Auto-detect file type from extension if not specified
+        if file_type is None:
+            file_type = _detect_file_type(path)
+        elif file_type not in ("csv", "fasta", "tsv", "jsonl"):
             raise ValueError(
                 f"file_type must be 'csv', 'fasta', 'tsv', or 'jsonl', got {file_type!r}"
             )
@@ -302,6 +323,11 @@ class ExportMixin:
             target_count = num_seqs
         else:
             target_count = num_cycles * self.state.num_values
+
+        # Print export message
+        if show_progress:
+            format_str = f"{file_type}.gz" if path.suffix == ".gz" else file_type
+            print(f"Exporting to {path.name} (format: {format_str}) ...")
 
         # Dispatch to format-specific writer
         if file_type == "csv":
@@ -379,22 +405,7 @@ class ExportMixin:
         written = 0
         first_chunk = True
 
-        # Create progress bar if requested
-        if show_progress:
-            try:
-                from tqdm import tqdm
-
-                pbar = tqdm(total=target_count, desc="Exporting", unit="seq")
-            except ImportError:
-                import warnings
-
-                warnings.warn(
-                    "tqdm not installed. Install with 'pip install tqdm' for progress bars.",
-                    stacklevel=3,
-                )
-                pbar = None
-        else:
-            pbar = None
+        pbar = _make_progress_bar(target_count, "Generating sequences") if show_progress else None
 
         try:
             while written < target_count:
@@ -405,7 +416,6 @@ class ExportMixin:
                     num_seqs=this_chunk,
                     seed=seed,
                     discard_null_seqs=discard_null_seqs,
-                    report_design_cards=include_design_cards,
                     _include_inline_styles=write_style,
                 )
 
@@ -464,22 +474,7 @@ class ExportMixin:
         written = 0
         first_chunk = True
 
-        # Create progress bar if requested
-        if show_progress:
-            try:
-                from tqdm import tqdm
-
-                pbar = tqdm(total=target_count, desc="Exporting", unit="seq")
-            except ImportError:
-                import warnings
-
-                warnings.warn(
-                    "tqdm not installed. Install with 'pip install tqdm' for progress bars.",
-                    stacklevel=3,
-                )
-                pbar = None
-        else:
-            pbar = None
+        pbar = _make_progress_bar(target_count, "Generating sequences") if show_progress else None
 
         try:
             while written < target_count:
@@ -490,7 +485,6 @@ class ExportMixin:
                     num_seqs=this_chunk,
                     seed=seed,
                     discard_null_seqs=discard_null_seqs,
-                    report_design_cards=False,
                     _include_inline_styles=write_style,
                 )
 
@@ -562,22 +556,7 @@ class ExportMixin:
         written = 0
         first_chunk = True
 
-        # Create progress bar if requested
-        if show_progress:
-            try:
-                from tqdm import tqdm
-
-                pbar = tqdm(total=target_count, desc="Exporting", unit="seq")
-            except ImportError:
-                import warnings
-
-                warnings.warn(
-                    "tqdm not installed. Install with 'pip install tqdm' for progress bars.",
-                    stacklevel=3,
-                )
-                pbar = None
-        else:
-            pbar = None
+        pbar = _make_progress_bar(target_count, "Generating sequences") if show_progress else None
 
         try:
             while written < target_count:
@@ -588,7 +567,6 @@ class ExportMixin:
                     num_seqs=this_chunk,
                     seed=seed,
                     discard_null_seqs=discard_null_seqs,
-                    report_design_cards=include_design_cards,
                     _include_inline_styles=write_style,
                 )
 

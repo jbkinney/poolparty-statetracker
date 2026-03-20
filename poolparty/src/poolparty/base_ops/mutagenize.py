@@ -9,7 +9,7 @@ import numpy as np
 from ..operation import Operation
 from ..party import get_active_party
 from ..pool import Pool
-from ..types import Integral, ModeType, Optional, Real, RegionType, Seq, Union, beartype
+from ..types import CardsType, Integral, ModeType, Optional, Real, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
 from ..utils.dna_seq import DnaSeq
 
@@ -26,6 +26,7 @@ def mutagenize(
     mode: ModeType = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
     _factory_name: Optional[str] = "mutagenize",
 ) -> Pool:
     """
@@ -83,6 +84,7 @@ def mutagenize(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        cards=cards,
         _factory_name=_factory_name,
     )
     # Preserve the pool type from the input
@@ -118,6 +120,7 @@ class MutagenizeOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
         _factory_name: Optional[str] = "mutagenize",
     ) -> None:
         # Set factory name if provided
@@ -247,6 +250,7 @@ class MutagenizeOp(Operation):
             prefix=prefix,
             region=region,
             _natural_num_states=natural_num_states,
+            cards=cards,
         )
 
         # Create LRU-cached version for position data computation

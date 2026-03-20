@@ -7,7 +7,7 @@ import pandas as pd
 
 from ..dna_pool import DnaPool
 from ..operation import Operation
-from ..types import Optional, Pool_type, Seq, Sequence, beartype
+from ..types import CardsType, Optional, Pool_type, Seq, Sequence, beartype
 from ..utils import dna_utils
 from ..utils.dna_seq import DnaSeq
 
@@ -37,6 +37,7 @@ class MaterializeOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
+        cards: CardsType = None,
     ) -> None:
         """Initialize MaterializeOp by generating sequences from source pool."""
         from ..party import get_active_party
@@ -117,6 +118,7 @@ class MaterializeOp(Operation):
             name=name,
             iter_order=iter_order,
             prefix=prefix,
+            cards=cards,
         )
 
     def _compute_core(
@@ -125,8 +127,6 @@ class MaterializeOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return stored Seq and design card for current state."""
-        from ..party import cards_suppressed
-
         # Get index from state (cycling if needed)
         state = self.state.value
         idx = (0 if state is None else state) % len(self._seqs)
@@ -135,9 +135,6 @@ class MaterializeOp(Operation):
         self._current_idx = idx
 
         output_seq = self._seqs[idx]
-
-        if cards_suppressed():
-            return output_seq, {}
 
         return output_seq, {
             "seq_index": idx,
@@ -168,6 +165,7 @@ def materialize(
     attempts_per_rate_assessment: int = 100,
     name: Optional[str] = None,
     prefix: Optional[str] = None,
+    cards: CardsType = None,
 ) -> Pool_type:
     """Materialize a pool's sequences into a new pool with fixed states.
 
@@ -236,5 +234,6 @@ def materialize(
         attempts_per_rate_assessment=attempts_per_rate_assessment,
         name=name,
         prefix=prefix,
+        cards=cards,
     )
     return DnaPool(operation=op)

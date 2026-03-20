@@ -9,11 +9,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-import statetracker as st
-
-from .types import Literal, Optional, Pool_type, Seq, Sequence, Union, beartype, is_null_seq
-from .utils.df_utils import counter_col_name, finalize_generate_df, organize_columns
-from .utils.utils import clean_df_int_columns
+from .types import Optional, Pool_type, Seq, Union, beartype, is_null_seq
 
 
 @beartype
@@ -24,10 +20,6 @@ def generate_library(
     seed: Optional[int] = None,
     init_state: Optional[int] = None,
     seqs_only: bool = False,
-    report_design_cards: bool = False,
-    aux_pools: Sequence[Pool_type] = (),
-    pools_to_report: Union[str, Sequence[Pool_type]] = "all",
-    organize_columns_by: Literal["pool", "type"] = "type",
     _include_inline_styles: bool = False,
     discard_null_seqs: bool = False,
     max_iterations: Optional[int] = None,
@@ -43,12 +35,6 @@ def generate_library(
         seed: Random seed for reproducibility.
         init_state: Initial state to start generation from.
         seqs_only: If True, return list of sequences instead of DataFrame.
-        report_design_cards: If True, include detailed design card info in output.
-            Column visibility controlled by party config (use pp.load_config()).
-            When False (default), returns minimal DataFrame with "name" and "seq".
-        aux_pools: Additional pools to include in output.
-        pools_to_report: Which pools to report ('all', 'self', or list of pools).
-        organize_columns_by: Column organization ('pool' or 'type').
         discard_null_seqs: If True, keep iterating until num_seqs valid (non-null)
             sequences are generated. Requires num_seqs to be specified.
         max_iterations: Maximum iterations before stopping. Default: state space
@@ -58,7 +44,12 @@ def generate_library(
         attempts_per_rate_assessment: Iterations between acceptance rate checks.
 
     Returns:
-        DataFrame with generated sequences, or list of sequences if seqs_only=True.
+        DataFrame with columns: name, seq, plus any requested design card columns.
+        Or list of sequences if seqs_only=True.
+
+    Note:
+        Design card columns are opt-in via the `cards` parameter on individual
+        operations. Default output contains only 'name' and 'seq' columns.
     """
     # Initialize state tracking on pool if not present
     if not hasattr(pool, "_current_state"):
@@ -88,56 +79,19 @@ def generate_library(
         else:
             max_iterations = num_seqs * 100
 
-    # Get config from pool's party (not active party, which may be different)
-    config = pool._party._config if hasattr(pool, "_party") and pool._party else None
-    suppress_cards = config.suppress_cards if config else False
-
     logger.info(
         "Starting library generation: pool=%s num_seqs=%s seed=%s", pool.name, num_seqs, seed
     )
 
-    # Build outputs dict
-    outputs: dict[str, Pool_type] = {f"{pool.name}.seq": pool}
-    if report_design_cards and not suppress_cards:
-        for aux_pool in aux_pools:
-            outputs[f"{aux_pool.name}.seq"] = aux_pool
-
-    sorted_ops = _topo_sort_operations(outputs)
+    # Topologically sort operations reachable from pool
+    sorted_ops = _topo_sort_operations(pool)
     _seed_random_operations(sorted_ops, pool._master_seed)
-
-    # Determine which pools to report (only used when report_design_cards=True and cards not suppressed)
-    if report_design_cards and not suppress_cards:
-        if pools_to_report == "all":
-            pools_filter = _collect_all_pools(outputs)
-        elif pools_to_report == "self":
-            pools_filter = {pool}
-        else:
-            pools_filter = set(pools_to_report)
-
-        ops_to_report = {p.operation.id for p in pools_filter}
-
-        # Add filtered pools to outputs if not already present
-        for p in pools_filter:
-            key = f"{p.name}.seq"
-            if key not in outputs:
-                outputs[key] = p
-
-        # Get column visibility from config (defaults to True)
-        report_pool_states = config.show_pool_states if config else True
-        report_op_states = config.show_op_states if config else True
-
-        states = _collect_counters(pools_filter, report_pool_states, report_op_states)
-    else:
-        pools_filter = {pool}
-        ops_to_report = set()
-        states = []
 
     # Generate rows
     rows = []
     state = pool._current_state
     iterations = 0
     valid_count = 0
-    seq_col = f"{pool.name}.seq"
     max_global_state = state + num_seqs - 1  # For zero-padding in names
 
     while len(rows) < num_seqs:
@@ -145,18 +99,13 @@ def generate_library(
         row = _compute_one(
             pool,
             sorted_ops,
-            outputs,
             global_state,
             max_global_state,
-            states,
-            report_design_cards and not suppress_cards,
-            ops_to_report,
-            pools_filter,
             _include_inline_styles,
         )
 
         # Check if this row has a null sequence
-        seq_value = row.get(seq_col)
+        seq_value = row.get("seq")
         is_null = seq_value is None or seq_value == ""
 
         if discard_null_seqs:
@@ -166,7 +115,7 @@ def generate_library(
         else:
             # Include all rows (null sequences show as None in output)
             if is_null:
-                row[seq_col] = None
+                row["seq"] = None
                 row["name"] = None
             rows.append(row)
             if not is_null:
@@ -218,7 +167,7 @@ def generate_library(
 
     pool._current_state = state
 
-    # Build and format DataFrame
+    # Build DataFrame
     df = pd.DataFrame(rows)
 
     # Handle empty DataFrame case
@@ -227,27 +176,11 @@ def generate_library(
             return []
         return pd.DataFrame(columns=["name", "seq"])
 
-    if not report_design_cards:
-        # Minimal output: just "name" and "seq" columns
-        df = df[["name", f"{pool.name}.seq"]].rename(columns={f"{pool.name}.seq": "seq"})
-        if seqs_only:
-            return list(df["seq"])
-        return df
-
-    # Full design card output
-    df = clean_df_int_columns(df)
-    df = organize_columns(df, pools_filter, organize_columns_by)
-
-    # Get column visibility from config
-    report_seq = config.show_seq if config else True
-    report_pool_seqs = config.show_pool_seqs if config else True
-    show_name = config.show_name if config else True
-
-    df = finalize_generate_df(df, pool.name, report_seq, report_pool_seqs, pools_filter, show_name)
-
-    # If cards are suppressed, remove the pool-specific seq column (keep only 'seq')
-    if suppress_cards and f"{pool.name}.seq" in df.columns:
-        df = df.drop(columns=[f"{pool.name}.seq"])
+    # Ensure name and seq are first columns, in that order
+    cols = ["name", "seq"] + [c for c in df.columns if c not in ("name", "seq", "_inline_styles")]
+    if "_inline_styles" in df.columns:
+        cols.append("_inline_styles")
+    df = df[cols]
 
     logger.info("Completed library generation: %d sequences", len(df))
     if seqs_only:
@@ -255,16 +188,15 @@ def generate_library(
     return df
 
 
-## THIS IS THE TOPOLOGICAL SORTING FUNCTION THAT IS USED TO DETERMINE THE ORDER OF OPERATIONS.
-def _topo_sort_operations(outputs: dict) -> list:
-    """Topologically sort operations reachable from outputs."""
+def _topo_sort_operations(pool: Pool_type) -> list:
+    """Topologically sort operations reachable from pool."""
     from .operation import Operation
 
     visited: set[int] = set()
     result: list[Operation] = []
 
-    def visit(pool: Pool_type) -> None:
-        op = pool.operation
+    def visit(p: Pool_type) -> None:
+        op = p.operation
         if op.id in visited:
             return
         for parent in op.parent_pools:
@@ -272,8 +204,7 @@ def _topo_sort_operations(outputs: dict) -> list:
         visited.add(op.id)
         result.append(op)
 
-    for pool in outputs.values():
-        visit(pool)
+    visit(pool)
     return result
 
 
@@ -283,65 +214,21 @@ def _seed_random_operations(sorted_ops: list, master_seed: int) -> None:
         op.rng = None
 
 
-def _collect_all_pools(outputs: dict) -> set:
-    """Collect all pools reachable from the outputs."""
-    visited: set[int] = set()
-    result: set = set()
-
-    def visit(pool: Pool_type) -> None:
-        pool_id = id(pool)
-        if pool_id in visited:
-            return
-        visited.add(pool_id)
-        result.add(pool)
-        for parent in pool.operation.parent_pools:
-            visit(parent)
-
-    for pool in outputs.values():
-        visit(pool)
-    return result
-
-
-def _collect_counters(
-    pools_filter: set,
-    include_pool_states: bool = True,
-    include_op_states: bool = True,
-) -> list[st.State]:
-    """Collect counters from the specified pools."""
-    visited: set[int] = set()
-    result: list[st.State] = []
-    for pool in pools_filter:
-        if include_pool_states:
-            counter_id = id(pool.state)
-            if counter_id not in visited:
-                visited.add(counter_id)
-                result.append(pool.state)
-        if include_op_states:
-            op_counter = pool.operation.state
-            op_counter_id = id(op_counter)
-            if op_counter_id not in visited:
-                visited.add(op_counter_id)
-                result.append(op_counter)
-    return result
-
-
-## THIS IS THE FUNCTION THAT COMPUTES ONE ROW OF OUTPUT FOR THE GIVEN GLOBAL STATE.
-## CALLS EACH OPERATION IN THE TOPOLOGICAL SORT ORDER AND CACHES THE RESULTS.
 def _compute_one(
     pool: Pool_type,
     sorted_ops: list,
-    outputs: dict,
     global_state: int,
     max_global_state: int,
-    states: list[st.State] = (),
-    report_design_cards: bool = True,
-    ops_to_report: set = None,
-    pools_filter: set = None,
     include_inline_styles: bool = False,
 ) -> dict:
-    """Compute one row of output for the given global state."""
+    """Compute one row of output for the given global state.
+
+    Returns a dict with:
+    - 'name': the sequence name
+    - 'seq': the final sequence string
+    - Any requested design card columns from operations with cards specified
+    """
     seq_cache: dict[int, Seq] = {}
-    card_cache: dict[int, dict] = {}
     row: dict = {}
 
     # Sets the value of the pool state and, in doing so, propagates values
@@ -352,7 +239,6 @@ def _compute_one(
     all_contributions: list[str] = []
 
     # Iterates over the operations in topological order (sources to final).
-    # This is the code that effectively implements the DAG.
     for op in sorted_ops:
         # Get parent Seq objects (already cached because of topological sort)
         parents = [seq_cache[p.operation.id] for p in op.parent_pools]
@@ -361,51 +247,54 @@ def _compute_one(
         if op.mode == "random":
             if op.action_uniquely_determined_by_state:
                 # Explicit num_states > 1: use state value
-                state = op.state.value if op.state.value is not None else 0
+                state_val = op.state.value if op.state.value is not None else 0
             else:
                 # Stateless random (num_states=None or 1): use global_state (row number)
-                state = global_state
-            seed_seq = np.random.SeedSequence([pool._master_seed, op.id, state])
+                state_val = global_state
+            seed_seq = np.random.SeedSequence([pool._master_seed, op.id, state_val])
             op_rng = np.random.default_rng(seed_seq)
         else:
             op_rng = op.rng
 
-        # Compute output Seq and design card (handles region wrapping automatically)
-        output_seq, card = op.compute(parents, op_rng)
+        # Compute output Seq and raw design card
+        output_seq, raw_card = op.compute(parents, op_rng)
 
-        # Store in caches for downstream operations
+        # Store seq in cache for downstream operations
         seq_cache[op.id] = output_seq
-        card_cache[op.id] = card
 
         # Collect name contributions from this operation
         all_contributions.extend(op.compute_name_contributions(global_state, max_global_state))
 
-        # Design cards are already filtered in Operation.compute()
-        if report_design_cards and (ops_to_report is None or op.id in ops_to_report):
-            for key, value in card.items():
+        # Process design cards if this operation has cards requested
+        if op.has_cards:
+            # Get seq and state values for universal keys
+            seq_value = output_seq.string if not is_null_seq(output_seq) else None
+            state_value = op.state.value
+
+            # Filter card based on _cards spec (handles universal keys too)
+            filtered_card = op._filter_design_card(raw_card, seq_value, state_value)
+
+            # Add to row with appropriate column naming
+            for key, value in filtered_card.items():
+                # If operation uses custom column names (dict), use key directly
+                # Otherwise prefix with op.name
+                if op.uses_custom_column_names:
+                    col_name = key
+                else:
+                    col_name = f"{op.name}.{key}"
+
                 # Return None if state is inactive (on an inactive branch)
                 if not op.state.is_active:
-                    row[f"{op.name}.key.{key}"] = None
+                    row[col_name] = None
                 else:
-                    row[f"{op.name}.key.{key}"] = value
+                    row[col_name] = value
 
-    # Read state values AFTER design card computation
-    # (allows operations like StackOp to set state value during compute_design_card)
-    for i, state in enumerate(states):
-        col_name = counter_col_name(state, i)
-        row[col_name] = state.value
-
-    for output_name, output_pool in outputs.items():
-        # Return None if pool state is inactive (on an inactive branch)
-        if not output_pool.state.is_active:
-            row[output_name] = None
-        else:
-            seq_obj = seq_cache[output_pool.operation.id]
-            # Handle NullSeq - convert to empty string for DataFrame output
-            if is_null_seq(seq_obj):
-                row[output_name] = ""
-            else:
-                row[output_name] = seq_obj.string
+    # Get the final sequence
+    final_seq = seq_cache[pool.operation.id]
+    if is_null_seq(final_seq):
+        row["seq"] = ""
+    else:
+        row["seq"] = final_seq.string
 
     # Compute final name from contributions (already in topological order)
     final_name = ".".join(all_contributions) if all_contributions else None
@@ -413,7 +302,6 @@ def _compute_one(
 
     # Get inline styles from final Seq object (only if requested)
     if include_inline_styles:
-        final_seq = seq_cache[pool.operation.id]
         row["_inline_styles"] = final_seq.style
 
     return row

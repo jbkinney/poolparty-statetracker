@@ -127,11 +127,11 @@ class TestFromIupacDesignCards:
     """Test design card output."""
 
     def test_iupac_state_in_output(self):
-        """Design card contains iupac_state."""
+        """Design card contains iupac_state when requested via cards parameter."""
         with pp.Party() as party:
-            pool = from_iupac("ACGT").named("mypool")
+            pool = from_iupac("ACGT", cards=["iupac_state"]).named("mypool")
 
-        df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
+        df = pool.generate_library(num_seqs=1, seed=42)
         # Check for iupac_state in design card columns (operation name is auto-generated)
         iupac_cols = [c for c in df.columns if "iupac_state" in c]
         assert len(iupac_cols) > 0

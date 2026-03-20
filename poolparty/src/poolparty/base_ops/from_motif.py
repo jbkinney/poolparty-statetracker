@@ -9,7 +9,7 @@ from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..party import get_active_party
 from ..pool import Pool
-from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
+from ..types import CardsType, ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
 from ..utils.dna_seq import DnaSeq
 
@@ -24,6 +24,7 @@ def from_motif(
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
     style: Optional[str] = None,
+    cards: CardsType = None,
 ) -> Pool_type:
     """
     Create a Pool that samples sequences from a position probability matrix.
@@ -79,6 +80,7 @@ def from_motif(
         name=None,
         iter_order=iter_order,
         style=style,
+        cards=cards,
     )
     result_pool = DnaPool(operation=op)
     return result_pool
@@ -102,6 +104,7 @@ class FromMotifOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
+        cards: CardsType = None,
     ) -> None:
         """Initialize FromMotifOp."""
 
@@ -142,6 +145,7 @@ class FromMotifOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
             region=region,
+            cards=cards,
         )
 
     def _compute_core(
@@ -159,7 +163,6 @@ class FromMotifOp(Operation):
         seq_string = "".join(dna_utils.BASES[i] for i in indices_list)
 
         # Apply styling if requested
-        from ..party import cards_suppressed
         from ..utils.style_utils import SeqStyle, styles_suppressed
 
         if styles_suppressed():
@@ -167,9 +170,6 @@ class FromMotifOp(Operation):
         else:
             output_style = SeqStyle.full(len(seq_string), self._style)
             output_seq = DnaSeq(seq_string, output_style)
-
-        if cards_suppressed():
-            return output_seq, {}
 
         return output_seq, {
             "prob_state": indices_list,

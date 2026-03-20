@@ -137,11 +137,11 @@ class TestGetKmersDesignCards:
     """Test GetKmers design card output."""
 
     def test_kmer_index_in_output(self):
-        """Test kmer_index is in output."""
+        """Test kmer_index is in output when cards requested."""
         with pp.Party() as party:
-            pool = get_kmers(length=2, mode="sequential").named("mypool")
+            pool = get_kmers(length=2, mode="sequential", cards=["kmer_index"]).named("mypool")
 
-        df = pool.generate_library(num_seqs=4, report_design_cards=True)
+        df = pool.generate_library(num_seqs=4)
         # Find kmer_index column (operation name is auto-generated)
         kmer_index_cols = [c for c in df.columns if "kmer_index" in c]
         assert len(kmer_index_cols) > 0
@@ -246,9 +246,9 @@ class TestGetKmersCustomName:
     def test_custom_name_in_design_card(self):
         """Test design card columns are present (operation name is auto-generated)."""
         with pp.Party() as party:
-            pool = get_kmers(length=4).named("mypool")
+            pool = get_kmers(length=4, cards=["kmer_index", "kmer"]).named("mypool")
 
-        df = pool.generate_library(num_seqs=1, seed=42, report_design_cards=True)
+        df = pool.generate_library(num_seqs=1, seed=42)
         # Find kmer_index and kmer columns (operation name is auto-generated)
         kmer_index_cols = [c for c in df.columns if "kmer_index" in c]
         kmer_cols = [c for c in df.columns if "kmer" in c and "kmer_index" not in c]

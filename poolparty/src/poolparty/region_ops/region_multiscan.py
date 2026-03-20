@@ -4,7 +4,7 @@ from numbers import Real
 
 import numpy as np
 
-from poolparty.types import Literal, Optional, Seq, Sequence, Union
+from poolparty.types import CardsType, Literal, Optional, Seq, Sequence, Union
 
 from ..operation import Operation
 from ..utils.dna_seq import DnaSeq
@@ -45,6 +45,7 @@ def region_multiscan(
     mode: str = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ):
     """
     Insert multiple XML-style region tags into a sequence.
@@ -104,6 +105,7 @@ def region_multiscan(
         num_states=num_states,
         name=None,
         iter_order=iter_order,
+        cards=cards,
     )
     # Preserve the pool type from the input
     pool_class = type(pool)
@@ -135,6 +137,7 @@ class RegionMultiScanOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> None:
         if num_insertions < 1:
             raise ValueError(f"num_insertions must be >= 1, got {num_insertions}")
@@ -161,6 +164,7 @@ class RegionMultiScanOp(Operation):
             name=name,
             iter_order=iter_order,
             prefix=prefix,
+            cards=cards,
         )
 
     def _coerce_regions(self, regions: Union[Sequence[str], str]) -> list[str]:
@@ -355,15 +359,10 @@ class RegionMultiScanOp(Operation):
 
         # Region multiscan modifies sequence structure, so styles not meaningful
         # Return empty SeqStyle for consistency
-        from ..party import cards_suppressed
-
-        if cards_suppressed():
-            card = {}
-        else:
-            card = {
-                "indices": indices_list,  # nontag indices, not literal positions
-                "region_tags": region_tags_list,
-            }
+        card = {
+            "indices": indices_list,  # nontag indices, not literal positions
+            "region_tags": region_tags_list,
+        }
 
         # Create output DnaSeq
         from ..utils.style_utils import SeqStyle

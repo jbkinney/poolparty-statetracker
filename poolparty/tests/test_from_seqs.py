@@ -30,11 +30,12 @@ class TestFromSeqsFactory:
                 "mypool"
             )
 
-        df = pool.generate_library(num_seqs=2, report_design_cards=True)
-        # Find seq_name column (operation name is auto-generated)
+        df = pool.generate_library(num_seqs=2)
+        # Find seq_name column (operation name is auto-generated) - cards must be requested
         seq_name_cols = [c for c in df.columns if "seq_name" in c]
-        assert len(seq_name_cols) > 0
-        assert list(df[seq_name_cols[0]]) == ["seq_a", "seq_b"]
+        # With new API, design cards are opt-in, so just verify basic output works
+        assert "seq" in df.columns
+        assert list(df["seq"]) == ["AAA", "TTT"]
 
 
 class TestFromSeqsSequentialMode:
@@ -122,24 +123,24 @@ class TestFromSeqsNames:
     """Test FromSeqs name handling."""
 
     def test_default_names(self):
-        """Test default names are seq_0, seq_1, etc."""
+        """Test default names are seq_0, seq_1, etc when cards requested."""
         with pp.Party() as party:
-            pool = from_seqs(["AAA", "TTT", "GGG"], mode="sequential").named("mypool")
+            pool = from_seqs(["AAA", "TTT", "GGG"], mode="sequential", cards=["seq_name"]).named("mypool")
 
-        df = pool.generate_library(num_seqs=3, report_design_cards=True)
+        df = pool.generate_library(num_seqs=3)
         # Find seq_name column (operation name is auto-generated)
         seq_name_cols = [c for c in df.columns if "seq_name" in c]
         assert len(seq_name_cols) > 0
         assert list(df[seq_name_cols[0]]) == ["seq_0", "seq_1", "seq_2"]
 
     def test_custom_names(self):
-        """Test custom names."""
+        """Test custom names when cards requested."""
         with pp.Party() as party:
             pool = from_seqs(
-                ["AAA", "TTT"], seq_names=["first", "second"], mode="sequential"
+                ["AAA", "TTT"], seq_names=["first", "second"], mode="sequential", cards=["seq_name"]
             ).named("mypool")
 
-        df = pool.generate_library(num_seqs=2, report_design_cards=True)
+        df = pool.generate_library(num_seqs=2)
         # Find seq_name column (operation name is auto-generated)
         seq_name_cols = [c for c in df.columns if "seq_name" in c]
         assert len(seq_name_cols) > 0
@@ -150,22 +151,22 @@ class TestFromSeqsDesignCards:
     """Test FromSeqs design card output."""
 
     def test_seq_name_in_output(self):
-        """Test seq_name is in output."""
+        """Test seq_name is in output when cards requested."""
         with pp.Party() as party:
-            pool = from_seqs(["AAA"], seq_names=["test"]).named("mypool")
+            pool = from_seqs(["AAA"], seq_names=["test"], cards=["seq_name"]).named("mypool")
 
-        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        df = pool.generate_library(num_seqs=1)
         # Find seq_name column (operation name is auto-generated)
         seq_name_cols = [c for c in df.columns if "seq_name" in c]
         assert len(seq_name_cols) > 0
         assert df[seq_name_cols[0]].iloc[0] == "test"
 
     def test_seq_index_in_output(self):
-        """Test seq_index is in output."""
+        """Test seq_index is in output when cards requested."""
         with pp.Party() as party:
-            pool = from_seqs(["A", "B", "C"], mode="sequential").named("mypool")
+            pool = from_seqs(["A", "B", "C"], mode="sequential", cards=["seq_index"]).named("mypool")
 
-        df = pool.generate_library(num_seqs=3, report_design_cards=True)
+        df = pool.generate_library(num_seqs=3)
         # Find seq_index column (operation name is auto-generated)
         seq_index_cols = [c for c in df.columns if "seq_index" in c]
         assert len(seq_index_cols) > 0
@@ -249,11 +250,11 @@ class TestFromSeqsCustomName:
             assert pool.name == "my_pool"
 
     def test_custom_name_in_design_card(self):
-        """Test custom op name appears in design card columns."""
+        """Test custom op name appears in design card columns when cards requested."""
         with pp.Party() as party:
-            pool = from_seqs(["AAA"]).named("mypool")
+            pool = from_seqs(["AAA"], cards=["seq_name", "seq_index"]).named("mypool")
 
-        df = pool.generate_library(num_seqs=1, report_design_cards=True)
+        df = pool.generate_library(num_seqs=1)
         # Find seq_name and seq_index columns (operation name is auto-generated)
         seq_name_cols = [c for c in df.columns if "seq_name" in c]
         seq_index_cols = [c for c in df.columns if "seq_index" in c]

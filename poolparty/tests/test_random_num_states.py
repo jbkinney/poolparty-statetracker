@@ -107,13 +107,12 @@ class TestRandomNumStatesOperationIsolation:
             pool2 = mutagenize("ACGTACGT", num_mutations=1, mode="random", num_states=10).named(
                 "mutant2"
             )
-            df = pool1.generate_library(
-                num_cycles=1, seed=42, report_design_cards=True, aux_pools=[pool2]
-            )
+            df1 = pool1.generate_library(num_cycles=1, seed=42)
+            df2 = pool2.generate_library(num_cycles=1, seed=42)
 
         # They should produce different results because op.id is part of the seed
-        results1 = list(df["mutant1.seq"])
-        results2 = list(df["mutant2.seq"])
+        results1 = list(df1["seq"])
+        results2 = list(df2["seq"])
 
         # At least some results should differ
         differences = sum(1 for a, b in zip(results1, results2) if a != b)

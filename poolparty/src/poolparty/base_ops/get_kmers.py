@@ -9,6 +9,7 @@ from ..operation import Operation
 from ..party import get_active_party
 from ..pool import Pool
 from ..types import (
+    CardsType,
     Integral,
     Literal,
     ModeType,
@@ -34,6 +35,7 @@ def get_kmers(
     mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ) -> Pool_type:
     """Create a Pool that generates DNA k-mers (all possible sequences of length k).
 
@@ -88,6 +90,7 @@ def get_kmers(
         num_states=num_states,
         name=None,
         iter_order=iter_order,
+        cards=cards,
     )
     pool = DnaPool(operation=op)
     return pool
@@ -112,6 +115,7 @@ class GetKmersOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> None:
         """Initialize GetKmersOp."""
         party = get_active_party()
@@ -188,6 +192,7 @@ class GetKmersOp(Operation):
             prefix=prefix,
             region=region,
             _natural_num_states=natural_num_states,
+            cards=cards,
         )
 
     def _value_to_kmer(self, value: int) -> str:
@@ -231,7 +236,6 @@ class GetKmersOp(Operation):
             kmer = kmer.lower()
 
         # Apply style to all positions if specified
-        from ..party import cards_suppressed
         from ..utils.style_utils import SeqStyle, styles_suppressed
 
         if styles_suppressed():
@@ -239,9 +243,6 @@ class GetKmersOp(Operation):
         else:
             output_style = SeqStyle.full(len(kmer), self._style)
             output_seq = DnaSeq(kmer, output_style)
-
-        if cards_suppressed():
-            return output_seq, {}
 
         return output_seq, {
             "kmer_index": kmer_index,

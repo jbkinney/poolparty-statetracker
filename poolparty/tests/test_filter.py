@@ -219,12 +219,13 @@ class TestFilterDesignCards:
             assert pd.isna(df.loc[1, "name"])
 
     def test_filter_design_card_reports_passed(self):
-        """Test that filter operation reports passed status in design card."""
+        """Test that filter operation reports passed status in design card when cards requested."""
         with pp.Party():
             root = pp.from_seqs(["AAAA", "CCCC"], mode="sequential")
-            filtered = root.filter(lambda s: s.startswith("A"))
+            # Use cards parameter to request design card output
+            filtered = root.filter(lambda s: s.startswith("A"), cards=["passed"])
 
-            df = filtered.generate_library(num_seqs=2, report_design_cards=True)
+            df = filtered.generate_library(num_seqs=2)
 
             # Check design card has passed field
             passed_cols = [c for c in df.columns if "passed" in c]

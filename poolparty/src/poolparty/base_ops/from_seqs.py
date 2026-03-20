@@ -7,7 +7,7 @@ import numpy as np
 from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..pool import Pool
-from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Sequence, Union, beartype
+from ..types import CardsType, ModeType, Optional, Pool_type, RegionType, Seq, Sequence, Union, beartype
 from ..utils import dna_utils
 from ..utils.dna_seq import DnaSeq
 
@@ -23,6 +23,7 @@ def from_seqs(
     mode: ModeType = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
     _factory_name: Optional[str] = None,
 ) -> Pool_type:
     """
@@ -76,6 +77,7 @@ def from_seqs(
         num_states=num_states,
         name=None,
         iter_order=iter_order,
+        cards=cards,
         _factory_name=_factory_name,
     )
     result_pool = DnaPool(operation=op)
@@ -101,6 +103,7 @@ class FromSeqsOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
         _factory_name: Optional[str] = None,
     ) -> None:
         """Initialize FromSeqsOp."""
@@ -171,6 +174,7 @@ class FromSeqsOp(Operation):
             prefix=prefix,
             region=region,
             _natural_num_states=natural_num_states,
+            cards=cards,
         )
 
     def _compute_core(
@@ -199,7 +203,6 @@ class FromSeqsOp(Operation):
         seq_string = self.seqs[idx]
 
         # Apply style to all positions if specified
-        from ..party import cards_suppressed
         from ..utils.style_utils import SeqStyle, styles_suppressed
 
         if styles_suppressed():
@@ -207,9 +210,6 @@ class FromSeqsOp(Operation):
         else:
             output_style = SeqStyle.full(len(seq_string), self._style)
             output_seq = DnaSeq(seq_string, output_style)
-
-        if cards_suppressed():
-            return output_seq, {}
 
         return output_seq, {
             "seq_name": self.seq_names[int(idx)],

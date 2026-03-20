@@ -202,12 +202,12 @@ class TestMaterializeDesignCards:
     """Test design card behavior."""
 
     def test_materialize_design_card(self):
-        """Test that materialize reports design card info."""
+        """Test that materialize reports design card info when cards requested."""
         with pp.Party():
             root = pp.from_seqs(["AAAA", "CCCC"], mode="sequential")
-            materialized = root.materialize(num_seqs=2, seed=42)
+            materialized = root.materialize(num_seqs=2, seed=42, cards=["seq_index", "seq_name"])
 
-            df = materialized.generate_library(num_seqs=2, report_design_cards=True)
+            df = materialized.generate_library(num_seqs=2)
 
             # Should have seq_index and seq_name columns
             index_cols = [c for c in df.columns if "seq_index" in c]

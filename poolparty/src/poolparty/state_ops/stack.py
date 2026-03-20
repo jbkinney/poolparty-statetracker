@@ -8,7 +8,7 @@ import statetracker as st
 
 from ..operation import Operation
 from ..pool import Pool
-from ..types import Optional, Pool_type, Real, Seq, Sequence, beartype
+from ..types import CardsType, Optional, Pool_type, Real, Seq, Sequence, beartype
 from ..utils.dna_seq import DnaSeq
 
 
@@ -17,6 +17,7 @@ def stack(
     pools: Sequence[Pool_type],
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ) -> Pool_type:
     """
     Create a Pool by stacking multiple input Pools state-wise.
@@ -36,7 +37,7 @@ def stack(
         A Pool object representing the state-wise stacking of all provided input Pools.
         Each state corresponds to a sequence from one of the input Pools.
     """
-    op = StackOp(pools, prefix=prefix, name=None, iter_order=iter_order)
+    op = StackOp(pools, prefix=prefix, name=None, iter_order=iter_order, cards=cards)
     # Return same type as first input pool
     pool_class = type(pools[0]) if pools else Pool
     result_pool = pool_class(operation=op)
@@ -55,6 +56,7 @@ class StackOp(Operation):
         prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> None:
         """Initialize StackOp."""
         # Compute seq_length: same as parents if all equal, else None
@@ -71,6 +73,7 @@ class StackOp(Operation):
             name=name,
             iter_order=iter_order,
             prefix=prefix,
+            cards=cards,
         )
 
     def build_pool_counter(
@@ -87,8 +90,6 @@ class StackOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         """Return Seq from active parent and design card."""
-        from ..party import cards_suppressed
-
         # Find active parent
         for i, parent in enumerate(self.parent_pools):
             if parent.state.value is not None:
@@ -96,14 +97,10 @@ class StackOp(Operation):
                 self.state.value = i
                 active = i
                 output_seq = parents[active]
-                if cards_suppressed():
-                    return output_seq, {}
                 return output_seq, {"active_parent": active}
 
         # No active parent
         self.state.value = None
         active = None
         output_seq = parents[0] if parents else DnaSeq.empty()
-        if cards_suppressed():
-            return output_seq, {}
         return output_seq, {"active_parent": active}

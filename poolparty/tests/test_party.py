@@ -169,28 +169,28 @@ class TestMixedModes:
 
 
 class TestDesignCards:
-    """Test design card metadata."""
+    """Test design card metadata with opt-in cards parameter."""
 
     def test_mutagenize_metadata(self):
-        """Test that mutation scan includes position and char metadata."""
+        """Test that mutation scan includes position and char metadata when cards requested."""
         with pp.Party() as party:
-            mutants = pp.mutagenize("ACGT", num_mutations=1, mode="sequential").named("mutant")
+            mutants = pp.mutagenize("ACGT", num_mutations=1, mode="sequential", cards=["positions", "wt_chars", "mut_chars"]).named("mutant")
 
         op_name = mutants.operation.name
-        df = mutants.generate_library(num_seqs=3, report_design_cards=True)
+        df = mutants.generate_library(num_seqs=3)
 
-        assert f"{op_name}.key.positions" in df.columns
-        assert f"{op_name}.key.wt_chars" in df.columns
-        assert f"{op_name}.key.mut_chars" in df.columns
+        assert f"{op_name}.positions" in df.columns
+        assert f"{op_name}.wt_chars" in df.columns
+        assert f"{op_name}.mut_chars" in df.columns
 
     def test_from_seqs_metadata(self):
-        """Test that from_seqs includes name and index metadata."""
+        """Test that from_seqs includes name and index metadata when cards requested."""
         with pp.Party() as party:
             pool = pp.from_seqs(
-                ["AAA", "TTT"], seq_names=["seq_a", "seq_b"], mode="sequential"
+                ["AAA", "TTT"], seq_names=["seq_a", "seq_b"], mode="sequential", cards=["seq_name", "seq_index"]
             ).named("myseq")
 
-        df = pool.generate_library(num_seqs=2, report_design_cards=True)
+        df = pool.generate_library(num_seqs=2)
 
         # Find design card columns (operation name is auto-generated)
         seq_name_cols = [c for c in df.columns if "seq_name" in c]

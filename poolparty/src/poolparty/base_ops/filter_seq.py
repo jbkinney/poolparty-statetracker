@@ -7,7 +7,7 @@ import numpy as np
 from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..pool import Pool
-from ..types import Callable, NullSeq, Optional, Pool_type, Seq, Sequence, beartype
+from ..types import Callable, CardsType, NullSeq, Optional, Pool_type, Seq, Sequence, beartype
 
 
 class FilterOp(Operation):
@@ -27,6 +27,7 @@ class FilterOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
+        cards: CardsType = None,
     ) -> None:
         """Initialize FilterOp."""
         super().__init__(
@@ -36,6 +37,7 @@ class FilterOp(Operation):
             name=name,
             iter_order=iter_order,
             prefix=prefix,
+            cards=cards,
         )
         self._predicate = predicate
 
@@ -64,6 +66,7 @@ def filter(
     predicate: Callable[[str], bool],
     name: Optional[str] = None,
     prefix: Optional[str] = None,
+    cards: CardsType = None,
 ) -> Pool:
     """Filter sequences based on a predicate function.
 
@@ -87,7 +90,7 @@ def filter(
     Pool
         New pool that may contain NullSeq for filtered sequences.
     """
-    op = FilterOp(parent_pool=pool, predicate=predicate, name=name, prefix=prefix)
+    op = FilterOp(parent_pool=pool, predicate=predicate, name=name, prefix=prefix, cards=cards)
     return DnaPool(op)
 
 

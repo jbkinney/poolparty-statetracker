@@ -6,7 +6,7 @@ import numpy as np
 
 from ..operation import Operation
 from ..pool import Pool
-from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
+from ..types import CardsType, ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils.dna_seq import DnaSeq
 
 
@@ -20,6 +20,7 @@ def shuffle_seq(
     iter_order: Optional[Real] = None,
     _remove_tags: bool = False,
     style: Optional[str] = None,
+    cards: CardsType = None,
     _factory_name: Optional[str] = None,
 ) -> Pool:
     """
@@ -61,6 +62,7 @@ def shuffle_seq(
         iter_order=iter_order,
         _remove_tags=_remove_tags,
         style=style,
+        cards=cards,
         _factory_name=_factory_name,
     )
     # Preserve the pool type from the input
@@ -87,6 +89,7 @@ class SeqShuffleOp(Operation):
         iter_order: Optional[Real] = None,
         _remove_tags: bool = False,
         style: Optional[str] = None,
+        cards: CardsType = None,
         _factory_name: Optional[str] = None,
     ) -> None:
         """Initialize SeqShuffleOp."""
@@ -117,6 +120,7 @@ class SeqShuffleOp(Operation):
             prefix=prefix,
             region=region,
             remove_tags=_remove_tags,
+            cards=cards,
         )
 
     def _compute_core(
@@ -175,11 +179,6 @@ class SeqShuffleOp(Operation):
             )
 
         output_seq = DnaSeq(shuffled_seq, output_style)
-
-        from ..party import cards_suppressed
-
-        if cards_suppressed():
-            return output_seq, {}
 
         return output_seq, {
             "permutation": permutation,

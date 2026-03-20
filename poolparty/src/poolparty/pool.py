@@ -4,8 +4,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from typing import Literal
-
 import pandas as pd
 
 import statetracker as st
@@ -254,119 +252,34 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
         seed: Optional[int] = None,
         init_state: Optional[int] = None,
         seqs_only: bool = False,
-        report_design_cards: bool = False,
-        aux_pools: Sequence[Pool_type] = (),
-        pools_to_report: Union[str, Sequence[Pool_type]] = "all",
-        organize_columns_by: Literal["pool", "type"] = "type",
         _include_inline_styles: bool = False,
         discard_null_seqs: bool = False,
         max_iterations: Optional[int] = None,
         min_acceptance_rate: Optional[float] = None,
         attempts_per_rate_assessment: int = 100,
-        # Deprecated parameters (for backwards compatibility)
-        report_seq: Optional[bool] = None,
-        report_pool_seqs: Optional[bool] = None,
-        report_pool_states: Optional[bool] = None,
-        report_op_states: Optional[bool] = None,
-        report_op_keys: Optional[bool] = None,
     ) -> Union[pd.DataFrame, list[str]]:
         from .generate_library import generate_library
 
-        # Handle deprecated parameters by temporarily modifying config
-        party = self._party
-        if any(
-            arg is not None
-            for arg in [
-                report_seq,
-                report_pool_seqs,
-                report_pool_states,
-                report_op_states,
-                report_op_keys,
-            ]
-        ):
-            # Save original config values
-            orig_show_seq = party._config.show_seq
-            orig_show_pool_seqs = party._config.show_pool_seqs
-            orig_show_pool_states = party._config.show_pool_states
-            orig_show_op_states = party._config.show_op_states
-            orig_design_cards = party._config._design_cards.copy()
-
-            # Apply deprecated parameters
-            if report_seq is not None:
-                party._config.show_seq = report_seq
-            if report_pool_seqs is not None:
-                party._config.show_pool_seqs = report_pool_seqs
-            if report_pool_states is not None:
-                party._config.show_pool_states = report_pool_states
-            if report_op_states is not None:
-                party._config.show_op_states = report_op_states
-            if report_op_keys is not None and not report_op_keys:
-                # Set all design cards to empty to filter out all keys
-                party._config._design_cards = {
-                    "from_seqs": set(),
-                    "from_iupac": set(),
-                    "from_motif": set(),
-                    "get_kmers": set(),
-                    "mutagenize": set(),
-                    "recombine": set(),
-                    "shuffle_seq": set(),
-                    "mutagenize_orf": set(),
-                    "region_scan": set(),
-                    "region_multiscan": set(),
-                    "repeat": set(),
-                    "stack": set(),
-                }
-
-            try:
-                return generate_library(
-                    pool=self,
-                    num_cycles=num_cycles,
-                    num_seqs=num_seqs,
-                    seed=seed,
-                    init_state=init_state,
-                    seqs_only=seqs_only,
-                    report_design_cards=report_design_cards,
-                    aux_pools=aux_pools,
-                    pools_to_report=pools_to_report,
-                    organize_columns_by=organize_columns_by,
-                    _include_inline_styles=_include_inline_styles,
-                    discard_null_seqs=discard_null_seqs,
-                    max_iterations=max_iterations,
-                    min_acceptance_rate=min_acceptance_rate,
-                    attempts_per_rate_assessment=attempts_per_rate_assessment,
-                )
-            finally:
-                # Restore original config values
-                party._config.show_seq = orig_show_seq
-                party._config.show_pool_seqs = orig_show_pool_seqs
-                party._config.show_pool_states = orig_show_pool_states
-                party._config.show_op_states = orig_show_op_states
-                party._config._design_cards = orig_design_cards
-        else:
-            return generate_library(
-                pool=self,
-                num_cycles=num_cycles,
-                num_seqs=num_seqs,
-                seed=seed,
-                init_state=init_state,
-                seqs_only=seqs_only,
-                report_design_cards=report_design_cards,
-                aux_pools=aux_pools,
-                pools_to_report=pools_to_report,
-                organize_columns_by=organize_columns_by,
-                _include_inline_styles=_include_inline_styles,
-                discard_null_seqs=discard_null_seqs,
-                max_iterations=max_iterations,
-                min_acceptance_rate=min_acceptance_rate,
-                attempts_per_rate_assessment=attempts_per_rate_assessment,
-            )
+        return generate_library(
+            pool=self,
+            num_cycles=num_cycles,
+            num_seqs=num_seqs,
+            seed=seed,
+            init_state=init_state,
+            seqs_only=seqs_only,
+            _include_inline_styles=_include_inline_styles,
+            discard_null_seqs=discard_null_seqs,
+            max_iterations=max_iterations,
+            min_acceptance_rate=min_acceptance_rate,
+            attempts_per_rate_assessment=attempts_per_rate_assessment,
+        )
 
     def print_library(
         self,
         num_seqs: Optional[Integral] = None,
         num_cycles: Optional[Integral] = None,
         show_header: bool = True,
-        show_state: bool = True,
+        show_state: bool = False,  # Changed default to False since state cols not generated by default
         show_name: bool = True,
         show_seq: bool = True,
         pad_names: bool = True,
@@ -395,7 +308,6 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
         # Build kwargs for generate_library, only including num_cycles when needed
         gen_kwargs = {
             "seqs_only": False,
-            "report_design_cards": True,
             "init_state": 0,
             "seed": seed,
             "_include_inline_styles": True,
@@ -427,6 +339,9 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
                 print("  ".join(header_parts))
 
         state_col = f"{self.name}.state"
+        # Disable show_state if the column doesn't exist
+        if show_state and state_col not in df.columns:
+            show_state = False
         for _, row in df.iterrows():
             # Build row columns
             row_parts = []

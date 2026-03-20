@@ -7,7 +7,7 @@ import numpy as np
 from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..pool import Pool
-from ..types import ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
+from ..types import CardsType, ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
 from ..utils.dna_seq import DnaSeq
 
@@ -22,6 +22,7 @@ def from_iupac(
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
     style: Optional[str] = None,
+    cards: CardsType = None,
 ) -> Pool_type:
     """
     Create a Pool that generates DNA sequences from IUPAC notation.
@@ -73,6 +74,7 @@ def from_iupac(
         name=None,
         iter_order=iter_order,
         style=style,
+        cards=cards,
     )
     result_pool = DnaPool(operation=op)
     return result_pool
@@ -95,6 +97,7 @@ class FromIupacOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
+        cards: CardsType = None,
     ) -> None:
         """Initialize FromIupacOp."""
         from ..party import get_active_party
@@ -179,6 +182,7 @@ class FromIupacOp(Operation):
             prefix=prefix,
             region=region,
             _natural_num_states=natural_num_states,
+            cards=cards,
         )
 
     def _compute_core(
@@ -205,7 +209,6 @@ class FromIupacOp(Operation):
         seq_string = "".join(result)
 
         # Apply styling if requested
-        from ..party import cards_suppressed
         from ..utils.style_utils import SeqStyle, styles_suppressed
 
         if styles_suppressed():
@@ -213,9 +216,6 @@ class FromIupacOp(Operation):
         else:
             output_style = SeqStyle.full(len(seq_string), self._style)
             output_seq = DnaSeq(seq_string, output_style)
-
-        if cards_suppressed():
-            return output_seq, {}
 
         return output_seq, {
             "iupac_state": state,
