@@ -57,7 +57,8 @@ region_seq = true
 
 [design_cards.region_multiscan]
 combination_index = true
-positions = true
+starts = true
+stops = true
 names = true
 region_seqs = true
 

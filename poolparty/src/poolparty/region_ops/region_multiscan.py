@@ -1,6 +1,5 @@
 """Insert multiple XML region tags into a sequence."""
 
-from math import factorial, perm
 from numbers import Real
 
 import numpy as np
@@ -27,7 +26,7 @@ def _is_per_insert_positions(positions) -> bool:
 
 def region_multiscan(
     pool,
-    regions,
+    tag_names,
     num_insertions: int,
     positions=None,
     region: RegionType = None,
@@ -47,8 +46,8 @@ def region_multiscan(
     ----------
     pool : Pool or str
         Input Pool or sequence string to insert tags into.
-    regions : Sequence[str] or str
-        Region name(s) to insert. If a single string, used for all insertions.
+    tag_names : Sequence[str] or str
+        Tag name(s) to insert. If a single string, used for all insertions.
     num_insertions : Integral
         Number of region tags to insert.
     positions : PositionsType or list[PositionsType], default=None
@@ -60,9 +59,9 @@ def region_multiscan(
         Length of sequence to encompass per region. Single int for uniform length,
         or a sequence of ints for per-region lengths (one per insertion).
     insertion_mode : str, default='ordered'
-        How to assign regions to positions:
-        - 'ordered': regions[i] goes to the i-th selected position (left to right)
-        - 'unordered': all valid assignments of regions to positions are enumerated
+        How to assign tags to positions:
+        - 'ordered': tag_names[i] goes to the i-th selected position (left to right)
+        - 'unordered': all valid assignments of tags to positions are enumerated
     min_spacing : Optional[int], default=None
         Minimum gap between end of one region and start of next.
         Default: 0 (non-overlapping, touching OK).
@@ -88,18 +87,17 @@ def region_multiscan(
     pool = from_seq(pool) if isinstance(pool, str) else pool
 
     party = get_active_party()
-    region_names = [regions] if isinstance(regions, str) else list(regions)
+    region_names = [tag_names] if isinstance(tag_names, str) else list(tag_names)
     region_lengths = _normalize_region_lengths(region_length, num_insertions)
 
     registered_regions = []
     for i, region_name in enumerate(region_names):
-        rl = region_lengths[i] if i < len(region_lengths) else region_lengths[0]
-        registered_region = party.register_region(region_name, rl)
+        registered_region = party.register_region(region_name, region_lengths[i])
         registered_regions.append(registered_region)
 
     op = RegionMultiScanOp(
         parent_pool=pool,
-        regions=regions,
+        tag_names=tag_names,
         num_insertions=int(num_insertions),
         positions=positions,
         region_constraint=region,
@@ -126,12 +124,12 @@ class RegionMultiScanOp(Operation):
     """Insert multiple XML region tags at selected positions."""
 
     factory_name = "region_multiscan"
-    design_card_keys = ["combination_index", "positions", "names", "region_seqs"]
+    design_card_keys = ["combination_index", "starts", "stops", "names", "region_seqs"]
 
     def __init__(
         self,
         parent_pool,
-        regions,
+        tag_names,
         num_insertions: int,
         positions=None,
         region_constraint: RegionType = None,
@@ -162,12 +160,11 @@ class RegionMultiScanOp(Operation):
         self._max_spacing = max_spacing
         self.num_insertions = num_insertions
         self.insertion_mode = insertion_mode
-        self._region_names = self._coerce_regions(regions)
+        self._region_names = self._coerce_tag_names(tag_names)
         self._validate_region_counts()
 
         self._sequential_cache: list[tuple[int, ...]] | None = None
 
-        # Resolve effective seq_length for cache building (same as RegionScanOp)
         if isinstance(region_constraint, str):
             from ..party import get_active_party
 
@@ -199,13 +196,13 @@ class RegionMultiScanOp(Operation):
             _natural_num_states=natural_num_states,
         )
 
-    def _coerce_regions(self, regions: Union[Sequence[str], str]) -> list[str]:
-        """Normalize regions input to a list of region names."""
-        if isinstance(regions, str):
-            regions = [regions]
-        if not regions:
-            raise ValueError("regions must not be empty")
-        return list(regions)
+    def _coerce_tag_names(self, tag_names: Union[Sequence[str], str]) -> list[str]:
+        """Normalize tag_names input to a list of names."""
+        if isinstance(tag_names, str):
+            tag_names = [tag_names]
+        if not tag_names:
+            raise ValueError("tag_names must not be empty")
+        return list(tag_names)
 
     def _validate_region_counts(self) -> None:
         """Validate region counts against insertion_mode."""
@@ -213,7 +210,7 @@ class RegionMultiScanOp(Operation):
             raise ValueError("insertion_mode must be one of 'ordered', 'unordered'")
         if len(self._region_names) != self.num_insertions:
             raise ValueError(
-                f"len(regions) ({len(self._region_names)}) must equal "
+                f"len(tag_names) ({len(self._region_names)}) must equal "
                 f"num_insertions ({self.num_insertions})"
             )
 
@@ -306,6 +303,13 @@ class RegionMultiScanOp(Operation):
 
         Returns an assignment tuple where result[i] is the position for insert i.
         """
+        for i, p_list in enumerate(valid_indices):
+            if len(p_list) == 0:
+                raise ValueError(
+                    f"No valid positions for insert {i} (region_length={self._region_lengths[i]}). "
+                    "The sequence may be too short or positions too constrained."
+                )
+
         has_varying = len(set(self._region_lengths)) > 1
         valid_sets: list[set[int]] | None = None
         if has_varying:
@@ -463,10 +467,12 @@ class RegionMultiScanOp(Operation):
         else:
             sorted_names = [n for _, _, n, _, _ in inserts]
             sorted_region_seqs = [t for _, t, _, _, _ in inserts]
-            sorted_positions = [pos for pos, _, _, _, _ in inserts]
+            sorted_starts = [pos for pos, _, _, _, _ in inserts]
+            sorted_stops = [pos + rl for pos, _, _, rl, _ in inserts]
             card = {
                 "combination_index": combination_index,
-                "positions": sorted_positions,
+                "starts": sorted_starts,
+                "stops": sorted_stops,
                 "names": sorted_names,
                 "region_seqs": sorted_region_seqs,
             }

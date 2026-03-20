@@ -26,6 +26,7 @@ def mutagenize(
     mode: ModeType = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
+    _remove_tags: bool = False,
     _factory_name: Optional[str] = "mutagenize",
 ) -> Pool:
     """
@@ -83,6 +84,7 @@ def mutagenize(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        _remove_tags=_remove_tags,
         _factory_name=_factory_name,
     )
     # Preserve the pool type from the input
@@ -118,6 +120,7 @@ class MutagenizeOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        _remove_tags: bool = False,
         _factory_name: Optional[str] = "mutagenize",
     ) -> None:
         # Set factory name if provided
@@ -247,6 +250,7 @@ class MutagenizeOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
             region=region,
+            remove_tags=_remove_tags,
             _natural_num_states=natural_num_states,
         )
 

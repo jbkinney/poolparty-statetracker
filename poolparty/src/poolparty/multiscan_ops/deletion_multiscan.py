@@ -3,7 +3,7 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import MultiPositionsType, Optional, RegionType, Sequence, Union, beartype
+from ..types import ModeType, MultiPositionsType, Optional, RegionType, Sequence, Union, beartype
 from ..region_ops.region_multiscan import _is_per_insert_positions
 from ..utils import validate_positions
 
@@ -20,8 +20,9 @@ def deletion_multiscan(
     min_spacing: Optional[Integral] = None,
     max_spacing: Optional[Integral] = None,
     prefix: Optional[str] = None,
-    mode: str = "random",
+    mode: ModeType = "random",
     num_states: Optional[Integral] = None,
+    style: Optional[str] = None,
     iter_order: Optional[Real] = None,
 ) -> Pool:
     """
@@ -54,6 +55,8 @@ def deletion_multiscan(
         Position selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
         Number of states. If None, auto-determined for sequential mode.
+    style : Optional[str], default=None
+        Style to apply to deletion marker characters (e.g., 'gray', 'red bold').
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
 
@@ -106,7 +109,7 @@ def deletion_multiscan(
 
     marked = region_multiscan(
         pool_obj,
-        regions=markers,
+        tag_names=markers,
         num_insertions=int(num_deletions),
         positions=validated_positions,
         region=region,
@@ -123,8 +126,10 @@ def deletion_multiscan(
     if deletion_marker is not None:
         marker_str = del_char * marker_length
         content = from_seq(marker_str)
+        replacement_style = style
     else:
         content = from_seq("")
+        replacement_style = None
 
     result = marked
     for region_name in markers:
@@ -133,6 +138,7 @@ def deletion_multiscan(
             content,
             region_name,
             iter_order=iter_order,
+            _style=replacement_style,
         )
 
     return result

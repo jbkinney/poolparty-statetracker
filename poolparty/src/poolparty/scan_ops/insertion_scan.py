@@ -98,11 +98,11 @@ def insertion_scan(
     # 1. Insert tags at scanning positions
     marked = region_scan(
         pool,
-        region=marker_name,
+        tag_name=marker_name,
         region_length=marker_length,
         positions=positions,
-        region_constraint=region,
-        remove_tags=False,  # Keep outer tags for now
+        region=region,
+        remove_tags=False,
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,

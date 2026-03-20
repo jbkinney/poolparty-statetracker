@@ -28,6 +28,7 @@ class ScanOpsMixin:
         prefix: Optional[Union[str, Sequence[str]]] = None,
         mode: Union[ModeType, tuple[ModeType, ModeType]] = "random",
         num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
+        style: Optional[str] = None,
         iter_order: Optional[Union[Real, Sequence[Real]]] = None,
     ) -> Pool_type:
         from ..scan_ops.mutagenize_scan import mutagenize_scan
@@ -42,6 +43,7 @@ class ScanOpsMixin:
             prefix=prefix,
             mode=mode,
             num_states=num_states,
+            style=style,
             iter_order=iter_order,
         )
 
@@ -49,8 +51,8 @@ class ScanOpsMixin:
         self,
         deletion_length: Integral,
         deletion_marker: Optional[str] = "-",
-        region: RegionType = None,
         positions: PositionsType = None,
+        region: RegionType = None,
         prefix: Optional[str] = None,
         mode: ModeType = "random",
         num_states: Optional[Integral] = None,
@@ -132,31 +134,6 @@ class ScanOpsMixin:
             iter_order=iter_order,
         )
 
-    def replacement_multiscan(
-        self,
-        num_replacements: Integral,
-        replacement_pools: Union[Pool_type, Sequence[Pool_type]],
-        positions: PositionsType = None,
-        insertion_mode: Literal["ordered", "unordered"] = "ordered",
-        prefix: Optional[str] = None,
-        mode: str = "random",
-        num_states: Optional[Integral] = None,
-        iter_order: Optional[Real] = None,
-    ) -> Pool_type:
-        from ..multiscan_ops.replacement_multiscan import replacement_multiscan
-
-        return replacement_multiscan(
-            pool=self,
-            num_replacements=num_replacements,
-            replacement_pools=replacement_pools,
-            positions=positions,
-            insertion_mode=insertion_mode,
-            prefix=prefix,
-            mode=mode,
-            num_states=num_states,
-            iter_order=iter_order,
-        )
-
     def shuffle_scan(
         self,
         shuffle_length: Integral,
@@ -188,6 +165,29 @@ class ScanOpsMixin:
             iter_order=iter_order,
         )
 
+    def subseq_scan(
+        self,
+        seq_length: Integral,
+        positions: PositionsType = None,
+        region: RegionType = None,
+        prefix: Optional[str] = None,
+        mode: ModeType = "random",
+        num_states: Optional[Integral] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        from ..scan_ops.subseq_scan import subseq_scan
+
+        return subseq_scan(
+            pool=self,
+            seq_length=seq_length,
+            positions=positions,
+            region=region,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+        )
+
     def deletion_multiscan(
         self,
         deletion_length: Integral,
@@ -199,8 +199,9 @@ class ScanOpsMixin:
         min_spacing: Optional[Integral] = None,
         max_spacing: Optional[Integral] = None,
         prefix: Optional[str] = None,
-        mode: str = "random",
+        mode: ModeType = "random",
         num_states: Optional[Integral] = None,
+        style: Optional[str] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
         from ..multiscan_ops.deletion_multiscan import deletion_multiscan
@@ -218,6 +219,7 @@ class ScanOpsMixin:
             prefix=prefix,
             mode=mode,
             num_states=num_states,
+            style=style,
             iter_order=iter_order,
         )
 
@@ -228,11 +230,12 @@ class ScanOpsMixin:
         positions: MultiPositionsType = None,
         region: RegionType = None,
         names: Optional[Sequence[str]] = None,
+        replace: bool = False,
         insertion_mode: Literal["ordered", "unordered"] = "ordered",
         min_spacing: Optional[Integral] = None,
         max_spacing: Optional[Integral] = None,
         prefix: Optional[str] = None,
-        mode: str = "random",
+        mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
@@ -245,6 +248,7 @@ class ScanOpsMixin:
             positions=positions,
             region=region,
             names=names,
+            replace=replace,
             insertion_mode=insertion_mode,
             min_spacing=min_spacing,
             max_spacing=max_spacing,
@@ -265,11 +269,11 @@ class ScanOpsMixin:
         min_spacing: Optional[Integral] = None,
         max_spacing: Optional[Integral] = None,
         prefix: Optional[str] = None,
-        mode: str = "random",
+        mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
     ) -> Pool_type:
-        from ..multiscan_ops.replacement_multiscan import replacement_multiscan
+        from ..multiscan_ops.insertion_multiscan import replacement_multiscan
 
         return replacement_multiscan(
             pool=self,

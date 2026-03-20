@@ -1,5 +1,6 @@
 """Mutagenize scan operation - apply mutagenesis within a window at scanning positions."""
 
+import warnings
 from numbers import Integral, Real
 
 from ..pool import Pool
@@ -17,6 +18,7 @@ def mutagenize_scan(
     prefix: Optional[Union[str, Sequence[str]]] = None,
     mode: Union[ModeType, tuple[ModeType, ModeType]] = "random",
     num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
+    style: Optional[str] = None,
     iter_order: Optional[Union[Real, Sequence[Real]]] = None,
     _factory_name: Optional[str] = "mutagenize_scan",
 ) -> Pool:
@@ -84,6 +86,12 @@ def mutagenize_scan(
     # Resolve mode - expand single value to tuple of two
     # Note: str is a Sequence, so check for str first
     if mode is None or isinstance(mode, str):
+        if isinstance(mode, str):
+            warnings.warn(
+                f"mode='{mode}' is broadcast to both scan and mutagenize. "
+                f"Use mode=(scan_mode, mut_mode) for explicit control.",
+                stacklevel=2,
+            )
         mode = (mode, mode)
     elif isinstance(mode, Sequence) and len(mode) != 2:
         raise ValueError("mode must be a sequence of length 2")
@@ -91,6 +99,13 @@ def mutagenize_scan(
 
     # Resolve num_states - expand single value to tuple of two
     if num_states is None or isinstance(num_states, Integral):
+        if isinstance(num_states, Integral):
+            warnings.warn(
+                f"num_states={num_states} is broadcast to both scan and mutagenize, "
+                f"producing up to {num_states}*{num_states}={num_states * num_states} "
+                f"total states. Use num_states=(scan_states, mut_states) for explicit control.",
+                stacklevel=2,
+            )
         num_states = (num_states, num_states)
     elif isinstance(num_states, Sequence) and len(num_states) != 2:
         raise ValueError("num_states must be a sequence of length 2")
@@ -114,11 +129,11 @@ def mutagenize_scan(
     # 1. Insert tags at scanning positions
     marked = region_scan(
         pool,
-        region=marker_name,
+        tag_name=marker_name,
         region_length=marker_length,
         positions=positions,
-        region_constraint=region,
-        remove_tags=False,  # Keep outer tags for now
+        region=region,
+        remove_tags=False,
         prefix=prefix_scan,
         mode=mode_scan,
         num_states=num_states_scan,
@@ -135,7 +150,9 @@ def mutagenize_scan(
         prefix=prefix_mut,
         mode=mode_mut,
         num_states=num_states_mut,
+        style=style,
         iter_order=iter_order_mut,
+        _remove_tags=True,
         _factory_name=f"{_factory_name}(mutagenize)",
     )
 

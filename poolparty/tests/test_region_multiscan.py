@@ -104,7 +104,7 @@ class TestRegionMultiscanSequential:
         with pp.Party():
             # 5 chars → 6 positions for zero-length, C(6,2)=15
             result = region_multiscan(
-                "ACGTG", regions=["a", "b"], num_insertions=2,
+                "ACGTG", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, mode="sequential",
             )
         df = result.generate_library(num_cycles=1)
@@ -116,7 +116,7 @@ class TestRegionMultiscanSequential:
             # 6 chars, region_length=2 → 5 valid start positions, C(5,2)=10
             # But min_spacing=0 means non-overlapping: starts must differ by >= 2
             result = region_multiscan(
-                "ACGTAC", regions=["a", "b"], num_insertions=2,
+                "ACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=2, mode="sequential",
             )
         df = result.generate_library(num_cycles=1)
@@ -130,7 +130,7 @@ class TestRegionMultiscanSequential:
         """Same state produces same output."""
         with pp.Party():
             result = region_multiscan(
-                "ACGTACGT", regions=["x", "y"], num_insertions=2,
+                "ACGTACGT", tag_names=["x", "y"], num_insertions=2,
                 region_length=0, mode="sequential",
             )
         df1 = result.generate_library(num_cycles=1)
@@ -141,7 +141,7 @@ class TestRegionMultiscanSequential:
         """Sequential mode with restricted positions."""
         with pp.Party():
             result = region_multiscan(
-                "ACGTACGT", regions=["x", "y"], num_insertions=2,
+                "ACGTACGT", tag_names=["x", "y"], num_insertions=2,
                 region_length=0, positions=[0, 2, 4, 6],
                 mode="sequential",
             )
@@ -152,7 +152,7 @@ class TestRegionMultiscanSequential:
         """Sequential with 1 insertion degenerates to single scan."""
         with pp.Party():
             result = region_multiscan(
-                "ACGT", regions=["m"], num_insertions=1,
+                "ACGT", tag_names=["m"], num_insertions=1,
                 region_length=0, mode="sequential",
             )
         df = result.generate_library(num_cycles=1)
@@ -165,7 +165,7 @@ class TestRegionMultiscanSequential:
             # Ordered: C(5,2) = 10
             # Unordered: P(5,2) = 20 (all ordered pairs with distinct positions)
             result = region_multiscan(
-                "ACGT", regions=["a", "b"], num_insertions=2,
+                "ACGT", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, insertion_mode="unordered",
                 mode="sequential",
             )
@@ -185,14 +185,14 @@ class TestRegionMultiscanSpacing:
         """min_spacing reduces valid combinations in sequential mode."""
         with pp.Party():
             no_spacing = region_multiscan(
-                "ACGTACGTAC", regions=["a", "b"], num_insertions=2,
+                "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=2, mode="sequential",
             )
         df_no = no_spacing.generate_library(num_cycles=1)
 
         with pp.Party():
             with_spacing = region_multiscan(
-                "ACGTACGTAC", regions=["a", "b"], num_insertions=2,
+                "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=2, min_spacing=3, mode="sequential",
             )
         df_with = with_spacing.generate_library(num_cycles=1)
@@ -202,11 +202,11 @@ class TestRegionMultiscanSpacing:
         """max_spacing limits how far apart regions can be."""
         with pp.Party():
             result = region_multiscan(
-                "ACGTACGTACGTACGTACGT", regions=["a", "b"], num_insertions=2,
+                "ACGTACGTACGTACGTACGT", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, max_spacing=3, mode="sequential",
             )
         df = result.generate_library(num_cycles=1, report_design_cards=True)
-        col = _find_card_col(df, ".key.positions")
+        col = _find_card_col(df, ".key.starts")
         for _, row in df.iterrows():
             positions = row[col]
             assert positions[1] - positions[0] <= 3
@@ -215,11 +215,11 @@ class TestRegionMultiscanSpacing:
         """Spacing constraints are enforced in random mode."""
         with pp.Party():
             result = region_multiscan(
-                "ACGTACGTACGTACGT", regions=["a", "b"], num_insertions=2,
+                "ACGTACGTACGTACGT", tag_names=["a", "b"], num_insertions=2,
                 region_length=3, min_spacing=2,
             )
         df = result.generate_library(num_seqs=20, seed=42, report_design_cards=True)
-        col = _find_card_col(df, ".key.positions")
+        col = _find_card_col(df, ".key.starts")
         for _, row in df.iterrows():
             positions = row[col]
             gap = positions[1] - (positions[0] + 3)
@@ -238,13 +238,13 @@ class TestRegionMultiscanPerInsertPositions:
         """Per-insert positions with sequential mode."""
         with pp.Party():
             result = region_multiscan(
-                "ACGTACGTAC", regions=["a", "b"], num_insertions=2,
+                "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, positions=[[0, 2, 4], [5, 7, 9]],
                 mode="sequential",
             )
         df = result.generate_library(num_cycles=1, report_design_cards=True)
         assert len(df) > 0
-        col = _find_card_col(df, ".key.positions")
+        col = _find_card_col(df, ".key.starts")
         for _, row in df.iterrows():
             positions = row[col]
             # At least one position should come from the specified sets
@@ -254,7 +254,7 @@ class TestRegionMultiscanPerInsertPositions:
         """Per-insert positions with random mode."""
         with pp.Party():
             result = region_multiscan(
-                "ACGTACGTACGTACGT", regions=["a", "b"], num_insertions=2,
+                "ACGTACGTACGTACGT", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, positions=[[0, 4, 8], [2, 6, 10]],
             )
         df = result.generate_library(num_seqs=20, seed=42)
@@ -272,7 +272,7 @@ class TestRegionMultiscanPerInsertPositions:
         with pp.Party():
             # Overlapping position lists so unordered generates more combos
             result_unordered = region_multiscan(
-                "ACGTACGTAC", regions=["a", "b"], num_insertions=2,
+                "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, positions=[[0, 5], [2, 7]],
                 insertion_mode="unordered", mode="sequential",
             )
@@ -280,7 +280,7 @@ class TestRegionMultiscanPerInsertPositions:
 
         with pp.Party():
             result_ordered = region_multiscan(
-                "ACGTACGTAC", regions=["a", "b"], num_insertions=2,
+                "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, positions=[[0, 5], [2, 7]],
                 insertion_mode="ordered", mode="sequential",
             )
@@ -311,11 +311,11 @@ class TestRegionMultiscanDesignCard:
         """Design card has all expected fields."""
         with pp.Party():
             result = region_multiscan(
-                "ACGTACGTAC", regions=["a", "b"], num_insertions=2,
+                "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=2, mode="sequential",
             )
         df = result.generate_library(num_cycles=1, report_design_cards=True)
-        suffixes = [".key.positions", ".key.names", ".key.region_seqs", ".key.combination_index"]
+        suffixes = [".key.starts", ".key.names", ".key.region_seqs", ".key.combination_index"]
         for s in suffixes:
             assert any(c.endswith(s) for c in df.columns), f"Missing column with suffix {s}"
 
@@ -323,7 +323,7 @@ class TestRegionMultiscanDesignCard:
         """In ordered mode, names match regions in order."""
         with pp.Party():
             result = region_multiscan(
-                "ACGTACGTAC", regions=["first", "second"], num_insertions=2,
+                "ACGTACGTAC", tag_names=["first", "second"], num_insertions=2,
                 region_length=0, mode="sequential",
             )
         df = result.generate_library(num_cycles=1, report_design_cards=True)
@@ -335,7 +335,7 @@ class TestRegionMultiscanDesignCard:
         """combination_index is set in sequential mode."""
         with pp.Party():
             result = region_multiscan(
-                "ACGT", regions=["a", "b"], num_insertions=2,
+                "ACGT", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, mode="sequential",
             )
         df = result.generate_library(num_cycles=1, report_design_cards=True)
@@ -347,7 +347,7 @@ class TestRegionMultiscanDesignCard:
         """combination_index is None in random mode."""
         with pp.Party():
             result = region_multiscan(
-                "ACGTACGTAC", regions=["a", "b"], num_insertions=2,
+                "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=0,
             )
         df = result.generate_library(num_seqs=5, seed=42, report_design_cards=True)
@@ -448,16 +448,16 @@ class TestRegionMultiscanWithRegionConstraint:
 
     def test_zero_length_markers_within_region(self):
         with pp.Party():
-            bg = pp.region_scan("AAAAACCCCCGGGGG", region="target", region_length=5, positions=[5], mode="sequential")
-            result = region_multiscan(bg, regions=["m1", "m2"], num_insertions=2, region="target", region_length=0)
+            bg = pp.region_scan("AAAAACCCCCGGGGG", tag_name="target", region_length=5, positions=[5], mode="sequential")
+            result = region_multiscan(bg, tag_names=["m1", "m2"], num_insertions=2, region="target", region_length=0)
         df = result.generate_library(num_seqs=10, seed=42)
         for seq in df["seq"]:
             assert "<m1/>" in seq or "<m2/>" in seq
 
     def test_surrounding_sequence_preserved(self):
         with pp.Party():
-            bg = pp.region_scan("AAAAACCCCCGGGGG", region="target", region_length=5, positions=[5], mode="sequential")
-            result = region_multiscan(bg, regions=["m1"], num_insertions=1, region="target", region_length=0)
+            bg = pp.region_scan("AAAAACCCCCGGGGG", tag_name="target", region_length=5, positions=[5], mode="sequential")
+            result = region_multiscan(bg, tag_names=["m1"], num_insertions=1, region="target", region_length=0)
         df = result.generate_library(num_seqs=10, seed=42)
         for seq in df["seq"]:
             assert seq.startswith("AAAAA")
@@ -474,7 +474,7 @@ class TestRegionMultiscanBackwardCompat:
 
     def test_basic_multiscan_random(self):
         with pp.Party():
-            result = region_multiscan("AAAAAAAAAAAAAAAAAA", regions=["r1", "r2"], num_insertions=2, region_length=3)
+            result = region_multiscan("AAAAAAAAAAAAAAAAAA", tag_names=["r1", "r2"], num_insertions=2, region_length=3)
         df = result.generate_library(num_seqs=10, seed=42)
         for seq in df["seq"]:
             assert "<r1>" in seq
@@ -545,7 +545,7 @@ class TestDeletionMultiscanConsistency:
         df = result.generate_library(num_cycles=1, report_design_cards=True)
         assert len(df) == 15
 
-        pos_col = _get_card(df, ".key.positions")
+        pos_col = _get_card(df, ".key.starts")
         for i, (_, row) in enumerate(df.iterrows()):
             positions = pos_col.iloc[i]
             seq = row["seq"]
@@ -574,7 +574,7 @@ class TestDeletionMultiscanConsistency:
         df = result.generate_library(num_cycles=1, report_design_cards=True)
 
         names_col = _get_card(df, ".key.names")
-        pos_col = _get_card(df, ".key.positions")
+        pos_col = _get_card(df, ".key.starts")
         idx_col = _get_card(df, ".key.combination_index")
 
         for i in range(len(df)):
@@ -619,7 +619,7 @@ class TestInsertionMultiscanConsistency:
         df = result.generate_library(num_cycles=1, report_design_cards=True)
         assert len(df) == 36
 
-        pos_col = _get_card(df, ".key.positions")
+        pos_col = _get_card(df, ".key.starts")
         idx_col = _get_card(df, ".key.combination_index")
 
         for i in range(len(df)):
@@ -653,7 +653,7 @@ class TestInsertionMultiscanConsistency:
 
         df = result.generate_library(num_cycles=1, report_design_cards=True)
 
-        pos_col = _get_card(df, ".key.positions")
+        pos_col = _get_card(df, ".key.starts")
         names_col = _get_card(df, ".key.names")
 
         for i in range(len(df)):
@@ -731,7 +731,7 @@ class TestReplacementMultiscanConsistency:
         )
         assert len(df) == len(expected_combos)
 
-        pos_col = _get_card(df, ".key.positions")
+        pos_col = _get_card(df, ".key.starts")
         idx_col = _get_card(df, ".key.combination_index")
 
         for i in range(len(df)):
@@ -764,7 +764,7 @@ class TestReplacementMultiscanConsistency:
 
         df = result.generate_library(num_cycles=1, report_design_cards=True)
 
-        pos_col = _get_card(df, ".key.positions")
+        pos_col = _get_card(df, ".key.starts")
         original = "ABCDEFGHIJ"
 
         for i in range(len(df)):
@@ -790,7 +790,7 @@ class TestReplacementMultiscanConsistency:
         """Replacement within a tagged region: positions are region-relative."""
         with pp.Party():
             bg = pp.region_scan(
-                "AAAAACCCCCCCCCCGGGGG", region="target",
+                "AAAAACCCCCCCCCCGGGGG", tag_name="target",
                 region_length=10, positions=[5], mode="sequential",
             )
             rep = pp.from_seq("XX")
@@ -801,7 +801,7 @@ class TestReplacementMultiscanConsistency:
 
         df = result.generate_library(num_cycles=1, report_design_cards=True)
 
-        pos_col = _get_card(df, ".key.positions")
+        pos_col = _get_card(df, ".key.starts")
 
         for i in range(len(df)):
             seq = df.iloc[i]["seq"]
@@ -855,7 +855,7 @@ class TestPerRegionLengths:
         """region_multiscan with varying region_length in sequential mode."""
         with pp.Party():
             result = region_multiscan(
-                "AAAAAAAAAA", regions=["short", "long"], num_insertions=2,
+                "AAAAAAAAAA", tag_names=["short", "long"], num_insertions=2,
                 region_length=[2, 4], mode="sequential",
             )
         df = result.generate_library(num_cycles=1)
@@ -868,7 +868,7 @@ class TestPerRegionLengths:
         """region_multiscan with varying region_length in random mode."""
         with pp.Party():
             result = region_multiscan(
-                "AAAAAAAAAAAAAAAA", regions=["s", "l"], num_insertions=2,
+                "AAAAAAAAAAAAAAAA", tag_names=["s", "l"], num_insertions=2,
                 region_length=[2, 4],
             )
         df = result.generate_library(num_seqs=10, seed=42)
@@ -881,7 +881,7 @@ class TestPerRegionLengths:
         """Tags encompass the correct number of characters for each region length."""
         with pp.Party():
             result = region_multiscan(
-                "ABCDEFGHIJ", regions=["r2", "r3"], num_insertions=2,
+                "ABCDEFGHIJ", tag_names=["r2", "r3"], num_insertions=2,
                 region_length=[2, 3], mode="sequential",
             )
         df = result.generate_library(num_cycles=1)
@@ -899,7 +899,7 @@ class TestPerRegionLengths:
         """Varying region_length with unordered mode works (assignment-based)."""
         with pp.Party():
             result = region_multiscan(
-                "AAAAAAAAAAAAAAAA", regions=["s", "l"], num_insertions=2,
+                "AAAAAAAAAAAAAAAA", tag_names=["s", "l"], num_insertions=2,
                 region_length=[2, 4], insertion_mode="unordered",
                 mode="sequential",
             )
@@ -913,7 +913,7 @@ class TestPerRegionLengths:
         """Unordered + varying lengths: both spatial orderings appear."""
         with pp.Party():
             result = region_multiscan(
-                "AAAAAAAAAAAAAAAA", regions=["s", "l"], num_insertions=2,
+                "AAAAAAAAAAAAAAAA", tag_names=["s", "l"], num_insertions=2,
                 region_length=[2, 4], insertion_mode="unordered",
                 mode="sequential",
             )
@@ -971,7 +971,7 @@ class TestPerRegionLengths:
                 min_spacing=3, mode="sequential",
             ).named("result")
         df = result.generate_library(num_cycles=1, report_design_cards=True)
-        pos_col = _get_card(df, ".key.positions")
+        pos_col = _get_card(df, ".key.starts")
         for i in range(len(df)):
             positions = pos_col.iloc[i]
             # gap = positions[1] - (positions[0] + 2) >= 3
