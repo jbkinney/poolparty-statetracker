@@ -119,6 +119,7 @@ Contents
    :caption: User Guide
 
    quickstart
+   operations/index
 
 .. toctree::
    :maxdepth: 2

@@ -16,6 +16,39 @@ table.docutils td, table.docutils th {
     border: 1px solid #ddd;
 }
 
+/* Pool output display blocks */
+.pp-pool {
+    background: #f7f9fb;
+    border-left: 3px solid #3b82f6;
+    padding: 6px 14px 8px;
+    margin: 2px 0 18px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 0.87em;
+    line-height: 1.75;
+    border-radius: 0 4px 4px 0;
+}
+.pp-header {
+    display: block;
+    font-family: sans-serif;
+    font-size: 0.82em;
+    color: #6b7280;
+    margin-bottom: 3px;
+    font-style: normal;
+}
+/* Tagged region content (blue) */
+.pp-region  { color: #1d4ed8; font-weight: 600; }
+/* Mutated / substituted bases (red) */
+.pp-mut     { color: #dc2626; font-weight: 600; }
+/* Deleted bases / gap markers (grey) */
+.pp-del     { color: #9ca3af; }
+/* Inserted sequences (green) */
+.pp-ins     { color: #16a34a; font-weight: 600; }
+/* Alternating codon colours */
+.pp-codon-a { color: #7c3aed; }
+.pp-codon-b { color: #db2777; }
+/* Truncation indicator */
+.pp-ellipsis { color: #9ca3af; font-style: italic; }
+
 /* Improve API reference readability */
 dl.py.function > dt,
 dl.py.class > dt,
