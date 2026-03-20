@@ -132,6 +132,31 @@ class ScanOpsMixin:
             iter_order=iter_order,
         )
 
+    def replacement_multiscan(
+        self,
+        num_replacements: Integral,
+        replacement_pools: Union[Pool_type, Sequence[Pool_type]],
+        positions: PositionsType = None,
+        insertion_mode: Literal["ordered", "unordered"] = "ordered",
+        prefix: Optional[str] = None,
+        mode: str = "random",
+        num_states: Optional[Integral] = None,
+        iter_order: Optional[Real] = None,
+    ) -> Pool_type:
+        from ..multiscan_ops.replacement_multiscan import replacement_multiscan
+
+        return replacement_multiscan(
+            pool=self,
+            num_replacements=num_replacements,
+            replacement_pools=replacement_pools,
+            positions=positions,
+            insertion_mode=insertion_mode,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+        )
+
     def shuffle_scan(
         self,
         shuffle_length: Integral,
