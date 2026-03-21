@@ -205,7 +205,7 @@ class TestRegionMultiscanSpacing:
                 "ACGTACGTACGTACGTACGT", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, max_spacing=3, mode="sequential",
             )
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
         col = _find_card_col(df, ".key.starts")
         for _, row in df.iterrows():
             positions = row[col]
@@ -218,7 +218,7 @@ class TestRegionMultiscanSpacing:
                 "ACGTACGTACGTACGT", tag_names=["a", "b"], num_insertions=2,
                 region_length=3, min_spacing=2,
             )
-        df = result.generate_library(num_seqs=20, seed=42, report_design_cards=True)
+        df = result.generate_library(num_seqs=20, seed=42)
         col = _find_card_col(df, ".key.starts")
         for _, row in df.iterrows():
             positions = row[col]
@@ -242,7 +242,7 @@ class TestRegionMultiscanPerInsertPositions:
                 region_length=0, positions=[[0, 2, 4], [5, 7, 9]],
                 mode="sequential",
             )
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
         assert len(df) > 0
         col = _find_card_col(df, ".key.starts")
         for _, row in df.iterrows():
@@ -314,7 +314,7 @@ class TestRegionMultiscanDesignCard:
                 "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=2, mode="sequential",
             )
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
         suffixes = [".key.starts", ".key.names", ".key.region_seqs", ".key.combination_index"]
         for s in suffixes:
             assert any(c.endswith(s) for c in df.columns), f"Missing column with suffix {s}"
@@ -326,7 +326,7 @@ class TestRegionMultiscanDesignCard:
                 "ACGTACGTAC", tag_names=["first", "second"], num_insertions=2,
                 region_length=0, mode="sequential",
             )
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
         col = _find_card_col(df, ".key.names")
         for _, row in df.iterrows():
             assert row[col] == ["first", "second"]
@@ -338,7 +338,7 @@ class TestRegionMultiscanDesignCard:
                 "ACGT", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, mode="sequential",
             )
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
         col = _find_card_col(df, ".key.combination_index")
         indices = list(df[col])
         assert indices == list(range(len(df)))
@@ -350,7 +350,7 @@ class TestRegionMultiscanDesignCard:
                 "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=0,
             )
-        df = result.generate_library(num_seqs=5, seed=42, report_design_cards=True)
+        df = result.generate_library(num_seqs=5, seed=42)
         col = _find_card_col(df, ".key.combination_index")
         for _, row in df.iterrows():
             assert row[col] is None
@@ -542,7 +542,7 @@ class TestDeletionMultiscanConsistency:
                 min_spacing=2, mode="sequential",
             ).named("result")
 
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 15
 
         pos_col = _get_card(df, ".key.starts")
@@ -571,7 +571,7 @@ class TestDeletionMultiscanConsistency:
                 names=["cut_A", "cut_B"], mode="sequential",
             ).named("result")
 
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
 
         names_col = _get_card(df, ".key.names")
         pos_col = _get_card(df, ".key.starts")
@@ -616,7 +616,7 @@ class TestInsertionMultiscanConsistency:
                 mode="sequential",
             ).named("result")
 
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
         assert len(df) == 36
 
         pos_col = _get_card(df, ".key.starts")
@@ -651,7 +651,7 @@ class TestInsertionMultiscanConsistency:
                 min_spacing=3, mode="sequential",
             ).named("result")
 
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
 
         pos_col = _get_card(df, ".key.starts")
         names_col = _get_card(df, ".key.names")
@@ -688,7 +688,7 @@ class TestInsertionMultiscanConsistency:
                 mode="sequential",
             ).named("result")
 
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
         # C(4,2) = 6 positions: (0,1),(0,2),(0,3),(1,2),(1,3),(2,3)
         assert len(df) == 6
 
@@ -722,7 +722,7 @@ class TestReplacementMultiscanConsistency:
                 min_spacing=1, mode="sequential",
             ).named("result")
 
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
 
         # Verify independently: enumerate valid pairs
         from poolparty.utils.scan_utils import enumerate_multiscan_combinations
@@ -762,7 +762,7 @@ class TestReplacementMultiscanConsistency:
                 mode="sequential",
             ).named("result")
 
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
 
         pos_col = _get_card(df, ".key.starts")
         original = "ABCDEFGHIJ"
@@ -799,7 +799,7 @@ class TestReplacementMultiscanConsistency:
                 region="target", mode="sequential",
             ).named("result")
 
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
 
         pos_col = _get_card(df, ".key.starts")
 
@@ -917,7 +917,7 @@ class TestPerRegionLengths:
                 region_length=[2, 4], insertion_mode="unordered",
                 mode="sequential",
             )
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
         names_col = _find_card_col(df, ".key.names")
         # In ordered mode, "s" is always leftmost. In unordered,
         # some combos have "l" as the leftmost.
@@ -970,7 +970,7 @@ class TestPerRegionLengths:
                 replacement_pools=[pool_a, pool_b],
                 min_spacing=3, mode="sequential",
             ).named("result")
-        df = result.generate_library(num_cycles=1, report_design_cards=True)
+        df = result.generate_library(num_cycles=1)
         pos_col = _get_card(df, ".key.starts")
         for i in range(len(df)):
             positions = pos_col.iloc[i]

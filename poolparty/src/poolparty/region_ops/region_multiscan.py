@@ -174,6 +174,8 @@ class RegionMultiScanOp(Operation):
                 self._seq_length = constraint_region.seq_length
             except (ValueError, KeyError):
                 self._seq_length = parent_pool.seq_length
+        elif region_constraint is not None:
+            self._seq_length = int(region_constraint[1]) - int(region_constraint[0])
         else:
             self._seq_length = parent_pool.seq_length
 

@@ -155,8 +155,8 @@ class TestDeletionScanModes:
         positions = [seq.index("---") for seq in df["seq"]]
         assert len(set(positions)) > 1
 
-    def test_hybrid_mode(self):
-        """Test hybrid mode."""
+    def test_random_mode_with_num_states(self):
+        """Test random mode with explicit num_states."""
         with pp.Party() as party:
             bg = pp.from_seqs(["AAAAAAAAAA"])
             result = deletion_scan(bg, deletion_length=3, mode="random", num_states=5).named(

@@ -49,9 +49,28 @@ def remove_tags(
     """
     from ..fixed_ops.fixed import fixed_operation
     from ..fixed_ops.from_seq import from_seq
+    from ..party import get_active_party
 
     # Convert string to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
+
+    # Look up registered region length for seq_length computation
+    party = get_active_party()
+    region_seq_length = None
+    if party is not None and party.has_region(region_name):
+        region_seq_length = party.get_region(region_name).seq_length
+
+    if keep_content:
+        # Stripping tags doesn't change biological length
+        def _seq_length_fn(lengths):
+            return lengths[0]
+    else:
+        # Biological length shrinks by the region's content length
+        def _seq_length_fn(lengths):
+            parent_len = lengths[0]
+            if parent_len is None or region_seq_length is None:
+                return None
+            return parent_len - region_seq_length
 
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         seq = seqs[0]
@@ -68,7 +87,7 @@ def remove_tags(
     result_pool = fixed_operation(
         parent_pools=[pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
-        seq_length_from_pool_lengths_fn=lambda lengths: None,  # Length changes when removing tags
+        seq_length_from_pool_lengths_fn=_seq_length_fn,
         iter_order=iter_order,
         prefix=prefix,
         _factory_name="remove_tags",

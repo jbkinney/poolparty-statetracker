@@ -44,7 +44,7 @@ def shuffle_scan(
     prefix_shuffle : Optional[str], default=None
         Prefix for shuffle variant index (e.g., 'var' produces 'var_0', 'var_1', ...).
     mode : ModeType, default='random'
-        Selection mode: 'random', 'sequential', or 'hybrid'.
+        Selection mode: 'random' or 'sequential'.
     style : Optional[str], default=None
         Style to apply to shuffled characters (e.g., 'purple', 'red bold').
 

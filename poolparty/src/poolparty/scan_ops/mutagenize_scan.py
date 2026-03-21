@@ -17,7 +17,7 @@ def mutagenize_scan(
     region: RegionType = None,
     prefix: Optional[Union[str, Sequence[str]]] = None,
     mode: Union[ModeType, tuple[ModeType, ModeType]] = "random",
-    num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
+    num_states: Optional[Union[Integral, Sequence[Optional[Integral]]]] = None,
     style: Optional[str] = None,
     iter_order: Optional[Union[Real, Sequence[Real]]] = None,
     _factory_name: Optional[str] = "mutagenize_scan",
@@ -47,9 +47,13 @@ def mutagenize_scan(
     mode : Union[ModeType, Sequence[ModeType]], default='random'
         Selection mode for scanning positions: 'random' or 'sequential'.
         If sequence, first element is for scanning positions, second element is for mutagenization.
-    num_states : Optional[Union[Integral, Sequence[Integral]]], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
-        If sequence, first element is for scanning positions, second element is for mutagenization.
+    num_states : Optional[Union[Integral, Sequence[Optional[Integral]]]], default=None
+        Number of states. A scalar value is broadcast to both sub-operations.
+        If a 2-tuple, first element is for scanning positions, second for mutagenization.
+        For each element: None means auto-compute in sequential mode (enumerate all
+        variants) or 1 in random mode (pure random sampling).
+        Example: ``num_states=(3, None)`` with ``mode=("random", "sequential")`` picks
+        3 random scan positions and enumerates all mutation variants at each.
     iter_order : Optional[Union[Real, Sequence[Real]]], default=None
         Iteration order priority for the Operation.
         If sequence, first element is for scanning positions, second element is for mutagenization.

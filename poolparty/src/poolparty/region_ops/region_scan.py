@@ -137,6 +137,7 @@ class RegionScanOp(Operation):
 
         # Determine effective seq_length for cache building:
         # If region is a region name, use the region's registered length
+        # If region is [start, stop], use stop - start
         # Otherwise, use the parent pool's seq_length
         if isinstance(region, str):
             party = get_active_party()
@@ -144,8 +145,9 @@ class RegionScanOp(Operation):
                 constraint_region = party.get_region_by_name(region)
                 self._seq_length = constraint_region.seq_length
             except (ValueError, KeyError):
-                # Region not yet registered, fall back to parent seq_length
                 self._seq_length = parent_pool.seq_length
+        elif region is not None:
+            self._seq_length = int(region[1]) - int(region[0])
         else:
             self._seq_length = parent_pool.seq_length
 
@@ -230,7 +232,7 @@ class RegionScanOp(Operation):
             raise ValueError("No valid positions for region tag insertion")
 
         # Select position
-        if self.mode in ("random", "hybrid"):
+        if self.mode == "random":
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
             position_index = int(rng.integers(0, len(valid_indices)))

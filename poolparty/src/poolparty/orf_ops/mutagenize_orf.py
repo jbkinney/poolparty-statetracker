@@ -465,7 +465,7 @@ class MutagenizeOrfOp(Operation):
         # Extract codons using molecular coordinates (with frame offset)
         codons = self._extract_codons_molecular(parent_seq, mol_start, mol_end, self.frame_offset)
 
-        if self.mode in ("random", "hybrid"):
+        if self.mode == "random":
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
             positions, wt_codons, mut_codons, wt_aas, mut_aas = self._random_mutation(

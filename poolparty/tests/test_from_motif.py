@@ -85,11 +85,11 @@ class TestFromMotifRandomMode:
         assert list(df1["seq"]) == list(df2["seq"])
 
 
-class TestFromMotifHybridMode:
-    """Test FromMotif in hybrid mode."""
+class TestFromMotifRandomWithNumStates:
+    """Test FromMotif in random mode with explicit num_states."""
 
-    def test_hybrid_mode_num_states(self):
-        """Test that hybrid mode has specified num_states."""
+    def test_random_mode_num_states(self):
+        """Test that random mode with num_states has specified num_states."""
         prob_df = pd.DataFrame({"A": [0.5], "T": [0.5]})
         with pp.Party() as party:
             pool = from_motif(prob_df, mode="random", num_states=10)
@@ -340,8 +340,8 @@ class TestFromMotifCopyParams:
         assert params["num_states"] is None
         assert params["name"] is None
 
-    def test_copy_params_hybrid_mode(self):
-        """Test _get_copy_params in hybrid mode."""
+    def test_copy_params_random_mode_with_num_states(self):
+        """Test _get_copy_params in random mode with num_states."""
         prob_df = pd.DataFrame({"A": [0.5], "T": [0.5]})
         with pp.Party() as party:
             pool = from_motif(prob_df, mode="random", num_states=10)

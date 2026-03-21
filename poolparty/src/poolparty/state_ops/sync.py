@@ -9,19 +9,14 @@ from ..types import Sequence, beartype
 @beartype
 def sync(
     pools: Sequence[Pool],
-) -> Pool:
+) -> None:
     """
-    Create a Pool that synchronizes multiple input Pools to iterate in lockstep.
+    Synchronize multiple Pools to iterate in lockstep (in-place).
 
     Parameters
     ----------
     pools : Sequence[Pool]
         Sequence of Pool objects to synchronize. All pools must have the same number of states.
-
-    Returns
-    -------
-    Pool
-        A Pool whose state selection causes all input Pools to advance synchronously through their states.
 
     Raises
     ------
@@ -36,6 +31,8 @@ def sync(
         raise ValueError(f"Cannot sync pools with different num_states: {sizes=}")
 
     states = [p.state for p in pools]
-    shared_state = st.sync(states)
+    for s in states[1:]:
+        st.sync(states[0], s)
+    shared_state = states[0]
     for pool in pools:
         pool.state = shared_state

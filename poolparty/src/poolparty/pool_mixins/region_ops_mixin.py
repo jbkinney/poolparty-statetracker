@@ -106,7 +106,7 @@ class RegionOpsMixin:
         result = fixed_operation(
             parent_pools=[self],
             seq_from_seqs_fn=lambda seqs: strip_all_tags(seqs[0]),
-            seq_length_from_pool_lengths_fn=lambda lengths: None,
+            seq_length_from_pool_lengths_fn=lambda lengths: lengths[0],
             **kwargs,
         )
         result._regions = set()

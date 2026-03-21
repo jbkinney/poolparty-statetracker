@@ -200,10 +200,12 @@ class StylizeOrfOp(Operation):
         if self._style_region is None:
             return (0, len(text))
 
-        # Handle [start, stop] interval
+        # Handle [start, stop] interval — convert molecular to literal positions
         if not isinstance(self._style_region, str):
+            from ..utils.parsing_utils import nontag_pos_to_literal_pos
+
             start, stop = int(self._style_region[0]), int(self._style_region[1])
-            return (start, stop)
+            return (nontag_pos_to_literal_pos(text, start), nontag_pos_to_literal_pos(text, stop))
 
         # Handle region name
         from ..utils.parsing_utils import find_all_regions

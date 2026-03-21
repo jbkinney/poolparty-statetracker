@@ -27,7 +27,7 @@ class ScanOpsMixin:
         region: RegionType = None,
         prefix: Optional[Union[str, Sequence[str]]] = None,
         mode: Union[ModeType, tuple[ModeType, ModeType]] = "random",
-        num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
+        num_states: Optional[Union[Integral, Sequence[Optional[Integral]]]] = None,
         style: Optional[str] = None,
         iter_order: Optional[Union[Real, Sequence[Real]]] = None,
     ) -> Pool_type:

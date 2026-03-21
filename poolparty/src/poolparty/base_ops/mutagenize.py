@@ -9,7 +9,7 @@ import numpy as np
 from ..operation import Operation
 from ..party import get_active_party
 from ..pool import Pool
-from ..types import Integral, ModeType, Optional, Real, RegionType, Seq, Union, beartype
+from ..types import CardsType, Integral, ModeType, Optional, Real, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
 from ..utils.dna_seq import DnaSeq
 
@@ -27,6 +27,7 @@ def mutagenize(
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
     _remove_tags: bool = False,
+    cards: CardsType = None,
     _factory_name: Optional[str] = "mutagenize",
 ) -> Pool:
     """
@@ -85,6 +86,7 @@ def mutagenize(
         num_states=num_states,
         iter_order=iter_order,
         _remove_tags=_remove_tags,
+        cards=cards,
         _factory_name=_factory_name,
     )
     # Preserve the pool type from the input
@@ -121,6 +123,7 @@ class MutagenizeOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _remove_tags: bool = False,
+        cards: CardsType = None,
         _factory_name: Optional[str] = "mutagenize",
     ) -> None:
         # Set factory name if provided
@@ -211,6 +214,8 @@ class MutagenizeOp(Operation):
                         effective_length = region_obj.seq_length
                 except ValueError:
                     pass  # Region not found, fall back to full sequence length
+            elif region is not None:
+                effective_length = int(region[1]) - int(region[0])
 
             # If allowed_chars is provided, use its length and pre-computed mutation counts
             if self._mutation_counts_from_allowed is not None:
@@ -252,6 +257,7 @@ class MutagenizeOp(Operation):
             region=region,
             remove_tags=_remove_tags,
             _natural_num_states=natural_num_states,
+            cards=cards,
         )
 
         # Create LRU-cached version for position data computation

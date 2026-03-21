@@ -8,6 +8,7 @@ from .parsing_utils import (
     ParsedRegion,
     build_region_tags,
     find_all_regions,
+    nontag_pos_to_literal_pos,
     validate_single_region_from_list,
 )
 
@@ -90,14 +91,21 @@ class RegionContext:
                 _region_obj=region_obj,
             )
         else:
-            # Interval region [start, stop]
+            # Interval region [start, stop] — molecular (nontag) positions
+            # Use last-char+1 for stop to exclude trailing tags from region content,
+            # keeping them in the suffix (preserves tag structure for operations that strip tags)
             start, stop = int(region[0]), int(region[1])
+            lit_start = nontag_pos_to_literal_pos(seq, start)
+            if start < stop:
+                lit_stop = nontag_pos_to_literal_pos(seq, stop - 1) + 1
+            else:
+                lit_stop = lit_start
             return cls(
-                prefix=seq[:start],
-                region_content=seq[start:stop],
-                suffix=seq[stop:],
-                region_start=start,
-                region_end=stop,
+                prefix=seq[:lit_start],
+                region_content=seq[lit_start:lit_stop],
+                suffix=seq[lit_stop:],
+                region_start=lit_start,
+                region_end=lit_stop,
                 region_name=None,
                 strand=None,
                 remove_tags=remove_tags,
