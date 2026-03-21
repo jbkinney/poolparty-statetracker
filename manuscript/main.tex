@@ -138,15 +138,21 @@ Each Operation's backward-pass decomposition is designed to reverse its forward-
 
 One often wants to perform different operations on different parts of a template sequence. To facilitate this, PoolParty lets users mark regions of interest within sequences using XML-style tags. Content tags enclose an existing sub-sequence (e.g., \texttt{AAA<cre>CCCGGG</cre>TTT}), while self-closing tags mark insertion points (e.g., \texttt{ACGT<ins/>ACGT}). Operations can then be instructed to act only on a named region, as illustrated in Fig.~\ref{fig:figure1}C. Tags persist through the DAG and remain valid even when upstream Operations change the content or length within a region, so multiple Operations can reliably target the same region in series.
 
-\subsection{Sequence Provenance}
+\subsection{Sequence metadata}
 
-PoolParty has three complementary features to record sequence provenance.
+When generating a library, it is often useful to record how each sequence was constructed. PoolParty provides three complementary features that enable this:
 
-\textbf{Design cards} record the design choices used to generate each sequence in the library. Users specify which Operations to track, and the resulting cards are returned as a DataFrame at the same time the sequences are generated. Each row corresponds to an individual sequence, and its columns record the design choices of the tracked Operations. Additional user-defined sequence properties can also be computed and returned as part of this DataFrame. As design cards are metadata encoding sequence features, they support downstream analyses such as filtering, grouping, and modeling without the need for custom sequence parsing.
+\begin{itemize}
+\item \textbf{Design cards} record the design choices used to generate each sequence. Users specify which Operations and Operation-specific parameters to track. The resulting cards are then returned as a DataFrame alongside the generated sequences. Each row corresponds to one sequence, and its columns record the values of the tracked operation parameters. As structured metadata, design cards support downstream filtering, grouping, and modeling without custom sequence parsing.
 
-\textbf{Composite sequence names} collectively summarize the states of the Operations used to generate each sequence. Users assign prefixes to each Operation they wish to track. During sequence generation, PoolParty combines each prefix with the corresponding resolved state and concatenates these prefix--state pairs in topological order within the DAG to form the name. For example, \texttt{wt.mut\_03.bc\_01} denotes a wild-type sequence modified with mutation variant~3 and tagged with barcode~1. Operations without prefixes or on inactive branches are omitted.
+\item \textbf{Sequence names} summarize the construction history of each sequence in an easily readable format. Users assign a prefix to each Operation they wish to track. PoolParty then combines each prefix with the corresponding resolved state to form the name. For example, \texttt{wt.mut\_03.bc\_01} denotes a wild-type sequence with mutation variant~3 and barcode~1.
 
-\textbf{Sequence styling} enables PoolParty to render sequences with visual annotations that indicate their construction history. Operations can optionally annotate sequence positions they act on with different colors or text formatting (e.g., case changes). Annotations propagate through the same forward pass used for sequence construction, so visual styling from successive Operations layer on top of each other. For example, a mutated base can be highlighted in red within an inserted motif shown in blue. In ORF-aware designs, neighboring codons can be displayed with alternating colors to indicate the reading frame. Using the PoolParty helper method for translation, the resulting amino acids inherit the styling of their source codons.
+\item \textbf{Sequence styling} visually annotates sequences with colors and text formatting that reflect their construction history. For example, \texttt{mutagenize} can be instructed to mark the positions it mutates in bold yellow text, making these positions stand out from the rest of the sequence. This formatting uses ANSI escape codes, so output renders correctly in terminals, Jupyter notebooks, and other environments that support formatted text. Importantly, styles combine in a natural manner as sequences propagate through the DAG, e.g., a mutated base can appear highlighted in red within an inserted motif shown in blue.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Below is from manuscript_overleaf_26.03.17/main.tex %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Implementation and extensibility}
 
