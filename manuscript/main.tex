@@ -123,11 +123,11 @@ To generate a sequence, PoolParty passes a \emph{state} --- an integer index tha
 Each Operation has a mode that determines how it interprets its internal state. Operations can run in one of three modes:
 
 \begin{itemize}
-\item In \emph{sequential} mode, the Operation exhaustively enumerates a finite set of design choices. For example, \texttt{mutagenize} in sequential mode with single-nucleotide mutations yields one variant for every possible mutation at every target position. The internal state indexes which specific mutation is applied.
+\item In \textbf{sequential mode}, the Operation exhaustively enumerates a finite set of design choices. For example, \texttt{mutagenize} in sequential mode with single-nucleotide mutations yields one variant for every possible mutation at every target position. The internal state indexes which specific mutation is applied.
 
-\item In \emph{random} mode, design choices are sampled stochastically. For example, the \texttt{shuffle} Operation randomly reorders the bases in a sequence. Users can optionally fix the number of samples, producing a reproducible set of variants. A master seed ensures reproducibility.
+\item In \textbf{random mode}, design choices are sampled stochastically. For example, the \texttt{shuffle} Operation randomly reorders the bases in a sequence. Users can optionally fix the number of samples, producing a reproducible set of variants. A master seed ensures reproducibility.
 
-\item In \emph{fixed} mode, the output is uniquely determined by the input sequences. For example, \texttt{join} concatenates its input sequences without modification.
+\item In \textbf{fixed mode}, the output is uniquely determined by the input sequences. For example, \texttt{join} concatenates its input sequences without modification.
 \end{itemize}
 
 \subsection{StateTracker}
@@ -140,7 +140,7 @@ One often wants to perform different operations on different parts of a template
 
 \subsection{Sequence metadata}
 
-When generating a library, it is often useful to record how each sequence was constructed. PoolParty provides three complementary features that enable this:
+When generating a library, it is often useful to record how each sequence was constructed. PoolParty provides three complementary features that enable this, each of which is illustrated in Fig.~\ref{fig:figure1}C and described below.
 
 \begin{itemize}
 \item \textbf{Design cards} record the design choices used to generate each sequence. Users specify which Operations and Operation-specific parameters to track. The resulting cards are then returned as a DataFrame alongside the generated sequences. Each row corresponds to one sequence, and its columns record the values of the tracked operation parameters. As structured metadata, design cards support downstream filtering, grouping, and modeling without custom sequence parsing.
