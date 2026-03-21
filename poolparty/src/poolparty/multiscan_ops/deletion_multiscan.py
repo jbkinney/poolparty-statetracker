@@ -3,7 +3,7 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import ModeType, MultiPositionsType, Optional, RegionType, Sequence, Union, beartype
+from ..types import CardsType, ModeType, MultiPositionsType, Optional, RegionType, Sequence, Union, beartype
 from ..region_ops.region_multiscan import _is_per_insert_positions
 from ..utils import validate_positions
 
@@ -24,6 +24,7 @@ def deletion_multiscan(
     num_states: Optional[Integral] = None,
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ) -> Pool:
     """
     Delete segments at multiple positions simultaneously.
@@ -121,6 +122,7 @@ def deletion_multiscan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        cards=cards,
     )
 
     if deletion_marker is not None:

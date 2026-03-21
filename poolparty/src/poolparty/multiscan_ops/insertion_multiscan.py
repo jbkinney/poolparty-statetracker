@@ -3,7 +3,7 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import Literal, ModeType, MultiPositionsType, Optional, RegionType, Sequence, Union, beartype
+from ..types import CardsType, Literal, ModeType, MultiPositionsType, Optional, RegionType, Sequence, Union, beartype
 from ..region_ops.region_multiscan import _is_per_insert_positions
 from ..utils import validate_positions
 
@@ -24,6 +24,7 @@ def insertion_multiscan(
     mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ) -> Pool:
     """
     Insert or replace sequences at multiple positions simultaneously.
@@ -146,6 +147,7 @@ def insertion_multiscan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        cards=cards,
     )
 
     result = marked
@@ -175,6 +177,7 @@ def replacement_multiscan(
     mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ) -> Pool:
     """Replace segments at multiple positions simultaneously.
 
@@ -195,4 +198,5 @@ def replacement_multiscan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        cards=cards,
     )

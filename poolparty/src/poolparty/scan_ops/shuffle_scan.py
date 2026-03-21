@@ -3,7 +3,7 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import ModeType, Optional, PositionsType, RegionType, Union, beartype
+from ..types import CardsType, ModeType, Optional, PositionsType, RegionType, Union, beartype
 
 
 @beartype
@@ -20,6 +20,7 @@ def shuffle_scan(
     num_states: Optional[Integral] = None,
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
+    cards: Optional[tuple[CardsType, CardsType]] = None,
     _factory_name: Optional[str] = "shuffle_scan",
 ) -> Pool:
     """
@@ -79,6 +80,9 @@ def shuffle_scan(
             f"shuffle_length ({shuffle_length}) must be < pool.seq_length ({bg_length})"
         )
 
+    # Resolve cards
+    cards_scan, cards_shuf = cards if cards else (None, None)
+
     region_name = "_shuf"
     region_length = int(shuffle_length)
 
@@ -93,6 +97,7 @@ def shuffle_scan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        cards=cards_scan,
         _factory_name=f"{_factory_name}(region_scan)",
     )
 
@@ -108,6 +113,7 @@ def shuffle_scan(
         mode="random",
         num_states=shuffles_per_position,
         iter_order=-1,
+        cards=cards_shuf,
         _factory_name=f"{_factory_name}(shuffle_seq)",
     )
 

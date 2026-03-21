@@ -4,7 +4,7 @@ import warnings
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import ModeType, Optional, PositionsType, RegionType, Sequence, Union, beartype
+from ..types import CardsType, ModeType, Optional, PositionsType, RegionType, Sequence, Union, beartype
 
 
 @beartype
@@ -20,6 +20,7 @@ def mutagenize_scan(
     num_states: Optional[Union[Integral, Sequence[Optional[Integral]]]] = None,
     style: Optional[str] = None,
     iter_order: Optional[Union[Real, Sequence[Real]]] = None,
+    cards: Optional[tuple[CardsType, CardsType]] = None,
     _factory_name: Optional[str] = "mutagenize_scan",
 ) -> Pool:
     """
@@ -130,6 +131,9 @@ def mutagenize_scan(
         raise ValueError("iter_order must be a sequence of length 2")
     iter_order_scan, iter_order_mut = iter_order[0], iter_order[1]
 
+    # Resolve cards
+    cards_scan, cards_mut = cards if cards else (None, None)
+
     # 1. Insert tags at scanning positions
     marked = region_scan(
         pool,
@@ -142,6 +146,7 @@ def mutagenize_scan(
         mode=mode_scan,
         num_states=num_states_scan,
         iter_order=iter_order_scan,
+        cards=cards_scan,
         _factory_name=f"{_factory_name}(region_scan)",
     )
 
@@ -157,6 +162,7 @@ def mutagenize_scan(
         style=style,
         iter_order=iter_order_mut,
         _remove_tags=True,
+        cards=cards_mut,
         _factory_name=f"{_factory_name}(mutagenize)",
     )
 

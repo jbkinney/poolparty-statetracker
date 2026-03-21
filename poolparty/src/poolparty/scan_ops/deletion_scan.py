@@ -3,7 +3,7 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import ModeType, Optional, PositionsType, RegionType, Union, beartype
+from ..types import CardsType, ModeType, Optional, PositionsType, RegionType, Union, beartype
 
 
 @beartype
@@ -18,6 +18,7 @@ def deletion_scan(
     num_states: Optional[Integral] = None,
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ) -> Pool:
     """
     Scan a pool for all possible single deletions of a fixed length.
@@ -85,6 +86,7 @@ def deletion_scan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        cards=cards,
         _factory_name="deletion_scan(region_scan)",
     )
 

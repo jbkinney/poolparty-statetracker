@@ -3,7 +3,7 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import ModeType, Optional, PositionsType, RegionType, Union, beartype
+from ..types import CardsType, ModeType, Optional, PositionsType, RegionType, Union, beartype
 from ..utils import validate_positions
 
 
@@ -17,6 +17,7 @@ def subseq_scan(
     mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ) -> Pool:
     """
     Extract subsequences of a specified length at scanning positions.
@@ -70,6 +71,7 @@ def subseq_scan(
                 mode=mode,
                 num_states=num_states,
                 iter_order=iter_order,
+                cards=cards,
             )
         else:
             # Region is [start, stop] - insert temporary tags, extract, then scan
@@ -89,6 +91,7 @@ def subseq_scan(
                 mode=mode,
                 num_states=num_states,
                 iter_order=iter_order,
+                cards=cards,
             )
 
     # No region specified - apply to entire pool
@@ -100,6 +103,7 @@ def subseq_scan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        cards=cards,
     )
 
 
@@ -111,6 +115,7 @@ def _subseq_scan_impl(
     mode: ModeType,
     num_states: Optional[Integral],
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ) -> Pool:
     """Core subseq scan implementation without region handling."""
     from ..region_ops import extract_region, region_scan
@@ -144,6 +149,7 @@ def _subseq_scan_impl(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        cards=cards,
     )
 
     # 2. Extract region content as the result
