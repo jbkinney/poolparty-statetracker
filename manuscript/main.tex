@@ -116,27 +116,23 @@ PoolParty provides over 20 built-in Operations that users can choose from when c
 
 \subsection{Sequence generation}
 
-To generate a sequence, PoolParty passes a \emph{state} --- an integer index that, together with a random seed, uniquely determines the output --- to the root. Generation then proceeds in two passes (Fig.~1B). In the \emph{backward pass}, PoolParty propagates the state from the root Pool back through the DAG. Each Operation decomposes the state it receives into an internal state and one or more states that are then passed to its input Pools. Each of the input Pools then passes its assigned state to its upstream Operation. In the \emph{forward pass}, each Operation generates a sequence based on its input sequences (if any) and its internal state. This process starts at the source Operations and proceeds forward until the root Pool receives the completed sequence. When generateing a library, PoolParty iterates the state passed to the root Pool sequentially, starting from zero and stopping at the number of sequences to be generated. 
+To generate a sequence, PoolParty passes a \emph{state} --- an integer index that, together with a random seed, uniquely determines the output --- to the root Pool. Generation then proceeds in two passes (Fig.~1B). In the \emph{backward pass}, PoolParty propagates the state from the root Pool back through the DAG. Each Operation decomposes the state it receives into an internal state and one or more states that are then passed to its input Pools. Each of the input Pools then passes its assigned state to its upstream Operation. In the \emph{forward pass}, each Operation generates a sequence based on its input sequences (if any) and its internal state. This process starts at the source Operations and proceeds forward until the root Pool receives the completed sequence. To generate a full library, PoolParty iterates the state passed to the root Pool from zero up to the desired library size.
 
+\subsection{Operation modes}
 
-\subsection{Sequential mode, random mode, and fixed mode}
-
-The way each Operation interprets its state depends on its mode, which can be fixed, sequential, or random. The number of possible internal states of the operation is represented by a parameter \texttt{num\_states}. When \texttt{num\_states} is not \texttt{None}, the Operation's internal state will iterate sequentially from 0 through $\texttt{num\_states}$. 
+Each Operation has a mode that determines how it interprets its internal state. Operations can run in one of three modes:
 
 \begin{itemize}
-\item In \emph{sequential} mode, a finite number of distinct operations are performed. For example, when the \texttt{mutagenize} Operation is run in sequential model with \texttt{num\_mutations=1}, it will yield an output Pool representing all single-nucleotide mutations to each of the sequences of the input Pool. Which specific mutation is applied to each sequence depends on the value of the Operation's internal state. 
+\item In \emph{sequential} mode, the Operation exhaustively enumerates a finite set of design choices. For example, \texttt{mutagenize} in sequential mode with single-nucleotide mutations yields one variant for every possible mutation at every target position. The internal state indexes which specific mutation is applied.
 
-\item In \emph{random} mode, there is a stochastic aspect to the sequence that is returned. One example is the \texttt{shuffle} Operation, which randomly reorders the bases in a sequence. Users can choose to set the value of \texttt{num\_state} to some specific integer, in which case the Operation will cycle through only that many distinct ways of permuting sequence positions. Alternatively, one can set \texttt{num\_states=None}, in which every permutation will be chosen randomly. Users can ensure reproducibility when generating libraries by passing a random seed.
+\item In \emph{random} mode, design choices are sampled stochastically. For example, the \texttt{shuffle} Operation randomly reorders the bases in a sequence. Users can optionally fix the number of samples, producing a reproducible set of variants. A master seed ensures reproducibility.
 
-\item In \emph{fixed} mode, \texttt{num\_states=None} and the ouput sequence is uniquely determined by the input sequences. One example of a fixed Operaiton is \texttt{join}, which simply concatenates its input sequences together but does not alter them otherwise. 
-
+\item In \emph{fixed} mode, the output is uniquely determined by the input sequences. For example, \texttt{join} concatenates its input sequences without modification.
 \end{itemize}
 
 \subsection{StateTracker}
 
-The way each Operation decomposes the state it receives during the backward pass into an internal state and a set of Pool-specific states is designed to reverse the way the Operation combines its internal and input states during the forward pass. For many Operations, the state of the output sequence represents a Cartesian product between the Operation's internal state and the states of the input sequences. For example, the state of the sequence yielded by \texttt{join} represents the Cartesian product of each of the input sequences that are joined together. In such cases, mixed-radix decomposition is used in the backward pass. Some Operations deviate from this pattern, however. Of particular importance is the \texttt{stack} Operation, which yields a Pool representing a disjoint union among the input Pool, and which thus requires a different way of decomposint its state. 
-
-Keeping track of how to compose and deompose states during the forward and backward passes presents a challenge in complex libraries. To address this challenge we developed a back-end package called StateTracker. [CONTINUE HERE]
+Each Operation's backward-pass decomposition is designed to reverse its forward-pass composition. For most Operations, the output state is the Cartesian product of the Operation's internal state and its input Pool states, so the backward pass uses mixed-radix decomposition to recover the constituents. The \texttt{stack} Operation is different: its output states are the disjoint union of its input Pool states, so each output state maps to exactly one parent. Keeping track of these composition rules across a complex DAG is error-prone, so we developed a back-end package called StateTracker that automates state composition and decomposition throughout the graph. During library specification, StateTracker resolves the state structure of every Pool from the DAG alone, and the state count of the root Pool defines the default library size. No sequences are generated at this stage.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
