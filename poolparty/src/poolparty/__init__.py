@@ -21,7 +21,6 @@ from .base_ops import (
     RecombineOp,
     SeqShuffleOp,
     filter,
-    filter_seq,  # Backward compatibility alias
     from_iupac,
     from_motif,
     from_seqs,
@@ -144,8 +143,6 @@ __all__ = [
     "get_active_party",
     "init",
     "clear_pools",
-    "set_default",
-    "load_defaults",
     "load_config",
     "configure_logging",
     "toggle_styles",
@@ -208,7 +205,6 @@ __all__ = [
     "lower",
     "clear_gaps",
     "filter",
-    "filter_seq",  # Backward compatibility alias
     "FilterOp",
     "stylize",
     "StylizeOp",
@@ -257,18 +253,6 @@ StateManager = st.Manager
 
 # Initialize default Party context on import
 _init_default_party()
-
-
-def set_default(key: str, value) -> None:
-    """Set a default parameter on the active Party."""
-    if key == "iter_order":
-        st.set_product_order_mode(value)
-    get_active_party().set_default(key, value)
-
-
-def load_defaults(filepath: str) -> None:
-    """Load default parameters from a TOML file into the active Party."""
-    get_active_party().load_defaults(filepath)
 
 
 def toggle_styles(on: bool = True) -> None:

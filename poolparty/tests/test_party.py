@@ -348,16 +348,6 @@ class TestErrors:
                 _ = pool + "TTT"
 
 
-class TestDefaultParameters:
-    """Test Party default parameter functionality."""
-
-    def test_get_default_with_fallback(self):
-        """Test get_default returns fallback when key not set."""
-        with pp.Party() as party:
-            assert party.get_default("nonexistent") is None
-            assert party.get_default("nonexistent", "default_value") == "default_value"
-
-
 class TestStateManagerIntegration:
     """Test StateManager integration with Party."""
 

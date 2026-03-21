@@ -1,6 +1,6 @@
 """Operations for poolparty."""
 
-from .filter_seq import FilterOp, filter, filter_seq
+from .filter_seq import FilterOp, filter
 from .from_iupac import FromIupacOp, from_iupac
 from .from_motif import FromMotifOp, from_motif
 from .from_seqs import FromSeqsOp, from_seqs
@@ -12,7 +12,6 @@ from .shuffle_seq import SeqShuffleOp, shuffle_seq
 
 __all__ = [
     "filter",
-    "filter_seq",  # Backward compatibility alias
     "FilterOp",
     "from_seqs",
     "FromSeqsOp",
