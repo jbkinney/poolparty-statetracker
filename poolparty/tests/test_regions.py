@@ -205,7 +205,7 @@ class TestMarkerScan:
     def test_sequential_zero_length_regions(self):
         """Test sequential enumeration of zero-length regions."""
         with pp.Party():
-            result = pp.region_scan("ACGT", region="m", mode="sequential")
+            result = pp.region_scan("ACGT", tag_name="m", mode="sequential")
         df = result.generate_library(num_cycles=1)
         # 5 positions: before A, after A, after C, after G, after T
         assert len(df) == 5
@@ -219,7 +219,7 @@ class TestMarkerScan:
     def test_sequential_region_regions(self):
         """Test sequential enumeration of region regions."""
         with pp.Party():
-            result = pp.region_scan("ACGT", region="m", mode="sequential", region_length=2)
+            result = pp.region_scan("ACGT", tag_name="m", mode="sequential", region_length=2)
         df = result.generate_library(num_cycles=1)
         # 3 positions for length-2 regions: positions 0, 1, 2
         assert len(df) == 3
@@ -231,7 +231,7 @@ class TestMarkerScan:
     def test_random_mode(self):
         """Test random mode."""
         with pp.Party():
-            result = pp.region_scan("ACGTACGT", region="m", mode="random")
+            result = pp.region_scan("ACGTACGT", tag_name="m", mode="random")
         df = result.generate_library(num_seqs=10, seed=42)
         for seq in df["seq"]:
             assert "<m/>" in seq
@@ -659,7 +659,7 @@ class TestIntegration:
         """Test region_scan followed by replace_region."""
         with pp.Party():
             # Scan positions
-            marked = pp.region_scan("ACGTACGT", region="ins", positions=[2, 6], mode="sequential")
+            marked = pp.region_scan("ACGTACGT", tag_name="ins", positions=[2, 6], mode="sequential")
             # Replace with insertions
             inserts = pp.from_seq("NNN")
             result = pp.replace_region(marked, inserts, "ins")

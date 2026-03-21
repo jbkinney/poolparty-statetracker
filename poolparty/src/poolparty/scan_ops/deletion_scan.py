@@ -11,10 +11,8 @@ def deletion_scan(
     pool: Union[Pool, str],
     deletion_length: Integral,
     deletion_marker: Optional[str] = "-",
-    region: RegionType = None,
     positions: PositionsType = None,
-    min_spacing: Optional[Integral] = None,
-    max_spacing: Optional[Integral] = None,
+    region: RegionType = None,
     prefix: Optional[str] = None,
     mode: ModeType = "random",
     num_states: Optional[Integral] = None,
@@ -32,10 +30,10 @@ def deletion_scan(
         Number of characters to delete at each valid position.
     deletion_marker : Optional[str], default='-'
         Character to insert at the deletion site. If None, segment is removed.
-    region : RegionType, default=None
-        Region to constrain the scan to. Can be a marker name (str) or [start, stop].
     positions : PositionsType, default=None
         Positions to consider for the start of the deletion (0-based, relative to region).
+    region : RegionType, default=None
+        Region to constrain the scan to. Can be a marker name (str) or [start, stop].
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
@@ -55,10 +53,6 @@ def deletion_scan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..region_ops import region_scan, replace_region
-
-    # Validate min_spacing/max_spacing not supported
-    if min_spacing is not None or max_spacing is not None:
-        raise ValueError("min_spacing and max_spacing are not supported.")
 
     # Convert string to pool
     pool = (
@@ -82,11 +76,11 @@ def deletion_scan(
     # 1. Mark the regions to delete with tags
     marked = region_scan(
         pool,
-        region=marker_name,
+        tag_name=marker_name,
         region_length=int(deletion_length),
         positions=positions,
-        region_constraint=region,
-        remove_tags=False,  # Keep tags for replace_region
+        region=region,
+        remove_tags=False,
         prefix=prefix,
         mode=mode,
         num_states=num_states,

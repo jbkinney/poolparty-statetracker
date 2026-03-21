@@ -103,13 +103,18 @@ class TestDeletionMultiscanModes:
             assert seq.count("-") == 6
             assert len(seq) == 18
 
-    def test_sequential_mode_raises(self):
-        """Test that sequential mode raises an error."""
+    def test_sequential_mode(self):
+        """Test that sequential mode works."""
         with pp.Party() as party:
             bg = pp.from_seqs(["AAAAAAAAAAAAAAAAAA"])
+            result = deletion_multiscan(
+                bg, deletion_length=3, num_deletions=2, mode="sequential"
+            ).named("result")
 
-            with pytest.raises(ValueError, match="only mode='random'"):
-                deletion_multiscan(bg, deletion_length=3, num_deletions=2, mode="sequential")
+        df = result.generate_library(num_cycles=1)
+        assert len(df) > 0
+        for seq in df["seq"]:
+            assert seq.count("-") == 6
 
 
 class TestDeletionMultiscanMarkerOptions:

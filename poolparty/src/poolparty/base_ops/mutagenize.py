@@ -9,7 +9,7 @@ import numpy as np
 from ..operation import Operation
 from ..party import get_active_party
 from ..pool import Pool
-from ..types import CardsType, Integral, ModeType, Optional, Real, RegionType, Seq, Union, beartype
+from ..types import Integral, ModeType, Optional, Real, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
 from ..utils.dna_seq import DnaSeq
 
@@ -26,7 +26,7 @@ def mutagenize(
     mode: ModeType = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
-    cards: CardsType = None,
+    _remove_tags: bool = False,
     _factory_name: Optional[str] = "mutagenize",
 ) -> Pool:
     """
@@ -84,7 +84,7 @@ def mutagenize(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
-        cards=cards,
+        _remove_tags=_remove_tags,
         _factory_name=_factory_name,
     )
     # Preserve the pool type from the input
@@ -120,7 +120,7 @@ class MutagenizeOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
-        cards: CardsType = None,
+        _remove_tags: bool = False,
         _factory_name: Optional[str] = "mutagenize",
     ) -> None:
         # Set factory name if provided
@@ -203,13 +203,14 @@ class MutagenizeOp(Operation):
         if mode == "sequential":
             # Sequential mode only available with num_mutations
             effective_length = self._seq_length
-            # If seq_length is unknown but region is a marker, try to get marker's seq_length
-            if effective_length is None and isinstance(region, str):
+            # If region is specified, use the region's length instead of full sequence
+            if isinstance(region, str):
                 try:
                     region_obj = party.get_region_by_name(region)
-                    effective_length = region_obj.seq_length
+                    if region_obj.seq_length is not None:
+                        effective_length = region_obj.seq_length
                 except ValueError:
-                    pass  # Region not found, stay with None
+                    pass  # Region not found, fall back to full sequence length
 
             # If allowed_chars is provided, use its length and pre-computed mutation counts
             if self._mutation_counts_from_allowed is not None:
@@ -249,8 +250,8 @@ class MutagenizeOp(Operation):
             iter_order=iter_order,
             prefix=prefix,
             region=region,
+            remove_tags=_remove_tags,
             _natural_num_states=natural_num_states,
-            cards=cards,
         )
 
         # Create LRU-cached version for position data computation

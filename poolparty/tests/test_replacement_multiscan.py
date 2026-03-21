@@ -88,15 +88,22 @@ class TestReplacementMultiscanPoolHandling:
             with pytest.raises(ValueError, match="replacement_pools length .* must equal"):
                 replacement_multiscan(bg, num_replacements=3, replacement_pools=[pool1, pool2])
 
-    def test_pools_with_different_seq_lengths_raises(self):
-        """Test that pools with different seq_lengths raise error."""
-        with pp.Party() as party:
+    def test_pools_with_different_seq_lengths(self):
+        """Test that pools with different seq_lengths are now supported."""
+        with pp.Party():
             bg = pp.from_seqs(["AAAAAAAAAAAAAAAAAA"])
             pool1 = pp.from_seq("GGG")  # 3 chars
             pool2 = pp.from_seq("TTTT")  # 4 chars
 
-            with pytest.raises(ValueError, match="same seq_length"):
-                replacement_multiscan(bg, num_replacements=2, replacement_pools=[pool1, pool2])
+            result = replacement_multiscan(
+                bg, num_replacements=2, replacement_pools=[pool1, pool2],
+                mode="random", num_states=5,
+            )
+            df = result.generate_library()
+            assert len(df) == 5
+            for seq in df["seq"]:
+                assert "GGG" in seq
+                assert "TTTT" in seq
 
 
 class TestReplacementMultiscanModes:
@@ -133,16 +140,19 @@ class TestReplacementMultiscanModes:
             assert seq.count("G") == 6
             assert len(seq) == 18
 
-    def test_sequential_mode_raises(self):
-        """Test that sequential mode raises an error."""
+    def test_sequential_mode(self):
+        """Test that sequential mode works."""
         with pp.Party() as party:
             bg = pp.from_seqs(["AAAAAAAAAAAAAAAAAA"])
             ins = pp.from_seq("GGG")
+            result = replacement_multiscan(
+                bg, num_replacements=2, replacement_pools=ins, mode="sequential"
+            ).named("result")
 
-            with pytest.raises(ValueError, match="only mode='random'"):
-                replacement_multiscan(
-                    bg, num_replacements=2, replacement_pools=ins, mode="sequential"
-                )
+        df = result.generate_library(num_cycles=1)
+        assert len(df) > 0
+        for seq in df["seq"]:
+            assert seq.count("G") == 6
 
 
 class TestReplacementMultiscanValidation:

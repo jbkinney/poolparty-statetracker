@@ -60,9 +60,17 @@ def from_seqs(
 
     Raises
     ------
+    TypeError
+        If seqs is a bare string instead of a list of strings.
     ValueError
         If pool is provided without region.
     """
+    if isinstance(seqs, str):
+        raise TypeError(
+            "from_seqs expects a list of sequences, not a bare string. "
+            "Use from_seqs(['...']) for a single sequence, or from_seq('...') for a fixed pool."
+        )
+
     from ..fixed_ops.from_seq import from_seq
 
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool

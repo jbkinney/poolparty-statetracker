@@ -52,14 +52,15 @@ mut_aas = true
 position_index = true
 start = true
 stop = true
-length = true
-region_name = true
-region_content = true
+name = true
 region_seq = true
 
 [design_cards.region_multiscan]
-indices = true
-region_tags = true
+combination_index = true
+starts = true
+stops = true
+names = true
+region_seqs = true
 
 [design_cards.repeat]
 repeat_index = true

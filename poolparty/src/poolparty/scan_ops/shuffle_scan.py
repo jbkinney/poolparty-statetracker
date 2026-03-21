@@ -85,11 +85,11 @@ def shuffle_scan(
     # 1. Insert tags at scanning positions
     marked = region_scan(
         pool,
-        region=region_name,
+        tag_name=region_name,
         region_length=region_length,
         positions=positions,
-        region_constraint=region,
-        remove_tags=False,  # Keep outer tags for now
+        region=region,
+        remove_tags=False,
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,

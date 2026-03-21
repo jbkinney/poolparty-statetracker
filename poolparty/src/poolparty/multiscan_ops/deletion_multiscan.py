@@ -3,7 +3,8 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import Optional, PositionsType, Union, beartype
+from ..types import ModeType, MultiPositionsType, Optional, RegionType, Sequence, Union, beartype
+from ..region_ops.region_multiscan import _is_per_insert_positions
 from ..utils import validate_positions
 
 
@@ -13,17 +14,19 @@ def deletion_multiscan(
     deletion_length: Integral,
     num_deletions: Integral,
     deletion_marker: Optional[str] = "-",
-    positions: PositionsType = None,
+    positions: MultiPositionsType = None,
+    region: RegionType = None,
+    names: Optional[Sequence[str]] = None,
+    min_spacing: Optional[Integral] = None,
+    max_spacing: Optional[Integral] = None,
     prefix: Optional[str] = None,
-    mode: str = "random",
+    mode: ModeType = "random",
     num_states: Optional[Integral] = None,
+    style: Optional[str] = None,
     iter_order: Optional[Real] = None,
 ) -> Pool:
     """
     Delete segments at multiple positions simultaneously.
-
-    Uses region_multiscan() to insert tags at multiple positions, then
-    replaces each region's content with deletion characters (or removes it).
 
     Parameters
     ----------
@@ -36,17 +39,24 @@ def deletion_multiscan(
     deletion_marker : Optional[str], default='-'
         Character to insert at each deletion site. If None, deleted segments
         are removed with no marker.
-    spacer_str : str, default=''
-        String to insert as a spacer around deletion sites.
     positions : PositionsType, default=None
         Valid positions for deletion starts (0-based). If None, all valid
         positions are used.
-    prefix : Optional[str], default=None
-        Prefix for sequence names in the resulting Pool.
+    region : RegionType, default=None
+        Region to constrain the scan to.
+    names : Optional[Sequence[str]], default=None
+        Custom names for the deletion regions. If None, auto-generated
+        (_del_0, _del_1, ...).
+    min_spacing : Optional[Integral], default=None
+        Minimum gap between end of one deletion and start of next.
+    max_spacing : Optional[Integral], default=None
+        Maximum gap between adjacent deletions. None = unbounded.
     mode : str, default='random'
-        Position selection mode: 'random'.
+        Position selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. If None, auto-determined for sequential mode.
+    style : Optional[str], default=None
+        Style to apply to deletion marker characters (e.g., 'gray', 'red bold').
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
 
@@ -58,72 +68,69 @@ def deletion_multiscan(
     from ..fixed_ops.from_seq import from_seq
     from ..region_ops import region_multiscan, replace_region
 
-    # Validate mode
-    if mode != "random":
-        raise ValueError(f"deletion_multiscan supports only mode='random', got '{mode}'")
-
-    # Validate num_deletions
     if num_deletions < 1:
         raise ValueError(f"num_deletions must be >= 1, got {num_deletions}")
 
-    # Convert string inputs to pools if needed
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
 
-    # Validate pool has defined seq_length
     bg_length = pool_obj.seq_length
-    if bg_length is None:
+    if bg_length is None and region is None:
         raise ValueError("pool must have a defined seq_length")
 
-    # Validate deletion_length
     if deletion_length <= 0:
         raise ValueError(f"deletion_length must be > 0, got {deletion_length}")
-    if deletion_length >= bg_length:
+    if bg_length is not None and deletion_length >= bg_length:
         raise ValueError(
             f"deletion_length ({deletion_length}) must be < pool.seq_length ({bg_length})"
         )
 
-    # Check if there's room for num_deletions non-overlapping regions
-    min_required_length = num_deletions * deletion_length
-    if min_required_length > bg_length:
-        raise ValueError(
-            f"Cannot fit {num_deletions} non-overlapping deletions of length "
-            f"{deletion_length} in sequence of length {bg_length}"
-        )
+    if bg_length is not None:
+        min_required_length = num_deletions * deletion_length
+        if min_required_length > bg_length:
+            raise ValueError(
+                f"Cannot fit {num_deletions} non-overlapping deletions of length "
+                f"{deletion_length} in sequence of length {bg_length}"
+            )
 
     del_char = deletion_marker if deletion_marker else "-"
 
-    # Generate auto-indexed marker names
-    markers = [f"_del_{i}" for i in range(num_deletions)]
+    markers = list(names) if names is not None else [f"_del_{i}" for i in range(num_deletions)]
+    if len(markers) != num_deletions:
+        raise ValueError(f"len(names) ({len(markers)}) must equal num_deletions ({num_deletions})")
     marker_length = int(deletion_length)
-    max_position = bg_length - deletion_length
 
-    # Validate positions
-    validated_positions = validate_positions(positions, max_position, min_position=0)
+    if _is_per_insert_positions(positions) or region is not None:
+        validated_positions = positions
+    elif bg_length is not None:
+        max_position = bg_length - deletion_length
+        validated_positions = validate_positions(positions, max_position, min_position=0)
+    else:
+        validated_positions = positions
 
-    # 1. Insert tags at multiple positions using region_multiscan
     marked = region_multiscan(
         pool_obj,
-        regions=markers,
+        tag_names=markers,
         num_insertions=int(num_deletions),
         positions=validated_positions,
+        region=region,
         region_length=marker_length,
         insertion_mode="ordered",
+        min_spacing=min_spacing,
+        max_spacing=max_spacing,
         prefix=prefix,
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
     )
 
-    # 2. Build replacement content based on deletion_marker
     if deletion_marker is not None:
-        # Fill gap with del_char * deletion_length
         marker_str = del_char * marker_length
         content = from_seq(marker_str)
+        replacement_style = style
     else:
-        # Simply remove the segment - use empty content
         content = from_seq("")
+        replacement_style = None
 
-    # 3. Replace each region's content with deletion content
     result = marked
     for region_name in markers:
         result = replace_region(
@@ -131,6 +138,7 @@ def deletion_multiscan(
             content,
             region_name,
             iter_order=iter_order,
+            _style=replacement_style,
         )
 
     return result

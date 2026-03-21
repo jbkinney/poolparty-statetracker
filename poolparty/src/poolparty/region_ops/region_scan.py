@@ -4,7 +4,7 @@ from numbers import Real
 
 import numpy as np
 
-from poolparty.types import CardsType, Literal, Optional, RegionType, Seq, SeqStyle, Union
+from poolparty.types import Literal, Optional, RegionType, Seq, SeqStyle, Union
 
 from ..operation import Operation
 from ..utils import build_scan_cache, validate_positions
@@ -19,16 +19,15 @@ StrandType = Literal["+", "-", "both"]
 
 def region_scan(
     pool,
-    region: str = "region",
+    tag_name: str = "region",
     positions: PositionsType = None,
-    region_constraint: RegionType = None,
+    region: RegionType = None,
     remove_tags: Optional[bool] = None,
     region_length: int = 0,
     prefix: Optional[str] = None,
     mode: str = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
-    cards: CardsType = None,
     _factory_name: Optional[str] = None,
 ):
     """
@@ -38,14 +37,14 @@ def region_scan(
     ----------
     pool : Pool or str
         Input Pool or sequence string to insert tags into.
-    region : str, default='region'
-        Name for the region to insert.
+    tag_name : str, default='region'
+        Name for the XML tag to insert.
     positions : PositionsType, default=None
         Valid insertion positions (0-based). If None, all positions are valid.
-    region_constraint : RegionType, default=None
+    region : RegionType, default=None
         Region to constrain the scan to. Can be region name (str) or [start, stop].
     remove_tags : Optional[bool], default=None
-        If True and region_constraint is a region name, remove tags from output.
+        If True and region is a region name, remove tags from output.
     region_length : Integral, default=0
         Length of sequence to encompass. 0 creates zero-length regions (<name/>),
         >0 creates region tags (<name>BASES</name>).
@@ -62,22 +61,22 @@ def region_scan(
     from ..fixed_ops.from_seq import from_seq
     from ..party import get_active_party
 
-    # Convert string input to pool if needed
     pool = from_seq(pool) if isinstance(pool, str) else pool
 
-    # Validate region_length
+    if mode not in ("random", "sequential"):
+        raise ValueError(f"mode must be 'random' or 'sequential', got '{mode}'")
+
     if region_length < 0:
         raise ValueError(f"region_length must be >= 0, got {region_length}")
 
-    # Register the region with the Party
     party = get_active_party()
-    registered_region = party.register_region(region, region_length)
+    registered_region = party.register_region(tag_name, region_length)
 
     op = RegionScanOp(
         parent_pool=pool,
-        region_name=region,
+        region_name=tag_name,
         positions=positions,
-        region=region_constraint,
+        region=region,
         remove_tags=remove_tags,
         region_length=int(region_length),
         prefix=prefix,
@@ -85,7 +84,6 @@ def region_scan(
         num_states=num_states,
         name=None,
         iter_order=iter_order,
-        cards=cards,
         _factory_name=_factory_name,
     )
     # Preserve the pool type from the input
@@ -106,9 +104,7 @@ class RegionScanOp(Operation):
         "position_index",
         "start",
         "stop",
-        "length",
-        "region_name",
-        "region_content",
+        "name",
         "region_seq",
     ]
 
@@ -126,7 +122,6 @@ class RegionScanOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
-        cards: CardsType = None,
         _factory_name: Optional[str] = None,
     ) -> None:
         """Initialize RegionScanOp."""
@@ -158,30 +153,24 @@ class RegionScanOp(Operation):
         if _factory_name is not None:
             self.factory_name = _factory_name
 
-        # Calculate number of states
+        natural_num_states = None
         if mode == "sequential":
             if self._seq_length is not None:
-                num_states = self._build_caches()
-            else:
-                num_states = 1
-        elif mode == "random":
-            # num_states stays None for pure random mode
-            pass
-        else:
-            num_states = 1
+                natural_num_states = self._build_caches()
+                if num_states is None:
+                    num_states = natural_num_states
 
-        # Initialize as Operation
         super().__init__(
             parent_pools=[parent_pool],
             num_states=num_states,
             mode=mode,
-            seq_length=None,  # Variable due to region tags
+            seq_length=None,
             name=name,
             iter_order=iter_order,
             prefix=prefix,
             region=region,
             remove_tags=remove_tags,
-            cards=cards,
+            _natural_num_states=natural_num_states,
         )
 
     def _build_caches(self) -> int:
@@ -335,12 +324,15 @@ class RegionScanOp(Operation):
 
         output_seq = DnaSeq(result_seq, output_style)
 
+        from ..party import cards_suppressed
+
+        if cards_suppressed():
+            return output_seq, {}
+
         return output_seq, {
             "position_index": position_index,
             "start": start,
             "stop": stop,
-            "length": self._region_length,
-            "region_name": self.region_name,
-            "region_content": marked_seq,
+            "name": self.region_name,
             "region_seq": region_tag,
         }

@@ -137,7 +137,7 @@ def _subseq_scan_impl(
     # 1. Scan region tags across pool at specified positions
     marked = region_scan(
         pool,
-        region=region_name,
+        tag_name=region_name,
         region_length=region_length,
         positions=validated_positions,
         prefix=prefix,

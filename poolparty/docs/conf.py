@@ -4,7 +4,7 @@ import os
 import sys
 
 # Add the package source to the path for autodoc
-sys.path.insert(0, os.path.abspath("../src"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 
 # -- Project information -----------------------------------------------------
 project = "PoolParty"
@@ -23,7 +23,7 @@ extensions = [
 ]
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "operations.rst"]
 
 # -- Options for HTML output -------------------------------------------------
 html_theme = "sphinx_rtd_theme"
