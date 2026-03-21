@@ -134,32 +134,9 @@ Each Operation has a mode that determines how it interprets its internal state. 
 
 Each Operation's backward-pass decomposition is designed to reverse its forward-pass composition. For most Operations, the output state is the Cartesian product of the Operation's internal state and its input Pool states, so the backward pass uses mixed-radix decomposition to recover the constituents. The \texttt{stack} Operation is different: its output states are the disjoint union of its input Pool states, so each output state maps to exactly one parent. Keeping track of these composition rules across a complex DAG is error-prone, so we developed a back-end package called StateTracker that automates state composition and decomposition throughout the graph. During library specification, StateTracker resolves the state structure of every Pool from the DAG alone, and the state count of the root Pool defines the default library size. No sequences are generated at this stage.
 
+\subsection{Sequence regions}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Below is from manuscript_overleaf_26.03.17/main.tex %%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{figure1_v2.png}
-\caption{\textbf{PoolParty framework for sequence library design.}
-\textbf{(A)} Library design workflows are represented as directed acyclic graphs (DAGs) of Pools and Operations (left). Pools represent collections of sequences, and Operations generate new Pools. Operations fall into four categories based on how they introduce, modify, combine, or reindex sequences: source, transformation, composition, and state (right).
-\textbf{(B)} Sequence generation for a given state of the final Pool occurs in two phases. The desired final sequence state is propagated backward through the DAG, thereby resolving the corresponding states of the upstream Pools and Operations (left). The sequence is then constructed via a forward pass from source Pools using the resolved states of each Operation (right). Nodes that receive no state (None) are inactive and do not contribute to sequence construction (grey arrows).
-\textbf{(C)} Example workflow. A template sequence containing a tagged region (\texttt{<tag>GCA</tag>}, $S = 1$) undergoes mutagenesis and deletion scanning in parallel. Deletion variants are replicated by \texttt{repeat}, and the outputs of both operations are combined by \texttt{stack} ($S = 15$). Left: workflow DAG. Center: design DataFrame returned by \texttt{generate\_library}; columns are grouped by operation. Right: styled \texttt{print\_library} output showing the tagged region in steel blue (via \texttt{.stylize()}).}
-\label{fig:figure1}
-\end{figure*}
-
-Users control how each Operation resolves its design choices through one of two generation modes. Sequential mode enumerates all possibilities exhaustively, such as all single-point mutations at a set of positions. Random mode samples from the specified design space. The resulting choices are recorded as internal states of the Operation. These internal states then compose with upstream Pool states to produce the states of downstream Pools. When a DAG mixes both modes, tracking states to ensure complete and reproducible library coverage becomes difficult as the design scales.
-
-To address this, we developed StateTracker, a backend package that defines composition rules governing how states combine across the DAG. The default rule is the Cartesian product: each downstream Pool state corresponds to a unique combination of upstream Pool and Operation states, and can thus be decomposed into its constituents through mixed-radix decomposition. For stack Operations, derived Pool states are the disjoint union of all parent Pool states, so each downstream state corresponds to exactly one state of a parent. Additional rules exist  to handle Operations such as sampling, slicing, shuffling, and repetition.
-
-During library specification, these composition rules define the state structure of each Pool, and the state count of the final Pool defines the default library size. Sequential-mode Operations contribute their full enumeration, whereas random-mode Operations contribute only when an explicit state count is specified, fixing a reproducible set of sampled choices as states. No sequences are generated at this stage.
-
-To generate sequences, PoolParty iterates through the states of the final Pool. Setting a state value triggers StateTracker to propagate it backward through the DAG, successively resolving parent and Operation states at each node (Fig.~1B). Sequence construction then proceeds forward through the DAG, starting from source Operations. Each Operation reads its resolved state, produces its output, and passes it to the next Operation until the final library sequence is assembled (Fig.~1B). Random-mode Operations without a specified state count sample their design choices stochastically during this forward pass. A master seed ensures reproducibility.
-
-\subsection{Region Markers}
-
-Tracking flanking sequences and region boundaries across steps is error-prone when a design requires manipulations on different parts of a sequence. PoolParty avoids this by letting users specify a positional interval as the target region, such that the Operation is only applied to the interval while preserving the flanks. Alternatively, target regions can be defined by inserting XML-style tags into the sequence (Fig.~1C). Two types of tags are supported: content tags enclose an existing sub-sequence (e.g., \texttt{AAA<cre>CCCGGG</cre>TTT}), and self-closing tags mark insertion points (e.g., \texttt{ACGT<ins/>ACGT}). Operations can then target these regions by tag name (here, ``cre'' and ``ins''). Named tags persist through the DAG, so multiple Operations can target the same or different named regions of a sequence repeatedly. Tags remain valid when upstream Operations change the content or length within a region.
+One often wants to perform different operations on different parts of a template sequence. To facilitate this, PoolParty lets users mark regions of interest within sequences using XML-style tags. Content tags enclose an existing sub-sequence (e.g., \texttt{AAA<cre>CCCGGG</cre>TTT}), while self-closing tags mark insertion points (e.g., \texttt{ACGT<ins/>ACGT}). Operations can then be instructed to act only on a named region, as illustrated in Fig.~\ref{fig:figure1}C. Tags persist through the DAG and remain valid even when upstream Operations change the content or length within a region, so multiple Operations can reliably target the same region in series.
 
 \subsection{Sequence Provenance}
 
@@ -184,6 +161,16 @@ Cryptic 5$'$ splice-site (5$'$ss) 9-mers were sampled from the human 5$'$ss posi
 SpliceAI donor probabilities at the canonical donor were predicted for all sequences using the five-model ensemble of \citet{Jaganathan2019ps} with $\pm$5~kb of genomic context (GRCh38). For each library-control pair, we computed the difference in logit-transformed predictions at the canonical donor. These per-sequence values were averaged within each cell of the resulting $100 \times 100$ position $\times$ strength grid (Fig.~4B).
 
 Generalized additive models (GAMs) were fit to the cell means on the grid using pyGAM \citep{Serven2018pg}, with smooth terms for position, strength, and their interaction. Models were weighted by the inverse variance of each cell mean. Exonic and intronic regions were modeled separately. Model performance was evaluated by checkerboard cross-validation of the grid.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figure1_v2.png}
+\caption{\textbf{PoolParty framework for sequence library design.}
+\textbf{(A)} Library design workflows are represented as directed acyclic graphs (DAGs) of Pools and Operations (left). Pools represent collections of sequences, and Operations generate new Pools. Operations fall into four categories based on how they introduce, modify, combine, or reindex sequences: source, transformation, composition, and state (right).
+\textbf{(B)} Sequence generation for a given state of the final Pool occurs in two phases. The desired final sequence state is propagated backward through the DAG, thereby resolving the corresponding states of the upstream Pools and Operations (left). The sequence is then constructed via a forward pass from source Pools using the resolved states of each Operation (right). Nodes that receive no state (None) are inactive and do not contribute to sequence construction (grey arrows).
+\textbf{(C)} Example workflow. A template sequence containing a tagged region (\texttt{<tag>GCA</tag>}, $S = 1$) undergoes mutagenesis and deletion scanning in parallel. Deletion variants are replicated by \texttt{repeat}, and the outputs of both operations are combined by \texttt{stack} ($S = 15$). Left: workflow DAG. Center: design DataFrame returned by \texttt{generate\_library}; columns are grouped by operation. Right: styled \texttt{print\_library} output showing the tagged region in steel blue (via \texttt{.stylize()}).}
+\label{fig:figure1}
+\end{figure*}
 
 
 \section{Example Applications}
