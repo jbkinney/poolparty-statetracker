@@ -150,34 +150,35 @@ When generating a library, it is often useful to record how each sequence was co
 \item \textbf{Sequence styling} visually annotates sequences with colors and text formatting that reflect their construction history. For example, \texttt{mutagenize} can be instructed to mark the positions it mutates in bold yellow text, making these positions stand out from the rest of the sequence. This formatting uses ANSI escape codes, so output renders correctly in terminals, Jupyter notebooks, and other environments that support formatted text. Importantly, styles combine in a natural manner as sequences propagate through the DAG, e.g., a mutated base can appear highlighted in red within an inserted motif shown in blue.
 \end{itemize}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Below is from manuscript_overleaf_26.03.17/main.tex %%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Implementation and extensibility}
-
-PoolParty is implemented in pure Python and requires Python 3.10 or later. The package has minimal dependencies (NumPy for numerical operations) and is distributed under an open-source license via PyPI. Comprehensive documentation, tutorials, and example notebooks are available at the project website.
-
-The architecture is designed for extensibility. New Operation types can be created by subclassing the base Operation class and implementing a small number of methods (state space size, sequence generation, metadata extraction). Custom Operation automatically inherit support for algebraic composition, global-state indexing, design card generation, and visualization, allowing researchers to extend PoolParty with domain-specific operations without reimplementing core infrastructure.
-
-\subsection{SpliceAI Surrogate Analysis}
-
-Cryptic 5$'$ splice-site (5$'$ss) 9-mers were sampled from the human 5$'$ss position weight matrix \citep{Wong2018quantitative} and scored with MaxEntScan \citep{Yeo2004me}. Sequences were binned into 100 MaxEntScan score (hereafter, strength) quantiles, and 20 sequences were drawn from each bin (2,000 total). Each 9-mer was inserted at 100 positions flanking the SMN2 exon~7 canonical donor and paired with a matched control in which the GT dinucleotide was disrupted (T$>$A at $+2$; Fig.~4A).
-
-SpliceAI donor probabilities at the canonical donor were predicted for all sequences using the five-model ensemble of \citet{Jaganathan2019ps} with $\pm$5~kb of genomic context (GRCh38). For each library-control pair, we computed the difference in logit-transformed predictions at the canonical donor. These per-sequence values were averaged within each cell of the resulting $100 \times 100$ position $\times$ strength grid (Fig.~4B).
-
-Generalized additive models (GAMs) were fit to the cell means on the grid using pyGAM \citep{Serven2018pg}, with smooth terms for position, strength, and their interaction. Models were weighted by the inverse variance of each cell mean. Exonic and intronic regions were modeled separately. Model performance was evaluated by checkerboard cross-validation of the grid.
-
+%TODO: In panel C, replace "S=" and "S'=" with "num_states=". 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figure1_v2.png}
-\caption{\textbf{PoolParty framework for sequence library design.}
-\textbf{(A)} Library design workflows are represented as directed acyclic graphs (DAGs) of Pools and Operations (left). Pools represent collections of sequences, and Operations generate new Pools. Operations fall into four categories based on how they introduce, modify, combine, or reindex sequences: source, transformation, composition, and state (right).
-\textbf{(B)} Sequence generation for a given state of the final Pool occurs in two phases. The desired final sequence state is propagated backward through the DAG, thereby resolving the corresponding states of the upstream Pools and Operations (left). The sequence is then constructed via a forward pass from source Pools using the resolved states of each Operation (right). Nodes that receive no state (None) are inactive and do not contribute to sequence construction (grey arrows).
-\textbf{(C)} Example workflow. A template sequence containing a tagged region (\texttt{<tag>GCA</tag>}, $S = 1$) undergoes mutagenesis and deletion scanning in parallel. Deletion variants are replicated by \texttt{repeat}, and the outputs of both operations are combined by \texttt{stack} ($S = 15$). Left: workflow DAG. Center: design DataFrame returned by \texttt{generate\_library}; columns are grouped by operation. Right: styled \texttt{print\_library} output showing the tagged region in steel blue (via \texttt{.stylize()}).}
+\caption{\textbf{PoolParty builds libraries from Pools and Operations.}
+\textbf{(A)} Pools represent collections of sequences and Operations generate new Pools based on their inputs (left). Users chain Operations into a directed acyclic graph (DAG) that specifies the desired library, but delays sequence generation until the user requests it. Operations fall into four functional categories: source, transformation, composition, and state (right).
+\textbf{(B)} Sequence generation proceeds in two passes. For each desired sequence, PoolParty passes a number (called the \emph{state}) that specifies which sequence to generate to the root Pool. This state is propagated backward through the DAG, resolving the internal state of every Operation along the way (left). A subsequent forward pass then causes each Operation to generate and combine sequence fragments according to its resolved state, producing the final sequence at the root Pool (right). When multiple Pools are combined by \texttt{stack}, only one parent is active for a given state; inactive branches receive no state (\texttt{None}) and are shown as grey arrows.
+\textbf{(C)} Example workflow. The template sequence contains a user-specified region (called ``tag'') that is targeted for both mutagenesis and deletion scanning. Left: the DAG specifying the sequence library. Center: the design card DataFrame returned by the DAG. Right: styled sequence output, with colors indicating mutations (red), deletions (green), and the tagged region (blue).}
 \label{fig:figure1}
 \end{figure*}
 
+
+\subsection{Implementation and extensibility}
+
+PoolParty requires Python 3.10 or later, is designed to have minimal dependencies, and is distributed via PyPI. Documentation, tutorials, and example notebooks are available on the ReadTheDocs and GitHub project websites. PoolParty is designed to be extensible: new Operation types can be created by subclassing the Operation base class and implementing a few required methods. Custom Operations automatically inherit support for state tracking, design card generation, and visualization, allowing researchers to add domain-specific operations without reimplementing core infrastructure.
+
+
+\subsection{SpliceAI surrogate analysis}
+
+This section provides technical details for the surrogate modeling analysis presented in Results. We sampled 9-mers from the human 5$'$ splice-site (5$'$ss) position weight matrix \citep{Wong2018quantitative} and scored them with MaxEntScan \citep{Yeo2004me}. Sequences were binned into 100 MaxEntScan score (hereafter, strength) quantiles, and 20 sequences were drawn from each bin (2,000 total). Each 9-mer was inserted at 100 positions flanking the SMN2 exon~7 canonical donor and paired with a matched control in which the GT dinucleotide was disrupted (T$>$A at $+2$; Fig.~4A).
+
+We predicted SpliceAI donor probabilities at the canonical site using the five-model ensemble of \citet{Jaganathan2019ps} with $\pm$5~kb of genomic context (GRCh38). For each library-control pair, we computed the difference in logit-transformed predictions at the canonical donor. These per-sequence values were averaged within each cell of the resulting $100 \times 100$ position $\times$ strength grid (Fig.~4B).
+
+We fit generalized additive models (GAMs) to the cell means using pyGAM \citep{Serven2018pg}, with smooth terms for position, strength, and their interaction. Models were weighted by the inverse variance of each cell mean. Exonic and intronic regions were modeled separately. Model performance was evaluated by checkerboard cross-validation of the grid.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Below is from manuscript_overleaf_26.03.17/main.tex %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Example Applications}
 
