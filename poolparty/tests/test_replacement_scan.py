@@ -168,8 +168,8 @@ class TestReplacementScanModes:
         positions = [seq.index("TTT") for seq in df["seq"]]
         assert len(set(positions)) > 1
 
-    def test_hybrid_mode(self):
-        """Test hybrid mode."""
+    def test_random_mode_with_num_states(self):
+        """Test random mode with explicit num_states."""
         with pp.Party() as party:
             bg = pp.from_seqs(["AAAAAAAAAA"])
             ins = pp.from_seqs(["TTT"])

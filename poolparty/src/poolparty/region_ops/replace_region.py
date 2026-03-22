@@ -117,15 +117,25 @@ class ReplaceRegionOp(Operation):
 
         self._style = _style
 
-        # The operation itself has num_values=1 because it doesn't add its own states.
-        # The total number of output states comes from the product of parent pool counters.
-        # When content_pool has multiple states (e.g., from mutagenize), those states
-        # are inherited via the parent counter product.
+        # Compute output seq_length when all component lengths are known:
+        # output = parent_bio_length - old_region_length + new_content_length
+        from ..party import get_active_party
+
+        seq_length = None
+        parent_len = parent_pool.seq_length
+        content_len = content_pool.seq_length
+        party = get_active_party()
+        region_len = None
+        if party is not None and party.has_region(region_name):
+            region_len = party.get_region(region_name).seq_length
+        if parent_len is not None and region_len is not None and content_len is not None:
+            seq_length = parent_len - region_len + content_len
+
         super().__init__(
             parent_pools=[parent_pool, content_pool],
-            num_states=1,  # Operation doesn't add states
-            mode="fixed",  # Mode is determined by parent counters
-            seq_length=None,  # Variable length
+            num_states=1,
+            mode="fixed",
+            seq_length=seq_length,
             name=name,
             iter_order=iter_order,
             prefix=prefix,

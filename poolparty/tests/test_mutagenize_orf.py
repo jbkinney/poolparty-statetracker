@@ -455,8 +455,8 @@ class TestMutagenizeOrfRandomMode:
         assert unique_mutants > 5  # Should have variety
 
 
-class TestMutagenizeOrfHybridMode:
-    """Test hybrid mode."""
+class TestMutagenizeOrfRandomWithNumStates:
+    """Test random mode with explicit num_states."""
 
     def test_random_uses_num_states(self):
         """Random mode with num_states sets num_states correctly."""

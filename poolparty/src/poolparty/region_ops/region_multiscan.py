@@ -4,7 +4,7 @@ from numbers import Real
 
 import numpy as np
 
-from poolparty.types import Literal, Optional, RegionType, Seq, Sequence, Union
+from poolparty.types import CardsType, Literal, Optional, RegionType, Seq, Sequence, Union
 
 from ..operation import Operation
 from ..utils.dna_seq import DnaSeq
@@ -38,6 +38,7 @@ def region_multiscan(
     mode: str = "random",
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
 ):
     """
     Insert multiple XML-style region tags into a sequence.
@@ -110,6 +111,7 @@ def region_multiscan(
         num_states=num_states,
         name=None,
         iter_order=iter_order,
+        cards=cards,
     )
     pool_class = type(pool)
     result_pool = pool_class(operation=op)
@@ -142,6 +144,7 @@ class RegionMultiScanOp(Operation):
         num_states: Optional[int] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> None:
         if num_insertions < 1:
             raise ValueError(f"num_insertions must be >= 1, got {num_insertions}")
@@ -174,6 +177,8 @@ class RegionMultiScanOp(Operation):
                 self._seq_length = constraint_region.seq_length
             except (ValueError, KeyError):
                 self._seq_length = parent_pool.seq_length
+        elif region_constraint is not None:
+            self._seq_length = int(region_constraint[1]) - int(region_constraint[0])
         else:
             self._seq_length = parent_pool.seq_length
 
@@ -194,6 +199,7 @@ class RegionMultiScanOp(Operation):
             prefix=prefix,
             region=region_constraint,
             _natural_num_states=natural_num_states,
+            cards=cards,
         )
 
     def _coerce_tag_names(self, tag_names: Union[Sequence[str], str]) -> list[str]:
@@ -460,9 +466,7 @@ class RegionMultiScanOp(Operation):
         result_seq = "".join(result_parts)
         output_style = SeqStyle.join(style_parts) if input_style is not None else None
 
-        from ..party import cards_suppressed
-
-        if cards_suppressed():
+        if self._party.suppress_cards:
             card = {}
         else:
             sorted_names = [n for _, _, n, _, _ in inserts]

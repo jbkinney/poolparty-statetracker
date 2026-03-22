@@ -38,7 +38,7 @@ class TestSeqShuffleBehavior:
         df = pool.generate_library(num_cycles=1, seed=42)
         assert df["seq"].nunique() > 5
 
-    def test_hybrid_num_states(self):
+    def test_random_num_states(self):
         with pp.Party():
             pool = shuffle_seq("ACGT", mode="random", num_states=10).named("shuf")
         assert pool.operation.num_states == 10

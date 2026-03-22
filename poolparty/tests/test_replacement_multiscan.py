@@ -124,8 +124,8 @@ class TestReplacementMultiscanModes:
         for seq in df["seq"]:
             assert seq.count("G") == 6
 
-    def test_hybrid_mode(self):
-        """Test hybrid mode."""
+    def test_random_mode_with_num_states(self):
+        """Test random mode with explicit num_states."""
         with pp.Party() as party:
             bg = pp.from_seqs(["AAAAAAAAAAAAAAAAAA"])  # 18 chars
             ins = pp.from_seq("GGG")

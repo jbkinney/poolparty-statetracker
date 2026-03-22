@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 import poolparty as pp
-from poolparty.base_ops.filter_seq import FilterOp, filter_seq
+from poolparty.base_ops.filter_seq import FilterOp, filter
 from poolparty.types import NullSeq, is_null_seq
 
 
@@ -236,19 +236,19 @@ class TestFilterDesignCards:
 
 
 class TestFilterFactory:
-    """Test filter_seq factory function."""
+    """Test filter factory function."""
 
-    def test_filter_seq_returns_pool(self):
-        """Test that filter_seq returns a Pool."""
+    def test_filter_returns_pool(self):
+        """Test that filter returns a Pool."""
         with pp.Party():
             root = pp.from_seqs(["AAA"])
-            filtered = filter_seq(root, lambda s: True)
+            filtered = filter(root, lambda s: True)
             assert filtered is not None
             assert hasattr(filtered, "operation")
 
-    def test_filter_seq_creates_filter_op(self):
-        """Test that filter_seq creates a FilterOp."""
+    def test_filter_creates_filter_op(self):
+        """Test that filter creates a FilterOp."""
         with pp.Party():
             root = pp.from_seqs(["AAA"])
-            filtered = filter_seq(root, lambda s: True)
+            filtered = filter(root, lambda s: True)
             assert isinstance(filtered.operation, FilterOp)

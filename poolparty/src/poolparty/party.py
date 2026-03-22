@@ -1,18 +1,12 @@
 """Party class - context manager for building and executing sequence libraries."""
 
-import sys
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
 import logging
 
 import statetracker as st
 
 from .codon_table import CodonTable
 from .region import OrfRegion, Region
-from .types import Any, Operation_type, Optional, Pool_type, Union, beartype
+from .types import Operation_type, Optional, Pool_type, Union, beartype
 from .utils import dna_utils
 
 logger = logging.getLogger(__name__)
@@ -84,11 +78,11 @@ def init(
         configure_logging(level=log_level)
     # Exit current default party if active
     if _default_party is not None and _default_party._is_active:
-        _default_party._counter_manager.__exit__(None, None, None)
+        _default_party._state_manager.__exit__(None, None, None)
         _default_party._is_active = False
     # Create new default party
     _default_party = Party(genetic_code=genetic_code)
-    _default_party._counter_manager.__enter__()
+    _default_party._state_manager.__enter__()
     _default_party._is_active = True
     _active_party = _default_party
     logger.info("Initialized default Party")
@@ -139,7 +133,7 @@ class Party:
         self._outputs: dict[str, Pool_type] = {}
         self._is_active: bool = False
         self._previous_party: Optional[Party] = None
-        self._counter_manager: st.Manager = st.Manager()
+        self._state_manager: st.Manager = st.Manager()
         self._next_pool_id: int = 0
         self._next_op_id: int = 0
         self._next_region_id: int = 0
@@ -157,8 +151,6 @@ class Party:
         from .config import Config
 
         self._config: Config = Config()
-        # Legacy: Default parameter values for operations (deprecated, use _config)
-        self._defaults: dict[str, Any] = {}
 
     def _get_next_pool_id(self) -> int:
         """Get the next unique pool ID."""
@@ -175,12 +167,7 @@ class Party:
     @property
     def state_manager(self) -> st.Manager:
         """Access the statetracker Manager for debugging state iteration."""
-        return self._counter_manager
-
-    @property
-    def counter_manager(self) -> st.Manager:
-        """Deprecated: Use state_manager instead. Access the statetracker Manager for debugging state iteration."""
-        return self._counter_manager
+        return self._state_manager
 
     @property
     def codon_table(self) -> CodonTable:
@@ -201,28 +188,11 @@ class Party:
         """Set or change the genetic code used for ORF operations."""
         self._codon_table = CodonTable(genetic_code)
 
-    def set_default(self, key: str, value: Any) -> None:
-        """Set a default parameter value for operations in this party."""
-        self._defaults[key] = value
-
-    def get_default(self, key: str, fallback: Any = None) -> Any:
-        """Get a default parameter value, or fallback if not set."""
-        return self._defaults.get(key, fallback)
-
     def load_config(self, filepath: str) -> None:
         """Load configuration from a TOML file."""
         from .config import Config
 
         self._config = Config.from_toml(filepath)
-
-    def load_defaults(self, filepath: str) -> None:
-        """Load default parameter values from a TOML file.
-
-        Deprecated: Use load_config() instead.
-        """
-        with open(filepath, "rb") as f:
-            defaults = tomllib.load(f)
-        self._defaults.update(defaults)
 
     def get_effective_seq_length(self, seq: str) -> int:
         """Get effective sequence length (DNA characters only, excluding markers)."""
@@ -243,14 +213,14 @@ class Party:
         self._previous_party = _active_party
         _active_party = self
         self._is_active = True
-        self._counter_manager.__enter__()
+        self._state_manager.__enter__()
         logger.info("Entered Party context")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit the Party context, restoring the previous party."""
         global _active_party
-        self._counter_manager.__exit__(exc_type, exc_val, exc_tb)
+        self._state_manager.__exit__(exc_type, exc_val, exc_tb)
         self._is_active = False
         # Restore previous party (could be default or another explicit party)
         _active_party = self._previous_party
@@ -361,10 +331,18 @@ class Party:
                     "variable" if existing.seq_length is None else str(existing.seq_length)
                 )
                 new_len = "variable" if seq_length is None else str(seq_length)
+                hint = ""
+                if name.startswith("_rep_") or name.startswith("_ins_"):
+                    hint = (
+                        " This commonly happens when calling insertion_multiscan "
+                        "or replacement_multiscan multiple times with different-"
+                        "sized pools in the same Party. Use the `names=` parameter "
+                        "to assign unique region names to each call."
+                    )
                 raise ValueError(
                     f"Region '{name}' already registered with seq_length={existing_len}, "
                     f"cannot re-register with seq_length={new_len}. "
-                    f"Region lengths must be consistent within a Party."
+                    f"Region lengths must be consistent within a Party.{hint}"
                 )
 
         # Create and register new region
@@ -513,7 +491,6 @@ class Party:
 
         Unlike init(), this preserves:
         - Genetic code settings (_codon_table)
-        - Default parameter values (_defaults)
         """
         # Clear pool tracking
         self._pools_by_id.clear()
@@ -533,11 +510,11 @@ class Party:
         self._outputs.clear()
         # Reset counter manager to clear counter state
         if self._is_active:
-            self._counter_manager.__exit__(None, None, None)
-            self._counter_manager = st.Manager()
-            self._counter_manager.__enter__()
+            self._state_manager.__exit__(None, None, None)
+            self._state_manager = st.Manager()
+            self._state_manager.__enter__()
         else:
-            self._counter_manager = st.Manager()
+            self._state_manager = st.Manager()
 
     def output(self, pool: Pool_type, name: Optional[str] = None) -> None:
         """Mark a pool as an output of this library."""

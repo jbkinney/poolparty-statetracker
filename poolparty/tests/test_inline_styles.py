@@ -1090,8 +1090,6 @@ class TestInsertKmersStylePropagation:
         the length delta wasn't accounting for marker tag format changes.
         """
         with pp.Party() as party:
-            # Set remove_tags=False so region tags are kept (like pp.init() does)
-            party.set_default("remove_tags", False)
 
             # Style the ENTIRE sequence (including suffix after marker)
             bg = pp.from_seq("AAAA<bc/>TTTT").stylize(style="red").named("bg")

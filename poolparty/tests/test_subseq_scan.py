@@ -102,8 +102,8 @@ class TestSubseqScanModes:
         unique_seqs = set(df["seq"])
         assert len(unique_seqs) > 1
 
-    def test_hybrid_mode(self):
-        """Test hybrid mode."""
+    def test_random_mode_with_num_states(self):
+        """Test random mode with explicit num_states."""
         with pp.Party() as party:
             result = subseq_scan("ACGTACGTACGT", seq_length=4, mode="random", num_states=3).named(
                 "result"

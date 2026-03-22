@@ -121,8 +121,8 @@ def organize_columns(
 def finalize_generate_df(
     df: pd.DataFrame,
     pool_name: str,
-    report_seq: bool,
-    report_pool_seqs: bool,
+    show_seq: bool,
+    show_pool_seqs: bool,
     pools_filter: set = None,
     show_name: bool = True,
 ) -> pd.DataFrame:
@@ -133,11 +133,11 @@ def finalize_generate_df(
         if show_name and name_col.notna().any():
             df.insert(0, "name", name_col)
 
-    if report_seq:
+    if show_seq:
         # Insert 'seq' after 'name' if name exists, else at position 0
         insert_pos = 1 if "name" in df.columns else 0
         df.insert(insert_pos, "seq", df[f"{pool_name}.seq"])
-    if not report_pool_seqs:
+    if not show_pool_seqs:
         seq_cols = [c for c in df.columns if c.endswith(".seq")]
         df = df.drop(columns=seq_cols)
     return df

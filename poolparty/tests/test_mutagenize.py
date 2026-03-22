@@ -340,7 +340,7 @@ class TestMutagenizeRandomModeWithRate:
                 assert wt != mut  # Mutation differs from wild-type
 
 
-class TestMutagenizeHybridModeWithRate:
+class TestMutagenizeRandomNumStatesWithRate:
     """Test random mode with num_states and mutation_rate."""
 
     def test_random_uses_num_states(self):
@@ -359,8 +359,8 @@ class TestMutagenizeHybridModeWithRate:
         df = pool.generate_library(num_cycles=1, seed=42)
         assert len(df) == 50
 
-    def test_hybrid_reproducible_with_seed(self):
-        """Same seed produces identical results in hybrid mode."""
+    def test_random_num_states_reproducible_with_seed(self):
+        """Same seed produces identical results in random mode with num_states."""
         results1 = []
         with pp.Party() as party:
             pool = mutagenize("ACGTACGT", mutation_rate=0.2, mode="random", num_states=10).named(
@@ -379,8 +379,8 @@ class TestMutagenizeHybridModeWithRate:
 
         assert results1 == results2
 
-    def test_hybrid_different_seeds_different_results(self):
-        """Different seeds produce different results."""
+    def test_random_num_states_different_seeds_different_results(self):
+        """Different seeds produce different results in random mode with num_states."""
         results1 = []
         with pp.Party() as party:
             pool = mutagenize("ACGTACGT", mutation_rate=0.2, mode="random", num_states=10).named(
@@ -669,7 +669,7 @@ class TestMutagenizeCustomName:
             assert ":mutagenize" in pool.operation.name
 
 
-class TestMutagenizeHybridModeWithNum:
+class TestMutagenizeRandomNumStatesWithNum:
     """Test random mode with num_states and num_mutations."""
 
     def test_random_uses_num_states_with_num(self):

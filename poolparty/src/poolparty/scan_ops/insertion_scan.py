@@ -3,7 +3,7 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import ModeType, Optional, PositionsType, RegionType, Union, beartype
+from ..types import CardsType, ModeType, Optional, PositionsType, RegionType, Union, beartype
 
 
 @beartype
@@ -20,6 +20,7 @@ def insertion_scan(
     mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
     _factory_name: Optional[str] = "insertion_scan",
 ) -> Pool:
     """
@@ -106,6 +107,7 @@ def insertion_scan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        cards=cards,
         _factory_name=f"{_factory_name}(region_scan)",
     )
     marked = marked.named(f"{marked.name}:{_factory_name}(intermediate)")
@@ -170,6 +172,7 @@ def replacement_scan(
     mode: ModeType = "random",
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
+    cards: CardsType = None,
     _factory_name: Optional[str] = "replacement_scan",
 ) -> Pool:
     """Replace a segment with insert at specified scanning positions.
@@ -189,5 +192,6 @@ def replacement_scan(
         mode=mode,
         num_states=num_states,
         iter_order=iter_order,
+        cards=cards,
         _factory_name=_factory_name if _factory_name is not None else "replacement_scan",
     )

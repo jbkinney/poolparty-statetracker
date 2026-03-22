@@ -1,6 +1,7 @@
 """Scan operation mixins for Pool class."""
 
 from ..types import (
+    CardsType,
     Integral,
     Literal,
     ModeType,
@@ -27,9 +28,10 @@ class ScanOpsMixin:
         region: RegionType = None,
         prefix: Optional[Union[str, Sequence[str]]] = None,
         mode: Union[ModeType, tuple[ModeType, ModeType]] = "random",
-        num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
+        num_states: Optional[Union[Integral, Sequence[Optional[Integral]]]] = None,
         style: Optional[str] = None,
         iter_order: Optional[Union[Real, Sequence[Real]]] = None,
+        cards: Optional[tuple[CardsType, CardsType]] = None,
     ) -> Pool_type:
         from ..scan_ops.mutagenize_scan import mutagenize_scan
 
@@ -45,6 +47,7 @@ class ScanOpsMixin:
             num_states=num_states,
             style=style,
             iter_order=iter_order,
+            cards=cards,
         )
 
     def deletion_scan(
@@ -58,6 +61,7 @@ class ScanOpsMixin:
         num_states: Optional[Integral] = None,
         style: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..scan_ops.deletion_scan import deletion_scan
 
@@ -72,6 +76,7 @@ class ScanOpsMixin:
             num_states=num_states,
             style=style,
             iter_order=iter_order,
+            cards=cards,
         )
 
     def insertion_scan(
@@ -87,6 +92,7 @@ class ScanOpsMixin:
         mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..scan_ops.insertion_scan import insertion_scan
 
@@ -103,6 +109,7 @@ class ScanOpsMixin:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
+            cards=cards,
         )
 
     def replacement_scan(
@@ -117,6 +124,7 @@ class ScanOpsMixin:
         mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..scan_ops.insertion_scan import replacement_scan
 
@@ -132,6 +140,7 @@ class ScanOpsMixin:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
+            cards=cards,
         )
 
     def shuffle_scan(
@@ -147,6 +156,7 @@ class ScanOpsMixin:
         num_states: Optional[Integral] = None,
         style: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: Optional[tuple[CardsType, CardsType]] = None,
     ) -> Pool_type:
         from ..scan_ops.shuffle_scan import shuffle_scan
 
@@ -163,6 +173,7 @@ class ScanOpsMixin:
             num_states=num_states,
             style=style,
             iter_order=iter_order,
+            cards=cards,
         )
 
     def subseq_scan(
@@ -174,6 +185,7 @@ class ScanOpsMixin:
         mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..scan_ops.subseq_scan import subseq_scan
 
@@ -186,6 +198,7 @@ class ScanOpsMixin:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
+            cards=cards,
         )
 
     def deletion_multiscan(
@@ -203,6 +216,7 @@ class ScanOpsMixin:
         num_states: Optional[Integral] = None,
         style: Optional[str] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..multiscan_ops.deletion_multiscan import deletion_multiscan
 
@@ -221,6 +235,7 @@ class ScanOpsMixin:
             num_states=num_states,
             style=style,
             iter_order=iter_order,
+            cards=cards,
         )
 
     def insertion_multiscan(
@@ -238,6 +253,7 @@ class ScanOpsMixin:
         mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..multiscan_ops.insertion_multiscan import insertion_multiscan
 
@@ -256,6 +272,7 @@ class ScanOpsMixin:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
+            cards=cards,
         )
 
     def replacement_multiscan(
@@ -272,6 +289,7 @@ class ScanOpsMixin:
         mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..multiscan_ops.insertion_multiscan import replacement_multiscan
 
@@ -289,4 +307,5 @@ class ScanOpsMixin:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
+            cards=cards,
         )

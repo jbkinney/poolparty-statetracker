@@ -4,7 +4,7 @@ import warnings
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import ModeType, Optional, PositionsType, RegionType, Sequence, Union, beartype
+from ..types import CardsType, ModeType, Optional, PositionsType, RegionType, Sequence, Union, beartype
 
 
 @beartype
@@ -17,9 +17,10 @@ def mutagenize_scan(
     region: RegionType = None,
     prefix: Optional[Union[str, Sequence[str]]] = None,
     mode: Union[ModeType, tuple[ModeType, ModeType]] = "random",
-    num_states: Optional[Union[Integral, Sequence[Integral]]] = None,
+    num_states: Optional[Union[Integral, Sequence[Optional[Integral]]]] = None,
     style: Optional[str] = None,
     iter_order: Optional[Union[Real, Sequence[Real]]] = None,
+    cards: Optional[tuple[CardsType, CardsType]] = None,
     _factory_name: Optional[str] = "mutagenize_scan",
 ) -> Pool:
     """
@@ -47,9 +48,13 @@ def mutagenize_scan(
     mode : Union[ModeType, Sequence[ModeType]], default='random'
         Selection mode for scanning positions: 'random' or 'sequential'.
         If sequence, first element is for scanning positions, second element is for mutagenization.
-    num_states : Optional[Union[Integral, Sequence[Integral]]], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
-        If sequence, first element is for scanning positions, second element is for mutagenization.
+    num_states : Optional[Union[Integral, Sequence[Optional[Integral]]]], default=None
+        Number of states. A scalar value is broadcast to both sub-operations.
+        If a 2-tuple, first element is for scanning positions, second for mutagenization.
+        For each element: None means auto-compute in sequential mode (enumerate all
+        variants) or 1 in random mode (pure random sampling).
+        Example: ``num_states=(3, None)`` with ``mode=("random", "sequential")`` picks
+        3 random scan positions and enumerates all mutation variants at each.
     iter_order : Optional[Union[Real, Sequence[Real]]], default=None
         Iteration order priority for the Operation.
         If sequence, first element is for scanning positions, second element is for mutagenization.
@@ -126,6 +131,9 @@ def mutagenize_scan(
         raise ValueError("iter_order must be a sequence of length 2")
     iter_order_scan, iter_order_mut = iter_order[0], iter_order[1]
 
+    # Resolve cards
+    cards_scan, cards_mut = cards if cards else (None, None)
+
     # 1. Insert tags at scanning positions
     marked = region_scan(
         pool,
@@ -138,6 +146,7 @@ def mutagenize_scan(
         mode=mode_scan,
         num_states=num_states_scan,
         iter_order=iter_order_scan,
+        cards=cards_scan,
         _factory_name=f"{_factory_name}(region_scan)",
     )
 
@@ -153,6 +162,7 @@ def mutagenize_scan(
         style=style,
         iter_order=iter_order_mut,
         _remove_tags=True,
+        cards=cards_mut,
         _factory_name=f"{_factory_name}(mutagenize)",
     )
 

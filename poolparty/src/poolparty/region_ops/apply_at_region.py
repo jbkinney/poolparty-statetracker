@@ -116,7 +116,22 @@ def _replace_keeping_tags(
 ):
     """Replace region content while preserving region tags."""
     from ..fixed_ops.fixed import fixed_operation
+    from ..party import get_active_party
     from ..utils.parsing_utils import build_region_tags, validate_single_region
+
+    # Compute output biological length: same formula as replace_region
+    # (tags are preserved but don't affect biological length)
+    party = get_active_party()
+    old_region_len = None
+    if party is not None and party.has_region(region_name):
+        old_region_len = party.get_region(region_name).seq_length
+
+    def _seq_length_fn(lengths):
+        parent_len = lengths[0]
+        content_len = lengths[1] if len(lengths) > 1 else None
+        if parent_len is None or old_region_len is None or content_len is None:
+            return None
+        return parent_len - old_region_len + content_len
 
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         bg_seq = seqs[0]
@@ -140,7 +155,7 @@ def _replace_keeping_tags(
     result_pool = fixed_operation(
         parent_pools=[pool, content_pool],
         seq_from_seqs_fn=seq_from_seqs_fn,
-        seq_length_from_pool_lengths_fn=lambda lengths: None,  # Variable length
+        seq_length_from_pool_lengths_fn=_seq_length_fn,
         iter_order=iter_order,
         prefix=prefix,
     )

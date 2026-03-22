@@ -92,7 +92,3 @@ def filter(
     """
     op = FilterOp(parent_pool=pool, predicate=predicate, name=name, prefix=prefix, cards=cards)
     return DnaPool(op)
-
-
-# Backward compatibility alias
-filter_seq = filter
