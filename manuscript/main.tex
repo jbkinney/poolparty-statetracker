@@ -161,11 +161,9 @@ When generating a library, it is often useful to record how each sequence was co
 \label{fig:figure1}
 \end{figure*}
 
-
 \subsection{Implementation and extensibility}
 
 PoolParty requires Python 3.10 or later, is designed to have minimal dependencies, and is distributed via PyPI. Documentation, tutorials, and example notebooks are available on the ReadTheDocs and GitHub project websites. PoolParty is designed to be extensible: new Operation types can be created by subclassing the Operation base class and implementing a few required methods. Custom Operations automatically inherit support for state tracking, design card generation, and visualization, allowing researchers to add domain-specific operations without reimplementing core infrastructure.
-
 
 \subsection{SpliceAI surrogate analysis}
 
@@ -175,34 +173,29 @@ We predicted SpliceAI donor probabilities at the canonical site using the five-m
 
 We fit generalized additive models (GAMs) to the cell means using pyGAM \citep{Serven2018pg}, with smooth terms for position, strength, and their interaction. Models were weighted by the inverse variance of each cell mean. Exonic and intronic regions were modeled separately. Model performance was evaluated by checkerboard cross-validation of the grid.
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Below is from manuscript_overleaf_26.03.17/main.tex %%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \section{Example Applications}
 
-\subsection{Codon-aware DMS library design}
+\subsection{DMS library for protein GB1}
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figure2_v2.png}
-\caption{\textbf{Design of a GB1 deep mutational scanning library using PoolParty.}
-\textbf{(A)} Schematic of the codon-aware mutational library for the GB1 ORF (168~bp; 56 codons). Parallel operations generate single- and pairwise-substitution pools, a random mutagenesis pool, and wild-type replicates, which are combined by stack to yield the final library (489,774 sequences). Representative sequence segments for each component are shown, with mutated codons highlighted and amino acid translations shown beneath.
-\textbf{(B)} Python code implementing the library design. Operations applied to the template sequence generate component pools, which are combined and materialized using \texttt{generate\_library}.
-\textbf{(C)} Example design cards. Representative rows are shown for each component with the fields relevant to that component, and row counts per component are indicated.
-\textbf{(D)} DAG view of the library specification (\texttt{print\_dag()}), showing the hierarchy of Pools and Operations.}
+\caption{\textbf{PoolParty design of a GB1 deep mutational scanning library.}
+\textbf{(A)} DAG and representative sequences for each of the four library components: single and pairwise amino acid substitutions, random higher-order mutants, and wild-type replicates. Mutated codons are highlighted with amino acid translations shown beneath.
+\textbf{(B)} Python code implementing the DAG.
+\textbf{(C)} Design cards reporting the library component, mutation positions, and amino acid changes for representative variants.
+\textbf{(D)} DAG structure displayed by \texttt{print\_dag()}.}
 \label{fig:figure2}
 \end{figure*}
 
+As a first example, we use PoolParty to reconstruct and extend the library used in a DMS experiment on protein GB1 by \citet{Olson2014iq}. Their library contained the wild-type GB1 coding sequence, all single amino acid mutations (excluding the start codon), and nearly all possible pairs of amino acid mutations. This library is substantially larger than most DMS libraries, containing over half a million variants. Its inclusion of so many pairwise variants has helped it become a benchmark dataset in the quantitative modeling of protein sequence-function relationships \citep{Otwinowski2018jb, Otwinowski2018jj, Tareen2022dh, Faure2024mn}.
 
-A common use of designed oligonucleotide pools is for DMS. In these experiments, a specific open reading frame of interest is mutagenized to introduce single amino acid substitutions at each position, and sometimes at multiple positions, possibly with additional codon recoding. In one experiment, \citet{Olson2014iq} designed a library in which they mutagenized 55 residues of protein~GB1, the IgG-binding domain of protein~G. This yielded a library of ${\sim}$500k sequences, with near-complete coverage of single and double mutants. The pairwise mutations have proven to be particularly valuable and serve as the basis for studying the epistatic landscape \citep{Zhou2022ho}. The nature of this dataset, together with the biophysics underlying GB1 function, has made it a classic testbed for quantitative sequence-to-function modeling \citep{Tareen2022dh,Faure2024mn}.
+Fig.\ \ref{fig:figure2}A illustrates the DAG used to construct this library; the code that establishes the DAG is shown in Fig.\ \ref{fig:figure2}B. First we define a Pool, named \texttt{orf\_pool}, that represents the wild-type GB1 coding sequence. This Pool is then fed as input to four separate branches. The first two branches use the \texttt{mutagenize\_orf} Operation in sequential mode to enumerate all 1,045 single and all 546,085 pairwise amino acid substitutions. A third branch uses \texttt{mutagenize\_orf} in random mode to generate 10,000 variants with mutations at 10\% of amino acid positions. Because \texttt{mutagenize\_orf} operates at the codon level, users specify only the desired amino acid substitutions, and PoolParty resolves the corresponding nucleotide changes. A fourth branch uses the \texttt{repeat} Operation to produce 100 wild-type replicates. All four branches are then merged by \texttt{stack} into a final library comprising 557,230 sequences. The design card provided with each variant (Fig.~\ref{fig:figure2}C) reports the component it derives from, the mutations it contains, and the replicate index (for wild-type sequences). Users can inspect the structure of the DAG by using the \texttt{print\_dag} method (Fig.~\ref{fig:figure2}D).
 
-We reconstruct and extend this library in PoolParty by defining a template Pool (\texttt{orf\_pool}) from the GB1 coding sequence and applying four parallel Operations, each targeting a different mutational order (Fig.~2A,B). For each \texttt{mutagenize\_orf} Operation, we specify only the substitution type (missense) and target positions (55 internal codons); PoolParty resolves the valid substitutions at each wild-type codon to their nucleotide changes. The \texttt{single\_pool} contains all 1{,}045 single substitutions, and the \texttt{double\_pool} contains all 546{,}085 pairwise combinations. A third \texttt{mutagenize\_orf} Operation produces the \texttt{random\_pool} of 10{,}000 variants at a 10\% per-codon substitution rate, enriched for higher-order mutants. The \texttt{repeat} Operation produces a \texttt{wt\_pool} of 100 wild-type replicates. The four Pools are combined via \texttt{stack} into the \texttt{dms\_pool} (Fig.~2A).
 
-The three \texttt{mutagenize\_orf} Operations use two different generation modes, specified as a parameter on each Operation (Fig.~2B). The \texttt{single\_pool} and \texttt{double\_pool} Operations run in sequential mode, which exhaustively enumerates the specified design space. The \texttt{random\_pool} Operation runs in random mode, sampling from the design space and fixing the result to a reproducible set. StateTracker resolves the state structure from the generation modes and design specifications of each Operation, without generating any sequences, so each of the 557{,}230 states in the \texttt{dms\_pool} indexes into exactly one variant from one of the four source Pools. The full library specification can also be inspected as a DAG via \texttt{print\_dag()} (Fig.~2D).
-
-We set \texttt{report\_design\_cards=True} in \texttt{generate\_library} so that each variant's generation history is tracked alongside its sequence (Fig.~2B). By default, every Operation is tracked, and each one adds its own set of design card features as columns in the output DataFrame. In Fig.~2C, each row is a library variant, and its columns record the design card features used in its generation: \texttt{stack} identifies the source Pool, \texttt{mutagenize\_orf} records the codon positions, codon changes, and amino acid substitutions, and \texttt{repeat} records the replicate index.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Below is from manuscript_overleaf_26.03.17/main.tex %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{MPRA library design for regulatory grammar}
 
@@ -215,7 +208,6 @@ We set \texttt{report\_design\_cards=True} in \texttt{generate\_library} so that
 \textbf{(C)} Example design cards. Representative rows are shown for each CRE variant, with insertion position, orientation, and barcode index recorded.}
 \label{fig:figure3}
 \end{figure*}
-
 
 MPRAs use synthetic DNA sequences to dissect the cis-regulatory codes underlying a variety of gene regulatory steps. Unlike DMS experiments, MPRAs for regulatory grammar often involve systematically changing the spacing, order, orientation, and multiplicity of known regulatory motifs within an otherwise inert sequence. The combinatorial variation of these design parameters reveals how regulatory proteins bound at cognate sites orchestrate regulatory activity. For example, \citet{GeorgakopoulosSoares2023tf} tested over 200{,}000 sequences with all pairwise and triplet arrangements of 18 TFBSs in synthetic enhancers, and found that orientation and order are major drivers of expression. The scale and controlled design of these data also make them highly suited for training and benchmarking machine learning models \citep{Fleur2024decoding}.
 
