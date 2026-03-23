@@ -18,6 +18,7 @@ from .base_ops import (
     GetKmersOp,
     MaterializeOp,
     MutagenizeOp,
+    OrientationOp,
     RecombineOp,
     SeqShuffleOp,
     filter,
@@ -27,6 +28,7 @@ from .base_ops import (
     get_kmers,
     materialize,
     mutagenize,
+    orientation,
     recombine,
     shuffle_seq,
 )
@@ -182,6 +184,8 @@ __all__ = [
     "MaterializeOp",
     "mutagenize",
     "MutagenizeOp",
+    "orientation",
+    "OrientationOp",
     "annotate_orf",
     "mutagenize_orf",
     "MutagenizeOrfOp",
@@ -348,6 +352,8 @@ _DNAPOOL_FACTORY_MAP = {
     "insert_from_iupac": from_iupac,
     "insert_from_motif": from_motif,
     "insert_kmers": get_kmers,
+    # DNA-specific base ops (stateful)
+    "orientation": orientation,
     # DNA-specific fixed ops
     "rc": rc,
     # ORF ops (DNA-specific)

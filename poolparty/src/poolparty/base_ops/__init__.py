@@ -7,6 +7,7 @@ from .from_seqs import FromSeqsOp, from_seqs
 from .get_kmers import GetKmersOp, get_kmers
 from .materialize import MaterializeOp, materialize
 from .mutagenize import MutagenizeOp, mutagenize
+from .orientation import OrientationOp, orientation
 from .recombine import RecombineOp, recombine
 from .shuffle_seq import SeqShuffleOp, shuffle_seq
 
@@ -25,6 +26,8 @@ __all__ = [
     "MaterializeOp",
     "mutagenize",
     "MutagenizeOp",
+    "orientation",
+    "OrientationOp",
     "shuffle_seq",
     "SeqShuffleOp",
     "recombine",
