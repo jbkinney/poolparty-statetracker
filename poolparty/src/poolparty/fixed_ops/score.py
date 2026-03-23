@@ -1,7 +1,5 @@
 """Score operation - evaluate a function on the sequence and record the result."""
 
-from numbers import Real
-
 import numpy as np
 
 from ..operation import Operation
@@ -17,7 +15,6 @@ def score(
     card_key: str = "score",
     region: RegionType = None,
     prefix: Optional[str] = None,
-    iter_order: Optional[Real] = None,
     cards: CardsType = None,
     _factory_name: Optional[str] = "score",
 ) -> Pool:
@@ -45,8 +42,6 @@ def score(
         region content. Can be a marker name (str) or [start, stop].
     prefix : Optional[str], default=None
         Prefix for sequence names.
-    iter_order : Optional[Real], default=None
-        Iteration order priority for the Operation.
     cards : CardsType, default=None
         Design card column specification.
 
@@ -69,7 +64,6 @@ def score(
         card_key=card_key,
         region=region,
         prefix=prefix,
-        iter_order=iter_order,
         cards=cards,
         _factory_name=_factory_name,
     )
@@ -89,7 +83,6 @@ class ScoreOp(Operation):
         card_key: str = "score",
         region: RegionType = None,
         prefix: Optional[str] = None,
-        iter_order: Optional[Real] = None,
         cards: CardsType = None,
         _factory_name: Optional[str] = "score",
     ) -> None:
@@ -106,7 +99,6 @@ class ScoreOp(Operation):
             mode="fixed",
             seq_length=parent_pool.seq_length,
             prefix=prefix,
-            iter_order=iter_order,
             region=region,
             cards=cards,
         )
@@ -118,6 +110,7 @@ class ScoreOp(Operation):
     ) -> tuple[Seq, dict]:
         """Evaluate fn on the clean sequence and return unchanged Seq with score card."""
         parent_seq = parents[0]
-        clean_seq = strip_all_tags(parent_seq.string)
+        seq_str = parent_seq.string
+        clean_seq = strip_all_tags(seq_str) if '<' in seq_str else seq_str
         result = self._fn(clean_seq)
         return parent_seq, {self._card_key: result}

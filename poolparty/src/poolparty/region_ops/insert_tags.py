@@ -4,7 +4,7 @@ from numbers import Real
 
 from poolparty.types import Optional
 
-from ..utils.parsing_utils import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos
+from ..utils.parsing_utils import build_region_tags, get_nontag_positions
 
 
 def insert_tags(
@@ -68,7 +68,8 @@ def insert_tags(
 
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         seq = seqs[0]
-        seq_len = len(get_nontag_positions(seq))
+        nontag_positions = get_nontag_positions(seq)
+        seq_len = len(nontag_positions)
 
         # Validate against non-tag length
         if start > seq_len:
@@ -78,9 +79,21 @@ def insert_tags(
         if actual_stop > seq_len:
             raise ValueError(f"stop ({actual_stop}) exceeds sequence length ({seq_len})")
 
-        # Convert to literal positions and build tags
-        literal_start = nontag_pos_to_literal_pos(seq, start)
-        literal_stop = nontag_pos_to_literal_pos(seq, actual_stop)
+        # Convert to literal positions
+        literal_start = nontag_positions[start] if start < seq_len else len(seq)
+        literal_stop = nontag_positions[actual_stop] if actual_stop < seq_len else len(seq)
+
+        # Walk literal_stop backward past any opening tags at the boundary
+        # to avoid capturing them inside the region content (crossing XML).
+        while literal_stop > literal_start and seq[literal_stop - 1] == '>':
+            tag_start = seq.rfind('<', literal_start, literal_stop)
+            if tag_start < 0:
+                break
+            tag = seq[tag_start:literal_stop]
+            if tag.startswith('</') or tag.endswith('/>'):
+                break
+            literal_stop = tag_start
+
         content = seq[literal_start:literal_stop] if region_length > 0 else ""
         region_tag = build_region_tags(region_name, content)
         return seq[:literal_start] + region_tag + seq[literal_stop:]

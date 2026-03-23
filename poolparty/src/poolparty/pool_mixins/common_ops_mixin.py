@@ -125,7 +125,6 @@ class CommonOpsMixin:
         card_key: str = "score",
         region: RegionType = None,
         prefix: Optional[str] = None,
-        iter_order: Optional[Real] = None,
         cards: CardsType = None,
     ) -> Pool_type:
         from ..fixed_ops.score import score
@@ -136,7 +135,6 @@ class CommonOpsMixin:
             card_key=card_key,
             region=region,
             prefix=prefix,
-            iter_order=iter_order,
             cards=cards,
         )
 

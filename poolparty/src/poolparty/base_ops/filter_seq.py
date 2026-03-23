@@ -4,10 +4,10 @@ from numbers import Real
 
 import numpy as np
 
-from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..pool import Pool
 from ..types import Callable, CardsType, NullSeq, Optional, Pool_type, Seq, Sequence, beartype
+from ..utils.parsing_utils import strip_all_tags
 
 
 class FilterOp(Operation):
@@ -34,6 +34,7 @@ class FilterOp(Operation):
             parent_pools=[parent_pool],
             num_states=1,  # Filter is always fixed mode
             mode="fixed",
+            seq_length=parent_pool.seq_length,
             name=name,
             iter_order=iter_order,
             prefix=prefix,
@@ -49,9 +50,13 @@ class FilterOp(Operation):
         """Apply predicate and return Seq or NullSeq."""
         parent_seq = parents[0]
 
-        # Evaluate predicate on the sequence string
-        # Use clean if available (strips tags), otherwise use string directly
-        seq_str = parent_seq.clean if parent_seq.clean else parent_seq.string
+        # Get tag-free sequence content for the predicate
+        if parent_seq.clean:
+            seq_str = parent_seq.clean
+        elif '<' in parent_seq.string:
+            seq_str = strip_all_tags(parent_seq.string)
+        else:
+            seq_str = parent_seq.string
         passes = self._predicate(seq_str)
 
         if passes:
@@ -91,4 +96,5 @@ def filter(
         New pool that may contain NullSeq for filtered sequences.
     """
     op = FilterOp(parent_pool=pool, predicate=predicate, name=name, prefix=prefix, cards=cards)
-    return DnaPool(op)
+    pool_class = type(pool)
+    return pool_class(operation=op)
