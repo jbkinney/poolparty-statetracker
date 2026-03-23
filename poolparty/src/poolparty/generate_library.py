@@ -35,8 +35,10 @@ def generate_library(
         seed: Random seed for reproducibility.
         init_state: Initial state to start generation from.
         seqs_only: If True, return list of sequences instead of DataFrame.
-        discard_null_seqs: If True, keep iterating until num_seqs valid (non-null)
-            sequences are generated. Requires num_seqs to be specified.
+        discard_null_seqs: If True, discard sequences that fail filters (null
+            sequences). With num_seqs, keeps sampling until N valid sequences are
+            collected. With num_cycles, enumerates all states and returns only the
+            valid ones (output may have fewer than num_cycles * num_states rows).
         max_iterations: Maximum iterations before stopping. Default: state space
             size for sequential mode, or num_seqs * 100 for random mode.
         min_acceptance_rate: Minimum fraction of sequences that must pass filters.
@@ -58,11 +60,6 @@ def generate_library(
         pool._master_seed = None
 
     # Validate arguments
-    if discard_null_seqs and num_seqs is None:
-        raise ValueError(
-            "num_seqs must be specified when discard_null_seqs=True. "
-            "Cannot use num_cycles with filtering."
-        )
     if num_seqs is None:
         num_seqs = num_cycles * pool.state.num_values
     if init_state is not None:
