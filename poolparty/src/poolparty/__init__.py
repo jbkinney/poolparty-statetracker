@@ -18,6 +18,7 @@ from .base_ops import (
     GetKmersOp,
     MaterializeOp,
     MutagenizeOp,
+    OrientationOp,
     RecombineOp,
     SeqShuffleOp,
     filter,
@@ -27,6 +28,7 @@ from .base_ops import (
     get_kmers,
     materialize,
     mutagenize,
+    orientation,
     recombine,
     shuffle_seq,
 )
@@ -44,6 +46,7 @@ from .dna_pool import DnaPool
 from .fixed_ops import (
     AddPrefixOp,
     FixedOp,
+    ScoreOp,
     StylizeOp,
     add_prefix,
     clear_annotation,
@@ -54,6 +57,7 @@ from .fixed_ops import (
     join,
     lower,
     rc,
+    score,
     slice_seq,
     stylize,
     swapcase,
@@ -182,6 +186,8 @@ __all__ = [
     "MaterializeOp",
     "mutagenize",
     "MutagenizeOp",
+    "orientation",
+    "OrientationOp",
     "annotate_orf",
     "mutagenize_orf",
     "MutagenizeOrfOp",
@@ -200,6 +206,8 @@ __all__ = [
     "shuffle_seq",
     "SeqShuffleOp",
     "rc",
+    "score",
+    "ScoreOp",
     "swapcase",
     "upper",
     "lower",
@@ -320,6 +328,7 @@ _POOL_FACTORY_MAP = {
     "insertion_multiscan": insertion_multiscan,
     "replacement_multiscan": replacement_multiscan,
     # Fixed ops (generic)
+    "score": score,
     "slice_seq": slice_seq,
     "swapcase": swapcase,
     "upper": upper,
@@ -348,6 +357,8 @@ _DNAPOOL_FACTORY_MAP = {
     "insert_from_iupac": from_iupac,
     "insert_from_motif": from_motif,
     "insert_kmers": get_kmers,
+    # DNA-specific base ops (stateful)
+    "orientation": orientation,
     # DNA-specific fixed ops
     "rc": rc,
     # ORF ops (DNA-specific)

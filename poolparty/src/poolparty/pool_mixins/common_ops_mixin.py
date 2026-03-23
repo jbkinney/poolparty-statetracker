@@ -1,9 +1,11 @@
 """Common operation mixins for Pool class - generic operations that work on any sequence type."""
 
 from ..types import (
+    Any,
     Callable,
     CardsType,
     Integral,
+    Literal,
     ModeType,
     Optional,
     Pool_type,
@@ -50,6 +52,7 @@ class CommonOpsMixin:
     def shuffle_seq(
         self,
         region: RegionType = None,
+        shuffle_type: Literal["mono", "dinuc"] = "mono",
         prefix: Optional[str] = None,
         mode: ModeType = "random",
         num_states: Optional[int] = None,
@@ -62,6 +65,7 @@ class CommonOpsMixin:
         return shuffle_seq(
             pool=self,
             region=region,
+            shuffle_type=shuffle_type,
             prefix=prefix,
             mode=mode,
             num_states=num_states,
@@ -114,6 +118,27 @@ class CommonOpsMixin:
         from ..base_ops.filter_seq import filter
 
         return filter(self, predicate=predicate, name=name, prefix=prefix, cards=cards)
+
+    def score(
+        self,
+        fn: Callable[[str], Any],
+        card_key: str = "score",
+        region: RegionType = None,
+        prefix: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        cards: CardsType = None,
+    ) -> Pool_type:
+        from ..fixed_ops.score import score
+
+        return score(
+            pool=self,
+            fn=fn,
+            card_key=card_key,
+            region=region,
+            prefix=prefix,
+            iter_order=iter_order,
+            cards=cards,
+        )
 
     def materialize(
         self,

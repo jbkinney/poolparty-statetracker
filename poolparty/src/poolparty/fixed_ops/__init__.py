@@ -9,6 +9,7 @@ from .from_seq import from_seq
 from .join import join
 from .lower import lower
 from .rc import rc
+from .score import ScoreOp, score
 from .slice_seq import slice_seq
 from .stylize import StylizeOp, stylize
 from .swapcase import swapcase
@@ -29,6 +30,8 @@ __all__ = [
     "lower",
     "clear_gaps",
     "clear_annotation",
+    "score",
+    "ScoreOp",
     "stylize",
     "StylizeOp",
 ]

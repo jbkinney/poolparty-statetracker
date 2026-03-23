@@ -3,6 +3,7 @@
 import pandas as pd
 
 from ..types import (
+    CardsType,
     Integral,
     Literal,
     ModeType,
@@ -91,6 +92,31 @@ class DnaMixin:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
+        )
+
+    def orientation(
+        self,
+        region: RegionType = None,
+        rc_rate: Real = 0.5,
+        prefix: Optional[str] = None,
+        mode: ModeType = "sequential",
+        num_states: Optional[int] = None,
+        iter_order: Optional[Real] = None,
+        style: Optional[str] = None,
+        cards: CardsType = None,
+    ) -> Pool_type:
+        from ..base_ops.orientation import orientation
+
+        return orientation(
+            pool=self,
+            region=region,
+            rc_rate=rc_rate,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+            style=style,
+            cards=cards,
         )
 
     # =========================================================================

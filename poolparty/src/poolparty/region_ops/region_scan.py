@@ -105,7 +105,7 @@ class RegionScanOp(Operation):
     design_card_keys = [
         "position_index",
         "start",
-        "stop",
+        "end",
         "name",
         "region_seq",
     ]
@@ -336,7 +336,7 @@ class RegionScanOp(Operation):
         return output_seq, {
             "position_index": position_index,
             "start": start,
-            "stop": stop,
+            "end": stop,
             "name": self.region_name,
             "region_seq": region_tag,
         }

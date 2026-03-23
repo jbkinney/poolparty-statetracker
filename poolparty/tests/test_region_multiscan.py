@@ -204,9 +204,10 @@ class TestRegionMultiscanSpacing:
             result = region_multiscan(
                 "ACGTACGTACGTACGTACGT", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, max_spacing=3, mode="sequential",
+                cards=["starts"],
             )
         df = result.generate_library(num_cycles=1)
-        col = _find_card_col(df, ".key.starts")
+        col = _find_card_col(df, ".starts")
         for _, row in df.iterrows():
             positions = row[col]
             assert positions[1] - positions[0] <= 3
@@ -217,9 +218,10 @@ class TestRegionMultiscanSpacing:
             result = region_multiscan(
                 "ACGTACGTACGTACGT", tag_names=["a", "b"], num_insertions=2,
                 region_length=3, min_spacing=2,
+                cards=["starts"],
             )
         df = result.generate_library(num_seqs=20, seed=42)
-        col = _find_card_col(df, ".key.starts")
+        col = _find_card_col(df, ".starts")
         for _, row in df.iterrows():
             positions = row[col]
             gap = positions[1] - (positions[0] + 3)
@@ -241,10 +243,11 @@ class TestRegionMultiscanPerInsertPositions:
                 "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, positions=[[0, 2, 4], [5, 7, 9]],
                 mode="sequential",
+                cards=["starts"],
             )
         df = result.generate_library(num_cycles=1)
         assert len(df) > 0
-        col = _find_card_col(df, ".key.starts")
+        col = _find_card_col(df, ".starts")
         for _, row in df.iterrows():
             positions = row[col]
             # At least one position should come from the specified sets
@@ -313,9 +316,10 @@ class TestRegionMultiscanDesignCard:
             result = region_multiscan(
                 "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=2, mode="sequential",
+                cards=["starts", "ends", "names", "region_seqs", "combination_index"],
             )
         df = result.generate_library(num_cycles=1)
-        suffixes = [".key.starts", ".key.names", ".key.region_seqs", ".key.combination_index"]
+        suffixes = [".starts", ".names", ".region_seqs", ".combination_index"]
         for s in suffixes:
             assert any(c.endswith(s) for c in df.columns), f"Missing column with suffix {s}"
 
@@ -325,9 +329,10 @@ class TestRegionMultiscanDesignCard:
             result = region_multiscan(
                 "ACGTACGTAC", tag_names=["first", "second"], num_insertions=2,
                 region_length=0, mode="sequential",
+                cards=["names"],
             )
         df = result.generate_library(num_cycles=1)
-        col = _find_card_col(df, ".key.names")
+        col = _find_card_col(df, ".names")
         for _, row in df.iterrows():
             assert row[col] == ["first", "second"]
 
@@ -337,9 +342,10 @@ class TestRegionMultiscanDesignCard:
             result = region_multiscan(
                 "ACGT", tag_names=["a", "b"], num_insertions=2,
                 region_length=0, mode="sequential",
+                cards=["combination_index"],
             )
         df = result.generate_library(num_cycles=1)
-        col = _find_card_col(df, ".key.combination_index")
+        col = _find_card_col(df, ".combination_index")
         indices = list(df[col])
         assert indices == list(range(len(df)))
 
@@ -349,9 +355,10 @@ class TestRegionMultiscanDesignCard:
             result = region_multiscan(
                 "ACGTACGTAC", tag_names=["a", "b"], num_insertions=2,
                 region_length=0,
+                cards=["combination_index"],
             )
         df = result.generate_library(num_seqs=5, seed=42)
-        col = _find_card_col(df, ".key.combination_index")
+        col = _find_card_col(df, ".combination_index")
         for _, row in df.iterrows():
             assert row[col] is None
 
@@ -540,12 +547,13 @@ class TestDeletionMultiscanConsistency:
             result = deletion_multiscan(
                 "AAAAAAAAAA", deletion_length=2, num_deletions=2,
                 min_spacing=2, mode="sequential",
+                cards=["starts"],
             ).named("result")
 
         df = result.generate_library(num_cycles=1)
         assert len(df) == 15
 
-        pos_col = _get_card(df, ".key.starts")
+        pos_col = _get_card(df, ".starts")
         for i, (_, row) in enumerate(df.iterrows()):
             positions = pos_col.iloc[i]
             seq = row["seq"]
@@ -569,13 +577,14 @@ class TestDeletionMultiscanConsistency:
             result = deletion_multiscan(
                 "AAAAAAAAAAAAAAAA", deletion_length=3, num_deletions=2,
                 names=["cut_A", "cut_B"], mode="sequential",
+                cards=["names", "starts", "combination_index"],
             ).named("result")
 
         df = result.generate_library(num_cycles=1)
 
-        names_col = _get_card(df, ".key.names")
-        pos_col = _get_card(df, ".key.starts")
-        idx_col = _get_card(df, ".key.combination_index")
+        names_col = _get_card(df, ".names")
+        pos_col = _get_card(df, ".starts")
+        idx_col = _get_card(df, ".combination_index")
 
         for i in range(len(df)):
             assert names_col.iloc[i] == ["cut_A", "cut_B"]
@@ -614,13 +623,14 @@ class TestInsertionMultiscanConsistency:
             result = insertion_multiscan(
                 "AAAAAAAA", num_insertions=2, insertion_pools=ins,
                 mode="sequential",
+                cards=["starts", "combination_index"],
             ).named("result")
 
         df = result.generate_library(num_cycles=1)
         assert len(df) == 36
 
-        pos_col = _get_card(df, ".key.starts")
-        idx_col = _get_card(df, ".key.combination_index")
+        pos_col = _get_card(df, ".starts")
+        idx_col = _get_card(df, ".combination_index")
 
         for i in range(len(df)):
             positions = pos_col.iloc[i]
@@ -649,12 +659,13 @@ class TestInsertionMultiscanConsistency:
                 "AAAAAAAAAA", num_insertions=2,
                 insertion_pools=[ins_a, ins_b],
                 min_spacing=3, mode="sequential",
+                cards=["starts", "names"],
             ).named("result")
 
         df = result.generate_library(num_cycles=1)
 
-        pos_col = _get_card(df, ".key.starts")
-        names_col = _get_card(df, ".key.names")
+        pos_col = _get_card(df, ".starts")
+        names_col = _get_card(df, ".names")
 
         for i in range(len(df)):
             positions = pos_col.iloc[i]
@@ -720,6 +731,7 @@ class TestReplacementMultiscanConsistency:
             result = replacement_multiscan(
                 "AAAAAAAAAA", num_replacements=2, replacement_pools=rep,
                 min_spacing=1, mode="sequential",
+                cards=["starts", "combination_index"],
             ).named("result")
 
         df = result.generate_library(num_cycles=1)
@@ -731,8 +743,8 @@ class TestReplacementMultiscanConsistency:
         )
         assert len(df) == len(expected_combos)
 
-        pos_col = _get_card(df, ".key.starts")
-        idx_col = _get_card(df, ".key.combination_index")
+        pos_col = _get_card(df, ".starts")
+        idx_col = _get_card(df, ".combination_index")
 
         for i in range(len(df)):
             positions = pos_col.iloc[i]
@@ -760,11 +772,12 @@ class TestReplacementMultiscanConsistency:
             result = replacement_multiscan(
                 "ABCDEFGHIJ", num_replacements=2, replacement_pools=rep,
                 mode="sequential",
+                cards=["starts"],
             ).named("result")
 
         df = result.generate_library(num_cycles=1)
 
-        pos_col = _get_card(df, ".key.starts")
+        pos_col = _get_card(df, ".starts")
         original = "ABCDEFGHIJ"
 
         for i in range(len(df)):
@@ -797,11 +810,12 @@ class TestReplacementMultiscanConsistency:
             result = replacement_multiscan(
                 bg, num_replacements=2, replacement_pools=rep,
                 region="target", mode="sequential",
+                cards=["starts"],
             ).named("result")
 
         df = result.generate_library(num_cycles=1)
 
-        pos_col = _get_card(df, ".key.starts")
+        pos_col = _get_card(df, ".starts")
 
         for i in range(len(df)):
             seq = df.iloc[i]["seq"]
@@ -916,9 +930,10 @@ class TestPerRegionLengths:
                 "AAAAAAAAAAAAAAAA", tag_names=["s", "l"], num_insertions=2,
                 region_length=[2, 4], insertion_mode="unordered",
                 mode="sequential",
+                cards=["names"],
             )
         df = result.generate_library(num_cycles=1)
-        names_col = _find_card_col(df, ".key.names")
+        names_col = _find_card_col(df, ".names")
         # In ordered mode, "s" is always leftmost. In unordered,
         # some combos have "l" as the leftmost.
         has_l_left = any(
@@ -969,9 +984,10 @@ class TestPerRegionLengths:
                 "A" * 20, num_replacements=2,
                 replacement_pools=[pool_a, pool_b],
                 min_spacing=3, mode="sequential",
+                cards=["starts"],
             ).named("result")
         df = result.generate_library(num_cycles=1)
-        pos_col = _get_card(df, ".key.starts")
+        pos_col = _get_card(df, ".starts")
         for i in range(len(df)):
             positions = pos_col.iloc[i]
             # gap = positions[1] - (positions[0] + 2) >= 3

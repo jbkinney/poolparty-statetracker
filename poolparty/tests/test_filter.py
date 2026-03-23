@@ -125,14 +125,15 @@ class TestFilterPropagation:
 class TestFilterEdgeCases:
     """Test edge cases and error handling."""
 
-    def test_discard_requires_num_seqs(self):
-        """Test that discard_null_seqs requires num_seqs."""
+    def test_discard_with_num_cycles(self):
+        """Test that discard_null_seqs works with num_cycles."""
         with pp.Party():
-            root = pp.from_seqs(["A", "C", "G"], mode="sequential")
-            filtered = root.filter(lambda s: True)
+            root = pp.from_seqs(["AA", "CC", "GG"], mode="sequential")
+            filtered = root.filter(lambda s: s != "CC")
 
-            with pytest.raises(ValueError, match="num_seqs must be specified"):
-                filtered.generate_library(num_cycles=1, discard_null_seqs=True)
+            df = filtered.generate_library(num_cycles=1, discard_null_seqs=True)
+            assert len(df) == 2
+            assert set(df["seq"]) == {"AA", "GG"}
 
     def test_state_space_exhaustion_warning(self):
         """Test warning when state space exhausted before quota."""

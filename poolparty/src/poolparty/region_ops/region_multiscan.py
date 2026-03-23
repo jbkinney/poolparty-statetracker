@@ -126,7 +126,7 @@ class RegionMultiScanOp(Operation):
     """Insert multiple XML region tags at selected positions."""
 
     factory_name = "region_multiscan"
-    design_card_keys = ["combination_index", "starts", "stops", "names", "region_seqs"]
+    design_card_keys = ["combination_index", "starts", "ends", "names", "region_seqs"]
 
     def __init__(
         self,
@@ -476,7 +476,7 @@ class RegionMultiScanOp(Operation):
             card = {
                 "combination_index": combination_index,
                 "starts": sorted_starts,
-                "stops": sorted_stops,
+                "ends": sorted_stops,
                 "names": sorted_names,
                 "region_seqs": sorted_region_seqs,
             }
