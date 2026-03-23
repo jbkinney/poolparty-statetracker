@@ -180,7 +180,7 @@ We fit generalized additive models (GAMs) to the cell means using pyGAM \citep{S
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figure2_v2.png}
-\caption{\textbf{PoolParty design of a GB1 deep mutational scanning library.}
+\caption{\textbf{Design of a deep mutational scanning library for protein GB1.}
 \textbf{(A)} DAG and representative sequences for each of the four library components: single and pairwise amino acid substitutions, random higher-order mutants, and wild-type replicates. Mutated codons are highlighted with amino acid translations shown beneath.
 \textbf{(B)} Python code implementing the DAG.
 \textbf{(C)} Design cards reporting the library component, mutation positions, and amino acid changes for representative variants.
@@ -192,29 +192,27 @@ As a first example, we use PoolParty to reconstruct and extend the library used 
 
 Fig.\ \ref{fig:figure2}A illustrates the DAG used to construct this library; the code that establishes the DAG is shown in Fig.\ \ref{fig:figure2}B. First we define a Pool, named \texttt{orf\_pool}, that represents the wild-type GB1 coding sequence. This Pool is then fed as input to four separate branches. The first two branches use the \texttt{mutagenize\_orf} Operation in sequential mode to enumerate all 1,045 single and all 546,085 pairwise amino acid substitutions. A third branch uses \texttt{mutagenize\_orf} in random mode to generate 10,000 variants with mutations at 10\% of amino acid positions. Because \texttt{mutagenize\_orf} operates at the codon level, users specify only the desired amino acid substitutions, and PoolParty resolves the corresponding nucleotide changes. A fourth branch uses the \texttt{repeat} Operation to produce 100 wild-type replicates. All four branches are then merged by \texttt{stack} into a final library comprising 557,230 sequences. The design card provided with each variant (Fig.~\ref{fig:figure2}C) reports the component it derives from, the mutations it contains, and the replicate index (for wild-type sequences). Users can inspect the structure of the DAG by using the \texttt{print\_dag} method (Fig.~\ref{fig:figure2}D).
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Below is from manuscript_overleaf_26.03.17/main.tex %%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{MPRA library design for regulatory grammar}
+\subsection{MPRA library for regulatory grammar}
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figure3_v2.png}
-\caption{\textbf{Design of a regulatory grammar MPRA library using PoolParty.}
-\textbf{(A)} Schematic of the regulatory grammar MPRA library targeting a 100-bp CRE. HNF4A, PPARA, and XBP1 binding sites are tiled across the CRE in different orders and orientations, with each variant assigned three unique barcodes (87,360 sequences total). Representative sequence structures are shown, with TFBS placements and barcode assignments indicated.
-\textbf{(B)} Python code for library construction. TFBS pools are initialized with both forward and reverse-complement sequences to represent orientation.
-\textbf{(C)} Example design cards. Representative rows are shown for each CRE variant, with insertion position, orientation, and barcode index recorded.}
+\caption{\textbf{Design of a massively parallel reporter assay library for regulatory grammar.}
+\textbf{(A)} Library schematic showing TFBS placements across a 100-bp CRE in representative variants, with barcode assignments (87{,}360 sequences total).
+\textbf{(B)} Python code for library construction. TFBS Pools are initialized with forward and reverse-complement sequences to represent orientation.
+\textbf{(C)} Styled \texttt{print\_library} output. TFBSs are colored by identity (HNF4A blue, PPARA purple, XBP1 orange) against the grey CRE background; barcodes are shown in bold.}
 \label{fig:figure3}
 \end{figure*}
 
-MPRAs use synthetic DNA sequences to dissect the cis-regulatory codes underlying a variety of gene regulatory steps. Unlike DMS experiments, MPRAs for regulatory grammar often involve systematically changing the spacing, order, orientation, and multiplicity of known regulatory motifs within an otherwise inert sequence. The combinatorial variation of these design parameters reveals how regulatory proteins bound at cognate sites orchestrate regulatory activity. For example, \citet{GeorgakopoulosSoares2023tf} tested over 200{,}000 sequences with all pairwise and triplet arrangements of 18 TFBSs in synthetic enhancers, and found that orientation and order are major drivers of expression. The scale and controlled design of these data also make them highly suited for training and benchmarking machine learning models \citep{Fleur2024decoding}.
+MPRA libraries used to study regulatory grammar often vary the spacing, order, and orientation of transcription factor binding sites (TFBSs) [NEED REFS]. For example, \citet{GeorgakopoulosSoares2023tf} tested over 200{,}000 sequences containing all pairwise and triplet arrangements of 18 TFBSs, and found that binding-site order and orientation are major drivers of expression. Designing such libraries requires substantially more complex combinatorics than standard DMS libraries; PoolParty handles this complexity automatically. 
 
-As a second use case, we designed an MPRA library studying how binding site arrangements of three liver-enriched TFs affect regulatory activity (Fig.~3A,B). Following the oligo layout of \citet{Melnikov2012dw}, we define the template Pool from a sequence containing an inert 100~bp CRE region and a barcode region, both tagged with region markers (Section~2.3). Each of the three TFs --- HNF4A, PPARA, and XBP1 --- is represented by a Pool containing both the forward and reverse-complement binding sites. We use \texttt{replacement\_multiscan} in sequential mode to tile these Pools within the central 80~bp of the CRE without overlap. PoolParty automatically enumerates 2{,}184 valid placements, each in eight orientation combinations, for a CRE Pool of 17{,}472 variants. After repeating this Pool three times, we fill the barcode region with random barcodes from \texttt{get\_barcodes}, giving the final \texttt{mpra\_pool} of 87{,}360 sequences at a 1:3 CRE-to-barcode ratio (Fig.~3A). 
+As a second example, we designed an MPRA library that tiles the binding sites of three liver-enriched TFs --- HNF4A, PPARA, and XBP1 --- across a 100~bp CRE in all possible orders and orientations (Fig.~\ref{fig:figure3}A,B). Following the oligo layout of \citet{Melnikov2012dw}, we define a template Pool containing an inert CRE region and a barcode region, both tagged with region markers (Section~2.5). Each TF is represented by a Pool containing its forward and reverse-complement binding site. We then use \texttt{replacement\_multiscan} in sequential mode to tile these three Pools within the central 80~bp of the CRE without overlap. PoolParty enumerates all 2{,}184 valid positional arrangements $\times$ 8 orientation combinations ($2^3$ for three TFs), yielding 17{,}472 CRE variants. We then replicate each variant three times using \texttt{repeat} and fill the barcode region with unique barcodes from \texttt{get\_barcodes}, so that each CRE variant is paired with three distinct barcodes, giving a final library of 87{,}360 sequences (Fig.~\ref{fig:figure3}A). 
 
-PoolParty supports two types of styling. The style parameter of Operations marks the modifications they introduce to the sequence, while the \texttt{stylize} Operation annotates a region of the existing sequence. We first use \texttt{stylize} to add a background color to the tagged CRE region in the template. For the inserts, we color each TFBS Pool using the style parameter in \texttt{from\_seqs} (HNF4A blue, PPARA purple, XBP1 orange) and mark barcodes bold in \texttt{get\_barcodes} (Fig.~3B). When the TFBSs are tiled into the CRE, their colors overlay the CRE region background color, and both are rendered in the \texttt{print\_library} output (Fig.~3C), making the positions and ordering of the three TFBSs immediately visible.
+To aid visual inspection, we use the \texttt{stylize} Operation to shade the CRE region grey, assign each TFBS Pool a distinct color via the \texttt{style} parameter in \texttt{from\_seqs} (HNF4A blue, PPARA purple, XBP1 orange), and mark barcodes bold in \texttt{get\_barcodes} (Fig.~\ref{fig:figure3}B). When the library is rendered with \texttt{print\_library}, these styles compose: TFBS colors overlay the CRE background, making the position and order of binding sites immediately visible across all variants (Fig.~\ref{fig:figure3}C).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Below is from manuscript_overleaf_26.03.17/main.tex %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{figure*}[p]
 \centering
