@@ -46,6 +46,7 @@ from .dna_pool import DnaPool
 from .fixed_ops import (
     AddPrefixOp,
     FixedOp,
+    ScoreOp,
     StylizeOp,
     add_prefix,
     clear_annotation,
@@ -56,6 +57,7 @@ from .fixed_ops import (
     join,
     lower,
     rc,
+    score,
     slice_seq,
     stylize,
     swapcase,
@@ -204,6 +206,8 @@ __all__ = [
     "shuffle_seq",
     "SeqShuffleOp",
     "rc",
+    "score",
+    "ScoreOp",
     "swapcase",
     "upper",
     "lower",
@@ -324,6 +328,7 @@ _POOL_FACTORY_MAP = {
     "insertion_multiscan": insertion_multiscan,
     "replacement_multiscan": replacement_multiscan,
     # Fixed ops (generic)
+    "score": score,
     "slice_seq": slice_seq,
     "swapcase": swapcase,
     "upper": upper,

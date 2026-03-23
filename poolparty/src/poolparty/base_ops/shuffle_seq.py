@@ -103,8 +103,10 @@ class SeqShuffleOp(Operation):
     ) -> None:
         """Initialize SeqShuffleOp."""
 
-        if mode == "sequential":
-            raise ValueError("mode='sequential' is not supported for SeqShuffleOp")
+        if mode != "random":
+            raise ValueError(
+                f"mode={mode!r} is not supported for shuffle_seq. Only mode='random' is allowed."
+            )
 
         # Set factory_name if provided
         if _factory_name is not None:
