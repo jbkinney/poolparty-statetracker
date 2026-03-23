@@ -108,6 +108,16 @@ Here we present PoolParty, a Python package that enables the streamlined design 
 
 \section{Methods}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figure1_v2.png}
+\caption{\textbf{PoolParty builds libraries from Pools and Operations.}
+\textbf{(A)} Pools represent collections of sequences and Operations generate new Pools based on their inputs (left). Users chain Operations into a directed acyclic graph (DAG) that specifies the desired library, but delays sequence generation until the user requests it. Operations fall into four functional categories: source, transformation, composition, and state (right).
+\textbf{(B)} Sequence generation proceeds in two passes. For each desired sequence, PoolParty passes a number (called the \emph{state}) that specifies which sequence to generate to the root Pool. This state is propagated backward through the DAG, resolving the internal state of every Operation along the way (left). A subsequent forward pass then causes each Operation to generate and combine sequence fragments according to its resolved state, producing the final sequence at the root Pool (right). When multiple Pools are combined by \texttt{stack}, only one parent is active for a given state; inactive branches receive no state (\texttt{None}) and are shown as grey arrows.
+\textbf{(C)} Example workflow. The template sequence contains a user-specified region (called ``tag'') that is targeted for both mutagenesis and deletion scanning. Left: the DAG specifying the sequence library. Center: the design card DataFrame returned by the DAG. Right: styled sequence output, with colors indicating mutations (red), deletions (green), and the tagged region (blue).}
+\label{fig:figure1}
+\end{figure*}
+
 \subsection{Pools and Operations}
 
 PoolParty is built around two core concepts: Pools and Operations. Pools represent collections of sequences---either the final library that the user wishes to generate, or intermediate sets of sequences out of which the final library is constructed. Operations represent the steps used to create Pools. When designing a library, users chain together multiple Operations into a DAG that yields the desired Pool. Sequences are then generated on demand from the final resulting Pool (the \emph{root Pool}) using the DAG. By delaying sequence generation until it is explicitly requested, users can test many different library designs (inspecting a few sampled sequences from each) before committing to generating the full library.  
@@ -149,17 +159,6 @@ It is often useful to record how each sequence within a library was constructed.
 
 \item \textbf{Sequence styling} allows sequences to be annotated with colors and formatted text that reflects each one's construction history. For example, \texttt{mutagenize} can be instructed to mark the positions it mutates in bold yellow text, making these positions stand out from the rest of the sequence. This formatting is accomplished using ANSI escape codes, so output renders correctly in terminals, Jupyter notebooks, and other environments that support text formatting standards. Importantly, styles combine in a natural manner as sequences propagate through the DAG, e.g., a mutated position can be underlined even if it occurs within a sequence region that is already colored blue.
 \end{itemize}
-
-%TODO: In panel C, replace "S=" and "S'=" with "num_states=". 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{figure1_v2.png}
-\caption{\textbf{PoolParty builds libraries from Pools and Operations.}
-\textbf{(A)} Pools represent collections of sequences and Operations generate new Pools based on their inputs (left). Users chain Operations into a directed acyclic graph (DAG) that specifies the desired library, but delays sequence generation until the user requests it. Operations fall into four functional categories: source, transformation, composition, and state (right).
-\textbf{(B)} Sequence generation proceeds in two passes. For each desired sequence, PoolParty passes a number (called the \emph{state}) that specifies which sequence to generate to the root Pool. This state is propagated backward through the DAG, resolving the internal state of every Operation along the way (left). A subsequent forward pass then causes each Operation to generate and combine sequence fragments according to its resolved state, producing the final sequence at the root Pool (right). When multiple Pools are combined by \texttt{stack}, only one parent is active for a given state; inactive branches receive no state (\texttt{None}) and are shown as grey arrows.
-\textbf{(C)} Example workflow. The template sequence contains a user-specified region (called ``tag'') that is targeted for both mutagenesis and deletion scanning. Left: the DAG specifying the sequence library. Center: the design card DataFrame returned by the DAG. Right: styled sequence output, with colors indicating mutations (red), deletions (green), and the tagged region (blue).}
-\label{fig:figure1}
-\end{figure*}
 
 \subsection{Implementation and extensibility}
 
