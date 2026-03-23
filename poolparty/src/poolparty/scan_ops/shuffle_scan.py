@@ -3,7 +3,7 @@
 from numbers import Integral, Real
 
 from ..pool import Pool
-from ..types import CardsType, ModeType, Optional, PositionsType, RegionType, Union, beartype
+from ..types import CardsType, Literal, ModeType, Optional, PositionsType, RegionType, Union, beartype
 
 
 @beartype
@@ -12,6 +12,7 @@ def shuffle_scan(
     shuffle_length: Integral,
     positions: PositionsType = None,
     region: RegionType = None,
+    shuffle_type: Literal["mono", "dinuc"] = "mono",
     shuffles_per_position: Integral = 1,
     prefix: Optional[str] = None,
     prefix_position: Optional[str] = None,
@@ -36,6 +37,11 @@ def shuffle_scan(
         Positions to consider for the start of the shuffle region (0-based).
     region : RegionType, default=None
         Region to constrain the scan to. Can be a marker name (str) or [start, stop].
+    shuffle_type : Literal["mono", "dinuc"], default="mono"
+        Type of shuffle to perform:
+        - ``"mono"``: random permutation preserving mononucleotide composition.
+        - ``"dinuc"``: Euler-path shuffle preserving dinucleotide frequencies.
+          The first and last characters of each window are fixed.
     shuffles_per_position : Integral, default=1
         Number of shuffles to perform at each position.
     prefix : Optional[str], default=None
@@ -108,6 +114,7 @@ def shuffle_scan(
     result = shuffle_seq(
         marked,
         region=region_name,
+        shuffle_type=shuffle_type,
         _remove_tags=True,  # Remove _shuf tags
         style=style,
         mode="random",

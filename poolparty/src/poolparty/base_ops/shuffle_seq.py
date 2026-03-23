@@ -6,7 +6,7 @@ import numpy as np
 
 from ..operation import Operation
 from ..pool import Pool
-from ..types import CardsType, ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
+from ..types import CardsType, Literal, ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils.dna_seq import DnaSeq
 
 
@@ -14,6 +14,7 @@ from ..utils.dna_seq import DnaSeq
 def shuffle_seq(
     pool: Union[Pool_type, str],
     region: RegionType = None,
+    shuffle_type: Literal["mono", "dinuc"] = "mono",
     prefix: Optional[str] = None,
     mode: ModeType = "random",
     num_states: Optional[int] = None,
@@ -33,6 +34,12 @@ def shuffle_seq(
     region : RegionType, default=None
         Region to shuffle. Can be a marker name (str), explicit interval [start, stop],
         or None to shuffle entire sequence.
+    shuffle_type : Literal["mono", "dinuc"], default="mono"
+        Type of shuffle to perform:
+        - ``"mono"``: random permutation preserving mononucleotide composition.
+        - ``"dinuc"``: Euler-path shuffle preserving dinucleotide frequencies.
+          The first and last characters are always fixed (mathematical constraint
+          of the Euler path algorithm).
     mode : ModeType, default='random'
         Shuffle mode: 'random'. Sequential is not supported.
     num_states : Optional[int], default=None
@@ -55,6 +62,7 @@ def shuffle_seq(
     op = SeqShuffleOp(
         parent_pool=pool_obj,
         region=region,
+        shuffle_type=shuffle_type,
         prefix=prefix,
         mode=mode,
         num_states=num_states,
@@ -81,6 +89,7 @@ class SeqShuffleOp(Operation):
         self,
         parent_pool: Pool,
         region: RegionType = None,
+        shuffle_type: Literal["mono", "dinuc"] = "mono",
         spacer_str: str = "",
         prefix: Optional[str] = None,
         mode: ModeType = "random",
@@ -101,7 +110,7 @@ class SeqShuffleOp(Operation):
         if _factory_name is not None:
             self.factory_name = _factory_name
 
-        # Store styling parameter
+        self._shuffle_type = shuffle_type
         self._style = style
 
         # Determine num_states
@@ -160,6 +169,27 @@ class SeqShuffleOp(Operation):
         if num_molecular == 0:
             permutation = tuple()
             shuffled_seq = seq
+        elif self._shuffle_type == "dinuc":
+            from collections import defaultdict
+
+            from ..utils.shuffle_utils import dinucleotide_shuffle
+
+            mol_str = "".join(self._seq_arr_cache[seq][pos_arr])
+            shuffled_mol = dinucleotide_shuffle(mol_str, rng)
+
+            seq_arr = self._seq_arr_cache[seq].copy()
+            seq_arr[pos_arr] = list(shuffled_mol)
+            shuffled_seq = "".join(seq_arr)
+
+            # Compute permutation: greedily match each output char
+            # to the first available input position of that character
+            char_positions: dict[str, list[int]] = defaultdict(list)
+            for i, c in enumerate(mol_str):
+                char_positions[c].append(i)
+            order = np.array(
+                [char_positions[c].pop(0) for c in shuffled_mol], dtype=np.intp
+            )
+            permutation = tuple(np.argsort(order).tolist())
         else:
             order = rng.permutation(num_molecular)
             # Use argsort to compute inverse permutation (vectorized)

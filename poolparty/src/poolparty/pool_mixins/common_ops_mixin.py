@@ -4,6 +4,7 @@ from ..types import (
     Callable,
     CardsType,
     Integral,
+    Literal,
     ModeType,
     Optional,
     Pool_type,
@@ -50,6 +51,7 @@ class CommonOpsMixin:
     def shuffle_seq(
         self,
         region: RegionType = None,
+        shuffle_type: Literal["mono", "dinuc"] = "mono",
         prefix: Optional[str] = None,
         mode: ModeType = "random",
         num_states: Optional[int] = None,
@@ -62,6 +64,7 @@ class CommonOpsMixin:
         return shuffle_seq(
             pool=self,
             region=region,
+            shuffle_type=shuffle_type,
             prefix=prefix,
             mode=mode,
             num_states=num_states,
