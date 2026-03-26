@@ -94,8 +94,15 @@ def ordered_product(states: Sequence[State_type], name: Optional[str] = None):
     for s in states:
         base_states.extend(_collect_product_bases(s))
 
-    # Deduplicate and order
-    unique_states = list(set(base_states))
+    # Deduplicate by sync group: synced states represent a single
+    # dimension of variation and must not multiply in the product.
+    seen_groups: set = set()
+    unique_states = []
+    for s in base_states:
+        gid = id(s._synced_group)
+        if gid not in seen_groups:
+            seen_groups.add(gid)
+            unique_states.append(s)
     id_sign = -1 if _product_order_mode == "first_state_slowest" else 1
     ordered_states = sorted(unique_states, key=lambda s: (s._iter_order, id_sign * s._id))
 

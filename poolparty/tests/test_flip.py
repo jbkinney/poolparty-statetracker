@@ -1,11 +1,11 @@
-"""Tests for the orientation operation."""
+"""Tests for the flip operation."""
 
 import re
 
 import pytest
 
 import poolparty as pp
-from poolparty.base_ops.orientation import orientation
+from poolparty.base_ops.flip import flip
 from poolparty.utils.dna_utils import reverse_complement
 
 
@@ -18,13 +18,13 @@ def strip_tags(s: str) -> str:
 # ===========================================================================
 
 
-class TestOrientationSequential:
+class TestFlipSequential:
 
     def test_default_two_states(self):
         """Sequential mode produces exactly 2 states: forward then rc."""
         seq = "ACGTAA"
         with pp.Party():
-            pool = orientation(seq, mode="sequential").named("s")
+            pool = flip(seq, mode="sequential").named("s")
             df = pool.generate_library(num_cycles=1)
 
         assert len(df) == 2
@@ -36,7 +36,7 @@ class TestOrientationSequential:
         seq = "ACGTAA"
         rc_seq = reverse_complement(seq)
         with pp.Party():
-            pool = orientation(seq, mode="sequential", num_states=4).named("s")
+            pool = flip(seq, mode="sequential", num_states=4).named("s")
             df = pool.generate_library(num_cycles=1)
 
         assert len(df) == 4
@@ -46,7 +46,7 @@ class TestOrientationSequential:
         """num_states=1 in sequential mode gives only forward."""
         seq = "ACGTAA"
         with pp.Party():
-            pool = orientation(seq, mode="sequential", num_states=1).named("s")
+            pool = flip(seq, mode="sequential", num_states=1).named("s")
             df = pool.generate_library(num_cycles=1)
 
         assert len(df) == 1
@@ -58,35 +58,35 @@ class TestOrientationSequential:
 # ===========================================================================
 
 
-class TestOrientationRandom:
+class TestFlipRandom:
 
     def test_random_produces_mix(self):
-        """Random mode with rc_rate=0.5 produces both orientations."""
+        """Random mode with rc_prob=0.5 produces both orientations."""
         seq = "ACGTAA"
         rc_seq = reverse_complement(seq)
         with pp.Party():
-            pool = orientation(seq, mode="random", num_states=100).named("s")
+            pool = flip(seq, mode="random", num_states=100).named("s")
             df = pool.generate_library(num_cycles=1)
 
         seqs = set(df["seq"])
         assert seq in seqs
         assert rc_seq in seqs
 
-    def test_rc_rate_zero_always_forward(self):
-        """rc_rate=0.0 always produces forward."""
+    def test_rc_prob_zero_always_forward(self):
+        """rc_prob=0.0 always produces forward."""
         seq = "ACGTAA"
         with pp.Party():
-            pool = orientation(seq, mode="random", rc_rate=0.0, num_states=50).named("s")
+            pool = flip(seq, mode="random", rc_prob=0.0, num_states=50).named("s")
             df = pool.generate_library(num_cycles=1)
 
         assert all(df["seq"] == seq)
 
-    def test_rc_rate_one_always_rc(self):
-        """rc_rate=1.0 always produces rc."""
+    def test_rc_prob_one_always_rc(self):
+        """rc_prob=1.0 always produces rc."""
         seq = "ACGTAA"
         rc_seq = reverse_complement(seq)
         with pp.Party():
-            pool = orientation(seq, mode="random", rc_rate=1.0, num_states=50).named("s")
+            pool = flip(seq, mode="random", rc_prob=1.0, num_states=50).named("s")
             df = pool.generate_library(num_cycles=1)
 
         assert all(df["seq"] == rc_seq)
@@ -94,7 +94,7 @@ class TestOrientationRandom:
     def test_num_states_controls_row_count(self):
         """Random mode with num_states=N generates N rows."""
         with pp.Party():
-            pool = orientation("ACGT", mode="random", num_states=7).named("s")
+            pool = flip("ACGT", mode="random", num_states=7).named("s")
             df = pool.generate_library(num_cycles=1)
 
         assert len(df) == 7
@@ -102,7 +102,7 @@ class TestOrientationRandom:
     def test_pure_random_one_row(self):
         """Random mode with num_states=None generates 1 row per cycle."""
         with pp.Party():
-            pool = orientation("ACGT", mode="random").named("s")
+            pool = flip("ACGT", mode="random").named("s")
             df = pool.generate_library(num_cycles=1)
 
         assert len(df) == 1
@@ -113,17 +113,17 @@ class TestOrientationRandom:
 # ===========================================================================
 
 
-class TestOrientationDesignCard:
+class TestFlipDesignCard:
 
     def test_sequential_cards(self):
-        """Design card has 'orientation' column with correct values."""
+        """Design card has 'flip' column with correct values."""
         seq = "ACGTAA"
         with pp.Party():
-            pool = orientation(seq, mode="sequential", cards=["orientation"]).named("s")
+            pool = flip(seq, mode="sequential", cards=["flip"]).named("s")
             op_name = pool.operation.name
             df = pool.generate_library(num_cycles=1)
 
-        col = f"{op_name}.orientation"
+        col = f"{op_name}.flip"
         assert col in df.columns
         assert df[col].iloc[0] == "forward"
         assert df[col].iloc[1] == "rc"
@@ -133,13 +133,13 @@ class TestOrientationDesignCard:
         seq = "ACGTAA"
         rc_seq = reverse_complement(seq)
         with pp.Party():
-            pool = orientation(
-                seq, mode="random", num_states=50, cards=["orientation"]
+            pool = flip(
+                seq, mode="random", num_states=50, cards=["flip"]
             ).named("s")
             op_name = pool.operation.name
             df = pool.generate_library(num_cycles=1)
 
-        col = f"{op_name}.orientation"
+        col = f"{op_name}.flip"
         for _, row in df.iterrows():
             if row["seq"] == seq:
                 assert row[col] == "forward"
@@ -153,14 +153,14 @@ class TestOrientationDesignCard:
 # ===========================================================================
 
 
-class TestOrientationRegion:
+class TestFlipRegion:
 
     def test_named_region(self):
-        """Orientation with named region rc's only the region content."""
+        """Flip with named region rc's only the region content."""
         with pp.Party():
             pool = pp.from_seq("AAA<cre>ACGT</cre>TTT")
-            oriented = orientation(pool, region="cre", mode="sequential").named("s")
-            df = oriented.generate_library(num_cycles=1)
+            flipped = flip(pool, region="cre", mode="sequential").named("s")
+            df = flipped.generate_library(num_cycles=1)
 
         assert len(df) == 2
         fwd_seq = strip_tags(df["seq"].iloc[0])
@@ -169,11 +169,11 @@ class TestOrientationRegion:
         assert rc_seq == "AAAACGTTTT"  # ACGT rc is ACGT (palindrome)
 
     def test_named_region_non_palindrome(self):
-        """Orientation with named region on non-palindromic content."""
+        """Flip with named region on non-palindromic content."""
         with pp.Party():
             pool = pp.from_seq("AAA<cre>ACGTAA</cre>TTT")
-            oriented = orientation(pool, region="cre", mode="sequential").named("s")
-            df = oriented.generate_library(num_cycles=1)
+            flipped = flip(pool, region="cre", mode="sequential").named("s")
+            df = flipped.generate_library(num_cycles=1)
 
         assert len(df) == 2
         fwd_seq = strip_tags(df["seq"].iloc[0])
@@ -182,11 +182,11 @@ class TestOrientationRegion:
         assert rc_seq == "AAATTACGTTTT"
 
     def test_interval_region(self):
-        """Orientation with interval region."""
+        """Flip with interval region."""
         seq = "AAAACGTAATTT"  # region [3,9] = ACGTAA
         with pp.Party():
-            oriented = orientation(seq, region=[3, 9], mode="sequential").named("s")
-            df = oriented.generate_library(num_cycles=1)
+            flipped = flip(seq, region=[3, 9], mode="sequential").named("s")
+            df = flipped.generate_library(num_cycles=1)
 
         assert len(df) == 2
         assert df["seq"].iloc[0] == seq
@@ -198,13 +198,13 @@ class TestOrientationRegion:
 # ===========================================================================
 
 
-class TestOrientationStyle:
+class TestFlipStyle:
 
     def test_style_applied_only_on_rc(self):
         """Style is applied when reverse complementing, not on forward."""
         seq = "ACGT"
         with pp.Party():
-            pool = orientation(seq, mode="sequential", style="red").named("s")
+            pool = flip(seq, mode="sequential", style="red").named("s")
             df = pool.generate_library(num_cycles=1)
 
         assert len(df) == 2
@@ -217,14 +217,14 @@ class TestOrientationStyle:
 # ===========================================================================
 
 
-class TestOrientationTags:
+class TestFlipTags:
 
     def test_tags_stripped_on_rc(self):
         """Tags are stripped when reverse complementing (same as rc op)."""
         with pp.Party():
             pool = pp.from_seq("A<m>CG</m>T")
-            oriented = orientation(pool, mode="sequential").named("s")
-            df = oriented.generate_library(num_cycles=1)
+            flipped = flip(pool, mode="sequential").named("s")
+            df = flipped.generate_library(num_cycles=1)
 
         assert df["seq"].iloc[1] == "ACGT"  # rc of ACGT is ACGT (palindrome)
 
@@ -232,8 +232,8 @@ class TestOrientationTags:
         """Tags stripped on rc path for non-palindromic sequence."""
         with pp.Party():
             pool = pp.from_seq("AA<m>CG</m>TT")
-            oriented = orientation(pool, mode="sequential").named("s")
-            df = oriented.generate_library(num_cycles=1)
+            flipped = flip(pool, mode="sequential").named("s")
+            df = flipped.generate_library(num_cycles=1)
 
         fwd = df["seq"].iloc[0]
         rc_out = df["seq"].iloc[1]
@@ -247,26 +247,26 @@ class TestOrientationTags:
 # ===========================================================================
 
 
-class TestOrientationMixin:
+class TestFlipMixin:
 
     def test_mixin_method(self):
-        """pool.orientation() works via fluent API."""
+        """pool.flip() works via fluent API."""
         seq = "ACGTAA"
         with pp.Party():
-            pool = pp.from_seq(seq).orientation(mode="sequential").named("s")
+            pool = pp.from_seq(seq).flip(mode="sequential").named("s")
             df = pool.generate_library(num_cycles=1)
 
         assert len(df) == 2
         assert df["seq"].iloc[0] == seq
         assert df["seq"].iloc[1] == reverse_complement(seq)
 
-    def test_mixin_with_rc_rate(self):
-        """pool.orientation(rc_rate=1.0) always rc's."""
+    def test_mixin_with_rc_prob(self):
+        """pool.flip(rc_prob=1.0) always rc's."""
         seq = "ACGTAA"
         rc_seq = reverse_complement(seq)
         with pp.Party():
-            pool = pp.from_seq(seq).orientation(
-                mode="random", rc_rate=1.0, num_states=10
+            pool = pp.from_seq(seq).flip(
+                mode="random", rc_prob=1.0, num_states=10
             ).named("s")
             df = pool.generate_library(num_cycles=1)
 
@@ -278,19 +278,19 @@ class TestOrientationMixin:
 # ===========================================================================
 
 
-class TestOrientationValidation:
+class TestFlipValidation:
 
-    def test_rc_rate_negative_raises(self):
+    def test_rc_prob_negative_raises(self):
         with pp.Party():
-            with pytest.raises(ValueError, match="rc_rate must be between 0 and 1"):
-                orientation("ACGT", rc_rate=-0.1)
+            with pytest.raises(ValueError, match="rc_prob must be between 0 and 1"):
+                flip("ACGT", rc_prob=-0.1)
 
-    def test_rc_rate_above_one_raises(self):
+    def test_rc_prob_above_one_raises(self):
         with pp.Party():
-            with pytest.raises(ValueError, match="rc_rate must be between 0 and 1"):
-                orientation("ACGT", rc_rate=1.5)
+            with pytest.raises(ValueError, match="rc_prob must be between 0 and 1"):
+                flip("ACGT", rc_prob=1.5)
 
     def test_fixed_mode_raises(self):
         with pp.Party():
             with pytest.raises(ValueError, match="mode='fixed' is not supported"):
-                orientation("ACGT", mode="fixed")
+                flip("ACGT", mode="fixed")

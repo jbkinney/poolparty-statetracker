@@ -107,7 +107,6 @@ class GetKmersOp(Operation):
         length: int,
         pool: Optional[Pool] = None,
         region: RegionType = None,
-        spacer_str: str = "",
         style: Optional[str] = None,
         case: Literal["lower", "upper"] = "upper",
         prefix: Optional[str] = None,
@@ -156,7 +155,6 @@ class GetKmersOp(Operation):
         else:
             num_states = 1
 
-        self._natural_num_states_local = natural_num_states
         parent_pools = [pool] if pool is not None else []
 
         # Compute seq_length: kmer length when standalone, adjusted when replacing region

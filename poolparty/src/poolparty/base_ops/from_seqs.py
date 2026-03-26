@@ -103,7 +103,6 @@ class FromSeqsOp(Operation):
         seqs: Sequence[str],
         parent_pool: Optional[Pool] = None,
         region: RegionType = None,
-        spacer_str: str = "",
         style: Optional[str] = None,
         seq_names: Optional[Sequence[str]] = None,
         prefix: Optional[str] = None,

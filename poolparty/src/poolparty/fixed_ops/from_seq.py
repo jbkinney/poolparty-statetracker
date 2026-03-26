@@ -81,8 +81,8 @@ def from_seq(
     )
 
     # Add validated regions to the pool
-    for region in regions:
-        result_pool.add_region(region)
+    for embedded_region in regions:
+        result_pool.add_region(embedded_region)
 
     # Apply style if specified
     if style is not None:

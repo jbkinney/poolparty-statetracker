@@ -85,6 +85,8 @@ class RegionOpsMixin:
         self,
         content_pool: Union[Pool_type, str],
         region_name: str,
+        sync: bool = False,
+        keep_tags: bool = False,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
     ) -> Pool_type:
@@ -94,6 +96,8 @@ class RegionOpsMixin:
             self,
             content_pool,
             region_name,
+            sync=sync,
+            keep_tags=keep_tags,
             iter_order=iter_order,
             prefix=prefix,
         )

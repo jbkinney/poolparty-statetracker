@@ -25,6 +25,7 @@ def deletion_multiscan(
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
+    _factory_name: Optional[str] = "deletion_multiscan",
 ) -> Pool:
     """
     Delete segments at multiple positions simultaneously.
@@ -123,14 +124,15 @@ def deletion_multiscan(
         num_states=num_states,
         iter_order=iter_order,
         cards=cards,
+        _factory_name=f"{_factory_name}(region_multiscan)",
     )
 
     if deletion_marker is not None:
         marker_str = del_char * marker_length
-        content = from_seq(marker_str)
+        content = from_seq(marker_str, _factory_name=f"{_factory_name}(from_seq)")
         replacement_style = style
     else:
-        content = from_seq("")
+        content = from_seq("", _factory_name=f"{_factory_name}(from_seq)")
         replacement_style = None
 
     result = marked
@@ -140,6 +142,7 @@ def deletion_multiscan(
             content,
             region_name,
             iter_order=iter_order,
+            _factory_name=f"{_factory_name}(replace_region)",
             _style=replacement_style,
         )
 

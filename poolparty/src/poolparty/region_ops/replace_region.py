@@ -16,6 +16,8 @@ def replace_region(
     content_pool,
     region_name: str,
     rc: bool = False,
+    sync: bool = False,
+    keep_tags: bool = False,
     iter_order: Optional[Real] = None,
     prefix: Optional[str] = None,
     _factory_name: Optional[str] = None,
@@ -37,6 +39,12 @@ def replace_region(
         Name of the region to replace.
     rc : bool, default=False
         If True, reverse-complement the content before insertion.
+    sync : bool, default=False
+        If True, synchronize pool and content_pool so they iterate
+        in lock-step (1:1 pairing) instead of a Cartesian product.
+    keep_tags : bool, default=False
+        If True, preserve the region's XML tags around the new content.
+        The region remains tracked in the resulting pool.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
     _factory_name: Optional[str], default=None
@@ -57,11 +65,15 @@ def replace_region(
     ...     result = pp.replace_region(bg, inserts, 'insert')
     ...     # Result yields: 'ACGTAAATTTT', 'ACGTGGGTTTT'
     ...
-    ...     # With rc=True, content is reverse-complemented
-    ...     bg = pp.from_seq("ACGT<region>XX</region>TTTT")
-    ...     content = pp.from_seq('AAA')
-    ...     result = pp.replace_region(bg, content, 'region', rc=True)
-    ...     # Result: 'ACGTTTTTTTT' (TTT is reverse complement of AAA)
+    ...     # With sync=True for 1:1 pairing
+    ...     bg = pp.from_seqs(['ACGT<bc/>TTTT', 'CCCC<bc/>GGGG'], mode='sequential')
+    ...     barcodes = pp.get_barcodes(num_barcodes=2, length=4, seed=42)
+    ...     result = pp.replace_region(bg, barcodes, 'bc', sync=True)
+    ...     # Each background gets a unique barcode (no Cartesian product)
+    ...
+    ...     # With keep_tags=True to preserve region tracking
+    ...     result = pp.replace_region(bg, barcodes, 'bc', keep_tags=True)
+    ...     # Region tags remain: 'ACGT<bc>XXXX</bc>TTTT'
     """
     from ..fixed_ops.from_seq import from_seq
 
@@ -69,11 +81,17 @@ def replace_region(
     pool_obj = from_seq(pool) if isinstance(pool, str) else pool
     content_pool = from_seq(content_pool) if isinstance(content_pool, str) else content_pool
 
+    if sync:
+        from ..state_ops.sync import sync as _sync
+
+        _sync([pool_obj, content_pool])
+
     op = ReplaceRegionOp(
         parent_pool=pool_obj,
         content_pool=content_pool,
         region_name=region_name,
         rc=rc,
+        keep_tags=keep_tags,
         name=None,
         iter_order=iter_order,
         prefix=prefix,
@@ -84,8 +102,8 @@ def replace_region(
     pool_class = type(pool_obj)
     result_pool = pool_class(operation=op)
 
-    # The region is replaced, so remove it from the pool's region set
-    result_pool._untrack_region(region_name)
+    if not keep_tags:
+        result_pool._untrack_region(region_name)
 
     return result_pool
 
@@ -102,6 +120,7 @@ class ReplaceRegionOp(Operation):
         content_pool,
         region_name: str,
         rc: bool = False,
+        keep_tags: bool = False,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
@@ -110,6 +129,7 @@ class ReplaceRegionOp(Operation):
     ) -> None:
         self.region_name = region_name
         self.rc = rc
+        self.keep_tags = keep_tags
 
         # Set factory name if provided
         if _factory_name is not None:
@@ -164,6 +184,22 @@ class ReplaceRegionOp(Operation):
         # If rc=True, reverse complement the content before insertion
         if self.rc:
             content_seq_obj = content_seq_obj.reversed()
+
+        if self.keep_tags:
+            open_tag = f"<{self.region_name}>"
+            close_tag = f"</{self.region_name}>"
+            wrapped = f"{open_tag}{content_seq_obj.string}{close_tag}"
+            if content_seq_obj.style is not None:
+                from ..utils.style_utils import SeqStyle
+
+                wrapped_style = SeqStyle.join([
+                    SeqStyle.empty(len(open_tag)),
+                    content_seq_obj.style,
+                    SeqStyle.empty(len(close_tag)),
+                ])
+            else:
+                wrapped_style = None
+            content_seq_obj = DnaSeq.from_string(wrapped, wrapped_style)
 
         # Use Seq slicing for assembly (slices may have partial tags, but join works)
         prefix_seq = parents[0][: region.start]

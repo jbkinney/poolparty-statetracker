@@ -97,7 +97,6 @@ class FromMotifOp(Operation):
         prob_df: pd.DataFrame,
         parent_pool: Optional[Pool] = None,
         region: RegionType = None,
-        spacer_str: str = "",
         prefix: Optional[str] = None,
         mode: ModeType = "random",
         num_states: Optional[int] = None,

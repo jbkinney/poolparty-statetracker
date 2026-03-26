@@ -32,18 +32,20 @@ class DnaMixin:
         num_states: Optional[int] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..base_ops.from_iupac import from_iupac
 
         return from_iupac(
             iupac_seq=iupac_seq,
-            bg_pool=self,
+            pool=self,
             region=region,
             prefix=prefix,
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
             style=style,
+            cards=cards,
         )
 
     def insert_from_motif(
@@ -55,18 +57,20 @@ class DnaMixin:
         num_states: Optional[int] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..base_ops.from_motif import from_motif
 
         return from_motif(
             prob_df=prob_df,
-            bg_pool=self,
+            pool=self,
             region=region,
             prefix=prefix,
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
             style=style,
+            cards=cards,
         )
 
     def insert_kmers(
@@ -79,6 +83,7 @@ class DnaMixin:
         mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..base_ops.get_kmers import get_kmers
 
@@ -92,12 +97,13 @@ class DnaMixin:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
+            cards=cards,
         )
 
-    def orientation(
+    def flip(
         self,
         region: RegionType = None,
-        rc_rate: Real = 0.5,
+        rc_prob: Real = 0.5,
         prefix: Optional[str] = None,
         mode: ModeType = "sequential",
         num_states: Optional[int] = None,
@@ -105,12 +111,12 @@ class DnaMixin:
         style: Optional[str] = None,
         cards: CardsType = None,
     ) -> Pool_type:
-        from ..base_ops.orientation import orientation
+        from ..base_ops.flip import flip
 
-        return orientation(
+        return flip(
             pool=self,
             region=region,
-            rc_rate=rc_rate,
+            rc_prob=rc_prob,
             prefix=prefix,
             mode=mode,
             num_states=num_states,

@@ -48,17 +48,34 @@ mut_codons = true
 wt_aas = true
 mut_aas = true
 
+[design_cards.filter]
+passed = true
+
+[design_cards.score]
+score = true
+
+[design_cards.flip]
+flip = true
+
+[design_cards.get_barcodes]
+barcode_index = true
+barcode = true
+
+[design_cards.materialize]
+seq_index = true
+seq_name = true
+
 [design_cards.region_scan]
 position_index = true
 start = true
-stop = true
+end = true
 name = true
 region_seq = true
 
 [design_cards.region_multiscan]
 combination_index = true
 starts = true
-stops = true
+ends = true
 names = true
 region_seqs = true
 

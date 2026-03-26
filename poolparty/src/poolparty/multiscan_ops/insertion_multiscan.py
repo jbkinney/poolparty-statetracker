@@ -25,6 +25,7 @@ def insertion_multiscan(
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
+    _factory_name: Optional[str] = None,
 ) -> Pool:
     """
     Insert or replace sequences at multiple positions simultaneously.
@@ -68,6 +69,9 @@ def insertion_multiscan(
     """
     from ..fixed_ops.from_seq import from_seq
     from ..region_ops import region_multiscan, replace_region
+
+    if _factory_name is None:
+        _factory_name = "replacement_multiscan" if replace else "insertion_multiscan"
 
     count_label = "num_replacements" if replace else "num_insertions"
     pools_label = "replacement_pools" if replace else "insertion_pools"
@@ -148,6 +152,7 @@ def insertion_multiscan(
         num_states=num_states,
         iter_order=iter_order,
         cards=cards,
+        _factory_name=f"{_factory_name}(region_multiscan)",
     )
 
     result = marked
@@ -157,6 +162,7 @@ def insertion_multiscan(
             ins_pool,
             region_name,
             iter_order=iter_order,
+            _factory_name=f"{_factory_name}(replace_region)",
         )
 
     return result
@@ -178,6 +184,7 @@ def replacement_multiscan(
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
+    _factory_name: Optional[str] = "replacement_multiscan",
 ) -> Pool:
     """Replace segments at multiple positions simultaneously.
 
@@ -199,4 +206,5 @@ def replacement_multiscan(
         num_states=num_states,
         iter_order=iter_order,
         cards=cards,
+        _factory_name=_factory_name,
     )

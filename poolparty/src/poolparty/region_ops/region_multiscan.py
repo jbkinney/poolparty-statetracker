@@ -39,6 +39,7 @@ def region_multiscan(
     num_states: Optional[int] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
+    _factory_name: Optional[str] = None,
 ):
     """
     Insert multiple XML-style region tags into a sequence.
@@ -112,6 +113,7 @@ def region_multiscan(
         name=None,
         iter_order=iter_order,
         cards=cards,
+        _factory_name=_factory_name,
     )
     pool_class = type(pool)
     result_pool = pool_class(operation=op)
@@ -145,7 +147,11 @@ class RegionMultiScanOp(Operation):
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
+        _factory_name: Optional[str] = None,
     ) -> None:
+        if _factory_name is not None:
+            self.factory_name = _factory_name
+
         if num_insertions < 1:
             raise ValueError(f"num_insertions must be >= 1, got {num_insertions}")
         if mode not in ("random", "sequential"):
