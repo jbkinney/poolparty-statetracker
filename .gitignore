@@ -59,7 +59,9 @@ _minted-*/
 notebooks/legacy/
 .cursor/
 
-# Literature PDFs (local only)
+# Dev notes, prompts, and literature (local only)
+dev/
+prompts/
 literature/
 
 # Manuscript / papers (local only, managed via Overleaf)
