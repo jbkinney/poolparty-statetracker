@@ -58,3 +58,10 @@ _minted-*/
 **/legacy/
 notebooks/legacy/
 .cursor/
+
+# Literature PDFs (local only)
+literature/
+
+# Manuscript / papers (local only, managed via Overleaf)
+**/manuscript/
+**/joss_paper/
