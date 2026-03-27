@@ -229,10 +229,24 @@ class MutagenizeOrfOp(Operation):
             self.orf_start = int(region[0])
             self.orf_end = int(region[1])
         else:
-            # Marker name - will be resolved at compute time
-            # For now, set placeholder values; actual values set in _compute_core
-            self.orf_start = 0
-            self.orf_end = parent_seq_length
+            # Named region — resolve content length from registered region metadata
+            region_obj = next(
+                (r for r in parent_pool.regions if r.name == region), None
+            )
+            if region_obj is not None and region_obj.seq_length is not None:
+                self.orf_start = 0
+                self.orf_end = region_obj.seq_length
+            elif mode == "sequential":
+                raise ValueError(
+                    f"Cannot determine geometry of named region '{region}' at "
+                    f"init time for mode='sequential'. Either use from_seq() or "
+                    f"annotate_orf() to create the parent (which register "
+                    f"regions automatically), or use an interval region "
+                    f"[start, stop]."
+                )
+            else:
+                self.orf_start = 0
+                self.orf_end = parent_seq_length
 
         # Calculate number of complete codons, accounting for frame offset
         # For positive frames: skip frame_offset bases at the start
@@ -259,17 +273,25 @@ class MutagenizeOrfOp(Operation):
         self.num_eligible = len(self.eligible_positions)
         if num_mutations is not None and num_mutations > self.num_eligible:
             raise ValueError(
-                f"num_mutations ({num_mutations}) exceeds eligible positions ({self.num_eligible})"
+                f"num_mutations ({num_mutations}) exceeds the number of "
+                f"eligible codon positions ({self.num_eligible}). "
+                f"The region spans {orf_length} bp with frame_offset="
+                f"{self.frame_offset}, yielding {self.num_codons} complete "
+                f"codon(s). Ensure the region covers at least "
+                f"{num_mutations * 3 + self.frame_offset} bp."
             )
 
         self.uniform_num_alts = UNIFORM_MUTATION_TYPES.get(mutation_type)
         self._sequential_cache = None
 
+        user_num_states = num_states
+        natural_num_states = None
+
         match mode:
             case "sequential" if num_mutations is not None and self.uniform_num_alts is not None:
-                num_states = self._build_caches()
+                natural_num_states = self._build_caches()
+                num_states = user_num_states if user_num_states is not None else natural_num_states
             case "random":
-                # num_states stays None for pure random mode
                 pass
             case _:
                 num_states = 1
@@ -282,6 +304,7 @@ class MutagenizeOrfOp(Operation):
             name=name,
             iter_order=iter_order,
             prefix=prefix,
+            _natural_num_states=natural_num_states,
             cards=cards,
         )
 
@@ -478,6 +501,15 @@ class MutagenizeOrfOp(Operation):
             state = self.state.value
             cache_idx = (0 if state is None else state) % len(self._sequential_cache)
             positions, mut_indices = self._sequential_cache[cache_idx]
+
+            max_pos = max(positions) if positions else -1
+            if max_pos >= len(codons):
+                raise ValueError(
+                    f"Sequential cache position {max_pos} exceeds actual codon "
+                    f"count {len(codons)}. This indicates a geometry mismatch "
+                    f"between init-time and compute-time ORF bounds for "
+                    f"region '{self._orf_region}'."
+                )
 
             wt_codons, mut_codons, wt_aas, mut_aas = [], [], [], []
             for pos, mut_idx in zip(positions, mut_indices):

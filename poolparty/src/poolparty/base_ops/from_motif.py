@@ -134,12 +134,31 @@ class FromMotifOp(Operation):
             case _:
                 num_states = 1
 
+        insert_length = len(self.prob_df)
+        if parent_pool is None:
+            seq_length = insert_length
+        else:
+            parent_seq_length = parent_pool.seq_length
+            if isinstance(region, str):
+                try:
+                    region_obj = party.get_region_by_name(region)
+                    region_length = region_obj.seq_length
+                except ValueError:
+                    region_length = None
+            else:
+                region_length = region[1] - region[0] if region is not None else None
+
+            if parent_seq_length is None or region_length is None:
+                seq_length = None
+            else:
+                seq_length = parent_seq_length - region_length + insert_length
+
         parent_pools_list = [parent_pool] if parent_pool is not None else []
         super().__init__(
             parent_pools=parent_pools_list,
             num_states=num_states,
             mode=mode,
-            seq_length=len(self.prob_df),
+            seq_length=seq_length,
             name=name,
             iter_order=iter_order,
             prefix=prefix,

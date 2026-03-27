@@ -5,7 +5,7 @@ from numbers import Real
 from pyfaidx import Fasta
 
 from ..pool import Pool
-from ..types import Literal, Optional, Pool_type, RegionType, Sequence, Union, beartype
+from ..types import CardsType, Literal, Optional, Pool_type, RegionType, Sequence, Union, beartype
 from ..utils import dna_utils
 
 # Type alias for a single coordinate tuple: (chrom, start, stop, strand)
@@ -53,6 +53,7 @@ def from_fasta(
     iter_order: Optional[Real] = None,
     prefix: Optional[str] = None,
     style: Optional[str] = None,
+    cards: CardsType = None,
 ) -> Pool_type:
     """
     Extract genomic region(s) from a FASTA file and create a Pool.
@@ -68,6 +69,9 @@ def from_fasta(
     prefix : str, optional
         Prefix for sequence names. Names are "{prefix}_{chrom}:{start}-{stop}({strand})"
         or "{chrom}:{start}-{stop}({strand})" if no prefix.
+    cards : list[str] or dict[str, str], optional
+        Design card keys to include. Available keys (batch mode only):
+        ``'seq_name'``, ``'seq_index'``. Ignored in single-coordinate mode.
     """
     from ..base_ops.from_seqs import from_seqs
     from ..party import get_active_party
@@ -138,5 +142,6 @@ def from_fasta(
             seq_names=seq_names,
             mode="sequential",
             iter_order=iter_order,
+            cards=cards,
             _factory_name="from_fasta",
         )

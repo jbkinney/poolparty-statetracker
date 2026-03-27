@@ -256,11 +256,32 @@ class RecombineOp(Operation):
             # fixed mode
             num_states = 1
 
+        if parent_pool is None:
+            output_seq_length = self._seq_length
+        else:
+            parent_seq_length = parent_pool.seq_length
+            if isinstance(region, str):
+                from ..party import get_active_party
+
+                party = get_active_party()
+                try:
+                    region_obj = party.get_region_by_name(region)
+                    region_length = region_obj.seq_length
+                except ValueError:
+                    region_length = None
+            else:
+                region_length = region[1] - region[0] if region is not None else None
+
+            if parent_seq_length is None or region_length is None:
+                output_seq_length = None
+            else:
+                output_seq_length = parent_seq_length - region_length + self._seq_length
+
         super().__init__(
             parent_pools=parent_pools,
             num_states=num_states,
             mode=mode,
-            seq_length=self._seq_length,
+            seq_length=output_seq_length,
             name=name,
             iter_order=iter_order,
             prefix=prefix,
@@ -332,6 +353,8 @@ class RecombineOp(Operation):
         When region is not specified:
         - parents are the source pool sequences directly
         """
+        from ..utils.style_utils import SeqStyle, styles_suppressed
+
         # Cache party attributes at start (avoid repeated function calls)
         _suppress_styles = self._party.suppress_styles
         _suppress_cards = self._party.suppress_cards

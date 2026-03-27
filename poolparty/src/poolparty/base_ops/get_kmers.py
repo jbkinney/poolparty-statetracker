@@ -144,9 +144,7 @@ class GetKmersOp(Operation):
         # Determine num_states based on mode
         natural_num_states = None
         if mode == "sequential":
-            # Natural count is the total number of possible k-mers
-            natural_num_states = self.validate_num_states(self._total_kmers, mode)
-            # Use user-provided num_states if given, else natural count
+            natural_num_states = self._total_kmers
             if num_states is None:
                 num_states = natural_num_states
         elif mode == "random":

@@ -215,6 +215,7 @@ class DnaMixin:
         mode: ModeType = "random",
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         """Apply codon-level mutations."""
         from ..orf_ops.mutagenize_orf import mutagenize_orf
@@ -232,6 +233,7 @@ class DnaMixin:
             mode=mode,
             num_states=num_states,
             iter_order=iter_order,
+            cards=cards,
         )
 
     def translate(

@@ -86,6 +86,7 @@ class CommonOpsMixin:
         styles: Optional[list[str]] = None,
         style_by: StyleByForRecombineType = "order",
         iter_order: Optional[Real] = None,
+        cards: CardsType = None,
     ) -> Pool_type:
         from ..base_ops.recombine import recombine
 
@@ -101,6 +102,7 @@ class CommonOpsMixin:
             styles=styles,
             style_by=style_by,
             iter_order=iter_order,
+            cards=cards,
         )
 
     def filter(

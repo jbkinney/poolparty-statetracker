@@ -237,7 +237,13 @@ class MutagenizeOp(Operation):
                     )
                 natural_num_states = self._build_caches(effective_length)
             else:
-                natural_num_states = 1
+                raise ValueError(
+                    "mode='sequential' requires a parent pool with known "
+                    "seq_length. The parent pool has seq_length=None (e.g., "
+                    "from_seqs with variable-length sequences). Use "
+                    "mode='random' instead, or ensure all parent sequences "
+                    "have the same length."
+                )
             # Use user-provided num_states if given, else natural count
             num_states = user_num_states if user_num_states is not None else natural_num_states
         elif mode == "random":
@@ -551,20 +557,8 @@ class MutagenizeOp(Operation):
                 mutation_counts_arr,
             )
         else:
-            # Sequential mode (only available with num_mutations)
-            # When allowed_chars is set, cache is pre-built at init time with correct num_states
-            # Otherwise, build/rebuild cache based on actual mutable positions
-            if self._allowed_bases_per_pos is None:
-                # No allowed_chars - may need to build cache dynamically
-                if self._sequential_cache is None:
-                    self._build_caches(num_mutable)
-                    self._num_values = len(self._sequential_cache)
-                    self.state._num_values = self._num_values
-                elif self._num_mutable_positions != num_mutable:
-                    self._build_caches(num_mutable)
-                    self._num_values = len(self._sequential_cache)
-                    self.state._num_values = self._num_values
-            # With allowed_chars, cache was built at init - just use it
+            # Sequential mode — cache is always pre-built at init time
+            # (seq_length=None + sequential is rejected at init)
 
             # Use state 0 when inactive (state is None)
             state = self.state.value
