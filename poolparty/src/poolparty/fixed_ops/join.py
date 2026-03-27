@@ -56,10 +56,11 @@ def join(
         String to insert between joined sequences.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     style : Optional[str], default=None
         Style to apply to the resulting concatenated sequences (e.g., 'red', 'blue bold').
-    _factory_name: Optional[str], default=None
-        Sets default name of the resulting operation
+
     Returns
     -------
     Pool_type

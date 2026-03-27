@@ -28,19 +28,19 @@ def insertion_scan(
 
     Parameters
     ----------
-    pool : Pool or str
-        The background Pool or sequence string.
-    ins_pool : Pool or str
+    pool : Union[Pool, str]
+        Parent pool or sequence string.
+    ins_pool : Union[Pool, str]
         The insert Pool or sequence string to be inserted.
     positions : PositionsType, default=None
         Positions for insertion/replacement (0-based). If None, all valid positions.
     region : RegionType, default=None
-        Region to constrain the scan to. Can be a marker name (str) or [start, stop].
+        Region to constrain the scan to. Can be a marker name or [start, stop] interval.
     replace : bool, default=False
         If False, insert at position (output length = bg + ins).
         If True, replace content at position (output length = bg).
     style : Optional[str], default=None
-        Style to apply to inserted content.
+        Style to apply to inserted content (e.g., 'red', 'blue bold').
     prefix : Optional[str], default=None
         Prefix for cartesian product index (e.g., 'ins_' produces 'ins_0', 'ins_1', ...).
     prefix_position : Optional[str], default=None
@@ -50,9 +50,14 @@ def insertion_scan(
     mode : ModeType, default='random'
         Selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    cards : CardsType, default=None
+        Design card keys to include. Available keys: ``'position_index'``,
+        ``'start'``, ``'end'``, ``'name'``, ``'region_seq'``.
 
     Returns
     -------
@@ -177,7 +182,8 @@ def replacement_scan(
 ) -> Pool:
     """Replace a segment with insert at specified scanning positions.
 
-    Equivalent to insertion_scan(..., replace=True).
+    Equivalent to ``insertion_scan(..., replace=True)``.
+    See :func:`insertion_scan` for full parameter documentation.
     """
     return insertion_scan(
         pool=pool,

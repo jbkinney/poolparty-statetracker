@@ -45,11 +45,13 @@ def shuffle_seq(
     num_states : Optional[int], default=None
         Number of states for random mode. If None, defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
-        Iteration order priority for the resulting Pool.
-    _remove_tags : bool, default=False
-        If True and region is a marker name, remove the marker tags from output.
+        Iteration order priority for the Operation.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     style : Optional[str], default=None
-        Style to apply to shuffled characters (e.g., 'purple', 'red bold').
+        Style to apply to shuffled characters (e.g., 'red', 'blue bold').
+    cards : list[str] or dict, optional
+        Design card keys to include. Available keys: ``'permutation'``.
 
     Returns
     -------

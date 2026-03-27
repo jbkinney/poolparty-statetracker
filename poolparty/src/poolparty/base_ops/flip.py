@@ -53,9 +53,9 @@ def flip(
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
     style : Optional[str], default=None
-        Style to apply to reverse-complemented sequences.
-    cards : CardsType, default=None
-        Design card column specification.
+        Style to apply to reverse-complemented sequences (e.g., 'red', 'blue bold').
+    cards : list[str] or dict, optional
+        Design card keys to include. Available keys: ``'flip'``.
 
     Returns
     -------

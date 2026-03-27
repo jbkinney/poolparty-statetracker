@@ -42,8 +42,9 @@ def score(
         region content. Can be a marker name (str) or [start, stop].
     prefix : Optional[str], default=None
         Prefix for sequence names.
-    cards : CardsType, default=None
-        Design card column specification.
+    cards : list[str] or dict, optional
+        Design card keys to include. The available key is the ``card_key``
+        value (default ``'score'``).
 
     Returns
     -------

@@ -26,13 +26,18 @@ def _is_ancestor(candidate, state) -> bool:
 def sync(
     pools: Sequence[Pool],
 ) -> None:
-    """
-    Synchronize multiple Pools to iterate in lockstep (in-place).
+    """Synchronize multiple pools to iterate in lockstep (in-place).
 
     Parameters
     ----------
     pools : Sequence[Pool]
-        Sequence of Pool objects to synchronize. All pools must have the same number of states.
+        Sequence of Pool objects to synchronize. All pools must have the same
+        number of states.
+
+    Returns
+    -------
+    None
+        Pools are modified in-place; no new Pool is returned.
 
     Raises
     ------

@@ -35,7 +35,7 @@ def from_seq(
     remove_tags : Optional[bool], default=None
         If True and region is a marker name, remove marker tags from output.
     style : Optional[str], default=None
-        Style to apply to the sequence.
+        Style to apply to the sequence (e.g., 'red', 'blue bold').
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
     prefix : Optional[str], default=None

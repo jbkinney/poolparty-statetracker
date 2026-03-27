@@ -32,6 +32,8 @@ def lower(
         If True and region is a marker name, remove marker tags from output.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     style : Optional[str], default=None
         Style to apply to the resulting sequences (e.g., 'red', 'blue bold').
 

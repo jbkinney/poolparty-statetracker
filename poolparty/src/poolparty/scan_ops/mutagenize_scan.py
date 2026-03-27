@@ -28,8 +28,8 @@ def mutagenize_scan(
 
     Parameters
     ----------
-    pool : Pool or str
-        Source pool or sequence string to mutagenize regions of.
+    pool : Union[Pool, str]
+        Parent pool or sequence string.
     mutagenize_length : Integral
         Length of the region to mutagenize at each position.
     num_mutations : Optional[Integral], default=None
@@ -40,14 +40,15 @@ def mutagenize_scan(
         Positions to consider for the start of the mutagenize region (0-based).
         If None, all valid positions are used.
     region : RegionType, default=None
-        Region to constrain the scan to. Can be a marker name (str) or [start, stop].
+        Region to constrain the scan to. Can be a marker name or [start, stop] interval.
         If specified, positions are relative to the region start.
     prefix : Optional[Union[str, Sequence[str]]], default=None
         Prefix for sequence names.
-        If sequence, first element is for scanning positions, second element is for mutagenization.
-    mode : Union[ModeType, Sequence[ModeType]], default='random'
-        Selection mode for scanning positions: 'random' or 'sequential'.
-        If sequence, first element is for scanning positions, second element is for mutagenization.
+        If a 2-tuple, first element is for scanning positions, second for mutagenization.
+    mode : Union[ModeType, tuple[ModeType, ModeType]], default='random'
+        Selection mode: 'random' or 'sequential'. A scalar value is broadcast
+        to both scan and mutagenize sub-operations. If a 2-tuple, first element
+        is for scanning positions, second for mutagenization.
     num_states : Optional[Union[Integral, Sequence[Optional[Integral]]]], default=None
         Number of states. A scalar value is broadcast to both sub-operations.
         If a 2-tuple, first element is for scanning positions, second for mutagenization.
@@ -55,11 +56,16 @@ def mutagenize_scan(
         variants) or 1 in random mode (pure random sampling).
         Example: ``num_states=(3, None)`` with ``mode=("random", "sequential")`` picks
         3 random scan positions and enumerates all mutation variants at each.
+    style : Optional[str], default=None
+        Style to apply to mutated characters (e.g., 'red', 'blue bold').
     iter_order : Optional[Union[Real, Sequence[Real]]], default=None
         Iteration order priority for the Operation.
-        If sequence, first element is for scanning positions, second element is for mutagenization.
-    _factory_name: Optional[str], default=None
-        Sets default name of the resulting operation
+        If a 2-tuple, first element is for scanning positions, second for mutagenization.
+    cards : Optional[tuple[CardsType, CardsType]], default=None
+        Design card keys as a 2-tuple ``(scan_cards, mutagenize_cards)``.
+        Scan keys: ``'position_index'``, ``'start'``, ``'end'``, ``'name'``,
+        ``'region_seq'``. Mutagenize keys: ``'positions'``, ``'wt_chars'``,
+        ``'mut_chars'``.
 
     Returns
     -------

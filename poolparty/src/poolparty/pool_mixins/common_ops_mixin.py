@@ -96,6 +96,32 @@ class CommonOpsMixin:
         style: Optional[str] = None,
         cards: CardsType = None,
     ) -> Pool_type:
+        """Shuffle sequence characters within a region.
+
+        Parameters
+        ----------
+        region : RegionType, default=None
+            Region to shuffle. Can be marker name (str), [start, stop], or None.
+        shuffle_type : Literal['mono', 'dinuc'], default='mono'
+            Type of shuffle: 'mono' (mononucleotide) or 'dinuc' (dinucleotide-preserving).
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        mode : ModeType, default='random'
+            Selection mode: 'random' or 'sequential'.
+        num_states : Optional[int], default=None
+            Number of states for random mode. If None, defaults to 1.
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        style : Optional[str], default=None
+            Style to apply to shuffled characters (e.g., 'red', 'blue bold').
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'permutation'``.
+
+        Returns
+        -------
+        Pool
+            A Pool containing shuffled sequences.
+        """
         from ..base_ops.shuffle_seq import shuffle_seq
 
         return shuffle_seq(
@@ -205,6 +231,28 @@ class CommonOpsMixin:
         prefix: Optional[str] = None,
         cards: CardsType = None,
     ) -> Pool_type:
+        """Score sequences using a custom function and record values on design cards.
+
+        Parameters
+        ----------
+        fn : Callable[[str], Any]
+            Scoring function that takes a sequence string and returns a value.
+        card_key : str, default='score'
+            Key name for the score column in design cards.
+        region : RegionType, default=None
+            Region to extract before scoring. Can be marker name (str),
+            [start, stop], or None to score the full sequence.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        cards : list[str] or dict, optional
+            Design card keys to include. The available key is the ``card_key``
+            value (default ``'score'``).
+
+        Returns
+        -------
+        Pool
+            The same Pool, with scores recorded on design cards.
+        """
         from ..fixed_ops.score import score
 
         return score(

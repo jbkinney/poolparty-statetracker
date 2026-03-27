@@ -32,35 +32,46 @@ def insertion_multiscan(
 
     Parameters
     ----------
-    pool : Pool or str
-        Source pool or sequence string.
+    pool : Union[Pool, str]
+        Parent pool or sequence string.
     num_insertions : Integral
         Number of simultaneous insertions/replacements to make.
-    insertion_pools : Pool or Sequence[Pool]
+    insertion_pools : Union[Pool, Sequence[Pool]]
         Pool(s) providing content. If a single Pool is provided,
-        it will be deepcopied num_insertions-1 times. If a Sequence of Pools
-        is provided, its length must equal num_insertions.
-    positions : PositionsType, default=None
-        Valid positions (0-based).
+        it will be deepcopied ``num_insertions - 1`` times. If a Sequence of Pools
+        is provided, its length must equal ``num_insertions``.
+    positions : MultiPositionsType, default=None
+        Valid positions (0-based). Can be a flat list (shared across all
+        insertions) or a list of per-insertion sublists. If None, all valid
+        positions are used.
     region : RegionType, default=None
-        Region to constrain the scan to.
+        Region to constrain the scan to. Can be a marker name or [start, stop] interval.
     names : Optional[Sequence[str]], default=None
-        Custom names for the regions. If None, auto-generated.
+        Custom names for the insertion regions. If None, auto-generated
+        (``_ins_0``, ``_ins_1``, ...).
     replace : bool, default=False
         If True, replace existing content at each position (region_length = pool seq_length).
         If False, insert at zero-width positions.
     insertion_mode : Literal['ordered', 'unordered'], default='ordered'
-        How to assign pools to positions.
+        How to assign pools to positions. ``'ordered'`` preserves position
+        order; ``'unordered'`` uses all permutations.
     min_spacing : Optional[Integral], default=None
         Minimum gap between adjacent positions.
     max_spacing : Optional[Integral], default=None
         Maximum gap between adjacent positions. None = unbounded.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
-        Position selection mode: 'random' or 'sequential'.
+        Selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
-        Number of states. If None, auto-determined for sequential mode.
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    cards : CardsType, default=None
+        Design card keys to include. Available keys: ``'combination_index'``,
+        ``'starts'``, ``'ends'``, ``'names'``, ``'region_seqs'``.
 
     Returns
     -------
@@ -188,7 +199,8 @@ def replacement_multiscan(
 ) -> Pool:
     """Replace segments at multiple positions simultaneously.
 
-    Equivalent to insertion_multiscan(..., replace=True).
+    Equivalent to ``insertion_multiscan(..., replace=True)``.
+    See :func:`insertion_multiscan` for full parameter documentation.
     """
     return insertion_multiscan(
         pool=pool,

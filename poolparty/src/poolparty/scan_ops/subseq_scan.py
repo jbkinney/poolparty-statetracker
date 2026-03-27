@@ -18,6 +18,7 @@ def subseq_scan(
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
+    _factory_name: Optional[str] = "subseq_scan",
 ) -> Pool:
     """
     Extract subsequences of a specified length at scanning positions.
@@ -27,24 +28,29 @@ def subseq_scan(
 
     Parameters
     ----------
-    pool : Pool or str
-        Source pool or sequence string to extract subsequences from.
+    pool : Union[Pool, str]
+        Parent pool or sequence string.
     seq_length : Integral
         Length of subsequence to extract at each position.
     positions : PositionsType, default=None
         Positions to consider for the start of extraction (0-based).
         If None, all valid positions are used.
     region : RegionType, default=None
-        Region to constrain the scan to. Can be a region name (str) or [start, stop].
+        Region to constrain the scan to. Can be a marker name or [start, stop] interval.
         If specified, positions are relative to the region start.
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
-        Position selection mode: 'random' or 'sequential'.
+        Selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    cards : CardsType, default=None
+        Design card keys to include. Available keys: ``'position_index'``,
+        ``'start'``, ``'end'``, ``'name'``, ``'region_seq'``.
 
     Returns
     -------
@@ -55,7 +61,7 @@ def subseq_scan(
     from ..region_ops import extract_region, insert_tags
 
     # Convert string input to pool if needed
-    pool = from_seq(pool) if isinstance(pool, str) else pool
+    pool = from_seq(pool, _factory_name=f"{_factory_name}(from_seq)") if isinstance(pool, str) else pool
 
     # If region is specified, extract subsequences only from that region
     if region is not None:
@@ -72,6 +78,7 @@ def subseq_scan(
                 num_states=num_states,
                 iter_order=iter_order,
                 cards=cards,
+                _factory_name=_factory_name,
             )
         else:
             # Region is [start, stop] - insert temporary tags, extract, then scan
@@ -92,6 +99,7 @@ def subseq_scan(
                 num_states=num_states,
                 iter_order=iter_order,
                 cards=cards,
+                _factory_name=_factory_name,
             )
 
     # No region specified - apply to entire pool
@@ -104,6 +112,7 @@ def subseq_scan(
         num_states=num_states,
         iter_order=iter_order,
         cards=cards,
+        _factory_name=_factory_name,
     )
 
 
@@ -116,6 +125,7 @@ def _subseq_scan_impl(
     num_states: Optional[Integral],
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
+    _factory_name: Optional[str] = "subseq_scan",
 ) -> Pool:
     """Core subseq scan implementation without region handling."""
     from ..region_ops import extract_region, region_scan
@@ -150,6 +160,7 @@ def _subseq_scan_impl(
         num_states=num_states,
         iter_order=iter_order,
         cards=cards,
+        _factory_name=f"{_factory_name}(region_scan)",
     )
 
     # 2. Extract region content as the result

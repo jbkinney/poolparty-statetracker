@@ -81,6 +81,7 @@ class StateSliceOp(Operation):
         super().__init__(
             parent_pools=[parent_pool],
             num_states=1,
+            seq_length=parent_pool.seq_length,
             name=name,
             iter_order=iter_order,
             prefix=prefix,

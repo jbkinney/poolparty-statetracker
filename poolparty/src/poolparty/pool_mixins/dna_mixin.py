@@ -198,6 +198,32 @@ class DnaMixin:
         style: Optional[str] = None,
         cards: CardsType = None,
     ) -> Pool_type:
+        """Randomly reverse-complement sequences based on a probability.
+
+        Parameters
+        ----------
+        region : RegionType, default=None
+            Region to flip. Can be marker name (str), [start, stop], or None.
+        rc_prob : Real, default=0.5
+            Probability of reverse-complementing each sequence.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        mode : ModeType, default='sequential'
+            Selection mode: 'sequential' (enumerate forward/RC) or 'random'.
+        num_states : Optional[int], default=None
+            Number of states. In sequential mode defaults to 2 (forward + RC).
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        style : Optional[str], default=None
+            Style to apply to reverse-complemented sequences (e.g., 'red', 'blue bold').
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'flip'``.
+
+        Returns
+        -------
+        Pool
+            A Pool that yields forward or reverse-complemented sequences.
+        """
         from ..base_ops.flip import flip
 
         return flip(
@@ -224,6 +250,27 @@ class DnaMixin:
         prefix: Optional[str] = None,
         style: Optional[str] = None,
     ) -> Pool_type:
+        """Reverse-complement sequences deterministically.
+
+        Parameters
+        ----------
+        region : RegionType, default=None
+            Region to reverse-complement. Can be marker name (str),
+            [start, stop], or None.
+        remove_tags : Optional[bool], default=None
+            If True and region is a marker name, remove marker tags from output.
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        style : Optional[str], default=None
+            Style to apply to the resulting sequences (e.g., 'red', 'blue bold').
+
+        Returns
+        -------
+        Pool
+            A Pool containing reverse-complemented sequences.
+        """
         from ..fixed_ops.rc import rc
 
         return rc(

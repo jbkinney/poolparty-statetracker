@@ -19,14 +19,15 @@ def deletion_scan(
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
+    _factory_name: Optional[str] = "deletion_scan",
 ) -> Pool:
     """
     Scan a pool for all possible single deletions of a fixed length.
 
     Parameters
     ----------
-    pool : Pool or str
-        Source pool or sequence string to delete from.
+    pool : Union[Pool, str]
+        Parent pool or sequence string.
     deletion_length : Integral
         Number of characters to delete at each valid position.
     deletion_marker : Optional[str], default='-'
@@ -34,17 +35,22 @@ def deletion_scan(
     positions : PositionsType, default=None
         Positions to consider for the start of the deletion (0-based, relative to region).
     region : RegionType, default=None
-        Region to constrain the scan to. Can be a marker name (str) or [start, stop].
+        Region to constrain the scan to. Can be a marker name or [start, stop] interval.
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
-        Deletion mode: 'random' or 'sequential'.
+        Selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     style : Optional[str], default=None
         Style to apply to deletion gap characters (e.g., 'gray', 'red bold').
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    cards : CardsType, default=None
+        Design card keys to include. Available keys: ``'position_index'``,
+        ``'start'``, ``'end'``, ``'name'``, ``'region_seq'``.
 
     Returns
     -------
@@ -57,7 +63,7 @@ def deletion_scan(
 
     # Convert string to pool
     pool = (
-        from_seq(pool, _factory_name="deletion_scan(from_seq)") if isinstance(pool, str) else pool
+        from_seq(pool, _factory_name=f"{_factory_name}(from_seq)") if isinstance(pool, str) else pool
     )
 
     # Validate bg_pool has defined seq_length (only when no region specified)
@@ -87,7 +93,7 @@ def deletion_scan(
         num_states=num_states,
         iter_order=iter_order,
         cards=cards,
-        _factory_name="deletion_scan(region_scan)",
+        _factory_name=f"{_factory_name}(region_scan)",
     )
 
     # 2. Create replacement content (gap markers or empty string)
@@ -100,7 +106,7 @@ def deletion_scan(
         # No style when there's no marker content
         replacement_style = None
 
-    marker_pool = from_seq(marker_content, _factory_name="deletion_scan(from_seq)")
+    marker_pool = from_seq(marker_content, _factory_name=f"{_factory_name}(from_seq)")
 
     # 3. Replace the marked region with the marker content
     return replace_region(
@@ -108,6 +114,6 @@ def deletion_scan(
         marker_pool,
         marker_name,
         iter_order=iter_order,
-        _factory_name="deletion_scan(replace_region)",
+        _factory_name=f"{_factory_name}(replace_region)",
         _style=replacement_style,
     )

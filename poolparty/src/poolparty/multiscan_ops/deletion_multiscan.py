@@ -32,8 +32,8 @@ def deletion_multiscan(
 
     Parameters
     ----------
-    pool : Pool or str
-        Source pool or sequence string to delete from.
+    pool : Union[Pool, str]
+        Parent pool or sequence string.
     deletion_length : Integral
         Number of characters to delete at each position.
     num_deletions : Integral
@@ -41,26 +41,34 @@ def deletion_multiscan(
     deletion_marker : Optional[str], default='-'
         Character to insert at each deletion site. If None, deleted segments
         are removed with no marker.
-    positions : PositionsType, default=None
-        Valid positions for deletion starts (0-based). If None, all valid
-        positions are used.
+    positions : MultiPositionsType, default=None
+        Valid positions for deletion starts (0-based). Can be a flat list
+        (shared across all deletions) or a list of per-deletion sublists.
+        If None, all valid positions are used.
     region : RegionType, default=None
-        Region to constrain the scan to.
+        Region to constrain the scan to. Can be a marker name or [start, stop] interval.
     names : Optional[Sequence[str]], default=None
         Custom names for the deletion regions. If None, auto-generated
-        (_del_0, _del_1, ...).
+        (``_del_0``, ``_del_1``, ...).
     min_spacing : Optional[Integral], default=None
         Minimum gap between end of one deletion and start of next.
     max_spacing : Optional[Integral], default=None
         Maximum gap between adjacent deletions. None = unbounded.
-    mode : str, default='random'
-        Position selection mode: 'random' or 'sequential'.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
+    mode : ModeType, default='random'
+        Selection mode: 'random' or 'sequential'.
     num_states : Optional[Integral], default=None
-        Number of states. If None, auto-determined for sequential mode.
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     style : Optional[str], default=None
         Style to apply to deletion marker characters (e.g., 'gray', 'red bold').
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    cards : CardsType, default=None
+        Design card keys to include. Available keys: ``'combination_index'``,
+        ``'starts'``, ``'ends'``, ``'names'``, ``'region_seqs'``.
 
     Returns
     -------
@@ -94,7 +102,7 @@ def deletion_multiscan(
                 f"{deletion_length} in sequence of length {bg_length}"
             )
 
-    del_char = deletion_marker if deletion_marker else "-"
+    del_char = deletion_marker if deletion_marker is not None else "-"
 
     markers = list(names) if names is not None else [f"_del_{i}" for i in range(num_deletions)]
     if len(markers) != num_deletions:

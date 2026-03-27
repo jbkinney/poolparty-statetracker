@@ -1,6 +1,6 @@
 """Repeat operation - repeat a pool's states n times."""
 
-from numbers import Real
+from numbers import Integral, Real
 
 import numpy as np
 
@@ -11,30 +11,35 @@ from ..types import CardsType, Optional, Pool_type, Seq, beartype
 @beartype
 def repeat(
     pool: Pool_type,
-    times: int,
+    times: Integral,
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
 ) -> Pool_type:
-    """
-    Repeat the states of a pool a specified number of times, producing a new pool with
-    `times` as many states as the input pool has.
+    """Repeat a pool's states a specified number of times.
 
     Parameters
     ----------
     pool : Pool_type
-        The Pool whose state(s) are to be repeated.
-    times : int
-        The number of times to repeat the pool's state(s).
+        The Pool whose states are to be repeated.
+    times : Integral
+        The number of times to repeat the pool's states. Must be >= 1.
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    cards : list[str] or dict, optional
+        Design card keys to include. Available keys: ``'repeat_index'``.
 
     Returns
     -------
     Pool_type
-        A new Pool with `times` as many states as the input pool has.
+        A new Pool with ``times`` as many states as the input pool.
+
+    Raises
+    ------
+    ValueError
+        If ``times`` is less than 1.
     """
     op = RepeatOp(pool, times=times, prefix=prefix, name=None, iter_order=iter_order, cards=cards)
     # Return same type as input
@@ -52,13 +57,14 @@ class RepeatOp(Operation):
     def __init__(
         self,
         pool: Pool_type,
-        times: int,
+        times: Integral,
         prefix: Optional[str] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
     ) -> None:
         """Initialize RepeatOp."""
+        times = int(times)
         if times < 1:
             raise ValueError(f"times must be >= 1, got {times}")
         self.times = times

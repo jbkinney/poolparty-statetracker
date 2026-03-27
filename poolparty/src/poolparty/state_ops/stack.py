@@ -19,8 +19,7 @@ def stack(
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
 ) -> Pool_type:
-    """
-    Create a Pool by stacking multiple input Pools state-wise.
+    """Create a pool by stacking multiple input pools state-wise (disjoint union).
 
     Parameters
     ----------
@@ -30,12 +29,14 @@ def stack(
         Prefix for sequence names in the resulting Pool.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    cards : list[str] or dict, optional
+        Design card keys to include. Available keys: ``'active_parent'``.
 
     Returns
     -------
     Pool_type
-        A Pool object representing the state-wise stacking of all provided input Pools.
-        Each state corresponds to a sequence from one of the input Pools.
+        A Pool whose states are the disjoint union of all input pools' states.
+        Each state produces the sequence from the corresponding input pool.
     """
     op = StackOp(pools, prefix=prefix, name=None, iter_order=iter_order, cards=cards)
     # Return same type as first input pool

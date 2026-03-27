@@ -29,14 +29,14 @@ def shuffle_scan(
 
     Parameters
     ----------
-    pool : Pool or str
-        Source pool or sequence string to shuffle regions of.
+    pool : Union[Pool, str]
+        Parent pool or sequence string.
     shuffle_length : Integral
         Length of the region to shuffle at each position.
     positions : PositionsType, default=None
         Positions to consider for the start of the shuffle region (0-based).
     region : RegionType, default=None
-        Region to constrain the scan to. Can be a marker name (str) or [start, stop].
+        Region to constrain the scan to. Can be a marker name or [start, stop] interval.
     shuffle_type : Literal["mono", "dinuc"], default="mono"
         Type of shuffle to perform:
         - ``"mono"``: random permutation preserving mononucleotide composition.
@@ -52,8 +52,18 @@ def shuffle_scan(
         Prefix for shuffle variant index (e.g., 'var' produces 'var_0', 'var_1', ...).
     mode : ModeType, default='random'
         Selection mode: 'random' or 'sequential'.
+    num_states : Optional[Integral], default=None
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     style : Optional[str], default=None
         Style to apply to shuffled characters (e.g., 'purple', 'red bold').
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the Operation.
+    cards : Optional[tuple[CardsType, CardsType]], default=None
+        Design card keys as a 2-tuple ``(scan_cards, shuffle_cards)``.
+        Scan keys: ``'position_index'``, ``'start'``, ``'end'``, ``'name'``,
+        ``'region_seq'``. Shuffle keys: ``'permutation'``.
 
     Returns
     -------
