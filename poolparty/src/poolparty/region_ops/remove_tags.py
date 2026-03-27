@@ -2,18 +2,19 @@
 
 from numbers import Real
 
-from poolparty.types import Optional
-
+from ..pool import Pool
+from ..types import Optional, Pool_type, RegionType, Union, beartype
 from ..utils.parsing_utils import validate_single_region
 
 
+@beartype
 def remove_tags(
-    pool,
+    pool: Union[Pool_type, str],
     region_name: str,
     keep_content: bool = True,
     iter_order: Optional[Real] = None,
     prefix: Optional[str] = None,
-):
+) -> Pool:
     """
     Remove region tags from sequences.
 

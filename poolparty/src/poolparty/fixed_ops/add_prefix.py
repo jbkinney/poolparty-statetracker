@@ -2,7 +2,6 @@
 
 from numbers import Real
 
-from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..pool import Pool
 from ..types import Optional, Seq, beartype
@@ -41,7 +40,8 @@ def add_prefix(
     ...     # Names will be: mut_0.final, mut_1.final, ...
     """
     op = AddPrefixOp(pool, prefix=prefix, iter_order=iter_order)
-    return DnaPool(operation=op)
+    pool_class = type(pool)
+    return pool_class(operation=op)
 
 
 class AddPrefixOp(Operation):

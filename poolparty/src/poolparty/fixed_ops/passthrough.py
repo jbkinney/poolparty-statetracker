@@ -2,7 +2,6 @@
 
 from numbers import Real
 
-from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..pool import Pool
 from ..types import Callable, Optional, beartype
@@ -34,7 +33,8 @@ def passthrough(
         A Pool containing the same sequences as input.
     """
     op = PassthroughOp(pool, _name_fn=_name_fn, iter_order=iter_order, _factory_name=_factory_name)
-    return DnaPool(operation=op)
+    pool_class = type(pool)
+    return pool_class(operation=op)
 
 
 class PassthroughOp(Operation):

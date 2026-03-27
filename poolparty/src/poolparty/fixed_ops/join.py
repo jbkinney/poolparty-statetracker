@@ -67,6 +67,9 @@ def join(
     """
     from .fixed import fixed_operation
 
+    if len(pools) == 0:
+        raise ValueError("join requires at least one pool.")
+
     def seq_length_from_pool_lengths_fn(lengths: Sequence[Optional[int]]) -> Optional[int]:
         if all(L is not None for L in lengths):
             n_spacers = max(0, len(lengths) - 1)

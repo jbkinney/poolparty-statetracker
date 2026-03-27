@@ -4,7 +4,11 @@ from numbers import Real
 
 from ..pool import Pool
 from ..types import Optional, Pool_type, RegionType, Union, beartype
+from ..utils.dna_seq import DnaSeq
 from ..utils.parsing_utils import TAG_PATTERN
+from ..utils.protein_seq import ProteinSeq
+
+_MOLECULAR_CHARS: frozenset[str] = DnaSeq.VALID_CHARS | ProteinSeq.VALID_CHARS
 
 
 @beartype
@@ -18,9 +22,9 @@ def clear_gaps(
     """
     Create a Pool with all gap/non-molecular characters removed from sequences.
 
-    This removes everything that is NOT in the alphabet's all_chars, including:
-    - Ignore characters (gaps '-', dots '.', spaces ' ', etc.)
-    - Any other characters not in the molecular alphabet
+    This removes everything that is NOT a valid molecular character (DNA or
+    protein), including gaps '-', dots '.', spaces ' ', and any other
+    non-molecular characters.
 
     Marker tags are preserved intact.
 
@@ -39,12 +43,10 @@ def clear_gaps(
     -------
     Pool
         A Pool containing only molecular alphabet characters (markers preserved).
+        Always has ``seq_length=None`` because output length depends on how many
+        non-molecular characters each sequence contains.
     """
-    from ..party import get_active_party
     from .fixed import fixed_operation
-
-    alphabet = get_active_party().alphabet
-    all_chars_set = set(alphabet.all_chars)
 
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         seq = seqs[0]
@@ -53,12 +55,12 @@ def clear_gaps(
         last_end = 0
         for match in TAG_PATTERN.finditer(seq):
             # Filter non-marker text to only molecular chars
-            result.append("".join(c for c in seq[last_end : match.start()] if c in all_chars_set))
+            result.append("".join(c for c in seq[last_end : match.start()] if c in _MOLECULAR_CHARS))
             # Keep marker tag unchanged
             result.append(match.group(0))
             last_end = match.end()
         # Handle remaining text after last marker
-        result.append("".join(c for c in seq[last_end:] if c in all_chars_set))
+        result.append("".join(c for c in seq[last_end:] if c in _MOLECULAR_CHARS))
         return "".join(result)
 
     return fixed_operation(

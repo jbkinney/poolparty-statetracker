@@ -5,7 +5,6 @@ from numbers import Real
 
 import numpy as np
 
-from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..pool import Pool
 from ..types import Literal, Optional, Pool_type, RegionType, Seq, Union, beartype
@@ -68,7 +67,8 @@ def stylize(
         iter_order=iter_order,
         prefix=prefix,
     )
-    return DnaPool(operation=op)
+    pool_class = type(pool_obj)
+    return pool_class(operation=op)
 
 
 class StylizeOp(Operation):

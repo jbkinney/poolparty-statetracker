@@ -138,8 +138,17 @@ def slice_seq(
                     region_len = None
 
                 if keep_context:
-                    # Length is variable when keeping context (depends on prefix/suffix)
-                    return None
+                    parent_len = lengths[0]
+                    if parent_len is None or region_len is None:
+                        return None
+                    if not has_slice:
+                        return parent_len
+                    s_start, s_stop, s_step = key.indices(region_len)
+                    sliced_len = max(
+                        0,
+                        (s_stop - s_start + (s_step - 1 if s_step > 0 else s_step + 1)) // s_step,
+                    )
+                    return parent_len - region_len + sliced_len
 
                 if region_len is None:
                     return None
@@ -156,6 +165,11 @@ def slice_seq(
 
             def seq_from_seqs_fn(seqs: list[str]) -> str:
                 seq = strip_all_tags(seqs[0])
+                if region_stop > len(seq):
+                    raise ValueError(
+                        f"slice_seq region [{region_start}, {region_stop}] exceeds "
+                        f"sequence length {len(seq)}"
+                    )
                 content = seq[region_start:region_stop]
                 if has_slice:
                     sliced_content = content[key]
@@ -171,6 +185,12 @@ def slice_seq(
             def seq_length_from_pool_lengths_fn(lengths: Sequence[Optional[int]]) -> Optional[int]:
                 parent_len = lengths[0]
                 region_len = region_stop - region_start
+
+                if parent_len is not None and region_stop > parent_len:
+                    raise ValueError(
+                        f"slice_seq region [{region_start}, {region_stop}] exceeds "
+                        f"sequence length {parent_len}"
+                    )
 
                 if keep_context:
                     # Length depends on parent length and slice

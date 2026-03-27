@@ -67,6 +67,7 @@ def flip(
     ValueError
         If ``rc_prob`` is not in [0, 1] or ``mode='fixed'``.
     """
+    from ..dna_pool import DnaPool
     from ..fixed_ops.from_seq import from_seq
 
     pool = (
@@ -74,6 +75,11 @@ def flip(
         if isinstance(pool, str)
         else pool
     )
+    if not isinstance(pool, DnaPool):
+        raise TypeError(
+            f"flip requires a DnaPool input, got {type(pool).__name__}. "
+            "Reverse complement is not defined for non-DNA sequences."
+        )
     op = FlipOp(
         pool=pool,
         region=region,

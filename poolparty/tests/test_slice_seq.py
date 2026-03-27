@@ -300,6 +300,15 @@ class TestSliceSeqKeepContext:
             with pytest.raises(ValueError, match="keep_context=True requires a region"):
                 slice_seq(pool, start=0, stop=4, keep_context=True)
 
+    def test_interval_region_out_of_bounds(self):
+        """Test that OOB interval region raises clear ValueError, not beartype error."""
+        import pytest
+
+        with pp.Party():
+            pool = pp.from_seq("ACGT")
+            with pytest.raises(ValueError, match=r"region \[10, 20\] exceeds sequence length 4"):
+                slice_seq(pool, region=[10, 20])
+
     def test_keep_context_method(self):
         """Test keep_context via method call."""
         with pp.Party() as party:

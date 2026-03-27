@@ -4,7 +4,11 @@ from numbers import Real
 
 from ..pool import Pool
 from ..types import Optional, Pool_type, RegionType, Union, beartype
+from ..utils.dna_seq import DnaSeq
 from ..utils.parsing_utils import strip_all_tags
+from ..utils.protein_seq import ProteinSeq
+
+_MOLECULAR_CHARS: frozenset[str] = DnaSeq.VALID_CHARS | ProteinSeq.VALID_CHARS
 
 
 @beartype
@@ -37,19 +41,17 @@ def clear_annotation(
     -------
     Pool
         A Pool with cleared annotations and uppercase sequences.
+        Always has ``seq_length=None`` because output length depends on how many
+        tags and non-molecular characters each sequence contains.
     """
-    from ..party import get_active_party
     from .fixed import fixed_operation
-
-    alphabet = get_active_party().alphabet
-    all_chars_set = set(alphabet.all_chars)
 
     def seq_from_seqs_fn(seqs: list[str]) -> str:
         seq = seqs[0]
         # Strip all marker tags
         seq_no_markers = strip_all_tags(seq)
         # Filter to molecular chars only and uppercase
-        return "".join(c.upper() for c in seq_no_markers if c in all_chars_set)
+        return "".join(c.upper() for c in seq_no_markers if c in _MOLECULAR_CHARS)
 
     return fixed_operation(
         parent_pools=[pool],
