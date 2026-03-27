@@ -33,6 +33,42 @@ class CommonOpsMixin:
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
     ) -> Pool_type:
+        """Apply mutations to a sequence.
+
+        Parameters
+        ----------
+        region : Union[str, Sequence[Integral], None], default=None
+            Region to mutagenize. Can be a marker name (str), explicit interval
+            [start, stop], or None to mutagenize entire sequence.
+        num_mutations : Optional[Integral], default=None
+            Fixed number of mutations to apply (mutually exclusive with mutation_rate).
+        mutation_rate : Optional[Real], default=None
+            Probability of mutation at each position (mutually exclusive with num_mutations).
+        allowed_chars : Optional[str], default=None
+            IUPAC string of same length as sequence, specifying allowed bases at each
+            position. Positions where only the wild-type is allowed are non-mutable.
+        style : Optional[str], default=None
+            Style to apply to mutated positions (e.g., 'red', 'blue bold').
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        mode : ModeType, default='random'
+            Selection mode: 'random' or 'sequential'. Sequential only available
+            with num_mutations.
+        num_states : Optional[int], default=None
+            Number of states. In sequential mode, overrides the computed count
+            (cycling if greater, clipping if less). In random mode, if None
+            defaults to 1 (pure random sampling).
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'positions'``,
+            ``'wt_chars'``, ``'mut_chars'``.
+
+        Returns
+        -------
+        Pool
+            A Pool that generates mutated sequences.
+        """
         from ..base_ops.mutagenize import mutagenize
 
         return mutagenize(
@@ -88,6 +124,46 @@ class CommonOpsMixin:
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
     ) -> Pool_type:
+        """Recombine segments from multiple source pools at breakpoints.
+
+        Parameters
+        ----------
+        region : Union[str, Sequence[Integral], None], default=None
+            Region where recombined sequences will be inserted. Region content
+            is discarded (not used as a source pool).
+        sources : Sequence[Union[Pool, str]], default=()
+            Source pools for recombination. All must have the same seq_length.
+        num_breakpoints : Integral, default=1
+            Number of recombination breakpoints. Must be <= seq_length - 1.
+        positions : Optional[Sequence[Integral]], default=None
+            Valid breakpoint positions. If None, defaults to range(seq_length - 1).
+            Position i means "breakpoint after index i".
+        mode : ModeType, default='random'
+            Selection mode: 'random' (random breakpoints and pool assignments) or
+            'sequential' (enumerate all combinations).
+        num_states : Optional[int], default=None
+            Number of states. In sequential mode, overrides the computed count
+            (cycling if greater, clipping if less). In random mode, if None
+            defaults to 1 (pure random sampling).
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        styles : Optional[list[str]], default=None
+            List of styles to apply to segments. Cycles through the list.
+            Use style_by to control whether cycling is by segment position or source.
+        style_by : StyleByForRecombineType, default='order'
+            How styles are assigned: 'order' (by segment position) or
+            'source' (by source pool index).
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'breakpoints'``,
+            ``'pool_assignments'``.
+
+        Returns
+        -------
+        Pool
+            A Pool that generates recombined sequences.
+        """
         from ..base_ops.recombine import recombine
 
         return recombine(

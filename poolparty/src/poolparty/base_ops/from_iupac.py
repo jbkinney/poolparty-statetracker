@@ -50,6 +50,8 @@ def from_iupac(
         Iteration order priority for the Operation.
     style : Optional[str], default=None
         Style to apply to generated sequences (e.g., 'red', 'blue bold').
+    cards : list[str] or dict, optional
+        Design card keys to include. Available keys: ``'iupac_state'``.
 
     Returns
     -------

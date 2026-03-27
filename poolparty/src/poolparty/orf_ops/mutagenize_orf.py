@@ -103,11 +103,18 @@ def mutagenize_orf(
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
-        Selection mode: 'random' or 'sequential'.
+        Selection mode: 'random' or 'sequential'. Sequential requires ``num_mutations``
+        (not ``mutation_rate``) and a uniform ``mutation_type`` ('any_codon',
+        'nonsynonymous_first', 'missense_only_first', or 'nonsense').
     num_states : Optional[Integral], default=None
-        Number of states for random mode. If None, defaults to 1 (pure random sampling).
+        Number of states. In sequential mode, overrides the computed count
+        (cycling if greater, clipping if less). In random mode, if None
+        defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    cards : list[str] or dict, optional
+        Design card keys to include. Available keys: ``'codon_positions'``,
+        ``'wt_codons'``, ``'mut_codons'``, ``'wt_aas'``, ``'mut_aas'``.
 
     Returns
     -------

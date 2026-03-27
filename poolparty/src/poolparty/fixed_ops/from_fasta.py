@@ -66,12 +66,30 @@ def from_fasta(
         Single coordinate as (chrom, start, stop, strand) or list of such tuples.
         Coordinates are 0-based [start, stop). If strand='-', sequence is reverse
         complemented. For circular genomes, start > stop indicates wrap-around.
+    pool : Optional[Union[Pool, str]], default=None
+        Background pool or sequence. If provided with region, extracted sequence(s)
+        replace the region content.
+    region : RegionType, default=None
+        Region to replace in pool. Can be a marker name or [start, stop] interval.
+        Required if pool is provided.
+    remove_tags : Optional[bool], default=None
+        If True and region is a marker name, remove marker tags from the output.
+        Only relevant in single-coordinate mode (has no effect in batch mode).
+    iter_order : Optional[Real], default=None
+        Iteration order priority for the Operation (batch mode only).
     prefix : str, optional
         Prefix for sequence names. Names are "{prefix}_{chrom}:{start}-{stop}({strand})"
         or "{chrom}:{start}-{stop}({strand})" if no prefix.
+    style : Optional[str], default=None
+        Style to apply to extracted sequences (e.g., 'red', 'blue bold').
     cards : list[str] or dict[str, str], optional
         Design card keys to include. Available keys (batch mode only):
         ``'seq_name'``, ``'seq_index'``. Ignored in single-coordinate mode.
+
+    Returns
+    -------
+    Pool_type
+        A Pool yielding the extracted genomic sequence(s).
     """
     from ..base_ops.from_seqs import from_seqs
     from ..party import get_active_party

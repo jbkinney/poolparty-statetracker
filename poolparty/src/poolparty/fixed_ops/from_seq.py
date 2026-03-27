@@ -38,6 +38,8 @@ def from_seq(
         Style to apply to the sequence.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    prefix : Optional[str], default=None
+        Prefix for auto-generated sequence names.
 
     Returns
     -------

@@ -49,7 +49,7 @@ def mutagenize(
         Each character is an IUPAC code (A, C, G, T, R, Y, S, W, K, M, B, D, H, V, N).
         Positions where only the wild-type is allowed are treated as non-mutable.
     style : Optional[str], default=None
-        Style to apply to mutated positions.
+        Style to apply to mutated positions (e.g., 'red', 'blue bold').
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     mode : ModeType, default='random'
@@ -59,7 +59,10 @@ def mutagenize(
         (cycling if greater, clipping if less). In random mode, if None
         defaults to 1 (pure random sampling).
     iter_order : Optional[Real], default=None
-        Iteration order for the Operation.
+        Iteration order priority for the Operation.
+    cards : list[str] or dict, optional
+        Design card keys to include. Available keys: ``'positions'``,
+        ``'wt_chars'``, ``'mut_chars'``.
 
     Returns
     -------

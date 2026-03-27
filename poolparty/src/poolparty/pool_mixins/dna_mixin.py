@@ -34,6 +34,35 @@ class DnaMixin:
         style: Optional[str] = None,
         cards: CardsType = None,
     ) -> Pool_type:
+        """Insert IUPAC-generated DNA sequences into a region.
+
+        Parameters
+        ----------
+        iupac_seq : str
+            IUPAC sequence string (e.g., 'RN' for purine + any base).
+            Valid characters: A, C, G, T, U, R, Y, S, W, K, M, B, D, H, V, N.
+        region : RegionType, default=None
+            Region to replace. Can be a marker name or [start, stop] interval.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        mode : ModeType, default='random'
+            Sequence selection mode: 'sequential' or 'random'.
+        num_states : Optional[int], default=None
+            Number of states. In sequential mode, overrides the computed count
+            (cycling if greater, clipping if less). In random mode, if None
+            defaults to 1 (pure random sampling).
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        style : Optional[str], default=None
+            Style to apply to generated sequences (e.g., 'red', 'blue bold').
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'iupac_state'``.
+
+        Returns
+        -------
+        Pool
+            A Pool yielding DNA sequences from the IUPAC pattern.
+        """
         from ..base_ops.from_iupac import from_iupac
 
         return from_iupac(
@@ -59,6 +88,34 @@ class DnaMixin:
         style: Optional[str] = None,
         cards: CardsType = None,
     ) -> Pool_type:
+        """Insert sequences sampled from a position probability matrix into a region.
+
+        Parameters
+        ----------
+        prob_df : pd.DataFrame
+            DataFrame with probability values for each position.
+            Columns should be alphabet characters (e.g., 'A', 'C', 'G', 'T').
+            Rows represent positions. Values are probabilities (auto-normalized).
+        region : RegionType, default=None
+            Region to replace. Can be a marker name or [start, stop] interval.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        mode : ModeType, default='random'
+            Sequence selection mode. Only 'random' is supported.
+        num_states : Optional[int], default=None
+            Number of states. If None, defaults to 1 (pure random sampling).
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        style : Optional[str], default=None
+            Style to apply to generated sequences (e.g., 'red', 'blue bold').
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'prob_state'``.
+
+        Returns
+        -------
+        Pool
+            A Pool yielding sequences sampled from the probability matrix.
+        """
         from ..base_ops.from_motif import from_motif
 
         return from_motif(
@@ -85,6 +142,36 @@ class DnaMixin:
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
     ) -> Pool_type:
+        """Insert DNA k-mers (all possible sequences of length k) into a region.
+
+        Parameters
+        ----------
+        length : int
+            Length of k-mers to generate.
+        region : RegionType, default=None
+            Region to replace. Can be a marker name or [start, stop] interval.
+        style : Optional[str], default=None
+            Style to apply to generated k-mers (e.g., 'red', 'blue bold').
+        case : Literal['lower', 'upper'], default='upper'
+            Case of output k-mers.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        mode : ModeType, default='random'
+            Sequence selection mode: 'sequential' or 'random'.
+        num_states : Optional[Integral], default=None
+            Number of states. In sequential mode, overrides the computed count
+            (cycling if greater, clipping if less). In random mode, if None
+            defaults to 1 (pure random sampling).
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'kmer_index'``, ``'kmer'``.
+
+        Returns
+        -------
+        Pool
+            A Pool whose states yield DNA k-mers of the specified length.
+        """
         from ..base_ops.get_kmers import get_kmers
 
         return get_kmers(
@@ -217,7 +304,47 @@ class DnaMixin:
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
     ) -> Pool_type:
-        """Apply codon-level mutations."""
+        """Apply codon-level mutations to an ORF sequence.
+
+        Parameters
+        ----------
+        region : RegionType, default=None
+            Region to mutate. Can be marker name (e.g., "orf") or [start, stop].
+            If None, mutates the entire sequence.
+        num_mutations : Optional[Integral], default=None
+            Fixed number of codon mutations (mutually exclusive with mutation_rate).
+        mutation_rate : Optional[Real], default=None
+            Per-codon mutation probability (mutually exclusive with num_mutations).
+        mutation_type : str, default='missense_only_first'
+            Type of mutation: 'any_codon', 'nonsynonymous_first', 'nonsynonymous_random',
+            'missense_only_first', 'missense_only_random', 'synonymous', 'nonsense'.
+        codon_positions : Union[Sequence[Integral], slice, None], default=None
+            Eligible codon indices: None (all), list of indices, or slice.
+        style : Optional[str], default=None
+            Style to apply to mutated codon positions (e.g., 'red', 'bold').
+        frame : Optional[int], default=None
+            Reading frame and orientation (+1/+2/+3/-1/-2/-3).
+            If None and region is a named OrfRegion, uses the OrfRegion's frame.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        mode : ModeType, default='random'
+            Selection mode: 'random' or 'sequential'. Sequential requires
+            ``num_mutations`` (not ``mutation_rate``) and a uniform ``mutation_type``.
+        num_states : Optional[Integral], default=None
+            Number of states. In sequential mode, overrides the computed count
+            (cycling if greater, clipping if less). In random mode, if None
+            defaults to 1 (pure random sampling).
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'codon_positions'``,
+            ``'wt_codons'``, ``'mut_codons'``, ``'wt_aas'``, ``'mut_aas'``.
+
+        Returns
+        -------
+        Pool
+            A Pool that generates codon-mutated sequences.
+        """
         from ..orf_ops.mutagenize_orf import mutagenize_orf
 
         return mutagenize_orf(

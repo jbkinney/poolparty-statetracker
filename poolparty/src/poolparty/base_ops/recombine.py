@@ -80,7 +80,10 @@ def recombine(
         - 'order': styles[i % len(styles)] applied to segment i (cycles through styles by position)
         - 'source': styles[j % len(styles)] applied to segments from sources[j] (cycles by source index)
     iter_order : Optional[Real], default=None
-        Iteration order for the Operation.
+        Iteration order priority for the Operation.
+    cards : list[str] or dict, optional
+        Design card keys to include. Available keys: ``'breakpoints'``,
+        ``'pool_assignments'``.
 
     Returns
     -------

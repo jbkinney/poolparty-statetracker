@@ -50,8 +50,12 @@ def from_seqs(
         Number of states. In sequential mode, overrides the computed count
         (cycling if greater, clipping if less). In random mode, if None
         defaults to 1 (pure random sampling).
+    style : Optional[str], default=None
+        Style to apply to output sequences (e.g., 'red', 'blue bold').
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    cards : list[str] or dict, optional
+        Design card keys to include. Available keys: ``'seq_name'``, ``'seq_index'``.
 
     Returns
     -------
