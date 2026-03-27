@@ -30,6 +30,7 @@ def region_multiscan(
     num_insertions: int,
     positions=None,
     region: RegionType = None,
+    remove_tags: Optional[bool] = None,
     region_length: int | Sequence[int] = 0,
     insertion_mode: Literal["ordered", "unordered"] = "ordered",
     min_spacing: Optional[int] = None,
@@ -92,17 +93,13 @@ def region_multiscan(
     region_names = [tag_names] if isinstance(tag_names, str) else list(tag_names)
     region_lengths = _normalize_region_lengths(region_length, num_insertions)
 
-    registered_regions = []
-    for i, region_name in enumerate(region_names):
-        registered_region = party.register_region(region_name, region_lengths[i])
-        registered_regions.append(registered_region)
-
     op = RegionMultiScanOp(
         parent_pool=pool,
         tag_names=tag_names,
         num_insertions=int(num_insertions),
         positions=positions,
         region_constraint=region,
+        remove_tags=remove_tags,
         region_length=region_length,
         insertion_mode=insertion_mode,
         min_spacing=min_spacing,
@@ -115,9 +112,12 @@ def region_multiscan(
         cards=cards,
         _factory_name=_factory_name,
     )
+
+    registered_regions = []
+    for i, region_name in enumerate(region_names):
+        registered_regions.append(party.register_region(region_name, region_lengths[i]))
     pool_class = type(pool)
     result_pool = pool_class(operation=op)
-
     for registered_region in registered_regions:
         result_pool.add_region(registered_region)
 
@@ -137,6 +137,7 @@ class RegionMultiScanOp(Operation):
         num_insertions: int,
         positions=None,
         region_constraint: RegionType = None,
+        remove_tags: Optional[bool] = None,
         region_length: int | Sequence[int] = 0,
         insertion_mode: str = "ordered",
         min_spacing: Optional[int] = None,
@@ -164,6 +165,11 @@ class RegionMultiScanOp(Operation):
 
         self._positions = positions
         self._is_per_insert = _is_per_insert_positions(positions)
+        if self._is_per_insert and len(positions) != num_insertions:
+            raise ValueError(
+                f"per-insert positions has {len(positions)} sublists, "
+                f"but num_insertions={num_insertions}"
+            )
         self._mode = mode
         self._min_spacing = min_spacing if min_spacing is not None else 0
         self._max_spacing = max_spacing
@@ -194,16 +200,23 @@ class RegionMultiScanOp(Operation):
                 natural_num_states = self._build_caches()
                 if num_states is None:
                     num_states = natural_num_states
+            else:
+                raise ValueError(
+                    "mode='sequential' requires known scan geometry. "
+                    "Provide a parent with known seq_length, or a region "
+                    "constraint with known length."
+                )
 
         super().__init__(
             parent_pools=[parent_pool],
             num_states=num_states,
             mode=mode,
-            seq_length=None,
+            seq_length=parent_pool.seq_length,
             name=name,
             iter_order=iter_order,
             prefix=prefix,
             region=region_constraint,
+            remove_tags=remove_tags,
             _natural_num_states=natural_num_states,
             cards=cards,
         )

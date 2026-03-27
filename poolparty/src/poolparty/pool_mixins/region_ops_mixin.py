@@ -8,7 +8,7 @@ class RegionOpsMixin:
 
     def annotate_region(
         self,
-        name: str,
+        region_name: str,
         extent: Optional[tuple[int, int]] = None,
         style: Optional[str] = None,
         iter_order: Optional[Real] = None,
@@ -19,7 +19,7 @@ class RegionOpsMixin:
 
         return annotate_region(
             self,
-            name,
+            region_name,
             extent=extent,
             style=style,
             iter_order=iter_order,
@@ -30,6 +30,7 @@ class RegionOpsMixin:
         self,
         region_name: str,
         transform_fn: Callable,
+        rc: bool = False,
         remove_tags: bool = True,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
@@ -40,7 +41,25 @@ class RegionOpsMixin:
             self,
             region_name,
             transform_fn,
+            rc=rc,
             remove_tags=remove_tags,
+            iter_order=iter_order,
+            prefix=prefix,
+        )
+
+    def extract_region(
+        self,
+        region_name: str,
+        rc: bool = False,
+        iter_order: Optional[Real] = None,
+        prefix: Optional[str] = None,
+    ) -> Pool_type:
+        from ..region_ops.extract_region import extract_region
+
+        return extract_region(
+            self,
+            region_name,
+            rc=rc,
             iter_order=iter_order,
             prefix=prefix,
         )
@@ -85,6 +104,7 @@ class RegionOpsMixin:
         self,
         content_pool: Union[Pool_type, str],
         region_name: str,
+        rc: bool = False,
         sync: bool = False,
         keep_tags: bool = False,
         iter_order: Optional[Real] = None,
@@ -96,6 +116,7 @@ class RegionOpsMixin:
             self,
             content_pool,
             region_name,
+            rc=rc,
             sync=sync,
             keep_tags=keep_tags,
             iter_order=iter_order,

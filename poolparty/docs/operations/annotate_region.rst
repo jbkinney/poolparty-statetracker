@@ -28,7 +28,7 @@ Parameters
      - ``Pool``
      - *(required)*
      - The Pool to annotate.
-   * - ``name``
+   * - ``region_name``
      - ``str``
      - *(required)*
      - Name for the region (e.g. ``'cre'``, ``'orf'``).

@@ -71,7 +71,6 @@ def region_scan(
         raise ValueError(f"region_length must be >= 0, got {region_length}")
 
     party = get_active_party()
-    registered_region = party.register_region(tag_name, region_length)
 
     op = RegionScanOp(
         parent_pool=pool,
@@ -88,11 +87,10 @@ def region_scan(
         cards=cards,
         _factory_name=_factory_name,
     )
-    # Preserve the pool type from the input
+
+    registered_region = party.register_region(tag_name, region_length)
     pool_class = type(pool)
     result_pool = pool_class(operation=op)
-
-    # Add the region to the pool's region set
     result_pool.add_region(registered_region)
 
     return result_pool
@@ -164,12 +162,18 @@ class RegionScanOp(Operation):
                 natural_num_states = self._build_caches()
                 if num_states is None:
                     num_states = natural_num_states
+            else:
+                raise ValueError(
+                    "mode='sequential' requires known scan geometry. "
+                    "Provide a parent with known seq_length, or a region "
+                    "constraint with known length."
+                )
 
         super().__init__(
             parent_pools=[parent_pool],
             num_states=num_states,
             mode=mode,
-            seq_length=None,
+            seq_length=parent_pool.seq_length,
             name=name,
             iter_order=iter_order,
             prefix=prefix,

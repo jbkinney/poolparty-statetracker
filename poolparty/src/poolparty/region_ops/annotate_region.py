@@ -7,7 +7,7 @@ from ..types import Optional, Pool_type
 
 def annotate_region(
     pool: Pool_type,
-    name: str,
+    region_name: str,
     extent: Optional[tuple[int, int]] = None,
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
@@ -16,7 +16,7 @@ def annotate_region(
     """
     Annotate a region in the pool's sequences, optionally applying a style.
 
-    If region 'name' already exists in the pool, extent must be None (can't change
+    If the region already exists in the pool, extent must be None (can't change
     bounds), but styling can still be applied.
 
     If region doesn't exist, insert XML tags at the specified extent. If extent
@@ -26,7 +26,7 @@ def annotate_region(
     ----------
     pool : Pool
         The pool to annotate.
-    name : str
+    region_name : str
         Name for the region.
     extent : Optional[tuple[int, int]]
         Start and stop positions (0-indexed, stop exclusive) for the region.
@@ -64,28 +64,44 @@ def annotate_region(
         )
 
     # Check if region already exists
-    if pool.has_region(name):
+    if pool.has_region(region_name):
         if extent is not None:
             raise ValueError(
-                f"Region '{name}' already exists. Cannot specify extent when "
+                f"Region '{region_name}' already exists. Cannot specify extent when "
                 f"annotating an existing region. To change bounds, create a new region."
             )
         result_pool = pool
     else:
         # Region doesn't exist - create it
-        if extent is None:
-            # Use full sequence
-            start, stop = 0, pool.seq_length
-        else:
-            start, stop = extent
+        if extent is None and pool.seq_length is None:
+            from ..fixed_ops.fixed import fixed_operation
+            from ..utils.parsing_utils import build_region_tags
 
-        # Insert tags to create the region
-        result_pool = insert_tags(
-            pool, name, start=start, stop=stop, iter_order=iter_order, prefix=prefix
-        )
+            region = party.register_region(region_name, None)
+
+            def wrap_full_seq(seqs):
+                return build_region_tags(region_name, seqs[0])
+
+            result_pool = fixed_operation(
+                parent_pools=[pool],
+                seq_from_seqs_fn=wrap_full_seq,
+                seq_length_from_pool_lengths_fn=lambda lengths: lengths[0] if lengths else None,
+                iter_order=iter_order,
+                prefix=prefix,
+            )
+            result_pool.add_region(region)
+        else:
+            if extent is None:
+                start, stop = 0, pool.seq_length
+            else:
+                start, stop = extent
+
+            result_pool = insert_tags(
+                pool, region_name, start=start, stop=stop, iter_order=iter_order, prefix=prefix
+            )
 
     # Apply styling if requested
     if style is not None:
-        result_pool = stylize(result_pool, region=name, style=style, iter_order=iter_order)
+        result_pool = stylize(result_pool, region=region_name, style=style, iter_order=iter_order)
 
     return result_pool
