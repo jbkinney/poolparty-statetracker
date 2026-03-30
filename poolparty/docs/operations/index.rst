@@ -18,6 +18,7 @@ Output blocks show representative pool contents. Colour indicates
 
 Creating Pools
 --------------
+Operations that create pools from various input formats or specifications. They do not require an existing pool as input.
 
 .. list-table::
    :widths: 25 75
@@ -40,6 +41,7 @@ Creating Pools
 
 Combining Pools
 ---------------
+Operations that combine multiple pools into a single pool, either by concatenating sequences end-to-end or by stacking their state spaces.
 
 .. list-table::
    :widths: 25 75
@@ -54,6 +56,7 @@ Combining Pools
 
 Sequence Mutagenesis
 --------------------
+Operations that introduce random mutations, insertions, deletions, or recombinations into sequences. These operations are stochastic and produce a different draw each time.
 
 .. list-table::
    :widths: 25 75
@@ -70,6 +73,7 @@ Sequence Mutagenesis
 
 Scan Operations
 ---------------
+Operations that systematically tile across a sequence with a sliding window, applying a transformation at each position.
 
 .. list-table::
    :widths: 25 75
@@ -88,8 +92,26 @@ Scan Operations
 
 ----
 
+Multiscan Operations
+--------------------
+Operations that apply multiple simultaneous scans across a sequence, allowing for non-overlapping windows to be modified in parallel.
+
+.. list-table::
+   :widths: 25 75
+   :header-rows: 0
+
+   * - :doc:`replacement_multiscan`
+     - Place multiple non-overlapping replacement windows simultaneously.
+   * - :doc:`deletion_multiscan`
+     - Apply multiple simultaneous deletion windows.
+   * - :doc:`insertion_multiscan`
+     - Insert sequences at multiple positions simultaneously.
+
+----
+
 Region Operations
 -----------------
+Operations that modify sequences by tagging, replacing, or applying transformations to specific regions defined by tags. Regions can be nested and overlapping, and are identified by their tag names.
 
 .. list-table::
    :widths: 25 75
@@ -110,24 +132,10 @@ Region Operations
 
 ----
 
-Multiscan Operations
---------------------
-
-.. list-table::
-   :widths: 25 75
-   :header-rows: 0
-
-   * - :doc:`replacement_multiscan`
-     - Place multiple non-overlapping replacement windows simultaneously.
-   * - :doc:`deletion_multiscan`
-     - Apply multiple simultaneous deletion windows.
-   * - :doc:`insertion_multiscan`
-     - Insert sequences at multiple positions simultaneously.
-
-----
 
 State Operations
 ----------------
+Operations that manipulate the state space of a pool without directly modifying sequences. These operations can be used to combine, sample, or reorder the underlying sequences drawn from a pool.
 
 .. list-table::
    :widths: 25 75
@@ -148,6 +156,7 @@ State Operations
 
 ORF Operations
 --------------
+Operations that specifically target open reading frames (ORFs) within sequences, allowing for codon-level manipulations and translations while respecting reading frame boundaries.
 
 .. list-table::
    :widths: 25 75
@@ -166,6 +175,7 @@ ORF Operations
 
 Fixed Operations
 ----------------
+Operations that apply deterministic transformations to sequences, such as taking the reverse complement, changing case, or applying display styles.
 
 .. list-table::
    :widths: 25 75
@@ -186,6 +196,7 @@ Fixed Operations
 
 Filtering
 ---------
+An operation that applies a predicate function to sequences, retaining only those that satisfy the condition. This is a non-compositional operation that reduces the state space of a pool based on sequence content.
 
 .. list-table::
    :widths: 25 75
@@ -198,6 +209,7 @@ Filtering
 
 Library Generation
 ------------------
+Operations typically used at the end of a design pipeline to generate a final library of sequences for synthesis or analysis.
 
 .. list-table::
    :widths: 25 75
