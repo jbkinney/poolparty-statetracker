@@ -36,6 +36,8 @@ Operations that create pools from various input formats or specifications. They 
      - Sample sequences from a position-probability matrix.
    * - :doc:`get_kmers`
      - Enumerate every k-mer of a given length over a specified alphabet.
+   * - :doc:`get_barcodes`
+     - Generate DNA barcodes satisfying distance, GC, and homopolymer constraints.
 
 ----
 
@@ -68,6 +70,8 @@ Operations that introduce random mutations, insertions, deletions, or recombinat
      - Randomly permute the bases of a sequence or a tagged region.
    * - :doc:`recombine`
      - Produce chimeric sequences by recombining with source sequences at random breakpoints.
+   * - :doc:`flip`
+     - Produce forward and reverse-complement variants as distinct pool states.
 
 ----
 
@@ -194,9 +198,9 @@ Operations that apply deterministic transformations to sequences, such as taking
 
 ----
 
-Filtering
----------
-An operation that applies a predicate function to sequences, retaining only those that satisfy the condition. This is a non-compositional operation that reduces the state space of a pool based on sequence content.
+Filtering and Scoring
+---------------------
+Operations that evaluate sequence content: ``filter`` removes sequences that fail a predicate; ``score`` records a metric as a design card column without changing the sequence.
 
 .. list-table::
    :widths: 25 75
@@ -204,6 +208,8 @@ An operation that applies a predicate function to sequences, retaining only thos
 
    * - :doc:`filter`
      - Retain only sequences satisfying a predicate function.
+   * - :doc:`score`
+     - Evaluate a function on each sequence and record the result as a design card column.
 
 ----
 
@@ -265,5 +271,8 @@ Operations typically used at the end of a design pipeline to generate a final li
    clear_gaps
    clear_annotation
    filter
+   score
+   flip
+   get_barcodes
    generate_library
    materialize
