@@ -139,8 +139,8 @@ valid positions; output length stays 8. This is equivalent to calling
 .. code-block:: python
 
     wt    = pp.from_seq("ACGTACGT")
-    bases = pp.from_seqs(["AA", "CC", "GG", "TT"])
-    scan  = wt.insertion_scan(ins_pool=bases, replace=True)
+    bases = pp.from_seqs(["AA", "CC", "GG", "TT"], mode="sequential")
+    scan  = wt.insertion_scan(ins_pool=bases, replace=True, mode="sequential")
 
 .. raw:: html
 

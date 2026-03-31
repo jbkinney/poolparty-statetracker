@@ -126,7 +126,7 @@ cross over after index 5.
 
     src_a = pp.from_seq("AAAAAAAAAA")
     src_b = pp.from_seq("TTTTTTTTTT")
-    rec   = pp.recombine(sources=[src_a, src_b], positions=[5])
+    rec   = pp.recombine(sources=[src_a, src_b], positions=[5], mode="sequential")
 
 .. raw:: html
 

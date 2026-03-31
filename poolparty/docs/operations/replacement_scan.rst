@@ -158,8 +158,8 @@ are never modified.
 .. code-block:: python
 
     wt   = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    alt  = pp.from_seqs(["A", "C", "G", "T"])
-    scan = wt.replacement_scan(ins_pool=alt, region="cre")
+    alt  = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
+    scan = wt.replacement_scan(ins_pool=alt, region="cre", mode="sequential")
 
 .. raw:: html
 

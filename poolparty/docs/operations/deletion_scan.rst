@@ -83,7 +83,7 @@ are marked with ``-``.
 .. code-block:: python
 
     wt   = pp.from_seq("ACGTACGT")
-    dels = wt.deletion_scan(deletion_length=1)
+    dels = wt.deletion_scan(deletion_length=1, mode="sequential")
 
 .. raw:: html
 
