@@ -1,6 +1,7 @@
 """Stack operation - combine pools sequentially (disjoint union)."""
 
 from numbers import Real
+from typing import TypeVar
 
 import numpy as np
 
@@ -11,14 +12,16 @@ from ..pool import Pool
 from ..types import CardsType, Optional, Pool_type, Real, Seq, Sequence, beartype
 from ..utils.dna_seq import DnaSeq
 
+T = TypeVar("T", bound=Pool)
+
 
 @beartype
 def stack(
-    pools: Sequence[Pool_type],
+    pools: Sequence[T],
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
-) -> Pool_type:
+) -> T:
     """Create a pool by stacking multiple input pools state-wise (disjoint union).
 
     Parameters

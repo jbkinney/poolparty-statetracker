@@ -25,7 +25,7 @@ def from_motif(
     iter_order: Optional[Real] = None,
     style: Optional[str] = None,
     cards: CardsType = None,
-) -> Pool_type:
+) -> DnaPool:
     """
     Create a Pool that samples sequences from a position probability matrix.
 

@@ -2,6 +2,8 @@
 
 from typing import Literal
 
+from typing_extensions import Self
+
 from .pool import Pool
 from .pool_mixins import ProteinMixin
 from .types import Integral, Optional, Pool_type, beartype
@@ -36,7 +38,7 @@ class ProteinPool(Pool, ProteinMixin):
         attempts_per_rate_assessment: int = 100,
         chars_per_aa: Literal[1, 3] = 1,
         aa_separator: str = " ",
-    ) -> Pool_type:
+    ) -> Self:
         """Print preview protein sequences from this pool; returns self for chaining.
 
         Parameters

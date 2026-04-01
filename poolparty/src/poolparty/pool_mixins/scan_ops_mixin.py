@@ -1,5 +1,7 @@
 """Scan operation mixins for Pool class."""
 
+from typing_extensions import Self
+
 from ..types import (
     CardsType,
     Integral,
@@ -32,7 +34,7 @@ class ScanOpsMixin:
         style: Optional[str] = None,
         iter_order: Optional[Union[Real, Sequence[Real]]] = None,
         cards: Optional[tuple[CardsType, CardsType]] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Apply mutagenesis within a window at specified scanning positions.
 
         Parameters
@@ -106,7 +108,7 @@ class ScanOpsMixin:
         style: Optional[str] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Scan for all possible single deletions of a fixed length.
 
         Parameters
@@ -171,7 +173,7 @@ class ScanOpsMixin:
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Insert a sequence at specified scanning positions.
 
         Parameters
@@ -241,7 +243,7 @@ class ScanOpsMixin:
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Replace a segment with insert at specified scanning positions.
 
         Equivalent to ``insertion_scan(..., replace=True)``.
@@ -314,7 +316,7 @@ class ScanOpsMixin:
         style: Optional[str] = None,
         iter_order: Optional[Real] = None,
         cards: Optional[tuple[CardsType, CardsType]] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Shuffle characters within a window at specified scanning positions.
 
         Parameters
@@ -386,7 +388,7 @@ class ScanOpsMixin:
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Extract subsequences of a specified length at scanning positions.
 
         Parameters
@@ -447,7 +449,7 @@ class ScanOpsMixin:
         style: Optional[str] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Delete segments at multiple positions simultaneously.
 
         Parameters
@@ -528,7 +530,7 @@ class ScanOpsMixin:
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Insert sequences at multiple positions simultaneously.
 
         Parameters
@@ -614,7 +616,7 @@ class ScanOpsMixin:
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Replace segments at multiple positions simultaneously.
 
         Equivalent to ``insertion_multiscan(..., replace=True)``.

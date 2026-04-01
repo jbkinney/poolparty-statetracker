@@ -1,21 +1,25 @@
 """Repeat operation - repeat a pool's states n times."""
 
 from numbers import Integral, Real
+from typing import TypeVar
 
 import numpy as np
 
 from ..operation import Operation
+from ..pool import Pool
 from ..types import CardsType, Optional, Pool_type, Seq, beartype
+
+T = TypeVar("T", bound=Pool)
 
 
 @beartype
 def repeat(
-    pool: Pool_type,
+    pool: T,
     times: Integral,
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
-) -> Pool_type:
+) -> T:
     """Repeat a pool's states a specified number of times.
 
     Parameters

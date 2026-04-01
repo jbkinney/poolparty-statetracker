@@ -25,7 +25,7 @@ def from_seqs(
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
     _factory_name: Optional[str] = None,
-) -> Pool_type:
+) -> DnaPool:
     """
     Create a Pool containing the specified sequences.
 

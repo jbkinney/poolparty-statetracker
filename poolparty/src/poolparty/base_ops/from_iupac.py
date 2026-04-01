@@ -23,7 +23,7 @@ def from_iupac(
     iter_order: Optional[Real] = None,
     style: Optional[str] = None,
     cards: CardsType = None,
-) -> Pool_type:
+) -> DnaPool:
     """
     Create a Pool that generates DNA sequences from IUPAC notation.
 

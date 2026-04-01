@@ -324,7 +324,7 @@ def get_barcodes(
     iter_order: Optional[Real] = None,
     prefix: Optional[str] = None,
     cards: CardsType = None,
-) -> Pool_type:
+) -> DnaPool:
     """Generate DNA barcodes satisfying distance and quality constraints.
 
     Pre-generates all barcodes at construction time using a greedy random

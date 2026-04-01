@@ -1,5 +1,7 @@
 """State operation mixins for Pool class."""
 
+from typing_extensions import Self
+
 from ..types import CardsType, Integral, Optional, Pool_type, Real, Sequence, Union
 
 
@@ -12,7 +14,7 @@ class StateOpsMixin:
         prefix: Optional[str] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Repeat this pool's states a specified number of times.
 
         Parameters
@@ -54,7 +56,7 @@ class StateOpsMixin:
         with_replacement: bool = True,
         prefix: Optional[str] = None,
         iter_order: Optional[Real] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Sample states from this pool.
 
         Parameters
@@ -105,7 +107,7 @@ class StateOpsMixin:
         permutation: Optional[Sequence[Integral]] = None,
         prefix: Optional[str] = None,
         iter_order: Optional[Real] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Randomly permute this pool's states.
 
         Parameters
@@ -140,7 +142,7 @@ class StateOpsMixin:
         key: Union[Integral, slice],
         prefix: Optional[str] = None,
         iter_order: Optional[Real] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Select a subset of this pool's states by index or slice.
 
         Parameters

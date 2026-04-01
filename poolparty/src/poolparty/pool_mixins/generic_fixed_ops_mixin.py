@@ -3,6 +3,8 @@
 from numbers import Integral
 from typing import Literal
 
+from typing_extensions import Self
+
 from ..types import Optional, Pool_type, Real, RegionType
 
 
@@ -19,7 +21,7 @@ class GenericFixedOpsMixin:
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
         style: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Extract a subsequence based on region and/or Python-style slice parameters.
 
         Parameters
@@ -68,7 +70,7 @@ class GenericFixedOpsMixin:
         self,
         prefix: str,
         iter_order: Optional[Real] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Add a prefix to sequence names without modifying the sequences.
 
         Parameters
@@ -98,7 +100,7 @@ class GenericFixedOpsMixin:
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
         style: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Swap case of sequence characters, preserving marker tags.
 
         Parameters
@@ -138,7 +140,7 @@ class GenericFixedOpsMixin:
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
         style: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Convert sequence characters to uppercase, preserving marker tags.
 
         Parameters
@@ -178,7 +180,7 @@ class GenericFixedOpsMixin:
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
         style: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Convert sequence characters to lowercase, preserving marker tags.
 
         Parameters
@@ -217,7 +219,7 @@ class GenericFixedOpsMixin:
         remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Remove all gap/non-molecular characters from sequences.
 
         Parameters
@@ -253,7 +255,7 @@ class GenericFixedOpsMixin:
         remove_tags: Optional[bool] = None,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Remove all annotations and uppercase sequences.
 
         Parameters
@@ -292,7 +294,7 @@ class GenericFixedOpsMixin:
         regex: Optional[str] = None,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Apply inline styling to sequences without modifying them.
 
         Parameters

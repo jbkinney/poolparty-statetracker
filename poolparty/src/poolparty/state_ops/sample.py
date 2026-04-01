@@ -1,6 +1,7 @@
 """Sample operation - sample states from a pool."""
 
 from numbers import Real
+from typing import TypeVar
 
 import numpy as np
 
@@ -10,17 +11,19 @@ from ..operation import Operation
 from ..pool import Pool
 from ..types import Integral, Optional, Pool_type, Real, Seq, Sequence, beartype
 
+T = TypeVar("T", bound=Pool)
+
 
 @beartype
 def sample(
-    pool: Pool_type,
+    pool: T,
     num_seqs: Optional[Integral] = None,
     seq_states: Optional[Sequence[Integral]] = None,
     seed: Optional[Integral] = None,
     with_replacement: bool = True,
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
-) -> Pool_type:
+) -> T:
     """Sample states from a pool.
 
     Parameters

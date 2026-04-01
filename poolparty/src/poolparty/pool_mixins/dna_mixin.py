@@ -1,6 +1,13 @@
 """DNA-specific operation mixins for DnaPool class."""
 
+from typing import TYPE_CHECKING
+
+from typing_extensions import Self
+
 import pandas as pd
+
+if TYPE_CHECKING:
+    from ..protein_pool import ProteinPool
 
 from ..types import (
     CardsType,
@@ -33,7 +40,7 @@ class DnaMixin:
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Insert IUPAC-generated DNA sequences into a region.
 
         Parameters
@@ -87,7 +94,7 @@ class DnaMixin:
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Insert sequences sampled from a position probability matrix into a region.
 
         Parameters
@@ -141,7 +148,7 @@ class DnaMixin:
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Insert DNA k-mers (all possible sequences of length k) into a region.
 
         Parameters
@@ -197,7 +204,7 @@ class DnaMixin:
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Randomly reverse-complement sequences based on a probability.
 
         Parameters
@@ -249,7 +256,7 @@ class DnaMixin:
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
         style: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Reverse-complement sequences deterministically.
 
         Parameters
@@ -296,7 +303,7 @@ class DnaMixin:
         style_frames: Optional[list[str]] = None,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Annotate an ORF region with reading frame, optionally applying styling.
 
         Parameters
@@ -351,7 +358,7 @@ class DnaMixin:
         frame: Optional[int] = None,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Apply ORF-aware inline styling to sequences.
 
         Parameters
@@ -406,7 +413,7 @@ class DnaMixin:
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Apply codon-level mutations to an ORF sequence.
 
         Parameters
@@ -476,7 +483,7 @@ class DnaMixin:
         genetic_code: Union[str, dict] = "standard",
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ):
+    ) -> "ProteinPool":
         """Translate DNA sequence to protein.
 
         Parameters

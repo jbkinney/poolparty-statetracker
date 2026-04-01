@@ -1,5 +1,7 @@
 """Region operation mixins for Pool class."""
 
+from typing_extensions import Self
+
 from ..types import Callable, Optional, Pool_type, Real, Union
 
 
@@ -13,7 +15,7 @@ class RegionOpsMixin:
         style: Optional[str] = None,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Annotate a region in sequences, optionally applying a style.
 
         Parameters
@@ -55,7 +57,7 @@ class RegionOpsMixin:
         remove_tags: bool = True,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Apply a transformation to the content of a region.
 
         Parameters
@@ -98,7 +100,7 @@ class RegionOpsMixin:
         rc: bool = False,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Extract content from a named region as a new Pool.
 
         Parameters
@@ -134,7 +136,7 @@ class RegionOpsMixin:
         stop: Optional[int] = None,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Insert XML-style region tags at a fixed position in sequences.
 
         Parameters
@@ -173,7 +175,7 @@ class RegionOpsMixin:
         keep_content: bool = True,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Remove region tags from sequences.
 
         Parameters
@@ -212,7 +214,7 @@ class RegionOpsMixin:
         keep_tags: bool = False,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Replace a region with content from another Pool.
 
         Parameters
@@ -251,7 +253,7 @@ class RegionOpsMixin:
             prefix=prefix,
         )
 
-    def clear_tags(self, **kwargs) -> Pool_type:
+    def clear_tags(self, **kwargs) -> Self:
         """Remove all region tags from sequences, keeping content.
 
         Returns

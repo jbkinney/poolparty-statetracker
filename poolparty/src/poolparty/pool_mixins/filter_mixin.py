@@ -4,6 +4,8 @@ Provides convenience methods for filtering sequences based on
 various properties like GC content, complexity, and restriction sites.
 """
 
+from typing_extensions import Self
+
 from ..types import Optional, Pool_type, Sequence
 
 
@@ -21,7 +23,7 @@ class FilterMixin:
         max_gc: float = 1.0,
         name: Optional[str] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Filter sequences by GC content.
 
         Parameters
@@ -65,7 +67,7 @@ class FilterMixin:
         max_length: int,
         name: Optional[str] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Filter out sequences containing long homopolymer runs.
 
         Homopolymers (runs of repeated single bases like AAAA or GGGG)
@@ -107,7 +109,7 @@ class FilterMixin:
         k_range: tuple[int, ...] = (1, 2, 3),
         name: Optional[str] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Filter sequences by linguistic complexity.
 
         Linguistic complexity measures the ratio of observed unique k-mers
@@ -151,7 +153,7 @@ class FilterMixin:
         max_score: float = 2.0,
         name: Optional[str] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Filter sequences by DUST complexity score.
 
         The DUST algorithm identifies low-complexity regions based on
@@ -196,7 +198,7 @@ class FilterMixin:
         check_rc: bool = True,
         name: Optional[str] = None,
         prefix: Optional[str] = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Filter out sequences containing restriction enzyme recognition sites.
 
         Useful for designing sequences compatible with cloning strategies

@@ -36,7 +36,7 @@ def get_kmers(
     num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
-) -> Pool_type:
+) -> DnaPool:
     """Create a Pool that generates DNA k-mers (all possible sequences of length k).
 
     Must be called within a Party context.

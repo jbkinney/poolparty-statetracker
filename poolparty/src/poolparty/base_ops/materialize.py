@@ -166,7 +166,7 @@ def materialize(
     name: Optional[str] = None,
     prefix: Optional[str] = None,
     cards: CardsType = None,
-) -> Pool_type:
+) -> DnaPool:
     """Materialize a pool's sequences into a new pool with fixed states.
 
     Generates sequences from the input pool and creates a new pool that stores

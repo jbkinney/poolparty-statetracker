@@ -1,6 +1,7 @@
 """StateSlice operation - slice a pool's states (not sequences)."""
 
 from numbers import Real
+from typing import TypeVar
 
 import numpy as np
 
@@ -10,14 +11,16 @@ from ..operation import Operation
 from ..pool import Pool
 from ..types import Integral, Optional, Pool_type, Real, Seq, Sequence, Union, beartype
 
+T = TypeVar("T", bound=Pool)
+
 
 @beartype
 def state_slice(
-    pool: Pool_type,
+    pool: T,
     key: Union[Integral, slice],
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
-) -> Pool_type:
+) -> T:
     """
     Create a Pool containing a slice of states from the input Pool.
 

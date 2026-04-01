@@ -1,8 +1,12 @@
 """Join operation - join multiple sequences together."""
 
 from numbers import Real
+from typing import TypeVar
 
+from ..pool import Pool
 from ..types import Optional, Pool_type, Sequence, Union, beartype
+
+T = TypeVar("T", bound=Pool)
 from ..utils.style_utils import SeqStyle
 
 
@@ -37,13 +41,13 @@ def _make_join_style_combiner(spacer_str: str):
 
 @beartype
 def join(
-    pools: Sequence[Union[Pool_type, str]],
+    pools: Sequence[Union[T, str]],
     spacer_str: str = "",
     iter_order: Optional[Real] = None,
     prefix: Optional[str] = None,
     style: Optional[str] = None,
     _factory_name: Optional[str] = None,
-) -> Pool_type:
+) -> T:
     """
     Concatenate multiple Pools or string sequences into a single Pool.
 

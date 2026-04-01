@@ -1,5 +1,10 @@
 """Protein-specific operation mixins for ProteinPool class."""
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..dna_pool import DnaPool
+
 from ..types import Integral, Literal, Optional, Real, RegionType, Union
 
 
@@ -15,7 +20,7 @@ class ProteinMixin:
         genetic_code: Union[str, dict] = "standard",
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
-    ):
+    ) -> "DnaPool":
         """Reverse translate protein sequence to DNA.
 
         Parameters

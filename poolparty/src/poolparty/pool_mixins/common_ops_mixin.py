@@ -1,5 +1,7 @@
 """Common operation mixins for Pool class - generic operations that work on any sequence type."""
 
+from typing_extensions import Self
+
 from ..types import (
     Any,
     Callable,
@@ -32,7 +34,7 @@ class CommonOpsMixin:
         num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Apply mutations to a sequence.
 
         Parameters
@@ -95,7 +97,7 @@ class CommonOpsMixin:
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Shuffle sequence characters within a region.
 
         Parameters
@@ -149,7 +151,7 @@ class CommonOpsMixin:
         style_by: StyleByForRecombineType = "order",
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Recombine segments from multiple source pools at breakpoints.
 
         Parameters
@@ -213,7 +215,7 @@ class CommonOpsMixin:
         name: Optional[str] = None,
         prefix: Optional[str] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Filter sequences based on a predicate function.
 
         Sequences for which the predicate returns False are replaced with
@@ -249,7 +251,7 @@ class CommonOpsMixin:
         region: RegionType = None,
         prefix: Optional[str] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Score sequences using a custom function and record values on design cards.
 
         Parameters
@@ -295,7 +297,7 @@ class CommonOpsMixin:
         name: Optional[str] = None,
         prefix: Optional[str] = None,
         cards: CardsType = None,
-    ) -> Pool_type:
+    ) -> Self:
         """Materialize sequences into a new pool with fixed states.
 
         Generates sequences from this pool and creates a new pool that stores

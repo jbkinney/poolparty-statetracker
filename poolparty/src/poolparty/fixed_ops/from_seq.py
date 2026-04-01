@@ -2,6 +2,7 @@
 
 from numbers import Real
 
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import Optional, Pool_type, RegionType, Union, beartype
 from ..utils import dna_utils
@@ -17,7 +18,7 @@ def from_seq(
     iter_order: Optional[Real] = None,
     prefix: Optional[str] = None,
     _factory_name: Optional[str] = None,
-) -> Pool_type:
+) -> DnaPool:
     """
     Create a Pool containing a single, fixed sequence.
 

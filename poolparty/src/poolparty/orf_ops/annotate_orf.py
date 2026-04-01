@@ -2,6 +2,7 @@
 
 from numbers import Real
 
+from ..dna_pool import DnaPool
 from ..region import VALID_FRAMES, OrfRegion
 from ..types import Optional, Pool_type, beartype
 
@@ -17,7 +18,7 @@ def annotate_orf(
     style_frames: Optional[list[str]] = None,
     iter_order: Optional[Real] = None,
     prefix: Optional[str] = None,
-) -> Pool_type:
+) -> DnaPool:
     """
     Annotate an ORF region with reading frame, optionally applying styling.
 

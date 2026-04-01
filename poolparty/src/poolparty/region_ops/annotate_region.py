@@ -1,18 +1,22 @@
 """Annotate a region in pool sequences, optionally applying styling."""
 
 from numbers import Real
+from typing import TypeVar
 
+from ..pool import Pool
 from ..types import Optional, Pool_type
+
+T = TypeVar("T", bound=Pool)
 
 
 def annotate_region(
-    pool: Pool_type,
+    pool: T,
     region_name: str,
     extent: Optional[tuple[int, int]] = None,
     style: Optional[str] = None,
     iter_order: Optional[Real] = None,
     prefix: Optional[str] = None,
-) -> Pool_type:
+) -> T:
     """
     Annotate a region in the pool's sequences, optionally applying a style.
 

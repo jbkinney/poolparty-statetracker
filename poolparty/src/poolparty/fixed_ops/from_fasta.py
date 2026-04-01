@@ -4,6 +4,7 @@ from numbers import Real
 
 from pyfaidx import Fasta
 
+from ..dna_pool import DnaPool
 from ..pool import Pool
 from ..types import CardsType, Literal, Optional, Pool_type, RegionType, Sequence, Union, beartype
 from ..utils import dna_utils
@@ -54,7 +55,7 @@ def from_fasta(
     prefix: Optional[str] = None,
     style: Optional[str] = None,
     cards: CardsType = None,
-) -> Pool_type:
+) -> DnaPool:
     """
     Extract genomic region(s) from a FASTA file and create a Pool.
 

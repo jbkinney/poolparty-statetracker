@@ -8,6 +8,8 @@ import pandas as pd
 
 import statetracker as st
 
+from typing_extensions import Self
+
 from .pool_mixins import (
     CommonOpsMixin,
     GenericFixedOpsMixin,
@@ -164,23 +166,23 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
     # Counter-based operators
     #########################################################################
 
-    def __add__(self, other: Pool_type) -> Pool_type:
+    def __add__(self, other: Pool_type) -> Self:
         """Stack two pools (union of states via sum_counters)."""
         from .state_ops.stack import stack
 
         return stack([self, other])
 
-    def __mul__(self, n: int) -> Pool_type:
+    def __mul__(self, n: int) -> Self:
         """Repeat this pool n times (repeat states)."""
         from .state_ops.repeat import repeat
 
         return repeat(self, n)
 
-    def __rmul__(self, n: int) -> Pool_type:
+    def __rmul__(self, n: int) -> Self:
         """Repeat this pool n times (repeat states)."""
         return self.__mul__(n)
 
-    def __getitem__(self, key: Union[int, slice]) -> Pool_type:
+    def __getitem__(self, key: Union[int, slice]) -> Self:
         """Slice this pool's states (not sequences)."""
         from .state_ops.state_slice import state_slice
 
@@ -190,13 +192,13 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
         num_states_str = "None" if self.num_states is None else str(self.num_states)
         return f"Pool(id={self._id}, name={self.name!r}, op={self.operation.name!r}, num_states={num_states_str})"
 
-    def named(self, name: str, op_name: Optional[str] = None) -> Pool_type:
+    def named(self, name: str, op_name: Optional[str] = None) -> Self:
         """Set the name of this pool and its operation, return self for chaining."""
         self.name = name
         # self.operation.name = op_name if op_name is not None else name + '.op'
         return self
 
-    def copy(self, name: Optional[str] = None) -> Pool_type:
+    def copy(self, name: Optional[str] = None) -> Self:
         """Create a copy of this pool with a copied operation.
 
         The copied operation references the same parent_pools, so the copy
@@ -221,7 +223,7 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
             new_pool.name = self.name + ".copy"
         return new_pool
 
-    def deepcopy(self, name: Optional[str] = None) -> Pool_type:
+    def deepcopy(self, name: Optional[str] = None) -> Self:
         """Create a deep copy of this pool, recursively copying the entire upstream DAG.
 
         Unlike copy(), this creates independent copies of all upstream pools
@@ -288,7 +290,7 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
         max_iterations: Optional[int] = None,
         min_acceptance_rate: Optional[float] = None,
         attempts_per_rate_assessment: int = 100,
-    ) -> Pool_type:
+    ) -> Self:
         """Print preview sequences from this pool; returns self for chaining.
 
         Args:
@@ -375,7 +377,7 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
     # Tree visualization
     #########################################################################
 
-    def print_dag(self, style: str = "clean", show_pools: bool = True) -> Pool_type:
+    def print_dag(self, style: str = "clean", show_pools: bool = True) -> Self:
         """Print the ASCII tree visualization rooted at this pool."""
         from .text_viz import print_pool_tree
 

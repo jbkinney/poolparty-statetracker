@@ -1,6 +1,7 @@
 """StateShuffle operation - randomly permute a pool's states."""
 
 from numbers import Real
+from typing import TypeVar
 
 import numpy as np
 
@@ -10,15 +11,17 @@ from ..operation import Operation
 from ..pool import Pool
 from ..types import Integral, Optional, Pool_type, Real, Seq, Sequence, beartype
 
+T = TypeVar("T", bound=Pool)
+
 
 @beartype
 def state_shuffle(
-    pool: Pool_type,
+    pool: T,
     seed: Optional[Integral] = None,
     permutation: Optional[Sequence[Integral]] = None,
     prefix: Optional[str] = None,
     iter_order: Optional[Real] = None,
-) -> Pool_type:
+) -> T:
     """
     Create a Pool with randomly permuted states from the input Pool.
 
