@@ -5,7 +5,7 @@ import numpy as np
 from ..codon_table import CodonTable
 from ..operation import Operation
 from ..pool import Pool
-from ..types import Literal, NullSeq, Optional, RegionType, Seq, Union, beartype, is_null_seq
+from ..types import Integral, Literal, NullSeq, Optional, Real, RegionType, Seq, Union, beartype, is_null_seq
 from ..utils.dna_seq import DnaSeq
 from ..utils.protein_seq import ProteinSeq
 from ..utils.style_utils import SeqStyle
@@ -45,9 +45,9 @@ def reverse_translate(
     region: RegionType = None,
     *,
     codon_selection: Literal["first", "random"] = "first",
-    num_states: Optional[int] = None,
+    num_states: Optional[Integral] = None,
     genetic_code: Union[str, dict] = "standard",
-    iter_order: Optional[float] = None,
+    iter_order: Optional[Real] = None,
     prefix: Optional[str] = None,
 ):
     """Reverse translate protein sequence to DNA.
@@ -69,14 +69,19 @@ def reverse_translate(
     genetic_code : Union[str, dict], default="standard"
         Genetic code to use for reverse translation.
     iter_order : Optional[float], default=None
-        Iteration order priority.
+        Iteration order priority for the Operation.
     prefix : Optional[str], default=None
-        Prefix for sequence names.
+        Prefix for sequence names in the resulting Pool.
 
     Returns
     -------
     DnaPool
-        Pool containing reverse-translated DNA sequences.
+        A Pool containing reverse-translated DNA sequences.
+
+    Raises
+    ------
+    TypeError
+        If pool is not a ProteinPool (after string conversion).
     """
     from ..dna_pool import DnaPool
     from ..protein_pool import ProteinPool
@@ -84,6 +89,12 @@ def reverse_translate(
     # Convert string to ProteinPool if needed
     if isinstance(pool, str):
         pool = ProteinPool(operation=_FromProteinSeqOp(pool))
+
+    if not isinstance(pool, ProteinPool):
+        raise TypeError(
+            f"reverse_translate requires a ProteinPool input, got {type(pool).__name__}. "
+            "DNA sequences cannot be reverse-translated."
+        )
 
     # Determine mode based on codon_selection
     if codon_selection == "first":
@@ -118,10 +129,10 @@ class ReverseTranslateOp(Operation):
         parent_pool,
         region: RegionType = None,
         codon_selection: Literal["first", "random"] = "first",
-        num_states: Optional[int] = None,
+        num_states: Optional[Integral] = None,
         mode: Literal["fixed", "random"] = "fixed",
         genetic_code: Union[str, dict] = "standard",
-        iter_order: Optional[float] = None,
+        iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
         name: Optional[str] = None,
     ) -> None:
@@ -153,6 +164,11 @@ class ReverseTranslateOp(Operation):
             prefix=prefix,
             region=None,  # Don't use base class region handling
         )
+
+    def _get_copy_params(self) -> dict:
+        params = super()._get_copy_params()
+        params["region"] = self._reverse_translate_region
+        return params
 
     def _compute_core(
         self,

@@ -7,14 +7,19 @@ from ..operation import Operation
 from ..party import get_active_party
 from ..pool import Pool
 from ..region import VALID_FRAMES, OrfRegion
-from ..types import NullSeq, Optional, RegionType, Seq, Union, beartype, is_null_seq
+from ..types import NullSeq, Optional, Real, RegionType, Seq, Union, beartype, is_null_seq
 from ..utils.dna_utils import reverse_complement
 from ..utils.protein_seq import ProteinSeq
 from ..utils.style_utils import SeqStyle
 
 
 def _resolve_frame(region: RegionType, frame: Optional[int]) -> int:
-    """Resolve frame value from OrfRegion or use default +1."""
+    """Resolve the frame value, looking up from OrfRegion if needed.
+
+    Backward compatibility: defaults to frame=1 when region is None or an interval.
+    When region is a named OrfRegion, uses the stored frame.
+    When region is a named plain Region, raises an error (must specify frame).
+    """
     if frame is not None:
         if frame not in VALID_FRAMES:
             raise ValueError(f"frame must be one of {sorted(VALID_FRAMES)}, got {frame}")
@@ -36,8 +41,11 @@ def _resolve_frame(region: RegionType, frame: Optional[int]) -> int:
     if isinstance(registered_region, OrfRegion):
         return registered_region.frame
     else:
-        # Plain Region - default to +1
-        return 1
+        raise ValueError(
+            f"Region '{region}' is a plain Region, not an OrfRegion. "
+            f"frame must be specified explicitly, or use annotate_orf() to "
+            f"upgrade the region to an OrfRegion with a frame."
+        )
 
 
 def _get_shared_styles(seq_style: SeqStyle, positions: list[int]) -> list[str]:
@@ -61,7 +69,7 @@ def translate(
     include_stop: bool = True,
     preserve_codon_styles: bool = True,
     genetic_code: Union[str, dict] = "standard",
-    iter_order: Optional[float] = None,
+    iter_order: Optional[Real] = None,
     prefix: Optional[str] = None,
 ):
     """Translate DNA sequence to protein.
@@ -84,14 +92,20 @@ def translate(
     genetic_code : Union[str, dict], default="standard"
         Genetic code to use for translation.
     iter_order : Optional[float], default=None
-        Iteration order priority.
+        Iteration order priority for the Operation.
     prefix : Optional[str], default=None
-        Prefix for sequence names.
+        Prefix for sequence names in the resulting Pool.
 
     Returns
     -------
     ProteinPool
-        Pool containing translated protein sequences.
+        A Pool containing translated protein sequences.
+
+    Raises
+    ------
+    ValueError
+        If frame is invalid, or if region is a named plain Region
+        without an explicit frame.
     """
     from ..fixed_ops.from_seq import from_seq
     from ..protein_pool import ProteinPool
@@ -128,7 +142,7 @@ class TranslateOp(Operation):
         include_stop: bool = True,
         preserve_codon_styles: bool = True,
         genetic_code: Union[str, dict] = "standard",
-        iter_order: Optional[float] = None,
+        iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
         name: Optional[str] = None,
     ) -> None:
@@ -143,11 +157,10 @@ class TranslateOp(Operation):
 
         # Calculate output sequence length if possible
         parent_seq_length = parent_pool.seq_length
-        if parent_seq_length is not None and region is None:
-            # Full sequence translation
+        if parent_seq_length is not None and region is None and include_stop:
             frame_offset = abs(frame) - 1
             num_codons = (parent_seq_length - frame_offset) // 3
-            out_length = num_codons if include_stop else max(0, num_codons - 1)
+            out_length = num_codons
         else:
             out_length = None
 
@@ -163,6 +176,11 @@ class TranslateOp(Operation):
             prefix=prefix,
             region=None,  # Don't use base class region handling
         )
+
+    def _get_copy_params(self) -> dict:
+        params = super()._get_copy_params()
+        params["region"] = self._translate_region
+        return params
 
     def _compute_core(
         self,

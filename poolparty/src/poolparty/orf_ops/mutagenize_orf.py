@@ -124,7 +124,10 @@ def mutagenize_orf(
     Raises
     ------
     ValueError
-        If frame is None and region is not a named OrfRegion.
+        If frame is None and region is a named plain Region (not OrfRegion),
+        if mutation_rate is used with sequential mode, if mutation_type is
+        non-uniform with sequential mode, or if num_mutations exceeds
+        eligible codons.
     """
     from ..fixed_ops.from_seq import from_seq
 

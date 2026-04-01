@@ -3,12 +3,13 @@
 from numbers import Real
 
 from ..region import VALID_FRAMES, OrfRegion
-from ..types import Optional, Pool_type
+from ..types import Optional, Pool_type, beartype
 
 
+@beartype
 def annotate_orf(
     pool: Pool_type,
-    name: str,
+    region_name: str,
     extent: Optional[tuple[int, int]] = None,
     frame: int = 1,
     style: Optional[str] = None,
@@ -20,10 +21,10 @@ def annotate_orf(
     """
     Annotate an ORF region with reading frame, optionally applying styling.
 
-    If region 'name' exists as a plain Region, extent must be None and the region
+    If region already exists as a plain Region, extent must be None and the region
     is upgraded to an OrfRegion with the specified frame.
 
-    If region 'name' exists as an OrfRegion, extent must be None and frame must
+    If region already exists as an OrfRegion, extent must be None and frame must
     match the existing frame (can't change frame of an immutable OrfRegion).
     Styling can still be applied.
 
@@ -33,7 +34,7 @@ def annotate_orf(
     ----------
     pool : Pool
         The pool to annotate.
-    name : str
+    region_name : str
         Name for the ORF region.
     extent : Optional[tuple[int, int]]
         Start and stop positions (0-indexed, stop exclusive) for the region.
@@ -91,61 +92,76 @@ def annotate_orf(
         )
 
     # Check if region already exists
-    if pool.has_region(name):
+    if pool.has_region(region_name):
         if extent is not None:
             raise ValueError(
-                f"Region '{name}' already exists. Cannot specify extent when "
+                f"Region '{region_name}' already exists. Cannot specify extent when "
                 f"annotating an existing region. To change bounds, create a new region."
             )
 
         # Get existing region from Party
-        existing = party.get_region(name)
+        existing = party.get_region(region_name)
 
         if isinstance(existing, OrfRegion):
             # Already an OrfRegion - check frame matches
             if existing.frame != frame:
                 raise ValueError(
-                    f"OrfRegion '{name}' already exists with frame={existing.frame}. "
+                    f"OrfRegion '{region_name}' already exists with frame={existing.frame}. "
                     f"Cannot change frame to {frame} (OrfRegion is immutable)."
                 )
             # Frame matches, can proceed with styling
         else:
             # Plain Region - upgrade to OrfRegion
-            party.upgrade_to_orf_region(name, frame)
+            party.upgrade_to_orf_region(region_name, frame)
 
         result_pool = pool
     else:
         # Region doesn't exist - create it
-        if extent is None:
-            # Use full sequence
-            start, stop = 0, pool.seq_length
+        if extent is None and pool.seq_length is None:
+            from ..fixed_ops.fixed import fixed_operation
+            from ..utils.parsing_utils import build_region_tags
+
+            orf_region = party.register_orf_region(region_name, None, frame)
+
+            def wrap_full_seq(seqs):
+                return build_region_tags(region_name, seqs[0])
+
+            result_pool = fixed_operation(
+                parent_pools=[pool],
+                seq_from_seqs_fn=wrap_full_seq,
+                seq_length_from_pool_lengths_fn=lambda lengths: None,
+                iter_order=iter_order,
+                prefix=prefix,
+            )
+            result_pool.add_region(orf_region)
         else:
-            start, stop = extent
+            if extent is None:
+                start, stop = 0, pool.seq_length
+            else:
+                start, stop = extent
 
-        # Insert tags to create the region
-        result_pool = insert_tags(
-            pool, name, start=start, stop=stop, iter_order=iter_order, prefix=prefix
-        )
+            # Insert tags to create the region
+            result_pool = insert_tags(
+                pool, region_name, start=start, stop=stop, iter_order=iter_order, prefix=prefix
+            )
 
-        # Register as OrfRegion with Party (need to replace the plain Region that insert_tags created)
-        # First get the region that was just registered
-        existing = party.get_region(name)
-        if not isinstance(existing, OrfRegion):
-            # upgrade_to_orf_region will replace it
-            party.upgrade_to_orf_region(name, frame)
+            # Register as OrfRegion with Party
+            existing = party.get_region(region_name)
+            if not isinstance(existing, OrfRegion):
+                party.upgrade_to_orf_region(region_name, frame)
 
     # Apply styling if requested
     if style is not None:
         # Flat style via stylize()
-        result_pool = stylize(result_pool, region=name, style=style, iter_order=iter_order)
+        result_pool = stylize(result_pool, region=region_name, style=style, iter_order=iter_order)
     elif style_codons is not None or style_frames is not None:
         # ORF-aware styling via stylize_orf()
         # Get the frame from the registered OrfRegion (in case we need to use it)
-        orf_region = party.get_region(name)
+        orf_region = party.get_region(region_name)
         actual_frame = orf_region.frame if isinstance(orf_region, OrfRegion) else frame
         result_pool = stylize_orf(
             result_pool,
-            region=name,
+            region=region_name,
             style_codons=style_codons,
             style_frames=style_frames,
             frame=actual_frame,

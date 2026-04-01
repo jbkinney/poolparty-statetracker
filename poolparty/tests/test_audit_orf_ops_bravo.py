@@ -214,38 +214,28 @@ class TestI1OutputLength:
             assert len(df["seq"].iloc[0]) == pool.seq_length
 
     def test_translate_no_stop_output_length_with_stop_codon(self):
-        """When input CONTAINS a stop codon, include_stop=False correctly reports seq_length."""
+        """include_stop=False: seq_length is None (data-dependent), output is correct."""
         with pp.Party():
             pool = pp.translate("ATGGCTTAA", include_stop=False)
-            assert pool.seq_length == 2  # 3 codons - 1 stop
+            assert pool.seq_length is None
             df = _gen(pool)
-            assert len(df["seq"].iloc[0]) == pool.seq_length
+            assert df["seq"].iloc[0] == "MA"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="F10: translate(include_stop=False) underreports seq_length when input has no stop codon",
-    )
     def test_translate_no_stop_output_length_without_stop_codon(self):
-        """When input has NO stop codon, include_stop=False still subtracts 1 from seq_length.
-        Discovered by alpha audit."""
+        """include_stop=False with no stop codon: seq_length is None, output correct."""
         with pp.Party():
             pool = pp.translate("ATGGCT", include_stop=False)
+            assert pool.seq_length is None
             df = _gen(pool)
-            actual_len = len(df["seq"].iloc[0])
-            # seq_length reports 1 but actual output is "MA" (len 2)
-            assert pool.seq_length == actual_len == 2
+            assert df["seq"].iloc[0] == "MA"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="F10: translate(include_stop=False) underreports seq_length (single codon variant)",
-    )
     def test_translate_no_stop_single_codon(self):
-        """Single codon with no stop: seq_length=0 but output is 'M' (len 1)."""
+        """include_stop=False with single codon: seq_length is None, output correct."""
         with pp.Party():
             pool = pp.translate("ATG", include_stop=False)
+            assert pool.seq_length is None
             df = _gen(pool)
-            actual_len = len(df["seq"].iloc[0])
-            assert pool.seq_length == actual_len == 1
+            assert df["seq"].iloc[0] == "M"
 
     def test_translate_frame2_output_length(self):
         with pp.Party():
@@ -1196,129 +1186,95 @@ class TestAPIConsistency:
 class TestFindings:
     """Concrete repros for each preliminary finding."""
 
-    def test_f1_translate_copy_loses_region(self):
-        """TranslateOp.copy() loses region because _get_copy_params
-        doesn't override for _translate_region."""
+    def test_f1_translate_copy_preserves_region(self):
+        """TranslateOp.copy() preserves region via _get_copy_params override."""
         with pp.Party():
             pool = pp.from_seq("NNATGGCTTAANN").annotate_orf("cds", extent=(2, 11))
             protein = pool.translate(region="cds")
             df_orig = _gen(protein)
             assert df_orig["seq"].iloc[0] == "MA*"
 
-            # Copy the operation — region should be preserved but isn't
-            copied_op = protein.operation.copy()
-            copied_pool = ProteinPool(operation=copied_op)
-            # The copy translates the full sequence (including NN flanks),
-            # which crashes on IUPAC codes or produces wrong output
-            with pytest.raises(ValueError, match="IUPAC ambiguity"):
-                _gen(copied_pool)
-
-    def test_f1_reverse_translate_copy_loses_region(self):
-        """ReverseTranslateOp.copy() loses region."""
-        with pp.Party():
-            prot = pp.reverse_translate("MAPK")
-            # Without region, this works fine
-            df_orig = _gen(prot)
-            orig_seq = df_orig["seq"].iloc[0]
-            assert len(orig_seq) == 12
-
-            # Copy should produce identical output (no region to lose here)
-            copied_op = prot.operation.copy()
-            copied_pool = DnaPool(operation=copied_op)
+            copied_pool = protein.copy()
             df_copy = _gen(copied_pool)
-            assert df_copy["seq"].iloc[0] == orig_seq
+            assert df_copy["seq"].iloc[0] == "MA*"
+
+    def test_f1_reverse_translate_copy_preserves_region(self):
+        """ReverseTranslateOp.copy() preserves region via _get_copy_params override."""
+        with pp.Party():
+            protein = pp.from_seq("ATGGCTTAA").translate()
+            back = protein.reverse_translate(region=[0, 2], codon_selection="first")
+            df_orig = _gen(back)
+            orig_seq = strip_all_tags(df_orig["seq"].iloc[0])
+            assert len(orig_seq) == 6  # 2 AAs × 3bp
+
+            copied_pool = back.copy()
+            df_copy = copied_pool.generate_library(num_cycles=1)
+            copy_seq = strip_all_tags(df_copy["seq"].iloc[0])
+            assert len(copy_seq) == 6
+            assert copy_seq == orig_seq
 
     def test_f2_annotate_orf_variable_length_parent(self):
-        """annotate_orf(extent=None) with variable-length parent produces
-        zero-length tags instead of full-span wrapping."""
+        """annotate_orf(extent=None) with variable-length parent wraps full sequence."""
         with pp.Party():
             pool = pp.from_seqs(["ATGGCT", "ATGGCTAAA"])
             assert pool.seq_length is None
             result = pp.annotate_orf(pool, "cds")
             df = _gen(result)
             for seq in df["seq"]:
-                # BUG: produces <cds/>ATGGCT instead of <cds>ATGGCT</cds>
-                if "<cds/>" in seq:
-                    pytest.xfail("F2: annotate_orf(extent=None) produces zero-length "
-                                 "tags with variable-length parent (same as bug #58)")
-            # If we get here, the bug is fixed
-            for seq in df["seq"]:
                 assert "<cds>" in seq
                 assert "</cds>" in seq
+                assert "<cds/>" not in seq
 
-    def test_f3_reverse_translate_accepts_dna_pool(self):
-        """reverse_translate factory silently accepts DnaPool and treats
-        DNA characters as amino acids (same pattern as bug #53)."""
+    def test_f3_reverse_translate_rejects_dna_pool(self):
+        """reverse_translate factory raises TypeError for non-ProteinPool input."""
         with pp.Party():
             dna_pool = pp.from_seq("ACGT")
-            # This should ideally raise but currently produces nonsense
-            result = pp.reverse_translate(dna_pool)
-            df = _gen(result)
-            seq = df["seq"].iloc[0]
-            # A, C, G, T are all valid amino acid codes, so it silently
-            # produces codons for those amino acids (12 bp)
-            assert len(seq) == 12
-            pytest.xfail("F3: reverse_translate accepts non-ProteinPool "
-                         "without validation (same pattern as bug #53)")
+            with pytest.raises(TypeError, match="reverse_translate requires a ProteinPool"):
+                pp.reverse_translate(dna_pool)
 
-    def test_f4_reverse_translate_not_in_all(self):
-        """reverse_translate and ReverseTranslateOp are importable
-        but missing from __all__."""
-        assert hasattr(pp, "reverse_translate")
-        assert hasattr(pp, "ReverseTranslateOp")
-        assert "reverse_translate" not in pp.__all__
-        assert "ReverseTranslateOp" not in pp.__all__
-        pytest.xfail("F4: reverse_translate/ReverseTranslateOp missing from __all__")
+    def test_f4_reverse_translate_in_all(self):
+        """reverse_translate and ReverseTranslateOp are in __all__."""
+        assert "reverse_translate" in pp.__all__
+        assert "ReverseTranslateOp" in pp.__all__
 
-    def test_f5_orf_ops_init_missing_translate(self):
-        """translate and TranslateOp missing from orf_ops.__init__.__all__."""
+    def test_f5_orf_ops_init_has_translate(self):
+        """translate and TranslateOp are in orf_ops.__init__.__all__."""
         from poolparty import orf_ops
-        assert "translate" not in orf_ops.__all__
-        assert "TranslateOp" not in orf_ops.__all__
-        pytest.xfail("F5: translate/TranslateOp missing from orf_ops.__all__")
+        assert "translate" in orf_ops.__all__
+        assert "TranslateOp" in orf_ops.__all__
 
-    def test_f6_annotate_orf_param_name_inconsistency(self):
-        """annotate_orf uses 'name' while annotate_region uses 'region_name'."""
+    def test_f6_annotate_orf_param_name_consistency(self):
+        """annotate_orf and annotate_region both use 'region_name'."""
         import inspect
         sig = inspect.signature(pp.annotate_orf)
         params = list(sig.parameters.keys())
-        # Second param (after pool) is 'name', not 'region_name'
-        assert params[1] == "name"
-        # Compare with annotate_region which uses 'region_name'
+        assert params[1] == "region_name"
         sig_ar = inspect.signature(pp.annotate_region)
         params_ar = list(sig_ar.parameters.keys())
         assert "region_name" in params_ar
-        pytest.xfail("F6: annotate_orf uses 'name' vs annotate_region's 'region_name'")
 
-    def test_f7_annotate_orf_no_beartype(self):
-        """annotate_orf lacks @beartype — accepts wrong types silently."""
-        import inspect
-        # Check if annotate_orf is beartype-decorated by looking for wrapper
-        src = inspect.getsource(pp.annotate_orf)
-        # beartype-decorated functions have __wrapped__ or are wrapped
-        has_beartype = hasattr(pp.annotate_orf, "__wrapped__")
-        if not has_beartype:
-            pytest.xfail("F7: annotate_orf missing @beartype")
+    def test_f7_annotate_orf_has_beartype(self):
+        """annotate_orf is decorated with @beartype."""
+        assert hasattr(pp.annotate_orf, "__wrapped__")
 
-    def test_f8_resolve_frame_divergent_semantics(self):
-        """translate._resolve_frame returns 1 for plain Region;
-        mutagenize_orf._resolve_frame raises ValueError."""
+    def test_f8_resolve_frame_consistent_semantics(self):
+        """All _resolve_frame implementations raise ValueError for plain Region."""
         from poolparty.orf_ops.translate import _resolve_frame as translate_rf
         from poolparty.orf_ops.mutagenize_orf import _resolve_frame as mutagenize_rf
+        from poolparty.orf_ops.stylize_orf import _resolve_frame as stylize_rf
 
         with pp.Party():
             pool = pp.from_seq("ATGGCTTAA")
             pp.annotate_region(pool, "plain_region", extent=(0, 9))
 
-            # translate's _resolve_frame returns 1 for plain Region
-            result = translate_rf("plain_region", None)
-            assert result == 1
+            with pytest.raises(ValueError, match="plain Region, not an OrfRegion"):
+                translate_rf("plain_region", None)
 
-            # mutagenize_orf's _resolve_frame raises for plain Region
             with pytest.raises(ValueError, match="plain Region, not an OrfRegion"):
                 mutagenize_rf("plain_region", None)
 
-        pytest.xfail("F8: _resolve_frame has divergent semantics across ORF modules")
+            with pytest.raises(ValueError, match="plain Region, not an OrfRegion"):
+                stylize_rf("plain_region", None)
 
     def test_f9_stylize_orf_hardcodes_dnapool(self):
         """stylize_orf hardcodes DnaPool return instead of type(pool)."""
@@ -1329,19 +1285,261 @@ class TestFindings:
             # inconsistent with the pattern used by mutagenize, filter, etc.
             pytest.xfail("F9: stylize_orf hardcodes DnaPool return type")
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="F10: translate(include_stop=False) underreports seq_length when input has no stop codon",
-    )
-    def test_f10_translate_include_stop_false_seq_length_no_stop_input(self):
-        """When the input has no stop codon, include_stop=False unconditionally
-        subtracts 1 from seq_length, causing seq_length to underreport actual
-        output length. Discovered by alpha audit."""
+    def test_f10_translate_include_stop_false_seq_length(self):
+        """include_stop=False sets seq_length=None since output length is data-dependent."""
         with pp.Party():
             pool = pp.translate("ATGGCT", include_stop=False)
+            assert pool.seq_length is None
             df = _gen(pool)
-            actual_len = len(strip_all_tags(df["seq"].iloc[0]))
-            assert pool.seq_length == actual_len == 2
+            assert strip_all_tags(df["seq"].iloc[0]) == "MA"
+
+
+# ===================================================================
+# STEP 4 — Adversarial patterns (reverse_translate)
+# ===================================================================
+
+class TestAdversarialReverseTranslate:
+    """Diagonal combinations + assumption inversions for reverse_translate."""
+
+    def test_diagonal_region_interval_random(self):
+        """Interval region + random codon selection + num_states."""
+        with pp.Party():
+            protein = pp.translate("ATGGCTAAATTT")  # "MA*F" or similar
+            dna = pp.reverse_translate(
+                protein, region=[0, 2], codon_selection="random", num_states=20,
+            )
+            df = dna.generate_library(num_cycles=1, seed=42)
+            assert len(df) == 20
+            for seq in df["seq"]:
+                assert len(seq) == 6  # 2 AAs × 3bp
+
+    def test_diagonal_string_input_random_high_states(self):
+        """String input + random + many states → all valid codons."""
+        with pp.Party():
+            dna = pp.reverse_translate("MWMW", codon_selection="random", num_states=50)
+            df = dna.generate_library(num_cycles=1, seed=42)
+            assert len(df) == 50
+            for seq in df["seq"]:
+                assert len(seq) == 12  # 4 AAs × 3bp
+                # W has only one codon (TGG), so positions 3-5 and 9-11 must be TGG
+                assert seq[3:6] == "TGG"
+                assert seq[9:12] == "TGG"
+
+    def test_diagonal_single_aa_first(self):
+        """Single amino acid protein with deterministic codon selection."""
+        with pp.Party():
+            dna = pp.reverse_translate("M", codon_selection="first")
+            df = _gen(dna)
+            assert len(df) == 1
+            assert df["seq"].iloc[0] == "ATG"
+
+    def test_assumption_stop_codon_in_protein(self):
+        """Protein containing * (stop) — reverse_translate should produce a stop codon."""
+        with pp.Party():
+            dna = pp.reverse_translate("M*", codon_selection="first")
+            df = _gen(dna)
+            seq = df["seq"].iloc[0]
+            assert len(seq) == 6
+            assert seq[:3] == "ATG"
+            from poolparty.codon_table import CodonTable
+            ct = CodonTable("standard")
+            assert ct.codon_to_aa.get(seq[3:6]) == "*"
+
+    def test_assumption_all_20_aas_roundtrip(self):
+        """Every standard amino acid reverse-translates to a valid codon."""
+        from poolparty.codon_table import CodonTable
+        ct = CodonTable("standard")
+        all_aas = "ACDEFGHIKLMNPQRSTVWY"
+        with pp.Party():
+            dna = pp.reverse_translate(all_aas, codon_selection="first")
+            df = _gen(dna)
+            seq = df["seq"].iloc[0]
+            assert len(seq) == 60  # 20 AAs × 3bp
+            for i, aa in enumerate(all_aas):
+                codon = seq[i*3:(i+1)*3]
+                assert ct.codon_to_aa[codon] == aa
+
+    def test_assumption_random_produces_variety(self):
+        """Random codon selection produces multiple distinct sequences."""
+        with pp.Party():
+            dna = pp.reverse_translate("LLLL", codon_selection="random", num_states=30)
+            df = dna.generate_library(num_cycles=1, seed=42)
+            unique_seqs = df["seq"].nunique()
+            assert unique_seqs > 1, "Random codon selection should produce variety for L (6 codons)"
+
+
+# ===================================================================
+# STEP 4 — Adversarial patterns (stylize_orf)
+# ===================================================================
+
+class TestAdversarialStylizeOrf:
+    """Diagonal combinations + assumption inversions for stylize_orf."""
+
+    def test_diagonal_named_region_frame2_style_codons(self):
+        """Named OrfRegion + frame=2 + style_codons."""
+        with pp.Party():
+            pool = pp.from_seq("GATGAAACCC")
+            pool = pp.annotate_orf(pool, "cds", extent=(1, 10), frame=2)
+            styled = pp.stylize_orf(pool, region="cds", style_codons=["red", "blue"])
+            df = _gen(styled)
+            assert len(df) == 1
+            assert strip_all_tags(df["seq"].iloc[0]) == "GATGAAACCC"
+
+    def test_diagonal_interval_region_reverse_frame_style_frames(self):
+        """Interval region + negative frame + style_frames."""
+        with pp.Party():
+            styled = pp.stylize_orf(
+                "ATGAAACCCGGG", region=[0, 12],
+                style_frames=["r", "g", "b"], frame=-1,
+            )
+            df = _gen(styled)
+            assert len(df) == 1
+            assert len(df["seq"].iloc[0]) == 12
+
+    def test_diagonal_full_sequence_style_codons_many_styles(self):
+        """Full sequence (no region) + many codon styles cycling."""
+        with pp.Party():
+            styled = pp.stylize_orf(
+                "ATGATGATGATG",
+                style_codons=["red", "green", "blue"],
+            )
+            df = _gen(styled)
+            assert strip_all_tags(df["seq"].iloc[0]) == "ATGATGATGATG"
+
+    def test_assumption_single_base_in_region(self):
+        """Region with only 1 molecular position — no complete codon, styling still works."""
+        with pp.Party():
+            styled = pp.stylize_orf("ATGAAACCC", region=[0, 1], style_codons=["red"])
+            df = _gen(styled)
+            assert len(df) == 1
+
+    def test_assumption_style_frames_6_entries(self):
+        """style_frames with 6 entries (2 codon groups) cycles correctly."""
+        with pp.Party():
+            styled = pp.stylize_orf(
+                "ATGATGATG",
+                style_frames=["a", "b", "c", "d", "e", "f"],
+            )
+            df = _gen(styled)
+            assert strip_all_tags(df["seq"].iloc[0]) == "ATGATGATG"
+
+    def test_assumption_mutually_exclusive_style_args(self):
+        """Providing both style_codons and style_frames raises ValueError."""
+        with pp.Party():
+            with pytest.raises(ValueError, match="mutually exclusive"):
+                pp.stylize_orf("ATGAAA", style_codons=["red"], style_frames=["r", "g", "b"])
+
+    def test_assumption_empty_styles_raises(self):
+        """Empty style lists are rejected."""
+        with pp.Party():
+            with pytest.raises(ValueError):
+                pp.stylize_orf("ATGAAA", style_codons=[])
+            with pytest.raises(ValueError):
+                pp.stylize_orf("ATGAAA", style_frames=[])
+
+
+# ===================================================================
+# STEP 5 — Contract tracing (reverse_translate)
+# ===================================================================
+
+class TestContractTracingReverseTranslate:
+    """C1 (state→output mapping) and C3 (region round-trip) for reverse_translate."""
+
+    def test_c1_first_deterministic_mapping(self):
+        """codon_selection='first' always maps each AA to the same codon."""
+        from poolparty.codon_table import CodonTable
+        ct = CodonTable("standard")
+        with pp.Party():
+            dna = pp.reverse_translate("MAFW", codon_selection="first")
+            df1 = _gen(dna)
+            df2 = _gen(dna)
+            assert df1["seq"].iloc[0] == df2["seq"].iloc[0]
+            seq = df1["seq"].iloc[0]
+            for i, aa in enumerate("MAFW"):
+                codon = seq[i*3:(i+1)*3]
+                assert ct.codon_to_aa[codon] == aa
+                assert codon == ct.aa_to_codons[aa][0]
+
+    def test_c1_random_states_all_valid_codons(self):
+        """codon_selection='random' — every generated codon maps back to the original AA."""
+        from poolparty.codon_table import CodonTable
+        ct = CodonTable("standard")
+        with pp.Party():
+            dna = pp.reverse_translate("MAFW", codon_selection="random", num_states=50)
+            df = dna.generate_library(num_cycles=1, seed=42)
+            for seq in df["seq"]:
+                for i, aa in enumerate("MAFW"):
+                    codon = seq[i*3:(i+1)*3]
+                    assert ct.codon_to_aa[codon] == aa
+
+    def test_c3_region_only_reverse_translates_region(self):
+        """Interval region: only the specified AAs are reverse-translated."""
+        with pp.Party():
+            protein = pp.translate("ATGGCTAAATTTCCC")  # full translation
+            df_prot = _gen(protein)
+            full_protein = df_prot["seq"].iloc[0]
+
+            dna = pp.reverse_translate(protein, region=[1, 3], codon_selection="first")
+            df_dna = _gen(dna)
+            dna_seq = df_dna["seq"].iloc[0]
+            assert len(dna_seq) == 6  # 2 AAs × 3bp
+
+    def test_c2_composition_preserves_states(self):
+        """Multi-state parent → reverse_translate preserves state dimension."""
+        with pp.Party():
+            mutated_dna = pp.mutagenize_orf(
+                "ATGAAATTT", num_mutations=1, mode="sequential",
+                mutation_type="missense_only_first",
+            )
+            protein = mutated_dna.translate()
+            parent_states = protein.num_states
+            dna = protein.reverse_translate(codon_selection="first")
+            df = _gen(dna)
+            assert len(df) == parent_states
+
+
+# ===================================================================
+# STEP 5 — Contract tracing (stylize_orf)
+# ===================================================================
+
+class TestContractTracingStylizeOrf:
+    """C1 (output mapping) and C3 (region isolation) for stylize_orf."""
+
+    def test_c1_style_codons_assigns_correct_positions(self):
+        """style_codons=['red','blue'] assigns alternating codon colors."""
+        with pp.Party():
+            styled = pp.stylize_orf("ATGATG", style_codons=["red", "blue"])
+            df = _gen(styled)
+            seq_obj = styled.operation._compute_core(
+                [styled.operation.parent_pools[0].operation._compute_core([], None)[0]],
+                None,
+            )[0]
+            assert seq_obj.style is not None
+            style_list = seq_obj.style.style_list
+            style_map = {spec: set(pos.tolist()) for spec, pos in style_list}
+            assert "red" in style_map
+            assert "blue" in style_map
+            assert style_map["red"] == {0, 1, 2}
+            assert style_map["blue"] == {3, 4, 5}
+
+    def test_c3_region_isolation_flanks_unstyled(self):
+        """Styling only applies within region; flanks have no ORF styles."""
+        with pp.Party():
+            pool = pp.from_seq("GGGATGAAACCCGGG")
+            pool = pp.annotate_orf(pool, "cds", extent=(3, 12), frame=1)
+            styled = pp.stylize_orf(pool, region="cds", style_codons=["red", "blue"])
+            df = _gen(styled)
+            bio_seq = strip_all_tags(df["seq"].iloc[0])
+            assert bio_seq == "GGGATGAAACCCGGG"
+
+    def test_c1_frame_offset_shifts_codon_boundaries(self):
+        """frame=2 shifts where codon boundaries land."""
+        with pp.Party():
+            styled1 = pp.stylize_orf("AATGATG", style_codons=["red", "blue"], frame=1)
+            styled2 = pp.stylize_orf("AATGATG", style_codons=["red", "blue"], frame=2)
+            df1 = _gen(styled1)
+            df2 = _gen(styled2)
+            assert df1["seq"].iloc[0] == df2["seq"].iloc[0]  # same text, different styles
 
 
 # ===================================================================

@@ -1,6 +1,6 @@
 """Protein-specific operation mixins for ProteinPool class."""
 
-from ..types import Literal, Optional, RegionType, Union
+from ..types import Integral, Literal, Optional, Real, RegionType, Union
 
 
 class ProteinMixin:
@@ -11,9 +11,9 @@ class ProteinMixin:
         region: RegionType = None,
         *,
         codon_selection: Literal["first", "random"] = "first",
-        num_states: Optional[int] = None,
+        num_states: Optional[Integral] = None,
         genetic_code: Union[str, dict] = "standard",
-        iter_order: Optional[float] = None,
+        iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
     ):
         """Reverse translate protein sequence to DNA.
@@ -31,9 +31,9 @@ class ProteinMixin:
         genetic_code : Union[str, dict], default="standard"
             Genetic code to use for reverse translation.
         iter_order : Optional[float], default=None
-            Iteration order priority.
+            Iteration order priority for the Operation.
         prefix : Optional[str], default=None
-            Prefix for sequence names.
+            Prefix for sequence names in the resulting Pool.
 
         Returns
         -------
