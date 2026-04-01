@@ -30,6 +30,8 @@ def insert_tags(
         End position (exclusive). If None, creates a zero-length region at start.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
 
     Returns
     -------

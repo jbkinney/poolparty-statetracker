@@ -30,6 +30,8 @@ def extract_region(
         If True, reverse-complement the extracted content.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
 
     Returns
     -------

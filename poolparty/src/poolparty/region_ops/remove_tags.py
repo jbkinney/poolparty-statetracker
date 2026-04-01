@@ -29,6 +29,8 @@ def remove_tags(
         If False, remove both the region tags and their content.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
 
     Returns
     -------

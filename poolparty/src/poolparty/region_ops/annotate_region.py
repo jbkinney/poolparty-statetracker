@@ -37,6 +37,8 @@ def annotate_region(
         Applied via stylize() operation.
     iter_order : Optional[Real]
         Iteration order priority for the Operation.
+    prefix : Optional[str]
+        Prefix for sequence names in the resulting Pool.
 
     Returns
     -------

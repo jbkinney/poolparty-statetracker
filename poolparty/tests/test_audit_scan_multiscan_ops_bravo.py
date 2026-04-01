@@ -1420,20 +1420,20 @@ class TestAPIConsistency:
             df2 = r2.generate_library(seed=1)
         assert list(df1["seq"]) == list(df2["seq"])
 
-    def test_insertion_multiscan_missing_style_documented(self):
-        """Document: insertion_multiscan lacks style param that deletion_multiscan has."""
+    def test_insertion_multiscan_has_style(self):
+        """insertion_multiscan has style param like deletion_multiscan and insertion_scan."""
         ins_ms_params = inspect.signature(pp.insertion_multiscan).parameters
         del_ms_params = inspect.signature(pp.deletion_multiscan).parameters
         ins_s_params = inspect.signature(pp.insertion_scan).parameters
 
-        assert "style" not in ins_ms_params
+        assert "style" in ins_ms_params
         assert "style" in del_ms_params
         assert "style" in ins_s_params
 
-    def test_replacement_multiscan_missing_style_documented(self):
-        """Document: replacement_multiscan lacks style param."""
+    def test_replacement_multiscan_has_style(self):
+        """replacement_multiscan has style param."""
         rep_ms_params = inspect.signature(pp.replacement_multiscan).parameters
-        assert "style" not in rep_ms_params
+        assert "style" in rep_ms_params
 
     def test_deletion_scan_has_factory_name(self):
         """deletion_scan now has _factory_name param (F9 fixed)."""

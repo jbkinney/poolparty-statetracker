@@ -245,7 +245,42 @@ class ScanOpsMixin:
         """Replace a segment with insert at specified scanning positions.
 
         Equivalent to ``insertion_scan(..., replace=True)``.
-        See :meth:`insertion_scan` for full parameter documentation.
+
+        Parameters
+        ----------
+        ins_pool : Union[Pool, str]
+            The insert Pool or sequence string to be inserted.
+        positions : PositionsType, default=None
+            Positions for replacement (0-based). If None, all valid positions.
+        region : RegionType, default=None
+            Region to constrain the scan to. Can be a marker name or
+            [start, stop] interval.
+        style : Optional[str], default=None
+            Style to apply to inserted content (e.g., 'red', 'blue bold').
+        prefix : Optional[str], default=None
+            Prefix for cartesian product index.
+        prefix_position : Optional[str], default=None
+            Prefix for position index.
+        prefix_insert : Optional[str], default=None
+            Prefix for insert index.
+        mode : ModeType, default='random'
+            Selection mode: 'random' or 'sequential'.
+        num_states : Optional[Integral], default=None
+            Number of states. In sequential mode, overrides the computed
+            count (cycling if greater, clipping if less). In random mode,
+            if None defaults to 1 (pure random sampling).
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        cards : CardsType, default=None
+            Design card keys to include. Available keys:
+            ``'position_index'``, ``'start'``, ``'end'``, ``'name'``,
+            ``'region_seq'``.
+
+        Returns
+        -------
+        Pool
+            A Pool yielding sequences with the insert replacing content at
+            selected position(s).
         """
         from ..scan_ops.insertion_scan import replacement_scan
 
@@ -484,6 +519,7 @@ class ScanOpsMixin:
         region: RegionType = None,
         names: Optional[Sequence[str]] = None,
         replace: bool = False,
+        style: Optional[str] = None,
         insertion_mode: Literal["ordered", "unordered"] = "ordered",
         min_spacing: Optional[Integral] = None,
         max_spacing: Optional[Integral] = None,
@@ -513,6 +549,8 @@ class ScanOpsMixin:
         replace : bool, default=False
             If True, replace existing content at each position.
             If False, insert at zero-width positions.
+        style : Optional[str], default=None
+            Style to apply to inserted content (e.g., 'red', 'blue bold').
         insertion_mode : Literal['ordered', 'unordered'], default='ordered'
             How to assign pools to positions. ``'ordered'`` preserves position
             order; ``'unordered'`` uses all permutations.
@@ -549,6 +587,7 @@ class ScanOpsMixin:
             region=region,
             names=names,
             replace=replace,
+            style=style,
             insertion_mode=insertion_mode,
             min_spacing=min_spacing,
             max_spacing=max_spacing,
@@ -566,6 +605,7 @@ class ScanOpsMixin:
         positions: MultiPositionsType = None,
         region: RegionType = None,
         names: Optional[Sequence[str]] = None,
+        style: Optional[str] = None,
         insertion_mode: Literal["ordered", "unordered"] = "ordered",
         min_spacing: Optional[Integral] = None,
         max_spacing: Optional[Integral] = None,
@@ -578,7 +618,52 @@ class ScanOpsMixin:
         """Replace segments at multiple positions simultaneously.
 
         Equivalent to ``insertion_multiscan(..., replace=True)``.
-        See :meth:`insertion_multiscan` for full parameter documentation.
+
+        Parameters
+        ----------
+        num_replacements : Integral
+            Number of simultaneous replacements to make.
+        replacement_pools : Union[Pool, Sequence[Pool]]
+            Pool(s) providing replacement content. If a single Pool is
+            provided, it will be deepcopied ``num_replacements - 1`` times.
+            If a Sequence, its length must equal ``num_replacements``.
+        positions : MultiPositionsType, default=None
+            Valid positions (0-based). Can be a flat list (shared across
+            all replacements) or a list of per-replacement sublists.
+        region : RegionType, default=None
+            Region to constrain the scan to. Can be a marker name or
+            [start, stop] interval.
+        names : Optional[Sequence[str]], default=None
+            Custom names for the replacement regions. If None,
+            auto-generated.
+        style : Optional[str], default=None
+            Style to apply to replaced content (e.g., 'red', 'blue bold').
+        insertion_mode : Literal['ordered', 'unordered'], default='ordered'
+            How to assign pools to positions. ``'ordered'`` preserves
+            position order; ``'unordered'`` uses all permutations.
+        min_spacing : Optional[Integral], default=None
+            Minimum gap between adjacent positions.
+        max_spacing : Optional[Integral], default=None
+            Maximum gap between adjacent positions. None = unbounded.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        mode : ModeType, default='random'
+            Selection mode: 'random' or 'sequential'.
+        num_states : Optional[Integral], default=None
+            Number of states. In sequential mode, overrides the computed
+            count (cycling if greater, clipping if less). In random mode,
+            if None defaults to 1 (pure random sampling).
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        cards : CardsType, default=None
+            Design card keys to include. Available keys:
+            ``'combination_index'``, ``'starts'``, ``'ends'``,
+            ``'names'``, ``'region_seqs'``.
+
+        Returns
+        -------
+        Pool
+            A Pool yielding sequences with multiple replacements.
         """
         from ..multiscan_ops.insertion_multiscan import replacement_multiscan
 
@@ -589,6 +674,7 @@ class ScanOpsMixin:
             positions=positions,
             region=region,
             names=names,
+            style=style,
             insertion_mode=insertion_mode,
             min_spacing=min_spacing,
             max_spacing=max_spacing,

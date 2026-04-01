@@ -4,15 +4,13 @@ from numbers import Real
 
 import numpy as np
 
-from poolparty.types import CardsType, Literal, Optional, RegionType, Seq, Sequence, Union
+from poolparty.types import CardsType, Integral, Literal, ModeType, MultiPositionsType, Optional, RegionType, Seq, Sequence, Union
 
 from ..operation import Operation
 from ..utils.dna_seq import DnaSeq
 from ..utils.parsing_utils import build_region_tags, get_nontag_positions, nontag_pos_to_literal_pos, strip_all_tags
 from ..utils.scan_utils import _is_valid_combo, _normalize_region_lengths, enumerate_multiscan_combinations
 from ..utils.seq_utils import validate_positions
-
-PositionsType = Union[list[int], tuple[int, ...], slice, None]
 
 
 def _is_per_insert_positions(positions) -> bool:
@@ -28,7 +26,7 @@ def region_multiscan(
     pool,
     tag_names,
     num_insertions: int,
-    positions=None,
+    positions: MultiPositionsType = None,
     region: RegionType = None,
     remove_tags: Optional[bool] = None,
     region_length: int | Sequence[int] = 0,
@@ -36,8 +34,8 @@ def region_multiscan(
     min_spacing: Optional[int] = None,
     max_spacing: Optional[int] = None,
     prefix: Optional[str] = None,
-    mode: str = "random",
-    num_states: Optional[int] = None,
+    mode: ModeType = "random",
+    num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
     _factory_name: Optional[str] = None,
@@ -135,7 +133,7 @@ class RegionMultiScanOp(Operation):
         parent_pool,
         tag_names,
         num_insertions: int,
-        positions=None,
+        positions: MultiPositionsType = None,
         region_constraint: RegionType = None,
         remove_tags: Optional[bool] = None,
         region_length: int | Sequence[int] = 0,
@@ -143,8 +141,8 @@ class RegionMultiScanOp(Operation):
         min_spacing: Optional[int] = None,
         max_spacing: Optional[int] = None,
         prefix: Optional[str] = None,
-        mode: str = "random",
-        num_states: Optional[int] = None,
+        mode: ModeType = "random",
+        num_states: Optional[Integral] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,

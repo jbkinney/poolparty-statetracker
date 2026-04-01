@@ -4,17 +4,12 @@ from numbers import Real
 
 import numpy as np
 
-from poolparty.types import CardsType, Literal, Optional, RegionType, Seq, SeqStyle, Union
+from poolparty.types import CardsType, Integral, ModeType, Optional, PositionsType, RegionType, Seq, SeqStyle
 
 from ..operation import Operation
 from ..utils import build_scan_cache, validate_positions
 from ..utils.dna_seq import DnaSeq
 from ..utils.parsing_utils import build_region_tags, get_nontag_positions
-
-# Type aliases
-PositionsType = Union[list[int], tuple[int, ...], slice, None]
-ModeType = Literal["random", "sequential"]
-StrandType = Literal["+", "-", "both"]
 
 
 def region_scan(
@@ -25,8 +20,8 @@ def region_scan(
     remove_tags: Optional[bool] = None,
     region_length: int = 0,
     prefix: Optional[str] = None,
-    mode: str = "random",
-    num_states: Optional[int] = None,
+    mode: ModeType = "random",
+    num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
     cards: CardsType = None,
     _factory_name: Optional[str] = None,
@@ -118,8 +113,8 @@ class RegionScanOp(Operation):
         spacer_str: str = "",
         region_length: int = 0,
         prefix: Optional[str] = None,
-        mode: str = "random",
-        num_states: Optional[int] = None,
+        mode: ModeType = "random",
+        num_states: Optional[Integral] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,

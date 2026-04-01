@@ -47,8 +47,8 @@ def replace_region(
         The region remains tracked in the resulting pool.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
-    _factory_name: Optional[str], default=None
-        Sets default name of the resulting operation
+    prefix : Optional[str], default=None
+        Prefix for sequence names in the resulting Pool.
 
     Returns
     -------

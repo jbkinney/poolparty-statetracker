@@ -17,6 +17,7 @@ def insertion_multiscan(
     region: RegionType = None,
     names: Optional[Sequence[str]] = None,
     replace: bool = False,
+    style: Optional[str] = None,
     insertion_mode: Literal["ordered", "unordered"] = "ordered",
     min_spacing: Optional[Integral] = None,
     max_spacing: Optional[Integral] = None,
@@ -52,6 +53,8 @@ def insertion_multiscan(
     replace : bool, default=False
         If True, replace existing content at each position (region_length = pool seq_length).
         If False, insert at zero-width positions.
+    style : Optional[str], default=None
+        Style to apply to inserted/replaced content (e.g., 'red', 'blue bold').
     insertion_mode : Literal['ordered', 'unordered'], default='ordered'
         How to assign pools to positions. ``'ordered'`` preserves position
         order; ``'unordered'`` uses all permutations.
@@ -174,6 +177,7 @@ def insertion_multiscan(
             region_name,
             iter_order=iter_order,
             _factory_name=f"{_factory_name}(replace_region)",
+            _style=style,
         )
 
     return result
@@ -187,6 +191,7 @@ def replacement_multiscan(
     positions: MultiPositionsType = None,
     region: RegionType = None,
     names: Optional[Sequence[str]] = None,
+    style: Optional[str] = None,
     insertion_mode: Literal["ordered", "unordered"] = "ordered",
     min_spacing: Optional[Integral] = None,
     max_spacing: Optional[Integral] = None,
@@ -210,6 +215,7 @@ def replacement_multiscan(
         region=region,
         names=names,
         replace=True,
+        style=style,
         insertion_mode=insertion_mode,
         min_spacing=min_spacing,
         max_spacing=max_spacing,
