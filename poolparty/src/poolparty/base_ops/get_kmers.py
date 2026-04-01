@@ -115,7 +115,7 @@ class GetKmersOp(Operation):
         case: Literal["lower", "upper"] = "upper",
         prefix: Optional[str] = None,
         mode: ModeType = "random",
-        num_states: Optional[int] = None,
+        num_states: Optional[Integral] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,

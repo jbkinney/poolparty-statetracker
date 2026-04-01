@@ -29,7 +29,7 @@ class CommonOpsMixin:
         style: Optional[str] = None,
         prefix: Optional[str] = None,
         mode: ModeType = "random",
-        num_states: Optional[int] = None,
+        num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         cards: CardsType = None,
     ) -> Pool_type:
@@ -91,7 +91,7 @@ class CommonOpsMixin:
         shuffle_type: Literal["mono", "dinuc"] = "mono",
         prefix: Optional[str] = None,
         mode: ModeType = "random",
-        num_states: Optional[int] = None,
+        num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
         cards: CardsType = None,
@@ -143,7 +143,7 @@ class CommonOpsMixin:
         num_breakpoints: Integral = 1,
         positions: Optional[Sequence[Integral]] = None,
         mode: ModeType = "random",
-        num_states: Optional[int] = None,
+        num_states: Optional[Integral] = None,
         prefix: Optional[str] = None,
         styles: Optional[list[str]] = None,
         style_by: StyleByForRecombineType = "order",
@@ -216,8 +216,27 @@ class CommonOpsMixin:
     ) -> Pool_type:
         """Filter sequences based on a predicate function.
 
-        Sequences for which the predicate returns False are replaced with NullSeq.
-        Use generate_library with discard_null_seqs=True to exclude them.
+        Sequences for which the predicate returns False are replaced with
+        NullSeq, which propagates through downstream operations. Use
+        generate_library with discard_null_seqs=True to exclude filtered
+        sequences from output.
+
+        Parameters
+        ----------
+        predicate : Callable[[str], bool]
+            Function taking sequence string (clean, no tags), returning
+            True to keep.
+        name : Optional[str], default=None
+            Optional name for the operation.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'passed'``.
+
+        Returns
+        -------
+        Pool
+            New pool that may contain NullSeq for filtered sequences.
         """
         from ..base_ops.filter_seq import filter
 
@@ -281,7 +300,41 @@ class CommonOpsMixin:
 
         Generates sequences from this pool and creates a new pool that stores
         them. The resulting pool has a well-defined num_states and no parent
-        references (severed DAG).
+        references (severed DAG), making it a leaf node in any future
+        computation.
+
+        Parameters
+        ----------
+        num_seqs : Optional[Integral], default=None
+            Number of sequences to generate and store. Mutually exclusive
+            with num_cycles.
+        num_cycles : Optional[Integral], default=None
+            Number of complete cycles through the source pool's state space.
+            If both num_seqs and num_cycles are None, defaults to 1 cycle.
+            Mutually exclusive with num_seqs.
+        seed : Optional[Integral], default=None
+            Random seed for reproducible generation.
+        discard_null_seqs : bool, default=True
+            If True, filtered/null sequences are excluded. If False, they
+            are included as NullSeq objects.
+        max_iterations : Optional[Integral], default=None
+            Maximum iterations before stopping (only used with num_seqs).
+        min_acceptance_rate : Optional[Real], default=None
+            Minimum fraction of sequences that must pass filters.
+        attempts_per_rate_assessment : Integral, default=100
+            Iterations between acceptance rate checks.
+        name : Optional[str], default=None
+            Optional name for the operation.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        cards : list[str] or dict, optional
+            Design card keys to include.
+
+        Returns
+        -------
+        Pool
+            A new Pool containing the materialized sequences with a fixed
+            number of states equal to the number of stored sequences.
         """
         from ..base_ops.materialize import materialize
 

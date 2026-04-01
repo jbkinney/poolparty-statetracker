@@ -6,7 +6,7 @@ import numpy as np
 
 from ..operation import Operation
 from ..pool import Pool
-from ..types import CardsType, Literal, ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
+from ..types import CardsType, Integral, Literal, ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils.dna_seq import DnaSeq
 
 
@@ -17,7 +17,7 @@ def shuffle_seq(
     shuffle_type: Literal["mono", "dinuc"] = "mono",
     prefix: Optional[str] = None,
     mode: ModeType = "random",
-    num_states: Optional[int] = None,
+    num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
     _remove_tags: bool = False,
     style: Optional[str] = None,
@@ -95,7 +95,7 @@ class SeqShuffleOp(Operation):
         spacer_str: str = "",
         prefix: Optional[str] = None,
         mode: ModeType = "random",
-        num_states: Optional[int] = None,
+        num_states: Optional[Integral] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         _remove_tags: bool = False,

@@ -197,6 +197,8 @@ __all__ = [
     "MutagenizeOrfOp",
     "stylize_orf",
     "StylizeOrfOp",
+    "reverse_translate",
+    "ReverseTranslateOp",
     "translate",
     "TranslateOp",
     "recombine",

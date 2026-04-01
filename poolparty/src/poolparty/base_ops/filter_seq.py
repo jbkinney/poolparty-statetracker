@@ -88,7 +88,9 @@ def filter(
     name : Optional[str]
         Optional name for the operation.
     prefix : Optional[str]
-        Prefix for sequence naming.
+        Prefix for sequence names in the resulting Pool.
+    cards : list[str] or dict, optional
+        Design card keys to include. Available keys: ``'passed'``.
 
     Returns
     -------

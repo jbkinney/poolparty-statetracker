@@ -29,7 +29,7 @@ class DnaMixin:
         region: RegionType = None,
         prefix: Optional[str] = None,
         mode: ModeType = "random",
-        num_states: Optional[int] = None,
+        num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
         cards: CardsType = None,
@@ -83,7 +83,7 @@ class DnaMixin:
         region: RegionType = None,
         prefix: Optional[str] = None,
         mode: ModeType = "random",
-        num_states: Optional[int] = None,
+        num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
         cards: CardsType = None,
@@ -193,7 +193,7 @@ class DnaMixin:
         rc_prob: Real = 0.5,
         prefix: Optional[str] = None,
         mode: ModeType = "sequential",
-        num_states: Optional[int] = None,
+        num_states: Optional[Integral] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
         cards: CardsType = None,
@@ -288,7 +288,7 @@ class DnaMixin:
 
     def annotate_orf(
         self,
-        name: str,
+        region_name: str,
         extent: Optional[tuple[int, int]] = None,
         frame: int = 1,
         style: Optional[str] = None,
@@ -297,12 +297,42 @@ class DnaMixin:
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
     ) -> Pool_type:
-        """Annotate an ORF region with frame, optionally applying styling."""
+        """Annotate an ORF region with reading frame, optionally applying styling.
+
+        Parameters
+        ----------
+        region_name : str
+            Name for the ORF region.
+        extent : Optional[tuple[int, int]], default=None
+            Start and stop positions (0-indexed, stop exclusive) for the region.
+            If None and region doesn't exist, uses the entire sequence.
+            Must be None if region already exists.
+        frame : int, default=1
+            Reading frame (+1, +2, +3, -1, -2, -3).
+        style : Optional[str], default=None
+            Style to apply to the region (e.g., 'red', 'bold blue').
+            Mutually exclusive with style_codons and style_frames.
+        style_codons : Optional[list[str]], default=None
+            List of styles for codon-based coloring. Applied via stylize_orf().
+            Mutually exclusive with style and style_frames.
+        style_frames : Optional[list[str]], default=None
+            List of styles for frame-based coloring (length must be multiple
+            of 3). Mutually exclusive with style and style_codons.
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+
+        Returns
+        -------
+        Pool
+            Pool with ORF region annotated and optionally styled.
+        """
         from ..orf_ops.annotate_orf import annotate_orf
 
         return annotate_orf(
             self,
-            name,
+            region_name,
             extent=extent,
             frame=frame,
             style=style,
@@ -322,7 +352,33 @@ class DnaMixin:
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
     ) -> Pool_type:
-        """Apply ORF-aware styling."""
+        """Apply ORF-aware inline styling to sequences.
+
+        Parameters
+        ----------
+        region : RegionType, default=None
+            Region to style. Can be a marker name or [start, stop] interval.
+            If None, styles the entire sequence.
+        style_codons : Optional[list[str]], default=None
+            List of styles to apply to codons in sequence, cycling through
+            the list. Mutually exclusive with style_frames.
+        style_frames : Optional[list[str]], default=None
+            List of styles with length a multiple of 3. Each group of 3
+            styles is applied to frames 0, 1, 2 of a codon, cycling through
+            groups. Mutually exclusive with style_codons.
+        frame : Optional[int], default=None
+            Reading frame: +1, +2, +3, -1, -2, -3.
+            If None and region is a named OrfRegion, uses the OrfRegion's frame.
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+
+        Returns
+        -------
+        Pool
+            A Pool with ORF-aware inline styling attached to sequences.
+        """
         from ..orf_ops.stylize_orf import stylize_orf
 
         return stylize_orf(
@@ -421,7 +477,33 @@ class DnaMixin:
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
     ):
-        """Translate DNA to protein."""
+        """Translate DNA sequence to protein.
+
+        Parameters
+        ----------
+        region : RegionType, default=None
+            Region to translate. Can be a marker name or [start, stop] interval.
+            If None, translates the entire sequence.
+        frame : Optional[int], default=None
+            Reading frame: +1, +2, +3, -1, -2, -3.
+            If None and region is an OrfRegion, uses its frame; otherwise +1.
+        include_stop : bool, default=True
+            Whether to include stop codon (*) in output.
+        preserve_codon_styles : bool, default=True
+            If True, propagate styles to amino acids when all 3 nucleotides
+            of a codon share the same style.
+        genetic_code : Union[str, dict], default="standard"
+            Genetic code to use for translation.
+        iter_order : Optional[Real], default=None
+            Iteration order priority for the Operation.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+
+        Returns
+        -------
+        ProteinPool
+            A Pool containing translated protein sequences.
+        """
         from ..orf_ops.translate import translate
 
         return translate(

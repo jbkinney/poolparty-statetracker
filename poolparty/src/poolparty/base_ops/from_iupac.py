@@ -7,7 +7,7 @@ import numpy as np
 from ..dna_pool import DnaPool
 from ..operation import Operation
 from ..pool import Pool
-from ..types import CardsType, ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
+from ..types import CardsType, Integral, ModeType, Optional, Pool_type, RegionType, Seq, Union, beartype
 from ..utils import dna_utils
 from ..utils.dna_seq import DnaSeq
 
@@ -19,7 +19,7 @@ def from_iupac(
     region: RegionType = None,
     prefix: Optional[str] = None,
     mode: ModeType = "random",
-    num_states: Optional[int] = None,
+    num_states: Optional[Integral] = None,
     iter_order: Optional[Real] = None,
     style: Optional[str] = None,
     cards: CardsType = None,
@@ -95,7 +95,7 @@ class FromIupacOp(Operation):
         region: RegionType = None,
         prefix: Optional[str] = None,
         mode: ModeType = "random",
-        num_states: Optional[int] = None,
+        num_states: Optional[Integral] = None,
         name: Optional[str] = None,
         iter_order: Optional[Real] = None,
         style: Optional[str] = None,
