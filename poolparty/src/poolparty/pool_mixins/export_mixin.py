@@ -69,8 +69,14 @@ def _detect_file_type(path: Path) -> str:
         ".fna": "fasta",
         ".jsonl": "jsonl",
     }
-    # Default to csv for unknown extensions
-    return mapping.get(ext, "csv")
+    file_type = mapping.get(ext)
+    if file_type is None:
+        raise ValueError(
+            f"Unknown file extension '{ext}' for '{path}'. "
+            f"Supported extensions: {', '.join(sorted(mapping))}. "
+            f"Use file_type= to specify the format explicitly."
+        )
+    return file_type
 
 
 class ExportMixin:
@@ -88,7 +94,6 @@ class ExportMixin:
         write_style: bool = False,
         seed: Optional[Integral] = None,
         discard_null_seqs: bool = True,
-        include_design_cards: bool = False,
         columns: Optional[list[str]] = None,
         show_progress: bool = True,
     ) -> pd.DataFrame:
@@ -117,10 +122,11 @@ class ExportMixin:
             Random seed for reproducibility.
         discard_null_seqs : bool, default True
             If True, skip sequences that were filtered out (NullSeq).
-        include_design_cards : bool, default False
-            Include design card columns in output.
         columns : list[str], optional
-            Specific columns to include. Default is all columns.
+            Columns to include in the output. Default columns are ``'name'`` and
+            ``'seq'``; operations with design cards add additional columns (e.g.,
+            ``'mutagenize_positions'``). Use ``columns=['name', 'seq']`` to
+            exclude card columns.
         show_progress : bool, default True
             If True, show a tqdm progress bar during generation.
             Requires tqdm to be installed.
@@ -130,15 +136,23 @@ class ExportMixin:
         pd.DataFrame
             DataFrame containing the generated library.
 
+        Raises
+        ------
+        ValueError
+            If neither ``num_seqs`` nor ``num_cycles`` is specified, or if
+            ``chunk_size`` is not positive.
+
         Examples
         --------
         >>> df = pool.to_df(num_seqs=1000)
-        >>> df = pool.to_df(num_cycles=2, include_design_cards=True)
+        >>> df = pool.to_df(num_cycles=2)
         >>> df = pool.to_df(num_seqs=100000, show_progress=True)
         """
         # Validate arguments
         if num_seqs is None and num_cycles is None:
             raise ValueError("Either num_seqs or num_cycles must be specified")
+        if chunk_size <= 0:
+            raise ValueError(f"chunk_size must be positive, got {chunk_size}")
 
         # Determine target count
         if num_seqs is not None:
@@ -173,7 +187,7 @@ class ExportMixin:
                 # Strip tags if requested
                 if not write_tags and "seq" in df.columns:
                     df = df.copy()
-                    df["seq"] = df["seq"].apply(_strip_tags)
+                    df["seq"] = df["seq"].map(_strip_tags, na_action="ignore")
 
                 # Filter columns if specified
                 if columns is not None:
@@ -211,7 +225,6 @@ class ExportMixin:
         seed: Optional[Integral] = None,
         discard_null_seqs: bool = True,
         # CSV/TSV options
-        include_design_cards: bool = False,
         columns: Optional[list[str]] = None,
         # FASTA options
         line_width: Optional[Integral] = 60,
@@ -254,10 +267,10 @@ class ExportMixin:
             Random seed for reproducibility.
         discard_null_seqs : bool, default True
             If True, skip sequences that were filtered out (NullSeq).
-        include_design_cards : bool, default False
-            For CSV/TSV/JSONL: include design card columns in output.
         columns : list[str], optional
-            For CSV/TSV: specific columns to include. Default is ['name', 'seq'].
+            For CSV/TSV: columns to include in the output. Default columns are
+            ``'name'`` and ``'seq'``; operations with design cards add additional
+            columns. Use ``columns=['name', 'seq']`` to exclude card columns.
         line_width : int, optional, default 60
             For FASTA: wrap sequences at this width. None for no wrapping.
         description : str or callable, optional
@@ -275,6 +288,12 @@ class ExportMixin:
         int
             Number of sequences written to file.
 
+        Raises
+        ------
+        ValueError
+            If neither ``num_seqs`` nor ``num_cycles`` is specified, if
+            ``chunk_size`` is not positive, or if ``file_type`` is invalid.
+
         Examples
         --------
         >>> pool.to_file("library.csv", num_seqs=100000)
@@ -287,7 +306,6 @@ class ExportMixin:
         ...     "library.csv.gz",
         ...     num_seqs=1000000,
         ...     chunk_size=50000,
-        ...     include_design_cards=True,
         ... )
         1000000
 
@@ -309,6 +327,8 @@ class ExportMixin:
         # Validate arguments
         if num_seqs is None and num_cycles is None:
             raise ValueError("Either num_seqs or num_cycles must be specified")
+        if chunk_size <= 0:
+            raise ValueError(f"chunk_size must be positive, got {chunk_size}")
 
         # Auto-detect file type from extension if not specified
         if file_type is None:
@@ -339,7 +359,6 @@ class ExportMixin:
                 write_style=write_style,
                 seed=seed,
                 discard_null_seqs=discard_null_seqs,
-                include_design_cards=include_design_cards,
                 columns=columns,
                 sep=",",
                 show_progress=show_progress,
@@ -354,7 +373,6 @@ class ExportMixin:
                 write_style=write_style,
                 seed=seed,
                 discard_null_seqs=discard_null_seqs,
-                include_design_cards=include_design_cards,
                 columns=columns,
                 sep="\t",
                 show_progress=show_progress,
@@ -382,7 +400,6 @@ class ExportMixin:
                 write_style=write_style,
                 seed=seed,
                 discard_null_seqs=discard_null_seqs,
-                include_design_cards=include_design_cards,
                 show_progress=show_progress,
             )
 
@@ -395,7 +412,6 @@ class ExportMixin:
         write_style: bool,
         seed: Optional[int],
         discard_null_seqs: bool,
-        include_design_cards: bool,
         columns: Optional[list[str]],
         sep: str,
         show_progress: bool = False,
@@ -425,7 +441,7 @@ class ExportMixin:
                 # Strip tags if requested
                 if not write_tags and "seq" in df.columns:
                     df = df.copy()
-                    df["seq"] = df["seq"].apply(_strip_tags)
+                    df["seq"] = df["seq"].map(_strip_tags, na_action="ignore")
 
                 # Filter columns if specified
                 if columns is not None:
@@ -472,13 +488,14 @@ class ExportMixin:
     ) -> int:
         """Export to FASTA format."""
         written = 0
+        processed = 0
         first_chunk = True
 
         pbar = _make_progress_bar(target_count, "Generating sequences") if show_progress else None
 
         try:
-            while written < target_count:
-                remaining = target_count - written
+            while processed < target_count:
+                remaining = target_count - processed
                 this_chunk = min(chunk_size, remaining)
 
                 df = self.generate_library(
@@ -495,10 +512,11 @@ class ExportMixin:
                 # Write FASTA entries
                 with _open_file(path, "w" if first_chunk else "a") as f:
                     for _, row in df.iterrows():
-                        name = row.get("name", f"seq_{written}")
+                        name = row.get("name") or f"seq_{written}"
                         seq = row.get("seq", "")
 
                         if seq is None:
+                            processed += 1
                             continue
 
                         # Strip tags if requested
@@ -524,6 +542,7 @@ class ExportMixin:
                             f.write(seq + "\n")
 
                         written += 1
+                        processed += 1
                         chunk_written += 1
 
                 first_chunk = False
@@ -549,7 +568,6 @@ class ExportMixin:
         write_style: bool,
         seed: Optional[int],
         discard_null_seqs: bool,
-        include_design_cards: bool,
         show_progress: bool = False,
     ) -> int:
         """Export to JSON Lines format."""
