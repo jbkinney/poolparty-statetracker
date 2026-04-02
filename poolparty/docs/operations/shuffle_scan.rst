@@ -42,6 +42,11 @@ Parameters
      - ``None``
      - Name of a tagged region to restrict the scan to. Flanks are never
        modified.
+   * - ``shuffle_type``
+     - ``str``
+     - ``"mono"``
+     - ``"mono"`` shuffles individual bases; ``"dinuc"`` preserves
+       dinucleotide frequencies.
    * - ``shuffles_per_position``
      - ``int``
      - ``1``
@@ -68,6 +73,12 @@ Parameters
      - ``int | None``
      - ``None``
      - Controls which axis varies fastest when ``shuffles_per_position > 1``.
+
+.. note::
+
+   With ``shuffle_type="dinuc"``, the **first and last bases of each window
+   are always fixed** — this is a mathematical constraint of the Euler-path
+   algorithm used to preserve dinucleotide frequencies.
 
 ----
 

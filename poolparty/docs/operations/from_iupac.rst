@@ -64,6 +64,10 @@ Parameters
      - ``str | None``
      - ``None``
      - Display style applied to every generated sequence.
+   * - ``cards``
+     - ``dict | list | None``
+     - ``None``
+     - Design card columns to include in library output.
 
 ----
 

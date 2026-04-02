@@ -93,6 +93,8 @@ Operations that systematically tile across a sequence with a sliding window, app
      - Shuffle bases within a sliding window at each position.
    * - :doc:`mutagenize_scan`
      - Apply random point mutations within a sliding window tiling across the sequence.
+   * - :doc:`subseq_scan`
+     - Extract the subsequence at each sliding-window position.
 
 ----
 
@@ -131,6 +133,8 @@ Operations that modify sequences by tagging, replacing, or applying transformati
      - Replace the content of a named region with sequences from a pool.
    * - :doc:`apply_at_region`
      - Apply a transformation function to the content of a named region.
+   * - :doc:`extract_region`
+     - Extract the content of a named region as a new pool.
    * - :doc:`region_scan`
      - Run a replacement scan confined to a named region.
 
@@ -155,6 +159,8 @@ Operations that manipulate the state space of a pool without directly modifying 
      - Retain a contiguous slice of the state space.
    * - :doc:`shuffle_states`
      - Randomly reorder the state space.
+   * - :doc:`sync`
+     - Synchronize multiple pools to iterate in lockstep (in-place).
 
 ----
 
@@ -174,6 +180,8 @@ Operations that specifically target open reading frames (ORFs) within sequences,
      - Tag an ORF region within a longer sequence.
    * - :doc:`stylize_orf`
      - Apply alternating codon colours to visualize reading frames.
+   * - :doc:`reverse_translate`
+     - Back-translate a protein pool to DNA using a codon table.
 
 ----
 
@@ -195,6 +203,10 @@ Operations that apply deterministic transformations to sequences, such as taking
      - Remove gap characters (``-``) from sequences.
    * - :doc:`clear_annotation`
      - Strip region tags while keeping the underlying sequence.
+   * - :doc:`slice_seq`
+     - Extract a subsequence by index range, named region, or both.
+   * - :doc:`add_prefix`
+     - Add a label prefix to sequence names without modifying sequences.
 
 ----
 
@@ -274,5 +286,11 @@ Operations typically used at the end of a design pipeline to generate a final li
    score
    flip
    get_barcodes
+   subseq_scan
+   extract_region
+   sync
+   reverse_translate
+   slice_seq
+   add_prefix
    generate_library
    materialize

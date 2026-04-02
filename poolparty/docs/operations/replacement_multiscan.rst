@@ -12,6 +12,83 @@ substitutions.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :widths: 20 18 12 50
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pool``
+     - ``Pool | str``
+     - —
+     - Input pool or sequence string.
+   * - ``num_replacements``
+     - ``int``
+     - —
+     - Number of simultaneous non-overlapping replacement windows per draw.
+   * - ``replacement_pools``
+     - ``Pool | list[Pool]``
+     - —
+     - Pool(s) supplying replacement content. A single pool is reused at
+       every site; a list assigns one pool per site.
+   * - ``positions``
+     - ``list | None``
+     - ``None``
+     - Allowed position sets for each replacement window. ``None`` allows
+       any valid non-overlapping arrangement.
+   * - ``region``
+     - ``str | list | None``
+     - ``None``
+     - Named region or interval to restrict replacements to.
+   * - ``names``
+     - ``list[str] | None``
+     - ``None``
+     - Names for each replacement window.
+   * - ``style``
+     - ``str | None``
+     - ``None``
+     - Display style for replaced content.
+   * - ``insertion_mode``
+     - ``str``
+     - ``"ordered"``
+     - ``"ordered"`` preserves left-to-right order of positions;
+       ``"unordered"`` allows any permutation.
+   * - ``min_spacing``
+     - ``int | None``
+     - ``None``
+     - Minimum gap (in bases) between replacement windows.
+   * - ``max_spacing``
+     - ``int | None``
+     - ``None``
+     - Maximum gap (in bases) between replacement windows.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for the operation node name in the pool graph.
+   * - ``mode``
+     - ``str``
+     - ``"random"``
+     - ``"random"`` or ``"sequential"``.
+   * - ``num_states``
+     - ``int | None``
+     - ``None``
+     - Number of states. ``None`` lets PoolParty choose automatically.
+   * - ``iter_order``
+     - ``float | None``
+     - ``None``
+     - Iteration priority for downstream multi-pool iteration.
+   * - ``cards``
+     - ``dict | list | None``
+     - ``None``
+     - Design card columns to include in library output.
+
+----
+
 Examples
 --------
 

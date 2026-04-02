@@ -12,6 +12,50 @@ requested than the pool contains.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :widths: 20 18 12 50
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pool``
+     - ``Pool``
+     - —
+     - Input pool to sample from.
+   * - ``num_seqs``
+     - ``int | None``
+     - ``None``
+     - Number of sequences to draw. Provide either ``num_seqs`` or
+       ``seq_states``.
+   * - ``seq_states``
+     - ``list[int] | None``
+     - ``None``
+     - Explicit list of state indices to select. Overrides ``num_seqs``.
+   * - ``seed``
+     - ``int | None``
+     - ``None``
+     - Random seed for reproducible sampling.
+   * - ``with_replacement``
+     - ``bool``
+     - ``True``
+     - If ``True``, states may be drawn more than once when ``num_seqs``
+       exceeds the pool's state count.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for the operation node name in the pool graph.
+   * - ``iter_order``
+     - ``float | None``
+     - ``None``
+     - Iteration priority for downstream multi-pool iteration.
+
+----
+
 Examples
 --------
 

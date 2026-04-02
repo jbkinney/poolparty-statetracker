@@ -31,6 +31,12 @@ Parameters
      - ``None``
      - Name of a tagged region to restrict the shuffle to. Flanking sequences
        are returned unchanged.
+   * - ``shuffle_type``
+     - ``str``
+     - ``"mono"``
+     - ``"mono"`` randomly permutes individual bases (preserves
+       mononucleotide composition). ``"dinuc"`` uses an Euler-path shuffle
+       that preserves dinucleotide frequencies.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -53,6 +59,16 @@ Parameters
      - ``str | None``
      - ``None``
      - Display style applied to the shuffled result.
+   * - ``cards``
+     - ``dict | list | None``
+     - ``None``
+     - Design card columns to include in library output.
+
+.. note::
+
+   With ``shuffle_type="dinuc"``, the **first and last bases are always
+   fixed** — this is a mathematical constraint of the Euler-path algorithm
+   used to preserve dinucleotide frequencies.
 
 ----
 

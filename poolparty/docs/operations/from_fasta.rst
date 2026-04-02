@@ -64,6 +64,16 @@ Parameters
      - ``int | None``
      - ``None``
      - Dimension-name ordering for downstream multi-pool iteration.
+   * - ``cards``
+     - ``dict | list | None``
+     - ``None``
+     - Design card columns to include in library output.
+
+.. note::
+
+   For **circular genomes**, ``start > stop`` indicates wrap-around across
+   the origin — the extracted sequence runs from ``start`` to the end of
+   the chromosome and continues from the beginning to ``stop``.
 
 ----
 

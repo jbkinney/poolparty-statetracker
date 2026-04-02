@@ -70,6 +70,10 @@ Parameters
      - ``str | None``
      - ``None``
      - Prefix for the operation node name in the pool graph.
+   * - ``cards``
+     - ``dict | list | None``
+     - ``None``
+     - Design card columns to include in library output.
 
 ----
 

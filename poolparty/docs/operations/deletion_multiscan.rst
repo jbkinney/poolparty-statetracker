@@ -11,6 +11,82 @@ markers at each site. Deletion sites are guaranteed to be non-overlapping.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :widths: 20 18 12 50
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pool``
+     - ``Pool | str``
+     - —
+     - Input pool or sequence string.
+   * - ``deletion_length``
+     - ``int``
+     - —
+     - Length of each deletion window.
+   * - ``num_deletions``
+     - ``int``
+     - —
+     - Number of simultaneous non-overlapping deletions per draw.
+   * - ``deletion_marker``
+     - ``str | None``
+     - ``"-"``
+     - String to place at each deletion site. ``None`` removes the bases
+       outright, producing shorter output sequences.
+   * - ``positions``
+     - ``list | None``
+     - ``None``
+     - Allowed position sets for each deletion window. ``None`` allows any
+       valid non-overlapping arrangement.
+   * - ``region``
+     - ``str | list | None``
+     - ``None``
+     - Named region or interval to restrict deletions to.
+   * - ``names``
+     - ``list[str] | None``
+     - ``None``
+     - Names for each deletion window.
+   * - ``min_spacing``
+     - ``int | None``
+     - ``None``
+     - Minimum gap (in bases) between deletion windows.
+   * - ``max_spacing``
+     - ``int | None``
+     - ``None``
+     - Maximum gap (in bases) between deletion windows.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for the operation node name in the pool graph.
+   * - ``mode``
+     - ``str``
+     - ``"random"``
+     - ``"random"`` or ``"sequential"``.
+   * - ``num_states``
+     - ``int | None``
+     - ``None``
+     - Number of states. ``None`` lets PoolParty choose automatically.
+   * - ``style``
+     - ``str | None``
+     - ``None``
+     - Display style for deletion markers.
+   * - ``iter_order``
+     - ``float | None``
+     - ``None``
+     - Iteration priority for downstream multi-pool iteration.
+   * - ``cards``
+     - ``dict | list | None``
+     - ``None``
+     - Design card columns to include in library output.
+
+----
+
 Examples
 --------
 

@@ -59,7 +59,8 @@ Parameters
    * - ``style``
      - ``str | None``
      - ``None``
-     - Named display style applied to the deleted window.
+     - Named display style applied to the deletion marker. Only takes
+       effect when ``deletion_marker`` is not ``None``.
    * - ``iter_order``
      - ``int | None``
      - ``None``

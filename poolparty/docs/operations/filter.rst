@@ -2,14 +2,23 @@ filter
 ======
 
 Retain only the sequences for which a predicate function returns ``True``; all
-other sequences are replaced with a null value that propagates silently through
-downstream operations and is excluded from output when
-:func:`~poolparty.generate_library` is called with ``discard_null_seqs=True``.
+other sequences are replaced with a ``NullSeq`` sentinel.
 
 .. code-block:: python
 
     import poolparty as pp
     pp.init()
+
+.. note::
+
+   Rejected sequences are **not removed** from the state space — they
+   become ``NullSeq`` values that propagate silently through every
+   downstream operation.  By default ``generate_library`` still includes
+   ``NullSeq`` rows (as empty values).  Pass ``discard_null_seqs=True`` to
+   exclude them from the output.
+
+   The predicate receives the **tag-free** sequence string (region tags are
+   stripped before evaluation).
 
 ----
 

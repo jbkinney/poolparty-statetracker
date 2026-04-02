@@ -13,6 +13,67 @@ starting point for any number of independent downstream pipelines.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :widths: 20 18 12 50
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pool``
+     - ``Pool | str``
+     - —
+     - Input pool to materialize.
+   * - ``num_seqs``
+     - ``int | None``
+     - ``None``
+     - Number of sequences to generate and cache. Provide either
+       ``num_seqs`` or ``num_cycles``.
+   * - ``num_cycles``
+     - ``int | None``
+     - ``None``
+     - Number of complete cycles through the state space.
+   * - ``seed``
+     - ``int | None``
+     - ``None``
+     - Random seed for reproducible generation.
+   * - ``discard_null_seqs``
+     - ``bool``
+     - ``True``
+     - If ``True``, skip filtered-out (``NullSeq``) sequences.
+   * - ``max_iterations``
+     - ``int | None``
+     - ``None``
+     - Maximum iterations before stopping (useful with filters that reject
+       most draws).
+   * - ``min_acceptance_rate``
+     - ``float | None``
+     - ``None``
+     - If the acceptance rate drops below this threshold, generation stops
+       early.
+   * - ``attempts_per_rate_assessment``
+     - ``int``
+     - ``100``
+     - Number of draws between acceptance-rate checks.
+   * - ``name``
+     - ``str | None``
+     - ``None``
+     - Name for the materialized pool.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for the operation node name in the pool graph.
+   * - ``cards``
+     - ``dict | list | None``
+     - ``None``
+     - Design card columns to include in library output.
+
+----
+
 Examples
 --------
 

@@ -13,6 +13,64 @@ upstream computation and produces concrete output.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :widths: 20 18 12 50
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pool``
+     - ``Pool | str``
+     - —
+     - Pool to evaluate.
+   * - ``num_cycles``
+     - ``int``
+     - ``1``
+     - Number of complete cycles through the state space. Each cycle
+       visits every state exactly once.
+   * - ``num_seqs``
+     - ``int | None``
+     - ``None``
+     - Exact number of sequences to generate. Overrides ``num_cycles``
+       when provided.
+   * - ``seed``
+     - ``int | None``
+     - ``None``
+     - Random seed for reproducible output.
+   * - ``init_state``
+     - ``int | None``
+     - ``None``
+     - Starting state index. ``None`` begins from state 0.
+   * - ``seqs_only``
+     - ``bool``
+     - ``False``
+     - If ``True``, return a plain ``list[str]`` instead of a DataFrame.
+   * - ``discard_null_seqs``
+     - ``bool``
+     - ``False``
+     - If ``True``, skip sequences that were filtered out (``NullSeq``).
+   * - ``max_iterations``
+     - ``int | None``
+     - ``None``
+     - Maximum iterations before stopping (useful with filters that reject
+       most draws).
+   * - ``min_acceptance_rate``
+     - ``float | None``
+     - ``None``
+     - If the acceptance rate drops below this threshold, generation stops
+       early.
+   * - ``attempts_per_rate_assessment``
+     - ``int``
+     - ``100``
+     - Number of draws between acceptance-rate checks.
+
+----
+
 Examples
 --------
 

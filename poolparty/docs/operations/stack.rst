@@ -12,6 +12,38 @@ pools, enumerated in order.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :widths: 20 18 12 50
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pools``
+     - ``list[Pool]``
+     - —
+     - List of pools to stack. States are concatenated in order.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for the operation node name in the pool graph.
+   * - ``iter_order``
+     - ``float | None``
+     - ``None``
+     - Iteration priority for downstream multi-pool iteration.
+   * - ``cards``
+     - ``dict | list | None``
+     - ``None``
+     - Design card columns to include in library output. Available card
+       key: ``"active_parent"`` (index of which input pool produced each
+       state).
+
+----
+
 Examples
 --------
 

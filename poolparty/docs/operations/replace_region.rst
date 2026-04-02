@@ -41,6 +41,16 @@ Parameters
      - ``False``
      - When ``True``, reverse-complement each content sequence before
        inserting it.
+   * - ``sync``
+     - ``bool``
+     - ``False``
+     - When ``True``, pair background and content states 1:1 (lockstep
+       iteration) instead of taking the Cartesian product.
+   * - ``keep_tags``
+     - ``bool``
+     - ``False``
+     - When ``True``, preserve the region tags around the replaced content
+       so the region can still be referenced by downstream operations.
    * - ``iter_order``
      - ``int | None``
      - ``None``

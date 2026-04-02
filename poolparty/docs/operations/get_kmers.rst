@@ -61,6 +61,10 @@ Parameters
      - ``int | None``
      - ``None``
      - Dimension-name ordering for downstream multi-pool iteration.
+   * - ``cards``
+     - ``dict | list | None``
+     - ``None``
+     - Design card columns to include in library output.
 
 ----
 

@@ -12,6 +12,40 @@ state count — each input state appears ``times`` times consecutively.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :widths: 20 15 15 50
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pool``
+     - ``Pool``
+     - —
+     - Input pool whose states will be repeated.
+   * - ``times``
+     - ``int``
+     - —
+     - Number of times to repeat each state.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for the operation node name in the pool graph.
+   * - ``iter_order``
+     - ``float | None``
+     - ``None``
+     - Iteration priority for downstream multi-pool iteration.
+   * - ``cards``
+     - ``dict | list | None``
+     - ``None``
+     - Design card columns to include in library output.
+
+----
+
 Examples
 --------
 
