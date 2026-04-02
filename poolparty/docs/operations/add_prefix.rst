@@ -16,7 +16,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 15 15 50
+   :widths: 20 18 12 50
    :header-rows: 1
 
    * - Parameter
@@ -25,11 +25,11 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool``
-     - —
+     - *(required)*
      - Input pool.
    * - ``prefix``
      - ``str``
-     - —
+     - *(required)*
      - Prefix string appended to each sequence name.
    * - ``iter_order``
      - ``float | None``

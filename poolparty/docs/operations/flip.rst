@@ -132,6 +132,27 @@ returned unchanged.
     AAAA<span class="pp-region">CGATCGAT</span>TTTT
     </div>
 
+Using the ``flip`` design card
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pass ``cards={"flip": "orientation"}`` to add a column recording whether
+each sequence is forward or reverse-complemented.
+
+.. code-block:: python
+
+    wt      = pp.from_seq("ATCGATCG")
+    flipped = pp.flip(wt, cards={"flip": "orientation"})
+    df      = flipped.generate_library()
+    # df["orientation"] contains "forward" or "rc" for each row
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">Pool (2 sequences &mdash; "orientation" column in output)</em>
+    ATCGATCG &nbsp;<em style="color:#6b7280;">orientation=forward</em><br>
+    CGATCGAT &nbsp;<em style="color:#6b7280;">orientation=rc</em>
+    </div>
+
 Use with iter_order in a join
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

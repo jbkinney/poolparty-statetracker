@@ -26,7 +26,7 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool | str``
-     - —
+     - *(required)*
      - Pool to evaluate.
    * - ``num_cycles``
      - ``int``
@@ -118,8 +118,6 @@ DataFrame.
     </table>
     </div>
 
-See :func:`~poolparty.generate_library`.
-
 Controlling output size with ``num_seqs``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -156,8 +154,6 @@ the pool's state-space size.
     </tr>
     </table>
     </div>
-
-See :func:`~poolparty.generate_library`.
 
 Reproducible output with ``seed``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -198,8 +194,6 @@ always produces identical sequences.
     </table>
     </div>
 
-See :func:`~poolparty.generate_library`.
-
 Get a plain list with ``seqs_only=True``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -223,8 +217,6 @@ function), set ``seqs_only=True`` to skip DataFrame construction.
      'AT<span class="pp-mut">A</span>GATCG',
      '<span class="pp-mut">T</span>TCGATCG']
     </div>
-
-See :func:`~poolparty.generate_library`.
 
 Chain a full pipeline: mutagenize &rarr; filter &rarr; generate_library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

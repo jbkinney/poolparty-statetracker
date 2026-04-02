@@ -25,15 +25,15 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool | str``
-     - —
+     - *(required)*
      - Input pool or sequence string.
    * - ``num_insertions``
      - ``int``
-     - —
+     - *(required)*
      - Number of simultaneous non-overlapping insertion sites per draw.
    * - ``insertion_pools``
      - ``Pool | list[Pool]``
-     - —
+     - *(required)*
      - Pool(s) supplying inserted content. A single pool is reused at every
        site; a list assigns one pool per site.
    * - ``positions``
@@ -119,8 +119,6 @@ Insert a single random base at each of two independently chosen positions.
     <span class="pp-ellipsis">... each draw inserts 1 base at each of 2 distinct positions</span>
     </div>
 
-See :func:`~poolparty.insertion_multiscan`.
-
 Two simultaneous 2-mer insertions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -143,8 +141,6 @@ each of the two chosen positions.
     ATCG<span class="pp-ins">AA</span>ATCG<span class="pp-ins">GT</span>TCG<br>
     <span class="pp-ellipsis">... each draw inserts a random 2-mer at each of 2 positions</span>
     </div>
-
-See :func:`~poolparty.insertion_multiscan`.
 
 Multiscan insertion within a named region
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

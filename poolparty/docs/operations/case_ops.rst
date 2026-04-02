@@ -33,8 +33,6 @@ Convert every base of a lowercase sequence to uppercase.
     ATCGATCG
     </div>
 
-See :func:`~poolparty.upper`.
-
 upper: uppercase a named region only
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -53,8 +51,6 @@ bases remain unchanged.
     aaaa<span class="pp-region">ATCGATCG</span>tttt
     </div>
 
-See :func:`~poolparty.upper`.
-
 lower: lowercase a full sequence
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -71,8 +67,6 @@ Convert every base of an uppercase sequence to lowercase.
     <em class="pp-header">Pool (1 sequence &mdash; all bases lowercased)</em>
     atcgatcg
     </div>
-
-See :func:`~poolparty.lower`.
 
 lower: lowercase a named region only
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,8 +86,6 @@ are returned unchanged.
     AAAA<span class="pp-region">atcgatcg</span>TTTT
     </div>
 
-See :func:`~poolparty.lower`.
-
 swapcase: swap a mixed-case sequence
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -110,8 +102,6 @@ Invert the case of every base: uppercase becomes lowercase and vice versa.
     <em class="pp-header">Pool (1 sequence &mdash; case of each base inverted)</em>
     atcgATCG
     </div>
-
-See :func:`~poolparty.swapcase`.
 
 swapcase: visually distinguish a region
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

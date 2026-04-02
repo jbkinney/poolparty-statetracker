@@ -35,8 +35,6 @@ Apply alternating ``codon_a`` / ``codon_b`` styles across the 5-codon CDS
     <span class="pp-codon-a">ATG</span><span class="pp-codon-b">AAA</span><span class="pp-codon-a">TTT</span><span class="pp-codon-b">GGG</span><span class="pp-codon-a">CCC</span>
     </div>
 
-See :func:`~poolparty.stylize_orf`.
-
 Apply to a longer ORF
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -54,8 +52,6 @@ two-colour cycle; the pattern repeats automatically.
     <em class="pp-header">Pool (1 sequence &mdash; 7-codon CDS with alternating codon colours)</em>
     <span class="pp-codon-a">ATG</span><span class="pp-codon-b">AAA</span><span class="pp-codon-a">TTT</span><span class="pp-codon-b">GGG</span><span class="pp-codon-a">CCC</span><span class="pp-codon-b">AGC</span><span class="pp-codon-a">GAT</span>
     </div>
-
-See :func:`~poolparty.stylize_orf`.
 
 Chain with mutagenize_orf to visualize mutations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

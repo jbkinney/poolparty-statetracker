@@ -32,8 +32,6 @@ Take the reverse complement of the 4-mer ``ATCG``; the result is ``CGAT``.
     CGAT
     </div>
 
-See :func:`~poolparty.rc`.
-
 Reverse complement a longer tagged sequence
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -51,8 +49,6 @@ Reverse-complement the full sequence ``AAAA<cre>ATCGATCG</cre>TTTT``
     <em class="pp-header">Pool (1 sequence &mdash; full 16-mer reverse-complemented; tags removed)</em>
     AAAACGATCGATTTTT
     </div>
-
-See :func:`~poolparty.rc`.
 
 Reverse complement only a named region
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

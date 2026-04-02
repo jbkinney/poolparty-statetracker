@@ -16,7 +16,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 15 15 50
+   :widths: 20 18 12 50
    :header-rows: 1
 
    * - Parameter
@@ -25,11 +25,11 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool``
-     - —
+     - *(required)*
      - Input pool whose states will be repeated.
    * - ``times``
      - ``int``
-     - —
+     - *(required)*
      - Number of times to repeat each state.
    * - ``prefix``
      - ``str | None``
@@ -67,8 +67,6 @@ in order.
     AAAA<br>AAAA<br>AAAA<br>CCCC<br>CCCC<br>CCCC
     </div>
 
-See :func:`~poolparty.repeat`.
-
 Repeat a Scan Result to Get More Coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -97,8 +95,6 @@ sequence.
     A<span class="pp-del">--</span>GATCG<br>
     <span class="pp-ellipsis">... (14 total &mdash; all 7 deletion variants repeated twice)</span>
     </div>
-
-See :func:`~poolparty.repeat`.
 
 Difference Between ``repeat`` and the ``*`` Operator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

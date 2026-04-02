@@ -11,6 +11,38 @@ syntax, without altering the sequences themselves.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :widths: 20 18 12 50
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pool``
+     - ``Pool``
+     - *(required)*
+     - Input pool whose state space will be sliced.
+   * - ``key``
+     - ``int | slice``
+     - *(required)*
+     - Integer index (single state) or ``slice`` object specifying which
+       states to retain. Supports negative indices and standard Python
+       slice syntax.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for the operation node name in the pool graph.
+   * - ``iter_order``
+     - ``float | None``
+     - ``None``
+     - Iteration priority for downstream multi-pool iteration.
+
+----
+
 Examples
 --------
 
@@ -32,8 +64,6 @@ eight 2-mers that begin with ``A`` or ``C``.
     AA<br>AC<br>AG<br>AT<br>CA<br>CC<br>CG<br>CT
     </div>
 
-See :func:`~poolparty.state_slice`.
-
 Middle Slice: States 10–15
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -51,8 +81,6 @@ sub-range of sequences without regenerating the entire pool.
     <em class="pp-header">Pool (5 sequences &mdash; states 10&ndash;14 of 16 2-mers)</em>
     GG<br>GT<br>TA<br>TC<br>TG
     </div>
-
-See :func:`~poolparty.state_slice`.
 
 Last 4 States Using Negative Indexing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

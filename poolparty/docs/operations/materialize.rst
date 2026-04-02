@@ -26,7 +26,7 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool | str``
-     - —
+     - *(required)*
      - Input pool to materialize.
    * - ``num_seqs``
      - ``int | None``
@@ -110,8 +110,6 @@ scan operations without re-running the mutation logic each time.
     <span class="pp-ellipsis">... (20 total)</span>
     </div>
 
-See :func:`~poolparty.materialize`.
-
 Reproducible caching with ``seed``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -140,8 +138,6 @@ time the script is run.
     ATCGAT<span class="pp-mut">T</span>G<br>
     <span class="pp-mut">C</span>TCGATCG
     </div>
-
-See :func:`~poolparty.materialize`.
 
 Materialize then apply a deletion scan
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

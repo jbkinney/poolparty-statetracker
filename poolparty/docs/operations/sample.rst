@@ -25,7 +25,7 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool``
-     - —
+     - *(required)*
      - Input pool to sample from.
    * - ``num_seqs``
      - ``int | None``
@@ -77,8 +77,6 @@ representative sample.
     GCTA<br>TTAC<br>CAGG<br>AGCT<br>TGCA
     </div>
 
-See :func:`~poolparty.sample`.
-
 Sample with a Fixed Seed for Reproducibility
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -96,8 +94,6 @@ pipeline is evaluated.
     <em class="pp-header">Pool (5 sequences &mdash; deterministic sample, seed=42)</em>
     CGTA<br>AGTC<br>TTGA<br>GCAC<br>ATCG
     </div>
-
-See :func:`~poolparty.sample`.
 
 Sample More Sequences Than the Pool Has States (Cycling)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -117,8 +113,6 @@ always honoured.
     <em class="pp-header">Pool (9 sequences &mdash; 3-state pool sampled 9&times; with replacement, seed=0)</em>
     AAAA<br>GGGG<br>AAAA<br>CCCC<br>GGGG<br>AAAA<br>CCCC<br>GGGG<br>CCCC
     </div>
-
-See :func:`~poolparty.sample`.
 
 Sample from a Stochastic Pool
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

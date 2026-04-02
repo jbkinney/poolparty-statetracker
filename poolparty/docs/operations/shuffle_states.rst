@@ -12,6 +12,42 @@ unchanged.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :widths: 20 18 12 50
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pool``
+     - ``Pool``
+     - *(required)*
+     - Input pool whose state order will be shuffled.
+   * - ``seed``
+     - ``int | None``
+     - ``None``
+     - Random seed for deterministic shuffling. ``None`` uses a random
+       seed.
+   * - ``permutation``
+     - ``list[int] | None``
+     - ``None``
+     - Explicit permutation of state indices. Overrides ``seed`` when
+       provided.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for the operation node name in the pool graph.
+   * - ``iter_order``
+     - ``float | None``
+     - ``None``
+     - Iteration priority for downstream multi-pool iteration.
+
+----
+
 Examples
 --------
 
@@ -33,8 +69,6 @@ permutation is deterministic and reproducible.
     TG<br>AT<br>GA<br>CT<br>CG<br>TA<br>GC<br>CA<br>TC<br>GT<br>GG<br>CC<br>AA<br>TT<br>AC<br>AG
     </div>
 
-See :func:`~poolparty.state_shuffle`.
-
 Shuffle Then Slice to Get a Random Subset
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -53,8 +87,6 @@ subset without replacement — equivalent to a seeded random sample.
     <em class="pp-header">Pool (6 sequences &mdash; first 6 states of seed=0 shuffle, no replacement)</em>
     TG<br>AT<br>GA<br>CT<br>CG<br>TA
     </div>
-
-See :func:`~poolparty.state_shuffle`.
 
 Two Shuffles with Different Seeds Produce Different Orders
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

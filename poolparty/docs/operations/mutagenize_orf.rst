@@ -37,8 +37,6 @@ Draw one missense codon mutation per sequence from the 5-codon CDS
     <span class="pp-ellipsis">... each draw mutates one codon to a different amino acid</span>
     </div>
 
-See :func:`~poolparty.mutagenize_orf`.
-
 Two simultaneous codon mutations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -60,8 +58,6 @@ distinct codon positions.
     <span class="pp-ellipsis">... each draw carries exactly 2 missense substitutions at distinct codons</span>
     </div>
 
-See :func:`~poolparty.mutagenize_orf`.
-
 Restrict mutations to specific codons
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -82,8 +78,6 @@ Here only codon positions 1 and 3 (AAA and GGG) can be mutated.
     ATG<span class="pp-mut">CGT</span>TTTGGGCCC<br>
     <span class="pp-ellipsis">... only the AAA (pos 1) or GGG (pos 3) codon is mutated each draw</span>
     </div>
-
-See :func:`~poolparty.mutagenize_orf`.
 
 Apply to a CDS embedded in flanking UTR context
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

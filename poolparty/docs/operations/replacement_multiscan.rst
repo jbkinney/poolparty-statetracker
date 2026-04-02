@@ -25,15 +25,15 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool | str``
-     - —
+     - *(required)*
      - Input pool or sequence string.
    * - ``num_replacements``
      - ``int``
-     - —
+     - *(required)*
      - Number of simultaneous non-overlapping replacement windows per draw.
    * - ``replacement_pools``
      - ``Pool | list[Pool]``
-     - —
+     - *(required)*
      - Pool(s) supplying replacement content. A single pool is reused at
        every site; a list assigns one pool per site.
    * - ``positions``
@@ -115,8 +115,6 @@ sequence.
     <span class="pp-ellipsis">... each draw places 2 substitutions at distinct positions</span>
     </div>
 
-See :func:`~poolparty.replacement_multiscan`.
-
 Three simultaneous replacements on a longer sequence
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -138,8 +136,6 @@ Scale to three concurrent substitutions across a 16-mer background.
     A<span class="pp-mut">T</span>CGAT<span class="pp-mut">A</span>GATCG<span class="pp-mut">G</span>CG<br>
     <span class="pp-ellipsis">... each draw has 3 substitutions at non-overlapping positions</span>
     </div>
-
-See :func:`~poolparty.replacement_multiscan`.
 
 Multiscan within a named region
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

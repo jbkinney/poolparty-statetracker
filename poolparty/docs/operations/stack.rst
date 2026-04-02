@@ -25,7 +25,7 @@ Parameters
      - Description
    * - ``pools``
      - ``list[Pool]``
-     - —
+     - *(required)*
      - List of pools to stack. States are concatenated in order.
    * - ``prefix``
      - ``str | None``
@@ -67,8 +67,6 @@ sequences.
     AAAA<br>CCCC<br>GGGG
     </div>
 
-See :func:`~poolparty.stack`.
-
 Stack Pools of Different Sizes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -87,8 +85,6 @@ with six states total.
     <em class="pp-header">Pool (6 sequences &mdash; 4 from pool_a followed by 2 from pool_b)</em>
     AAAA<br>CCCC<br>GGGG<br>TTTT<br>ACGT<br>TGCA
     </div>
-
-See :func:`~poolparty.stack`.
 
 Stack the Results of Two Scan Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,8 +114,6 @@ covering both targets.
     GGGG<span class="pp-del">--</span>TT<br>
     <span class="pp-ellipsis">... (7 total from wt_b)</span>
     </div>
-
-See :func:`~poolparty.stack`.
 
 Stack Then Generate a Library to Show Interleaved Draws
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

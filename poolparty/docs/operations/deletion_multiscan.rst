@@ -24,15 +24,15 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool | str``
-     - —
+     - *(required)*
      - Input pool or sequence string.
    * - ``deletion_length``
      - ``int``
-     - —
+     - *(required)*
      - Length of each deletion window.
    * - ``num_deletions``
      - ``int``
-     - —
+     - *(required)*
      - Number of simultaneous non-overlapping deletions per draw.
    * - ``deletion_marker``
      - ``str | None``
@@ -111,8 +111,6 @@ deletion marker.
     <span class="pp-ellipsis">... each draw places 2 single-base deletions at distinct positions</span>
     </div>
 
-See :func:`~poolparty.deletion_multiscan`.
-
 Two simultaneous 2-base deletions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -132,8 +130,6 @@ Delete two non-overlapping dinucleotide windows per draw.
     ATCG<span class="pp-del">--</span>CG<span class="pp-del">--</span>CG<br>
     <span class="pp-ellipsis">... each draw places 2 non-overlapping 2-base deletions</span>
     </div>
-
-See :func:`~poolparty.deletion_multiscan`.
 
 Multiscan deletion within a named region
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

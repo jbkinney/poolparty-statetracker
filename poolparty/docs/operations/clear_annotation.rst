@@ -36,8 +36,6 @@ plain sequence with no markup.
     AAAATCGTTTT
     </div>
 
-See :func:`~poolparty.clear_annotation`.
-
 Strip tags from the result of a region_scan
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -62,8 +60,6 @@ for counting or export.
     AAAATCGTTTT<br>
     <span class="pp-ellipsis">... (16 total, one per replacement)</span>
     </div>
-
-See :func:`~poolparty.clear_annotation`.
 
 Clear annotation before saving to FASTA
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

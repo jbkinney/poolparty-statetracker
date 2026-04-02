@@ -115,6 +115,27 @@ Only bases inside the tagged region are permuted; flanks are unchanged.
     <span class="pp-ellipsis">... (AAAA and TTTT always unchanged)</span>
     </div>
 
+Dinucleotide-preserving shuffle
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``shuffle_type="dinuc"`` preserves dinucleotide frequencies using an
+Euler-path algorithm. Note that the first and last bases are always fixed.
+
+.. code-block:: python
+
+    wt       = pp.from_seq("ACGTACGTAC")
+    shuffled = pp.shuffle_seq(wt, shuffle_type="dinuc", num_states=3)
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">Pool (3 stochastic draws &mdash; dinucleotide frequencies preserved)</em>
+    ACGTACGTAC<br>
+    ACGACGTAC<br>
+    ACTACGGTAC<br>
+    <span class="pp-ellipsis">... (first A and last C always fixed)</span>
+    </div>
+
 Fixing the number of variants with ``num_states``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

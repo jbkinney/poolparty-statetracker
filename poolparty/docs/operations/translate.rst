@@ -33,8 +33,6 @@ peptide M-K-F-G-P.
     MKFGP
     </div>
 
-See :func:`~poolparty.translate`.
-
 Translate a mutagenized CDS pool
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -56,8 +54,6 @@ consequences of each codon mutation.
     MKF<span class="pp-mut">H</span>P<br>
     <span class="pp-ellipsis">... each draw is the protein product of one mutagenized CDS</span>
     </div>
-
-See :func:`~poolparty.translate`.
 
 Translate only the ORF region within a longer sequence
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

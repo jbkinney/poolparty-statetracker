@@ -31,7 +31,7 @@ Parameters
      - Description
    * - ``pools``
      - ``list[Pool]``
-     - —
+     - *(required)*
      - Pools to synchronize. Must all have the same ``num_states``.
 
 Returns ``None`` — pools are modified in-place.

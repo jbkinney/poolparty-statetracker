@@ -49,8 +49,6 @@ Keep only 6-mers whose GC count is at least 3 (GC content &ge; 50 %).
     <span class="pp-ellipsis">... (many more sequences pass; failing sequences are excluded)</span>
     </div>
 
-See :func:`~poolparty.filter`.
-
 Filter by sequence length
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -71,8 +69,6 @@ exactly 8 bases long.
     TTTTAAAA<br>
     <span class="pp-ellipsis">... (sequences of other lengths are silently dropped)</span>
     </div>
-
-See :func:`~poolparty.filter`.
 
 Exclude sequences containing a restriction site
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,8 +93,6 @@ Remove any sequence that contains the EcoRI recognition site ``GAATTC``.
     TTACGCTAGCCA<br>
     <span class="pp-ellipsis">... (any 12-mer containing GAATTC is silently dropped)</span>
     </div>
-
-See :func:`~poolparty.filter`.
 
 Chain: mutagenize then filter for single-mutant sequences
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

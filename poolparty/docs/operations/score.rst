@@ -108,6 +108,35 @@ Any callable works. Here a lambda counts A/T bases for AT richness.
     ATCG &nbsp;<em style="color:#6b7280;">at_count=2</em>
     </div>
 
+Built-in scoring functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PoolParty includes several sequence property functions that work directly
+with ``score``:
+
+- ``pp.calc_gc`` — GC fraction
+- ``pp.calc_complexity`` — linguistic complexity (0–1)
+- ``pp.calc_dust`` — DUST low-complexity score (lower = more complex)
+
+.. code-block:: python
+
+    wt     = pp.from_iupac("NNNNNNNN", mode="sequential", num_states=5)
+    scored = pp.score(wt, pp.calc_complexity, card_key="complexity",
+                     cards={"complexity": "complexity"})
+    df     = scored.generate_library()
+    # df["complexity"] contains the linguistic complexity for each sequence
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">Pool (5 sequences, unchanged &mdash; "complexity" column added)</em>
+    AAAAAAAA &nbsp;<em style="color:#6b7280;">complexity=0.187</em><br>
+    AAAAAAAC &nbsp;<em style="color:#6b7280;">complexity=0.373</em><br>
+    AAAAAAAG &nbsp;<em style="color:#6b7280;">complexity=0.373</em><br>
+    AAAAAAAT &nbsp;<em style="color:#6b7280;">complexity=0.373</em><br>
+    AAAAAACA &nbsp;<em style="color:#6b7280;">complexity=0.476</em>
+    </div>
+
 Score only a named region
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

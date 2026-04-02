@@ -42,8 +42,6 @@ through ``clear_gaps`` to produce gapless sequences of varying length.
     ATCGAT
     </div>
 
-See :func:`~poolparty.clear_gaps`.
-
 Clear gaps from a manually gapped sequence
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -61,8 +59,6 @@ alignment gaps.
     <em class="pp-header">Pool (1 sequence &mdash; four gap characters removed)</em>
     ATCGAT
     </div>
-
-See :func:`~poolparty.clear_gaps`.
 
 Chain clear_gaps with another operation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

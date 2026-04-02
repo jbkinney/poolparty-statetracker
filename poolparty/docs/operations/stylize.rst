@@ -36,8 +36,6 @@ displayed.
     AAAA<span style="color:#dc2626;font-weight:bold;">ATCG</span>TTTT
     </div>
 
-See :func:`~poolparty.stylize`.
-
 Stylize a different region with a different style
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -55,8 +53,6 @@ leaving the rest of the sequence unstyled.
     <em class="pp-header">Pool (1 sequence &mdash; <em>promoter</em> region styled bold blue)</em>
     GCGCGC<span style="color:#1d4ed8;font-weight:bold;">TATAAT</span>ATGAAATTT
     </div>
-
-See :func:`~poolparty.stylize`.
 
 Stylize the full sequence
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

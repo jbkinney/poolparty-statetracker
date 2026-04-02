@@ -26,7 +26,7 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool | str``
-     - —
+     - *(required)*
      - A :class:`~poolparty.ProteinPool` or a protein sequence string
        (e.g. ``"MKTL"``). DNA pools are not accepted.
    * - ``region``

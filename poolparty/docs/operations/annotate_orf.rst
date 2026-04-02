@@ -35,8 +35,6 @@ sequence that also contains 5-prime and 3-prime UTR flanks.
     TAT<span class="pp-region">ATGAAATTTGGGCCC</span>TAA
     </div>
 
-See :func:`~poolparty.annotate_orf`.
-
 Annotate with a display style
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -57,8 +55,6 @@ Apply alternating codon colours at the same time by passing
     <em class="pp-header">Pool (1 sequence &mdash; <em>gene</em> ORF tagged and codon-coloured)</em>
     TAT<span class="pp-region"><span class="pp-codon-a">ATG</span><span class="pp-codon-b">AAA</span><span class="pp-codon-a">TTT</span><span class="pp-codon-b">GGG</span><span class="pp-codon-a">CCC</span></span>TAA
     </div>
-
-See :func:`~poolparty.annotate_orf`.
 
 Chain annotate_orf with mutagenize_orf to visualize mutations in context
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

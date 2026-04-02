@@ -27,11 +27,11 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool | str``
-     - —
+     - *(required)*
      - Input pool or sequence string.
    * - ``seq_length``
      - ``int``
-     - —
+     - *(required)*
      - Length of the subsequence window to extract at each position.
    * - ``positions``
      - ``list[int] | None``

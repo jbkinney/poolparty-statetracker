@@ -376,7 +376,7 @@ compression.
      - Description
    * - ``path``
      - ``str | Path``
-     - —
+     - *(required)*
      - Output file path. Use a ``.gz`` suffix for transparent gzip
        compression (e.g. ``library.csv.gz``).
    * - ``file_type``

@@ -25,7 +25,7 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool | str``
-     - —
+     - *(required)*
      - Input pool or sequence string.
    * - ``region``
      - ``str | list | None``

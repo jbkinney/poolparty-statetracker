@@ -15,7 +15,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 15 15 50
+   :widths: 20 18 12 50
    :header-rows: 1
 
    * - Parameter
@@ -24,11 +24,11 @@ Parameters
      - Description
    * - ``pool``
      - ``Pool | str``
-     - —
+     - *(required)*
      - Input pool or sequence string containing the named region.
    * - ``region_name``
      - ``str``
-     - —
+     - *(required)*
      - Name of the region whose content will be extracted.
    * - ``rc``
      - ``bool``
