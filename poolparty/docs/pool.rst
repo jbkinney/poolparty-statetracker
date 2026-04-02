@@ -120,17 +120,66 @@ When to use which
      - Call again
      - Start a new ``with`` block
 
-Global configuration helpers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Session management
+~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :widths: 40 60
+   :header-rows: 1
+
+   * - Function
+     - Description
+   * - ``pp.init(genetic_code, log_level)``
+     - Create (or reset) the default persistent Party.
+   * - ``with pp.Party(genetic_code)``
+     - Create a scoped Party that is cleaned up when the block exits.
+   * - ``pp.get_active_party()``
+     - Return the currently active Party instance, or ``None``.
+   * - ``pp.clear_pools()``
+     - Discard all pools, operations, and regions from the active Party
+       without resetting configuration or genetic code.
+
+Runtime configuration
+~~~~~~~~~~~~~~~~~~~~~
 
 These apply to whichever Party is currently active:
 
+.. list-table::
+   :widths: 40 60
+   :header-rows: 1
+
+   * - Function
+     - Description
+   * - ``pp.toggle_styles(on=True)``
+     - Enable or disable inline sequence styling. When off, style tracking
+       is skipped for better performance.
+   * - ``pp.toggle_cards(on=True)``
+     - Enable or disable design card computation. When off, operations
+       skip building card columns. Styles are unaffected.
+   * - ``pp.set_text_progress(on=True)``
+     - Use text-based progress bars instead of notebook widgets. Useful
+       when widget display is broken. Can also be set in ``config.toml``.
+   * - ``pp.configure_logging(level, format, handler)``
+     - Configure logging for ``poolparty`` and ``statetracker``. ``level``
+       is one of ``"DEBUG"``, ``"INFO"``, ``"WARNING"``, ``"ERROR"``,
+       ``"CRITICAL"``.
+   * - ``pp.load_config(filepath)``
+     - Load configuration from a TOML file into the active Party.
+   * - ``party.set_genetic_code(genetic_code)``
+     - Change the genetic code on a Party instance. Affects subsequent
+       ORF operations in that context.
+   * - ``pp.cards_suppressed()``
+     - Return ``True`` if design cards are currently suppressed.
+
 .. code-block:: python
 
-    pp.toggle_styles(on=False)       # disable inline sequence styling
-    pp.toggle_cards(on=False)        # skip design card computation
-    pp.set_text_progress(on=True)    # text progress bars instead of widgets
-    pp.clear_pools()                 # discard pools but keep config/genetic code
+    # Example: disable cards and styles for a performance-sensitive run
+    pp.init()
+    pp.toggle_cards(on=False)
+    pp.toggle_styles(on=False)
+
+    pool = pp.from_iupac("NNNNNNNN", mode="sequential")
+    df   = pool.to_df(num_cycles=1)  # no card columns, no style overhead
 
 ----
 
