@@ -3,7 +3,7 @@ title: "PoolParty: streamlined design of DNA sequence libraries in Python"
 message: "If you use this software, please cite it using the metadata from this file."
 type: software
 version: "0.1.0"
-date-released: "2026-01-30"
+date-released: "2026-04-03"
 authors:
   - family-names: Liu
     given-names: Zhihan

@@ -26,10 +26,17 @@ If you've ever written nested loops to enumerate a Cartesian product and then wi
 pip install statetracker
 ```
 
+For development:
+```bash
+git clone https://github.com/jbkinney/poolparty-statetracker.git
+cd poolparty-statetracker/statetracker
+pip install -e ".[dev]"
+```
+
 ## Quick Start
 
 ```python
-from statetracker import State, Manager
+from statetracker import State, Manager, product, stack, repeat, shuffle, sync
 
 with Manager():
     # Create leaf states
@@ -37,7 +44,7 @@ with Manager():
     B = State(num_values=3, name='B')
 
     # Combine with product (Cartesian product)
-    C = A * B  # 6 values total
+    C = product([A, B])  # 6 values total
 
     # Iterate and see parent values update
     for value in C:
@@ -62,7 +69,7 @@ C=5, A=1, B=2
 with Manager():
     A = State(num_values=2, name='A')
     B = State(num_values=3, name='B')
-    C = A * B  # 6 values (2 × 3)
+    C = product([A, B])  # 6 values (2 × 3)
 ```
 
 ### Stack
@@ -71,7 +78,7 @@ with Manager():
 with Manager():
     A = State(num_values=2, name='A')
     B = State(num_values=3, name='B')
-    C = stack([A,B])  # 5 values (2 + 3)
+    C = stack([A, B])  # 5 values (2 + 3)
 
     for _ in C:
         # Only one of A or B is active (non-None) at a time
@@ -93,14 +100,12 @@ with Manager():
 ```python
 with Manager():
     A = State(num_values=3, name='A')
-    B = A * 4  # Repeat A four times (12 values)
+    B = repeat(A, 4)  # Repeat A four times (12 values)
 ```
 
 ### Shuffle
 
 ```python
-from statetracker import State, Manager, shuffle
-
 with Manager():
     A = State(num_values=5, name='A')
     B = shuffle(A, seed=42)  # Randomly permuted order
@@ -109,12 +114,10 @@ with Manager():
 ### Synchronize
 
 ```python
-from statetracker import State, Manager, sync
-
 with Manager():
     A = State(num_values=4, name='A')
     B = State(num_values=4, name='B')
-    C = sync([A, B])  # A and B always have same value
+    sync(A, B)  # A and B always have same value
 ```
 
 ## Value Propagation
@@ -125,7 +128,7 @@ StateTracker uses **unidirectional value propagation**. When you set a child sta
 with Manager():
     A = State(num_values=2, name='A')
     B = State(num_values=3, name='B')
-    C = A * B
+    C = product([A, B])
 
     C.value = 5  # Set child value
     print(A.value)  # 1 (automatically updated)
@@ -140,17 +143,18 @@ Visualize state dependencies with ASCII trees:
 with Manager():
     A = State(num_values=2, name='A')
     B = State(num_values=3, name='B')
-    C = A * B
+    C = product([A, B])
     C.name = 'C'
 
-    C.print_dag()
+    C.print_dag(style='minimal')
 ```
 
 Output:
 ```
-C [Product, n=6]
-├── A [State, n=2]
-└── B [State, n=3]
+C (n=6)
+└── [Product]
+    ├── A (n=2)
+    └── B (n=3)
 ```
 
 ## Documentation

@@ -4,16 +4,21 @@
 [![Documentation Status](https://readthedocs.org/projects/poolparty/badge/?version=latest)](https://poolparty.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**PoolParty** is a Python package for designing complex oligonucleotide sequence libraries. It provides a declarative, composable interface for generating DNA libraries used in MPRA (massively parallel reporter assays), deep mutational scanning, and other high-throughput experiments.
+**PoolParty** is a Python package for designing complex oligonucleotide sequence libraries. It provides a declarative, composable interface for generating DNA libraries used in MPRA (massively parallel reporter assays), deep mutational scanning, in silico analysis of genomic DNNs, and other high-throughput experiments.
+
+<p align="center">
+  <img src="images/poolparty_schematic.png" alt="PoolParty overview: Pools represent sequence collections; Operations transform them into a DAG that generates libraries on demand" width="700">
+</p>
 
 ## Why PoolParty?
 
-Designing DNA libraries often involves combining multiple types of sequence variation—point mutations, deletions, insertions, shuffled regions—each with different parameters and positions. PoolParty lets you:
+Designing DNA libraries often involves combining multiple types of sequence modifications — mutations, insertions, deletions, shuffles — across multiple regions with mixed coverage requirements. PoolParty lets you:
 
 - **Compose operations**: Chain operations like `.mutagenize()`, `.deletion_scan()`, and `.insertion_scan()` to build complex libraries
-- **Use lazy evaluation**: Sequences are generated on-demand, enabling libraries with billions of potential variants
-- **Track provenance**: Every sequence includes metadata tracing its combinatorial origin
 - **Tag regions**: Use XML-like syntax to mark and manipulate specific regions of sequences
+- **Use lazy evaluation**: Sequences are generated on-demand, enabling libraries with billions of potential variants
+- **Track provenance**: Each sequence comes with a structured record of how it was built — ready for filtering, grouping, and modeling
+- **Style output**: Visual annotations highlight sequence modifications and regions for quick auditing
 
 ## Installation
 
@@ -23,8 +28,8 @@ pip install poolparty
 
 For development:
 ```bash
-git clone https://github.com/jbkinney/poolparty-statecounter.git
-cd poolparty-statecounter/poolparty
+git clone https://github.com/jbkinney/poolparty-statetracker.git
+cd poolparty-statetracker/poolparty
 pip install -e ".[dev]"
 ```
 
@@ -135,10 +140,14 @@ random_mutants = template.mutagenize(
 Preserve reading frames during mutagenesis:
 
 ```python
-orf_mutants = template.mutagenize_orf(
-    region="cre",
+# Define a template with a coding region
+orf_template = pp.from_seq("ACGT<gfp>ATGGTGAGCAAGGGCGAG</gfp>TTTT")
+
+# Synonymous mutations preserve the amino acid sequence
+orf_mutants = orf_template.mutagenize_orf(
+    region="gfp",
     num_mutations=1,
-    mutation_type="synonymous"  # or "nonsynonymous", "nonsense"
+    mutation_type="synonymous"  # or "missense", "nonsense"
 )
 ```
 
@@ -160,9 +169,9 @@ See the [full API reference](https://poolparty.readthedocs.io) for details.
 
 Full documentation is available at [poolparty.readthedocs.io](https://poolparty.readthedocs.io).
 
-## Related Projects
+## See Also
 
-PoolParty is built on [StateTracker](https://github.com/jbkinney/poolparty-statecounter/tree/main/statetracker), a library for composable state management that enables efficient random access to combinatorial spaces.
+PoolParty is built on [StateTracker](https://github.com/jbkinney/poolparty-statetracker/tree/main/statetracker), a library for composable state management that enables efficient random access to combinatorial spaces.
 
 ## License
 

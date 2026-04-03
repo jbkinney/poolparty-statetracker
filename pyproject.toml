@@ -20,12 +20,6 @@ dev = [
     "pytest-cov>=4.0",
     "ruff>=0.9.0",
 ]
-benchmark = [
-    "pytest-benchmark>=4.0",
-    "memray>=1.10",
-    "pyinstrument>=4.5",
-    "line-profiler>=4.0",
-]
 
 [tool.uv.workspace]
 members = ["poolparty", "statetracker"]
@@ -84,7 +78,6 @@ ignore = [
 "**/state_ops/*.py" = ["F811"]  # Allow re-imports for API consistency
 "**/region_ops/*.py" = ["F841"]  # Allow unused intermediates for debugging
 "**/docs/*.ipynb" = ["F841"]  # Allow unused vars in notebook examples
-"**/benchmarks/*" = ["E402"]  # Allow imports not at top
 
 [tool.setuptools]
 py-modules = []

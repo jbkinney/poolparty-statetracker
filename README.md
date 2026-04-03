@@ -1,8 +1,8 @@
-# poolparty-repo
+# poolparty-statetracker
 
 This monorepo contains two related Python packages:
 
-- **[poolparty](poolparty/)** - A Python package for designing oligonucleotide sequence libraries
+- **[poolparty](poolparty/)** - A Python package for designing complex oligonucleotide sequence libraries
 - **[statetracker](statetracker/)** - Composable states with unidirectional value propagation for enumerating combinatorial spaces
 
 ## Repository Structure
@@ -12,6 +12,7 @@ poolparty-statetracker/
 ├── poolparty/          # poolparty package
 │   ├── src/poolparty/  # source code
 │   ├── tests/          # tests
+│   ├── docs/           # Sphinx documentation
 │   └── pyproject.toml
 ├── statetracker/       # statetracker package
 │   ├── src/statetracker/
@@ -45,6 +46,14 @@ pytest
 cd ../poolparty
 pytest
 ```
+
+## Citation
+
+If you use this software, please cite it using the metadata in [CITATION.cff](CITATION.cff).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
