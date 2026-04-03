@@ -126,22 +126,6 @@ def set_genetic_code(genetic_code: Union[str, dict]) -> None:
 
 
 @beartype
-def load_config(filepath: str) -> None:
-    """Load configuration from TOML file into the active party.
-
-    Args:
-        filepath: Path to TOML configuration file.
-
-    Raises:
-        RuntimeError: If no active Party context exists.
-    """
-    party = get_active_party()
-    if party is None:
-        raise RuntimeError("No active Party. Call pp.init() first.")
-    party.load_config(filepath)
-
-
-@beartype
 class Party:
     """Context manager for building and executing sequence libraries."""
 
@@ -207,12 +191,6 @@ class Party:
     def set_genetic_code(self, genetic_code: Union[str, dict]) -> None:
         """Set or change the genetic code used for ORF operations."""
         self._codon_table = CodonTable(genetic_code)
-
-    def load_config(self, filepath: str) -> None:
-        """Load configuration from a TOML file."""
-        from .config import Config
-
-        self._config = Config.from_toml(filepath)
 
     def get_effective_seq_length(self, seq: str) -> int:
         """Get effective sequence length (DNA characters only, excluding markers)."""

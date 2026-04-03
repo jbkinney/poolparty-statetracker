@@ -56,8 +56,6 @@ Initialization Functions
 
 .. autofunction:: poolparty.configure_logging
 
-.. autofunction:: poolparty.load_config
-
 .. autofunction:: poolparty.set_default
 
 .. autofunction:: poolparty.toggle_styles

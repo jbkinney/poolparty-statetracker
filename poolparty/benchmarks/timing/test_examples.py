@@ -14,7 +14,6 @@ def workload_mpra_example(
     use_cards: bool = False,
 ):
     pp.init()
-    # pp.load_config('default_config.toml')
 
     template_pool = (
         pp.from_seq("TCCCGACT<cre>GGAAAGCGGGCAGTGAGCACACAGGA</cre>ATTACGG<bc/>AGATCGGA")

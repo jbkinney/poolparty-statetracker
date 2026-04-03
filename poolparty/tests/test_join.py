@@ -279,12 +279,6 @@ class TestJoinWithOtherOperations:
             assert s.startswith("ACGT...")
             assert len(s) == 11  # 4 + 3 + 4
 
-    def test_with_synchronized_pools(self):
-        """Test joining synchronized pools.
-
-        This test is removed since breakpoint_scan no longer exists.
-        """
-        pass
 
 
 class TestJoinCustomName:

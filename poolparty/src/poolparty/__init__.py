@@ -1,6 +1,6 @@
 """poolparty - A Python package for designing oligonucleotide sequence libraries."""
 
-__version__ = "0.3.0"
+__version__ = "0.1.0"
 
 import logging
 
@@ -86,7 +86,6 @@ from .party import (
     configure_logging,
     get_active_party,
     init,
-    load_config,
     set_genetic_code,
 )
 from .pool import Pool
@@ -150,7 +149,6 @@ __all__ = [
     "get_active_party",
     "init",
     "clear_pools",
-    "load_config",
     "set_genetic_code",
     "configure_logging",
     "toggle_styles",
@@ -301,7 +299,6 @@ def set_progress_mode(mode: str = "auto") -> None:
     Args:
         mode: 'text' for plain text tqdm bars (terminal-friendly),
               'auto' for tqdm.auto (notebook widget when available).
-              Can also be set via config.toml: [general] progress_mode = "text"
     """
     from .config import VALID_PROGRESS_MODES
 

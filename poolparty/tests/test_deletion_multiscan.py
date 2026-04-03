@@ -171,14 +171,6 @@ class TestDeletionMultiscanNaming:
 class TestDeletionMultiscanValidation:
     """Test input validation."""
 
-    def test_bg_pool_requires_seq_length(self):
-        """Test error when bg_pool has no seq_length."""
-        with pp.Party() as party:
-            # Use a pool with variable length (e.g., from slice_seq with variable slice)
-            # For now, skip this test since we don't have a good way to create variable-length pools
-            # without breakpoint_scan
-            pass
-
     def test_deletion_length_must_be_positive(self):
         """Test error when deletion_length <= 0."""
         with pp.Party() as party:

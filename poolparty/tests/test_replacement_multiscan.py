@@ -158,16 +158,6 @@ class TestReplacementMultiscanModes:
 class TestReplacementMultiscanValidation:
     """Test input validation."""
 
-    def test_bg_pool_requires_seq_length(self):
-        """Test error when bg_pool has no seq_length."""
-        # Test removed - breakpoint_scan no longer exists
-        pass
-
-    def test_replacement_pool_requires_seq_length(self):
-        """Test error when replacement pool has no seq_length."""
-        # Test removed - breakpoint_scan no longer exists
-        pass
-
     def test_num_replacements_must_be_positive(self):
         """Test error when num_replacements < 1."""
         with pp.Party() as party:

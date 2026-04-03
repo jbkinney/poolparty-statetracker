@@ -222,16 +222,6 @@ class TestInsertionScanNaming:
 class TestInsertionScanValidation:
     """Test input validation."""
 
-    def test_bg_pool_requires_seq_length(self):
-        """Test error when bg_pool has no seq_length."""
-        # Test removed - breakpoint_scan no longer exists to create variable-length pools
-        pass
-
-    def test_ins_pool_requires_seq_length(self):
-        """Test error when ins_pool has no seq_length."""
-        # Test removed - breakpoint_scan no longer exists to create variable-length pools
-        pass
-
     def test_position_exceeds_maximum(self):
         """Test error when position exceeds maximum allowed value."""
         with pp.Party() as party:

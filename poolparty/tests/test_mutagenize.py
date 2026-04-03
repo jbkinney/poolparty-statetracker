@@ -648,14 +648,6 @@ class TestMutagenizeWithParentPool:
         # Should see mutations of both AAA and TTT
         assert len(df) == 10
 
-    def test_with_breakpoint_output(self):
-        """Test mutation scan on breakpoint output."""
-        with pp.Party() as party:
-            # Test removed - breakpoint_scan no longer exists
-            pass
-
-        # Test removed - breakpoint_scan no longer exists
-        pass
 
 
 class TestMutagenizeCustomName:

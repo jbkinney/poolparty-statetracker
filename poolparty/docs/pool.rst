@@ -158,13 +158,11 @@ These apply to whichever Party is currently active:
        skip building card columns. Styles are unaffected.
    * - ``pp.set_text_progress(on=True)``
      - Use text-based progress bars instead of notebook widgets. Useful
-       when widget display is broken. Can also be set in ``config.toml``.
+       when widget display is broken.
    * - ``pp.configure_logging(level, format, handler)``
      - Configure logging for ``poolparty`` and ``statetracker``. ``level``
        is one of ``"DEBUG"``, ``"INFO"``, ``"WARNING"``, ``"ERROR"``,
        ``"CRITICAL"``.
-   * - ``pp.load_config(filepath)``
-     - Load configuration from a TOML file into the active Party.
    * - ``party.set_genetic_code(genetic_code)``
      - Change the genetic code on a Party instance. Affects subsequent
        ORF operations in that context.

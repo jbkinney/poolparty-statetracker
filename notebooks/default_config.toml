@@ -1,6 +1,0 @@
-# Poolparty Configuration File
-
-[general]
-suppress_styles = false   # Suppress inline styling
-suppress_cards = false    # Suppress all design cards (global kill switch)
-progress_mode = "auto"    # Progress bar style: "auto" (notebook widget) or "text" (terminal)
