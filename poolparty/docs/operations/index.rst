@@ -52,7 +52,7 @@ Operations that combine multiple pools into a single pool, either by concatenati
    * - :doc:`join`
      - Concatenate a list of pools end-to-end into a single composite pool.
    * - :doc:`concatenate`
-     - Shorthand operators ``+`` (two pools) and ``*`` (repeat N times) for joining pools.
+     - Shorthand operators ``+`` (stack states) and ``*`` (repeat states).
 
 ----
 

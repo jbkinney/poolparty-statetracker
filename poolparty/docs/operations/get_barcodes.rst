@@ -222,9 +222,9 @@ right-padded with ``-``.
 
     <div class="pp-pool">
     <em class="pp-header">Pool (10 barcodes &mdash; 5 &times; 6-mer padded to 8, 5 &times; 8-mer)</em>
-    ACGTAC--<br>
-    TTGACCAG<br>
-    GCTAGC--<br>
+    CTAAAGAC<br>
+    ATTACA--<br>
+    AACATACA<br>
     <span class="pp-ellipsis">... (10 total; 6-mers right-padded with &ldquo;--&rdquo;)</span>
     </div>
 

@@ -96,6 +96,28 @@ position.
     <span class="pp-ellipsis">... (stochastic; each draw carries one substitution)</span>
     </div>
 
+Multiple independent mutants with ``num_states``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pass ``num_states`` to draw multiple independent single-mutant sequences in
+one ``generate_library`` call.
+
+.. code-block:: python
+
+    wt      = pp.from_seq("ATCGATCG")
+    mutants = pp.mutagenize(wt, num_mutations=1, num_states=5)
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">Pool (5 states &mdash; 5 independent single-mutation draws)</em>
+    A<span class="pp-mut">G</span>CGATCG<br>
+    ATCG<span class="pp-mut">C</span>TCG<br>
+    ATCGAT<span class="pp-mut">A</span>G<br>
+    <span class="pp-mut">G</span>TCGATCG<br>
+    AT<span class="pp-mut">T</span>GATCG
+    </div>
+
 Per-base mutation rate (mutation_rate=0.1)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

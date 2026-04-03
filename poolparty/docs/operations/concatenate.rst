@@ -1,4 +1,4 @@
-State Operators (``+`` and ``*``)
+Shorthand Operators (``+`` and ``*``)
 ==================================
 
 PoolParty overloads Python's ``+`` and ``*`` operators on pools as
