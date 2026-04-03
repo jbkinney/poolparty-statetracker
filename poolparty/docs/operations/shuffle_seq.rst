@@ -119,20 +119,24 @@ Dinucleotide-preserving shuffle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``shuffle_type="dinuc"`` preserves dinucleotide frequencies using an
-Euler-path algorithm. Note that the first and last bases are always fixed.
+Euler-path algorithm. The first and last bases are always fixed.
+
+The input sequence must have **repeated dinucleotides** for the shuffle to
+produce diverse outputs — highly regular sequences like ``ACGTACGT`` have
+only one valid Euler path and will always return the same result.
 
 .. code-block:: python
 
-    wt       = pp.from_seq("ACGTACGTAC")
+    wt       = pp.from_seq("AACGAACGTTGC")
     shuffled = pp.shuffle_seq(wt, shuffle_type="dinuc", num_states=3)
 
 .. raw:: html
 
     <div class="pp-pool">
     <em class="pp-header">Pool (3 stochastic draws &mdash; dinucleotide frequencies preserved)</em>
-    ACGTACGTAC<br>
-    ACGACGTAC<br>
-    ACTACGGTAC<br>
+    AAACGCGTTGAC<br>
+    ACGTTGAACGAC<br>
+    AACGTTGCGAAC<br>
     <span class="pp-ellipsis">... (first A and last C always fixed)</span>
     </div>
 

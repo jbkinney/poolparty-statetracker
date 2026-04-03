@@ -121,6 +121,7 @@ Contents
    quickstart
    operations/index
    pool
+   concepts
 
 .. toctree::
    :maxdepth: 2
