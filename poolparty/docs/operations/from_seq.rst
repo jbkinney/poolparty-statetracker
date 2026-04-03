@@ -98,7 +98,7 @@ Applying a display style
 
 .. code-block:: python
 
-    pool = pp.from_seq("ACGTACGT", style="bold_blue")
+    pool = pp.from_seq("ACGTACGT", style="blue bold")
 
 .. raw:: html
 

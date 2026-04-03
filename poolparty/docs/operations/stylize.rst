@@ -39,13 +39,13 @@ displayed.
 Stylize a different region with a different style
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Apply ``bold_blue`` to a ``promoter`` region embedded in a longer construct,
+Apply ``blue bold`` to a ``promoter`` region embedded in a longer construct,
 leaving the rest of the sequence unstyled.
 
 .. code-block:: python
 
     wt     = pp.from_seq("GCGCGC<promoter>TATAAT</promoter>ATGAAATTT")
-    styled = pp.stylize(wt, region="promoter", style="bold_blue")
+    styled = pp.stylize(wt, region="promoter", style="blue bold")
 
 .. raw:: html
 

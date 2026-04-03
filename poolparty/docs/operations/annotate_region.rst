@@ -41,7 +41,7 @@ Parameters
    * - ``style``
      - ``str | None``
      - ``None``
-     - Named display style applied to the region (e.g. ``'bold_blue'``).
+     - Named display style applied to the region (e.g. ``'blue bold'``).
        ``None`` leaves the display unchanged.
    * - ``iter_order``
      - ``int | None``
@@ -117,7 +117,7 @@ Chain two calls to give adjacent segments distinct colours.
 .. code-block:: python
 
     wt    = pp.from_seq("AAAAATCGGGGGCCCTTTT")
-    step1 = pp.annotate_region(wt,    "left",  extent=(4, 8),   style="bold_blue")
+    step1 = pp.annotate_region(wt,    "left",  extent=(4, 8),   style="blue bold")
     step2 = pp.annotate_region(step1, "right", extent=(13, 17), style="bold_red")
 
 .. raw:: html

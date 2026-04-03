@@ -30,8 +30,9 @@ Parameters
    * - ``ins_pool``
      - ``Pool | str``
      - *(required)*
-     - Pool whose sequences replace the window at each scanned position. The
-       pool's sequence length determines the window width.
+     - Pool supplying replacement content. Each of this pool's sequences is
+       substituted into the window at every scanned position. The pool's
+       ``seq_length`` determines the window width.
    * - ``positions``
      - ``list[int] | None``
      - ``None``
