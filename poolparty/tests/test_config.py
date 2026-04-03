@@ -14,7 +14,7 @@ def test_config_defaults():
 
     assert config.suppress_styles is False
     assert config.suppress_cards is False
-    assert config.text_progress is True
+    assert config.progress_mode == "auto"
 
 
 def test_config_from_toml():
@@ -25,7 +25,7 @@ def test_config_from_toml():
 [general]
 suppress_styles = true
 suppress_cards = true
-text_progress = false
+progress_mode = "auto"
 """
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
@@ -39,7 +39,7 @@ text_progress = false
         # Check general settings
         assert config.suppress_styles is True
         assert config.suppress_cards is True
-        assert config.text_progress is False
+        assert config.progress_mode == "auto"
     finally:
         os.unlink(temp_path)
 

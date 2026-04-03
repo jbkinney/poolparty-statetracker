@@ -110,12 +110,6 @@ class TestMutationScan:
         assert len(df) == 10
 
 
-class TestBreakpointScan:
-    """Test breakpoint scanning operations."""
-
-    # Breakpoint scan tests removed - breakpoint_scan no longer exists
-
-
 class TestStatePersistence:
     """Test that Pool maintains state between generate_library() calls."""
 
@@ -401,14 +395,15 @@ class TestStateManagerIntegration:
             captured = capsys.readouterr()
             assert len(captured.out) > 0
 
-    def test_state_manager_deactivated_on_exit(self):
-        """Test that StateManager is deactivated when exiting Party context."""
+    def test_state_manager_restored_on_exit(self):
+        """Test that previous Manager is restored when exiting Party context."""
+        default_mgr = st.Manager._active_manager
         with pp.Party() as party:
-            # Inside context, manager should be active
             assert st.Manager._active_manager is party.state_manager
+            assert st.Manager._active_manager is not default_mgr
 
-        # Outside context, manager should be deactivated
-        assert st.Manager._active_manager is None
+        # Previous (default) manager is restored, not cleared to None
+        assert st.Manager._active_manager is default_mgr
 
     def test_complex_dag_counters_registered(self):
         """Test that counters from a complex DAG are all registered."""

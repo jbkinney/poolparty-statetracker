@@ -507,7 +507,7 @@ class TestLibrary8:
             library = pp.join([adapter, kmers, kozak, orf, utr3_clean, barcodes])
 
             kozak_subseqs = kozak.subseq_scan(
-                seq_length=5,
+                subseq_length=5,
                 mode="sequential",
             ).named("kozak_subseqs")
 

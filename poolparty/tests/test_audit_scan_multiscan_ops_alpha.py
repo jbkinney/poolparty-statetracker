@@ -121,7 +121,7 @@ class TestStep2RuntimeForwarding:
                 ),
             )
             subseq = base.subseq_scan(
-                seq_length=2,
+                subseq_length=2,
                 positions=[0, 1],
                 region="core",
                 prefix="sub",
@@ -221,7 +221,7 @@ class TestStep3CoreInvariants:
                     positions=[1, 3],
                     mode=("sequential", "sequential"),
                 ),
-                "subseq_scan": pp.subseq_scan(base, seq_length=3, positions=[1, 3], mode="sequential"),
+                "subseq_scan": pp.subseq_scan(base, subseq_length=3, positions=[1, 3], mode="sequential"),
                 "deletion_multiscan": pp.deletion_multiscan(
                     base,
                     deletion_length=1,
@@ -282,7 +282,7 @@ class TestStep3CoreInvariants:
             )
         )
         _assert_random_determinism(
-            lambda: pp.subseq_scan(pp.from_seq("AACCGGTT"), seq_length=3, mode="random", num_states=5)
+            lambda: pp.subseq_scan(pp.from_seq("AACCGGTT"), subseq_length=3, mode="random", num_states=5)
         )
         _assert_random_determinism(
             lambda: pp.deletion_multiscan(
@@ -357,7 +357,7 @@ class TestStep3CoreInvariants:
                     assert clean.startswith("AA")
                     assert clean.endswith("TT")
 
-            subseq = pp.subseq_scan(base, seq_length=2, region="core", mode="sequential")
+            subseq = pp.subseq_scan(base, subseq_length=2, region="core", mode="sequential")
             sub_df = subseq.generate_library(num_cycles=1, seed=17)
             for seq in sub_df["seq"]:
                 assert _bio_len(seq) == 2
@@ -675,7 +675,7 @@ class TestStep6ApiConsistencyAndFindings:
     def test_subseq_scan_accepts_factory_name(self):
         with pp.Party():
             bg = pp.from_seq("AACCGGTT")
-            out = pp.subseq_scan(bg, seq_length=2, positions=[1], mode="sequential", _factory_name="audit")
+            out = pp.subseq_scan(bg, subseq_length=2, positions=[1], mode="sequential", _factory_name="audit")
             _assert_i1_i2(out)
 
     def test_bug_insertion_scan_should_preserve_known_seq_length(self):
@@ -724,7 +724,7 @@ class TestStep2SmokeAndMixinPresence:
                     positions=[0],
                     mode=("sequential", "sequential"),
                 ),
-                lambda: pp.subseq_scan(base, seq_length=2, positions=[0], mode="sequential"),
+                lambda: pp.subseq_scan(base, subseq_length=2, positions=[0], mode="sequential"),
                 lambda: pp.deletion_multiscan(
                     base,
                     deletion_length=1,
@@ -796,7 +796,7 @@ class TestStep3AdditionalContractDimensions:
                     positions=[0],
                     mode=("sequential", "sequential"),
                 ),
-                pp.subseq_scan(base, seq_length=2, positions=[0], mode="sequential"),
+                pp.subseq_scan(base, subseq_length=2, positions=[0], mode="sequential"),
                 pp.deletion_multiscan(
                     base,
                     deletion_length=1,

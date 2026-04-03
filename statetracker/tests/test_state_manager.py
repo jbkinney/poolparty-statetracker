@@ -10,10 +10,11 @@ class TestManager:
     """Test Manager context manager."""
 
     def test_context_manager_basic(self):
-        """Manager works as context manager."""
+        """Manager works as context manager and restores previous on exit."""
+        previous = Manager._active_manager
         with Manager() as mgr:
             assert Manager._active_manager is mgr
-        assert Manager._active_manager is None
+        assert Manager._active_manager is previous
 
     def test_auto_registration(self):
         """States created in context auto-register."""
@@ -35,9 +36,14 @@ class TestManager:
             assert len(mgr._states) == 3
 
     def test_state_requires_manager(self):
-        """States created outside context raise error."""
-        with pytest.raises(RuntimeError, match="must be created within a Manager context"):
-            State(num_values=2, name="A")
+        """States created outside any Manager context raise error."""
+        previous = Manager._active_manager
+        Manager._active_manager = None
+        try:
+            with pytest.raises(RuntimeError, match="must be created within a Manager context"):
+                State(num_values=2, name="A")
+        finally:
+            Manager._active_manager = previous
 
     def test_get_state_names(self):
         """get_state_names returns list of state names."""
@@ -265,6 +271,35 @@ class TestStateIdAssignment:
             D = State(num_values=5, name="D")
             assert C.id == 0  # Starts fresh
             assert D.id == 1
+
+    def test_nested_managers_restore_previous(self):
+        """Nested Manager contexts restore previous active manager on exit."""
+        previous = Manager._active_manager
+        with Manager() as outer:
+            assert Manager._active_manager is outer
+            A = State(num_values=2, name="A")
+
+            with Manager() as inner:
+                assert Manager._active_manager is inner
+                B = State(num_values=3, name="B")
+                assert B._manager is inner
+
+            assert Manager._active_manager is outer
+            C = State(num_values=4, name="C")
+            assert C._manager is outer
+
+        assert Manager._active_manager is previous
+
+    def test_triple_nested_managers(self):
+        """Three levels of nested Manager contexts restore correctly."""
+        previous = Manager._active_manager
+        with Manager() as m1:
+            with Manager() as m2:
+                with Manager() as m3:
+                    assert Manager._active_manager is m3
+                assert Manager._active_manager is m2
+            assert Manager._active_manager is m1
+        assert Manager._active_manager is previous
 
 
 class TestDAGSupport:

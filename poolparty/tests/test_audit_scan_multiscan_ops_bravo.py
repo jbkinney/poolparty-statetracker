@@ -77,7 +77,7 @@ class TestSmokeAllFactories:
     def test_smoke_subseq_scan(self):
         with pp.Party():
             pool = pp.from_seq("ACGT")
-            result = pp.subseq_scan(pool, seq_length=2)
+            result = pp.subseq_scan(pool, subseq_length=2)
             df = result.generate_library(num_cycles=1)
             assert len(df) > 0
 
@@ -215,7 +215,7 @@ class TestScanOpsBaseline:
     def test_subseq_scan_I1_I2(self):
         with pp.Party():
             pool = pp.from_seq("ACGTACGT")
-            result = pp.subseq_scan(pool, seq_length=4, mode="sequential")
+            result = pp.subseq_scan(pool, subseq_length=4, mode="sequential")
             df = result.generate_library()
             assert len(df) == result.num_states
             for seq in df["seq"]:
@@ -334,7 +334,7 @@ class TestScanOpsDeterminism:
     def test_subseq_scan_determinism(self):
         def build():
             bg = pp.from_seq("ACGTACGT")
-            return pp.subseq_scan(bg, seq_length=4, mode="random", num_states=5)
+            return pp.subseq_scan(bg, subseq_length=4, mode="random", num_states=5)
         self._check_determinism(build)
 
     def test_deletion_multiscan_determinism(self):
@@ -440,7 +440,7 @@ class TestScanOpsRegionIsolation:
     def test_subseq_scan_with_named_region(self):
         with pp.Party():
             pool = pp.from_seq("AA<core>CCGG</core>TT")
-            result = pp.subseq_scan(pool, seq_length=2, region="core", mode="sequential")
+            result = pp.subseq_scan(pool, subseq_length=2, region="core", mode="sequential")
             df = result.generate_library()
             assert len(df) == result.num_states
             for seq in df["seq"]:
@@ -450,7 +450,7 @@ class TestScanOpsRegionIsolation:
         with pp.Party():
             pool = pp.from_seq("ACGTACGT")
             result = pp.subseq_scan(
-                pool, seq_length=2, region=[2, 6], mode="sequential"
+                pool, subseq_length=2, region=[2, 6], mode="sequential"
             )
             df = result.generate_library()
             assert len(df) == result.num_states
@@ -576,7 +576,7 @@ class TestScanOpsCards:
         with pp.Party():
             pool = pp.from_seq("ACGTACGT")
             result = pp.subseq_scan(
-                pool, seq_length=4, mode="sequential",
+                pool, subseq_length=4, mode="sequential",
                 cards=["start", "end"],
             )
             df = result.generate_library()
@@ -792,7 +792,7 @@ class TestNestedTagBehavior:
         """subseq_scan extracts correct-length subseqs from nested-tag input."""
         with pp.Party():
             pool = pp.from_seq(self.NESTED_SEQ)
-            result = pp.subseq_scan(pool, seq_length=3, mode="sequential")
+            result = pp.subseq_scan(pool, subseq_length=3, mode="sequential")
             df = result.generate_library()
             assert len(df) == result.num_states
             for seq in df["seq"]:
@@ -1283,7 +1283,7 @@ class TestMixinForwarding:
         with pp.Party():
             pool = pp.from_seq("ACGTACGT")
             result = pool.subseq_scan(
-                seq_length=4, positions=[0, 1, 2],
+                subseq_length=4, positions=[0, 1, 2],
                 region=None, prefix="sub",
                 mode="sequential", num_states=3,
                 iter_order=1, cards=["start"],
@@ -1715,7 +1715,7 @@ class TestSubseqScanDomain:
         with pp.Party():
             parent = "ACGTACGT"
             pool = pp.from_seq(parent)
-            result = pp.subseq_scan(pool, seq_length=3, mode="sequential")
+            result = pp.subseq_scan(pool, subseq_length=3, mode="sequential")
             df = result.generate_library()
             for seq in df["seq"]:
                 clean = strip_all_tags(seq)
@@ -1726,7 +1726,7 @@ class TestSubseqScanDomain:
         with pp.Party():
             parent = "ACGTAC"
             pool = pp.from_seq(parent)
-            result = pp.subseq_scan(pool, seq_length=3, mode="sequential")
+            result = pp.subseq_scan(pool, subseq_length=3, mode="sequential")
             df = result.generate_library()
             expected_subseqs = {parent[i:i+3] for i in range(4)}
             actual_subseqs = {strip_all_tags(s) for s in df["seq"]}
@@ -2194,7 +2194,7 @@ class TestSubseqScanFullSuite:
     def test_I1_output_length(self):
         with pp.Party():
             pool = pp.from_seq("ACGTACGT")
-            result = pp.subseq_scan(pool, seq_length=3, mode="sequential")
+            result = pp.subseq_scan(pool, subseq_length=3, mode="sequential")
             df = result.generate_library()
             for seq in df["seq"]:
                 assert bio_len(seq) == 3
@@ -2202,7 +2202,7 @@ class TestSubseqScanFullSuite:
     def test_I2_exhaustion(self):
         with pp.Party():
             pool = pp.from_seq("ACGTAC")
-            result = pp.subseq_scan(pool, seq_length=3, mode="sequential")
+            result = pp.subseq_scan(pool, subseq_length=3, mode="sequential")
             df = result.generate_library()
             assert len(df) == result.num_states
             assert result.num_states == 4
@@ -2211,7 +2211,7 @@ class TestSubseqScanFullSuite:
         with pp.Party():
             pool = pp.from_seq("ACGTACGT")
             result = pp.subseq_scan(
-                pool, seq_length=3, mode="sequential",
+                pool, subseq_length=3, mode="sequential",
                 cards=["start", "end"],
             )
             df = result.generate_library()
@@ -2225,7 +2225,7 @@ class TestSubseqScanFullSuite:
             with pp.Party():
                 pool = pp.from_seq("ACGTACGT")
                 result = pp.subseq_scan(
-                    pool, seq_length=3, mode="random", num_states=5,
+                    pool, subseq_length=3, mode="random", num_states=5,
                 )
                 df = result.generate_library(seed=42)
                 seqs = list(df["seq"])
@@ -2238,7 +2238,7 @@ class TestSubseqScanFullSuite:
         with pp.Party():
             pool = pp.from_seq("AA<core>CCGGAA</core>TT")
             result = pp.subseq_scan(
-                pool, seq_length=2, region="core", mode="sequential",
+                pool, subseq_length=2, region="core", mode="sequential",
             )
             df = result.generate_library()
             assert len(df) == result.num_states
@@ -2249,7 +2249,7 @@ class TestSubseqScanFullSuite:
         with pp.Party():
             pool = pp.from_seq("ACGTACGT")
             result = pp.subseq_scan(
-                pool, seq_length=2, region=[1, 6], mode="sequential",
+                pool, subseq_length=2, region=[1, 6], mode="sequential",
             )
             df = result.generate_library()
             assert len(df) == result.num_states
@@ -2259,7 +2259,7 @@ class TestSubseqScanFullSuite:
     def test_I7_composition(self):
         with pp.Party():
             bg = pp.from_seqs(["ACGT", "TGCA"], mode="sequential")
-            result = pp.subseq_scan(bg, seq_length=2, mode="sequential")
+            result = pp.subseq_scan(bg, subseq_length=2, mode="sequential")
             df = result.generate_library()
             assert len(df) == result.num_states
             assert result.num_states == 2 * 3
@@ -2267,7 +2267,7 @@ class TestSubseqScanFullSuite:
     def test_I10_state_immutability(self):
         with pp.Party():
             pool = pp.from_seq("ACGTACGT")
-            result = pp.subseq_scan(pool, seq_length=3, mode="sequential")
+            result = pp.subseq_scan(pool, subseq_length=3, mode="sequential")
             ns_before = result.num_states
             sv_before = result.operation.state._num_values
             result.generate_library(seed=1)
@@ -2278,7 +2278,7 @@ class TestSubseqScanFullSuite:
         with pp.Party():
             parent = "ACGTACGT"
             pool = pp.from_seq(parent)
-            result = pp.subseq_scan(pool, seq_length=3, mode="sequential")
+            result = pp.subseq_scan(pool, subseq_length=3, mode="sequential")
             df = result.generate_library()
             for seq in df["seq"]:
                 assert strip_all_tags(seq) in parent
@@ -2287,7 +2287,7 @@ class TestSubseqScanFullSuite:
         with pp.Party():
             parent = "ACGTAC"
             pool = pp.from_seq(parent)
-            result = pp.subseq_scan(pool, seq_length=3, mode="sequential")
+            result = pp.subseq_scan(pool, subseq_length=3, mode="sequential")
             df = result.generate_library()
             expected = {parent[i:i+3] for i in range(4)}
             actual = {strip_all_tags(s) for s in df["seq"]}

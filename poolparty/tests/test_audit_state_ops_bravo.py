@@ -502,11 +502,11 @@ class TestEdgeCases:
         df = sliced.generate_library(num_cycles=1)
         assert df["seq"].iloc[0] == "C"
 
-    def test_state_slice_empty_result(self) -> None:
+    def test_state_slice_empty_result_raises(self) -> None:
         with pp.Party():
             base = pp.from_seqs(["A", "B", "C"], mode="sequential")
-            sliced = pp.state_slice(base, slice(5, 10)).named("sl")
-        assert sliced.num_states == 0
+            with pytest.raises(ValueError, match="slice produces 0 states"):
+                pp.state_slice(base, slice(5, 10))
 
     def test_sample_with_replacement_allows_duplicates(self) -> None:
         with pp.Party():

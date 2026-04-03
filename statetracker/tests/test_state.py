@@ -48,9 +48,14 @@ class TestStateCreation:
             assert B.value == 1  # B is active at state 1
 
     def test_state_requires_manager(self):
-        """State raises error when created outside Manager."""
-        with pytest.raises(RuntimeError, match="must be created within a Manager context"):
-            State(num_values=3, name="A")
+        """State raises error when created outside any Manager context."""
+        previous = Manager._active_manager
+        Manager._active_manager = None
+        try:
+            with pytest.raises(RuntimeError, match="must be created within a Manager context"):
+                State(num_values=3, name="A")
+        finally:
+            Manager._active_manager = previous
 
 
 class TestStateManagement:

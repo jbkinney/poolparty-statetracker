@@ -12,13 +12,13 @@ class TestSubseqScanBasics:
     def test_returns_pool(self):
         """Test that subseq_scan returns a Pool."""
         with pp.Party() as party:
-            result = subseq_scan("ACGTACGTACGT", seq_length=4)
+            result = subseq_scan("ACGTACGTACGT", subseq_length=4)
             assert hasattr(result, "operation")
 
     def test_extracts_correct_length(self):
         """Test that extracted subsequences have correct length."""
         with pp.Party() as party:
-            result = subseq_scan("ACGTACGTACGT", seq_length=4, mode="sequential").named("result")
+            result = subseq_scan("ACGTACGTACGT", subseq_length=4, mode="sequential").named("result")
 
         df = result.generate_library(num_seqs=20, seed=42)
         for seq in df["seq"]:
@@ -28,7 +28,7 @@ class TestSubseqScanBasics:
         """Test sequential mode extracts at all positions."""
         with pp.Party() as party:
             # 12-char sequence, 4-char extraction = 9 positions (0-8)
-            result = subseq_scan("ACGTACGTACGT", seq_length=4, mode="sequential").named("result")
+            result = subseq_scan("ACGTACGTACGT", subseq_length=4, mode="sequential").named("result")
 
         df = result.generate_library(num_cycles=1)
         assert len(df) == 9
@@ -40,7 +40,7 @@ class TestSubseqScanBasics:
         """Test subseq_scan with Pool input."""
         with pp.Party() as party:
             bg = pp.from_seqs(["ACGTACGTACGT"])
-            result = subseq_scan(bg, seq_length=4, mode="sequential").named("result")
+            result = subseq_scan(bg, subseq_length=4, mode="sequential").named("result")
 
         df = result.generate_library(num_cycles=1)
         assert len(df) == 9
@@ -53,7 +53,7 @@ class TestSubseqScanPositions:
         """Test extraction at specific positions."""
         with pp.Party() as party:
             result = subseq_scan(
-                "ACGTACGTACGT", seq_length=4, positions=[0, 4, 8], mode="sequential"
+                "ACGTACGTACGT", subseq_length=4, positions=[0, 4, 8], mode="sequential"
             ).named("result")
 
         df = result.generate_library(num_cycles=1)
@@ -63,7 +63,7 @@ class TestSubseqScanPositions:
     def test_single_position(self):
         """Test extraction at a single position."""
         with pp.Party() as party:
-            result = subseq_scan("ACGTTTTT", seq_length=4, positions=[0], mode="sequential").named(
+            result = subseq_scan("ACGTTTTT", subseq_length=4, positions=[0], mode="sequential").named(
                 "result"
             )
 
@@ -77,7 +77,7 @@ class TestSubseqScanPositions:
             # 12-char sequence, 4-char extraction = 9 positions (0-8)
             # slice(0, 6, 2) gives positions 0, 2, 4
             result = subseq_scan(
-                "ACGTACGTACGT", seq_length=4, positions=slice(0, 6, 2), mode="sequential"
+                "ACGTACGTACGT", subseq_length=4, positions=slice(0, 6, 2), mode="sequential"
             ).named("result")
 
         df = result.generate_library(num_cycles=1)
@@ -91,7 +91,7 @@ class TestSubseqScanModes:
         """Test random mode with explicit num_states samples different positions."""
         with pp.Party() as party:
             # Use explicit num_states to get varied outputs
-            result = subseq_scan("ACGTACGTACGT", seq_length=4, mode="random", num_states=50).named(
+            result = subseq_scan("ACGTACGTACGT", subseq_length=4, mode="random", num_states=50).named(
                 "result"
             )
 
@@ -105,7 +105,7 @@ class TestSubseqScanModes:
     def test_random_mode_with_num_states(self):
         """Test random mode with explicit num_states."""
         with pp.Party() as party:
-            result = subseq_scan("ACGTACGTACGT", seq_length=4, mode="random", num_states=3).named(
+            result = subseq_scan("ACGTACGTACGT", subseq_length=4, mode="random", num_states=3).named(
                 "result"
             )
 
@@ -122,14 +122,14 @@ class TestSubseqScanNaming:
     def test_pool_name(self):
         """Test name parameter."""
         with pp.Party() as party:
-            result = subseq_scan("ACGTACGT", seq_length=4).named("my_subseqs")
+            result = subseq_scan("ACGTACGT", subseq_length=4).named("my_subseqs")
 
         assert result.name == "my_subseqs"
 
     def test_op_name(self):
         """Test op_name parameter."""
         with pp.Party() as party:
-            result = subseq_scan("ACGTACGT", seq_length=4).named("my_result")
+            result = subseq_scan("ACGTACGT", subseq_length=4).named("my_result")
 
         # Operation name is set via Pool.named()
         assert result.name == "my_result"
@@ -138,32 +138,27 @@ class TestSubseqScanNaming:
 class TestSubseqScanValidation:
     """Test input validation."""
 
-    def test_pool_requires_seq_length(self):
-        """Test error when pool has no seq_length."""
-        # Test removed - breakpoint_scan no longer exists
-        pass
-
     def test_seq_length_must_be_positive(self):
         """Test error when seq_length <= 0."""
         with pp.Party() as party:
             with pytest.raises(ValueError, match="seq_length must be > 0"):
-                subseq_scan("ACGTACGT", seq_length=0)
+                subseq_scan("ACGTACGT", subseq_length=0)
 
             with pytest.raises(ValueError, match="seq_length must be > 0"):
-                subseq_scan("ACGTACGT", seq_length=-1)
+                subseq_scan("ACGTACGT", subseq_length=-1)
 
     def test_seq_length_must_not_exceed_pool_length(self):
         """Test error when seq_length > pool length."""
         with pp.Party() as party:
             with pytest.raises(ValueError, match="seq_length .* must be <= pool.seq_length"):
-                subseq_scan("ACGT", seq_length=5)
+                subseq_scan("ACGT", subseq_length=5)
 
     def test_position_exceeds_maximum(self):
         """Test error when position exceeds maximum allowed value."""
         with pp.Party() as party:
             # 8-char sequence, 4-char extraction = max position is 4
             with pytest.raises(ValueError, match="out of range"):
-                subseq_scan("ACGTACGT", seq_length=4, positions=[5])
+                subseq_scan("ACGTACGT", subseq_length=4, positions=[5])
 
 
 class TestSubseqScanEdgeCases:
@@ -172,7 +167,7 @@ class TestSubseqScanEdgeCases:
     def test_extract_at_start(self):
         """Test extraction at position 0."""
         with pp.Party() as party:
-            result = subseq_scan("ACGTTTTT", seq_length=4, positions=[0], mode="sequential").named(
+            result = subseq_scan("ACGTTTTT", subseq_length=4, positions=[0], mode="sequential").named(
                 "result"
             )
 
@@ -183,7 +178,7 @@ class TestSubseqScanEdgeCases:
         """Test extraction at maximum position."""
         with pp.Party() as party:
             # 8-char sequence, 4-char extraction = max position is 4
-            result = subseq_scan("TTTTACGT", seq_length=4, positions=[4], mode="sequential").named(
+            result = subseq_scan("TTTTACGT", subseq_length=4, positions=[4], mode="sequential").named(
                 "result"
             )
 
@@ -193,7 +188,7 @@ class TestSubseqScanEdgeCases:
     def test_extract_single_char(self):
         """Test extracting single character."""
         with pp.Party() as party:
-            result = subseq_scan("ACGT", seq_length=1, mode="sequential").named("result")
+            result = subseq_scan("ACGT", subseq_length=1, mode="sequential").named("result")
 
         df = result.generate_library(num_cycles=1)
         # 4 positions
@@ -203,7 +198,7 @@ class TestSubseqScanEdgeCases:
     def test_extract_entire_sequence(self):
         """Test extracting the entire sequence."""
         with pp.Party() as party:
-            result = subseq_scan("ACGT", seq_length=4, mode="sequential").named("result")
+            result = subseq_scan("ACGT", subseq_length=4, mode="sequential").named("result")
 
         df = result.generate_library(num_cycles=1)
         # Only 1 position (position 0)
@@ -218,7 +213,7 @@ class TestSubseqScanWithMultipleSeqs:
         """Test with multiple background sequences."""
         with pp.Party() as party:
             bg = pp.from_seqs(["AAAAAAAA", "CCCCCCCC"], mode="sequential")
-            result = subseq_scan(bg, seq_length=4, mode="sequential").named("result")
+            result = subseq_scan(bg, subseq_length=4, mode="sequential").named("result")
 
         df = result.generate_library(num_cycles=1)
         # 2 backgrounds * 5 positions = 10 sequences
@@ -235,7 +230,7 @@ class TestSubseqScanSeqLengthOutput:
     def test_output_seq_length(self):
         """Test that output pool has seq_length equal to input seq_length."""
         with pp.Party() as party:
-            result = subseq_scan("ACGTACGTACGT", seq_length=4)
+            result = subseq_scan("ACGTACGTACGT", subseq_length=4)
 
         assert result.seq_length == 4
 
@@ -243,6 +238,6 @@ class TestSubseqScanSeqLengthOutput:
         """Test output seq_length for various extraction sizes."""
         for extract_len in [1, 3, 5, 8]:
             with pp.Party() as party:
-                result = subseq_scan("ACGTACGTACGT", seq_length=extract_len)
+                result = subseq_scan("ACGTACGTACGT", subseq_length=extract_len)
 
             assert result.seq_length == extract_len
