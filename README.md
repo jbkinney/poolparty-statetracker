@@ -8,7 +8,7 @@ This monorepo contains two related Python packages:
 ## Repository Structure
 
 ```
-poolparty-repo/
+poolparty-statetracker/
 ├── poolparty/          # poolparty package
 │   ├── src/poolparty/  # source code
 │   ├── tests/          # tests

@@ -88,8 +88,7 @@ insertions = template.insertion_scan(
 # Replacement scanning
 replacements = template.replacement_scan(
     region="cre",
-    replacement_pool=pp.get_kmers(length=5),
-    replacement_length=5
+    ins_pool=pp.get_kmers(length=5),
 )
 ```
 
@@ -143,15 +142,19 @@ orf_mutants = template.mutagenize_orf(
 )
 ```
 
-## Operations Reference
+## Operations
 
-| Category | Operations |
-|----------|-----------|
-| **Base** | `from_seq`, `from_seqs`, `from_fasta`, `from_iupac`, `from_motif`, `get_kmers`, `mutagenize`, `shuffle_seq`, `recombine` |
-| **Scan** | `deletion_scan`, `insertion_scan`, `replacement_scan`, `shuffle_scan`, `mutagenize_scan`, `subseq_scan` |
-| **Region** | `insert_tags`, `extract_region`, `replace_region`, `remove_tags`, `apply_at_region` |
-| **State** | `stack`, `repeat`, `state_slice`, `state_shuffle`, `sample`, `sync` |
-| **ORF** | `mutagenize_orf` |
+PoolParty provides 50+ composable operations for DNA library design.
+See the [full API reference](https://poolparty.readthedocs.io) for details.
+
+| Goal | Key operations |
+|------|----------------|
+| Create pools | `from_seq`, `from_seqs`, `from_fasta`, `from_iupac`, `get_kmers`, `get_barcodes` |
+| Mutate | `mutagenize`, `mutagenize_orf`, `shuffle_seq`, `recombine`, `flip` |
+| Scan across positions | `deletion_scan`, `insertion_scan`, `replacement_scan`, `mutagenize_scan`, `subseq_scan` |
+| Work with regions | `annotate_region`, `extract_region`, `replace_region`, `insert_tags` |
+| Combine & control | `stack`, `sample`, `repeat`, `sync`, `filter`, `score` |
+| Export | `generate_library`, `to_df`, `to_file` |
 
 ## Documentation
 

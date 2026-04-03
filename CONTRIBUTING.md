@@ -13,7 +13,7 @@ participating, you are expected to uphold this code.
 ### Reporting Bugs
 
 Before submitting a bug report:
-1. Check the [existing issues](https://github.com/jbkinney/poolparty-statecounter/issues)
+1. Check the [existing issues](https://github.com/jbkinney/poolparty-statetracker/issues)
 2. Ensure the bug is reproducible with the latest version
 
 When submitting a bug report, include:
@@ -36,9 +36,10 @@ Feature requests are welcome! Please open an issue describing:
 2. Create a feature branch (`git checkout -b feature/your-feature`)
 3. Make your changes
 4. Run tests (`uv run pytest`)
-5. Commit with a clear message
-6. Push to your fork
-7. Open a pull request
+5. Run `pre-commit run --all-files` to check formatting
+6. Commit with a clear message
+7. Push to your fork
+8. Open a pull request
 
 ## Development Setup
 
@@ -51,8 +52,8 @@ Feature requests are welcome! Please open an issue describing:
 
 ```bash
 # Clone the repository
-git clone https://github.com/jbkinney/poolparty-statecounter.git
-cd poolparty-statecounter
+git clone https://github.com/jbkinney/poolparty-statetracker.git
+cd poolparty-statetracker
 
 # Install with uv (recommended)
 uv sync --group dev
@@ -60,6 +61,9 @@ uv sync --group dev
 # Or install with pip
 pip install -e ./statetracker[dev]
 pip install -e ./poolparty[dev]
+
+# Set up pre-commit hooks
+pre-commit install
 ```
 
 ### Running Tests
@@ -94,7 +98,7 @@ ruff format .
 ## Project Structure
 
 ```
-poolparty-statecounter/
+poolparty-statetracker/
 ├── poolparty/           # DNA library design package
 │   ├── src/poolparty/   # Source code
 │   ├── tests/           # Test suite

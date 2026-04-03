@@ -10,7 +10,17 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [
-    {name = "Justin Kinney"},
+    {name = "Zhihan Liu"},
+    {name = "Aidan Cordero"},
+    {name = "Justin B. Kinney"},
+]
+keywords = [
+    "DNA library design",
+    "oligonucleotide pools",
+    "combinatorics",
+    "bioinformatics",
+    "MPRA",
+    "deep mutational scanning",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
