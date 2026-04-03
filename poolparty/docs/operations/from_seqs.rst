@@ -88,8 +88,8 @@ Default random mode — each draw picks one sequence uniformly at random.
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (4 sequences, random)</em>
-    AAAA<br>TTTT<br>GGGG<br>TTTT
+    <em class="pp-header">Pool (1 sequence, random)</em>
+    TTTT
     </div>
 
 Sequential mode
