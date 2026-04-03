@@ -225,10 +225,119 @@ The ``generate_library()`` method produces a pandas DataFrame with sequence info
     print()
     print(df[["seq", "seq_name"]].head())
 
+Initialisation and Context Management
+--------------------------------------
+
+``pp.init()`` — persistent context
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``pp.init()`` creates a long-lived Party context that stays active for the
+rest of the session. This is the recommended approach for notebooks and
+interactive scripts.
+
+.. code-block:: python
+
+    import poolparty as pp
+    pp.init()
+
+    pool = pp.from_seq("ACGT")
+    df   = pool.generate_library()
+
+.. note::
+
+   If you need a clean slate — for example, at the top of a new notebook cell
+   block or after an experiment — call ``pp.init()`` again. This tears down the
+   previous context and starts fresh: **all prior pools and operations are
+   discarded**.
+
+``pp.init()`` accepts:
+
+- ``genetic_code`` (``str | dict``, default ``"standard"``) — genetic code for
+  ORF operations.
+- ``log_level`` (``str | None``, default ``None``) — if set, configures logging
+  (``"DEBUG"``, ``"INFO"``, ``"WARNING"``, etc.).
+
+``with pp.Party()`` — scoped context
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For isolation — running independent experiments, writing reusable functions,
+or testing — use ``with pp.Party()``. The context is cleaned up automatically
+when the block exits.
+
+.. code-block:: python
+
+    with pp.Party() as party:
+        pool = pp.from_seq("ACGT")
+        df   = pool.generate_library()
+    # context closed
+
+Contexts nest automatically:
+
+.. code-block:: python
+
+    with pp.Party() as outer:
+        wt = pp.from_seq("ACGT")
+        with pp.Party() as inner:
+            other = pp.from_seq("TTTT")  # inner is active
+        # outer is active again; wt is still usable
+
+.. list-table::
+   :widths: 50 25 25
+   :header-rows: 1
+
+   * - Scenario
+     - ``pp.init()``
+     - ``with pp.Party()``
+   * - Interactive notebook or REPL
+     - Recommended
+     -
+   * - Multiple independent experiments
+     -
+     - Recommended
+   * - Inside a reusable function
+     -
+     - Recommended
+   * - Quick reset (discard all pools)
+     - Call again
+     - Start a new ``with`` block
+
+Configuration
+~~~~~~~~~~~~~
+
+These functions apply to whichever Party is currently active:
+
+.. list-table::
+   :widths: 40 60
+   :header-rows: 1
+
+   * - Function
+     - Description
+   * - ``pp.clear_pools()``
+     - Discard all pools and operations without resetting configuration.
+   * - ``pp.toggle_styles(on=True)``
+     - Enable or disable inline sequence styling.
+   * - ``pp.toggle_cards(on=True)``
+     - Enable or disable design card computation.
+   * - ``pp.set_text_progress(on=True)``
+     - Use text-based progress bars instead of notebook widgets.
+   * - ``pp.configure_logging(level)``
+     - Set the logging level for ``poolparty`` and ``statetracker``.
+   * - ``pp.set_genetic_code(genetic_code)``
+     - Change the genetic code (affects ORF operations).
+
+.. code-block:: python
+
+    # Disable cards and styles for a performance-sensitive run
+    pp.init()
+    pp.toggle_cards(on=False)
+    pp.toggle_styles(on=False)
+
+    pool = pp.from_iupac("NNNNNNNN", mode="sequential")
+    df   = pool.to_df(num_cycles=1)  # no card columns, no style overhead
+
 Next Steps
 ----------
 
-- See the :doc:`api` for complete documentation
-- Explore region operations for complex library designs
-- Learn about state operations for advanced combinatorial control
+- Browse the :doc:`operations/index` for the full list of composable operations
+- See :doc:`pool` for Pool properties and export methods (``to_df``, ``to_file``)
 - Check out `StateTracker <https://statetracker.readthedocs.io>`_ for understanding the underlying state algebra
