@@ -28,7 +28,8 @@ VALID_MUTATION_TYPES = {
 # https://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?species=9606
 #
 # This ordering is important for mutation types like 'missense_only_first'
-# and 'nonsynonymous_first' which select the first (most frequent) codon.
+# and 'nonsynonymous_first' which select the first codon in each list
+# (the most frequent when using the built-in standard genetic code).
 STANDARD_GENETIC_CODE: dict[str, list[str]] = {
     "F": ["TTC", "TTT"],
     "L": ["CTG", "CTC", "CTT", "TTG", "TTA", "CTA"],
@@ -67,7 +68,16 @@ class CodonTable:
     """
 
     def __init__(self, genetic_code: Union[str, dict] = "standard"):
-        # Set the genetic code
+        """Initialize a CodonTable.
+
+        Args:
+            genetic_code: Either 'standard' to use the built-in frequency-ordered
+                table, or a dict mapping amino acids to codon lists, e.g.
+                ``{"M": ["ATG"], "F": ["TTC", "TTT"], ...}``. For custom dicts,
+                the order of codons in each list matters: ``_first`` mutation
+                types and ``codon_selection="first"`` pick the first codon in
+                each list.
+        """
         if genetic_code == "standard":
             aa_to_codons = STANDARD_GENETIC_CODE
         elif isinstance(genetic_code, dict):

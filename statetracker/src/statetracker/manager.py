@@ -24,13 +24,15 @@ class Manager:
         self._next_id = 0
 
     def __enter__(self):
-        """Enter context and set as active manager."""
+        """Enter context and set as active manager, saving any previous."""
+        self._previous_manager = Manager._active_manager
         Manager._active_manager = self
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Exit context and clear active manager."""
-        Manager._active_manager = None
+        """Exit context and restore previous active manager."""
+        Manager._active_manager = self._previous_manager
+        self._previous_manager = None
         return False
 
     def register(self, state):

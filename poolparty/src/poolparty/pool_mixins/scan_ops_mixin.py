@@ -380,7 +380,7 @@ class ScanOpsMixin:
 
     def subseq_scan(
         self,
-        seq_length: Integral,
+        subseq_length: Integral,
         positions: PositionsType = None,
         region: RegionType = None,
         prefix: Optional[str] = None,
@@ -393,7 +393,7 @@ class ScanOpsMixin:
 
         Parameters
         ----------
-        seq_length : Integral
+        subseq_length : Integral
             Length of subsequence to extract at each position.
         positions : PositionsType, default=None
             Positions to consider for the start of extraction (0-based).
@@ -423,7 +423,7 @@ class ScanOpsMixin:
 
         return subseq_scan(
             pool=self,
-            seq_length=seq_length,
+            subseq_length=subseq_length,
             positions=positions,
             region=region,
             prefix=prefix,

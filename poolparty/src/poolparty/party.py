@@ -98,11 +98,31 @@ def _init_default_party() -> None:
 
 @beartype
 def clear_pools() -> None:
-    """Clear all pools, operations, and regions from the active Party without resetting highlights."""
+    """Clear all pools, operations, and regions from the active Party without resetting configuration or genetic code."""
     party = get_active_party()
     if party is None:
         raise RuntimeError("No active Party context.")
     party.clear_pools()
+
+
+@beartype
+def set_genetic_code(genetic_code: Union[str, dict]) -> None:
+    """Set the genetic code on the active Party.
+
+    Args:
+        genetic_code: Either 'standard' or a dict mapping amino acids to codon lists,
+            e.g. ``{"M": ["ATG"], "F": ["TTC", "TTT"], ...}``.
+            For custom dicts, the order of codons in each list matters:
+            operations using ``codon_selection="first"`` or ``mutation_type="*_first"``
+            will pick the first codon in each list.
+
+    Raises:
+        RuntimeError: If no active Party context exists.
+    """
+    party = get_active_party()
+    if party is None:
+        raise RuntimeError("No active Party context.")
+    party.set_genetic_code(genetic_code)
 
 
 @beartype
@@ -487,9 +507,10 @@ class Party:
         return name in self._regions_by_name
 
     def clear_pools(self) -> None:
-        """Clear all pools, operations, and regions without resetting highlights.
+        """Clear all pools, operations, and regions without resetting configuration or genetic code.
 
         Unlike init(), this preserves:
+        - Configuration settings (_config)
         - Genetic code settings (_codon_table)
         """
         # Clear pool tracking

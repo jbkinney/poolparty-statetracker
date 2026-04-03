@@ -87,6 +87,7 @@ from .party import (
     get_active_party,
     init,
     load_config,
+    set_genetic_code,
 )
 from .pool import Pool
 from .protein_pool import ProteinPool
@@ -150,10 +151,11 @@ __all__ = [
     "init",
     "clear_pools",
     "load_config",
+    "set_genetic_code",
     "configure_logging",
     "toggle_styles",
     "toggle_cards",
-    "set_text_progress",
+    "set_progress_mode",
     "Pool",
     "DnaPool",
     "ProteinPool",
@@ -276,6 +278,8 @@ def toggle_styles(on: bool = True) -> None:
     When on (on=True), normal style tracking is restored.
     """
     party = get_active_party()
+    if party is None:
+        raise RuntimeError("No active Party context.")
     party._config.suppress_styles = not on
 
 
@@ -286,18 +290,29 @@ def toggle_cards(on: bool = True) -> None:
     Inline styles are unaffected (controlled by toggle_styles).
     """
     party = get_active_party()
+    if party is None:
+        raise RuntimeError("No active Party context.")
     party._config.suppress_cards = not on
 
 
-def set_text_progress(on: bool = True) -> None:
-    """Set text-based progress bars on/off for the active Party.
+def set_progress_mode(mode: str = "auto") -> None:
+    """Set progress bar style for the active Party.
 
-    When on (on=True), progress bars use text output instead of notebook widgets.
-    This is useful when the notebook widget doesn't display properly.
-    Can also be set via config.toml: [general] text_progress = true
+    Args:
+        mode: 'text' for plain text tqdm bars (terminal-friendly),
+              'auto' for tqdm.auto (notebook widget when available).
+              Can also be set via config.toml: [general] progress_mode = "text"
     """
+    from .config import VALID_PROGRESS_MODES
+
+    if mode not in VALID_PROGRESS_MODES:
+        raise ValueError(
+            f"progress_mode must be one of {VALID_PROGRESS_MODES}, got {mode!r}"
+        )
     party = get_active_party()
-    party._config.text_progress = on
+    if party is None:
+        raise RuntimeError("No active Party context.")
+    party._config.progress_mode = mode
 
 
 # === Copy factory docstrings to Pool methods ===

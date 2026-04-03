@@ -61,7 +61,8 @@ def reverse_translate(
         If None, reverse translates the entire sequence.
     codon_selection : Literal["first", "random"], default="first"
         How to select codons for each amino acid:
-        - "first": Use the most frequent codon (deterministic, mode="fixed")
+        - "first": Use the first codon in the codon table list, which is the
+          most frequent when using the built-in standard genetic code (deterministic, mode="fixed")
         - "random": Randomly select from synonymous codons (stochastic, mode="random")
     num_states : Optional[int], default=None
         Number of states to generate. Only relevant when codon_selection="random".

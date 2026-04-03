@@ -192,10 +192,9 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
         num_states_str = "None" if self.num_states is None else str(self.num_states)
         return f"Pool(id={self._id}, name={self.name!r}, op={self.operation.name!r}, num_states={num_states_str})"
 
-    def named(self, name: str, op_name: Optional[str] = None) -> Self:
-        """Set the name of this pool and its operation, return self for chaining."""
+    def named(self, name: str) -> Self:
+        """Set the name of this pool, return self for chaining."""
         self.name = name
-        # self.operation.name = op_name if op_name is not None else name + '.op'
         return self
 
     def copy(self, name: Optional[str] = None) -> Self:
@@ -216,7 +215,7 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
         """
         new_op = self.operation.copy()
         pool_class = type(self)
-        new_pool = pool_class(operation=new_op)
+        new_pool = pool_class(operation=new_op, regions=set(self._regions))
         if name is not None:
             new_pool.name = name
         else:
@@ -233,14 +232,18 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
 
         Args:
             name: Optional name for the copied pool. If None, uses
-                self.name + '.copy' as the default.
+                self.name + '.deepcopy' as the default.
 
         Returns:
             A new Pool backed by a recursively copied Operation.
         """
         new_op = self.operation.deepcopy()
         pool_class = type(self)
-        new_pool = pool_class(operation=new_op, name=name)
+        new_pool = pool_class(operation=new_op, regions=set(self._regions))
+        if name is not None:
+            new_pool.name = name
+        else:
+            new_pool.name = self.name + ".deepcopy"
         return new_pool
 
     #########################################################################
@@ -249,9 +252,9 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
 
     def generate_library(
         self,
-        num_cycles: int = 1,
-        num_seqs: Optional[int] = None,
-        seed: Optional[int] = None,
+        num_cycles: Integral = 1,
+        num_seqs: Optional[Integral] = None,
+        seed: Optional[Integral] = None,
         init_state: Optional[int] = None,
         seqs_only: bool = False,
         _include_inline_styles: bool = False,
@@ -259,7 +262,7 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
         max_iterations: Optional[int] = None,
         min_acceptance_rate: Optional[float] = None,
         attempts_per_rate_assessment: int = 100,
-    ) -> Union[pd.DataFrame, list[str]]:
+    ) -> Union[pd.DataFrame, list[str | None]]:
         from .generate_library import generate_library
 
         return generate_library(
@@ -297,7 +300,9 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
             num_seqs: Number of sequences to generate.
             num_cycles: Number of complete iterations through all states.
             show_header: Whether to show the pool header line.
-            show_state: Whether to show the state column.
+            show_state: Whether to show the state column. Requires the pool
+                to have been built with design cards that produce a state column;
+                silently ignored otherwise.
             show_name: Whether to show the name column.
             show_seq: Whether to show the seq column.
             pad_names: Whether to pad names to align sequences.
@@ -326,10 +331,13 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
         has_name = show_name and "name" in df.columns and df["name"].notna().any()
         max_name_len = df["name"].str.len().max() if has_name and pad_names else 0
 
+        state_col = f"{self.name}.state"
+        if show_state and state_col not in df.columns:
+            show_state = False
+
         if show_header:
             num_states_str = "None" if self.num_states is None else str(self.num_states)
             print(f"{self.name}: seq_length={self.seq_length}, num_states={num_states_str}")
-            # Build header columns
             header_parts = []
             if show_state:
                 header_parts.append("state")
@@ -339,11 +347,6 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
                 header_parts.append("seq")
             if header_parts:
                 print("  ".join(header_parts))
-
-        state_col = f"{self.name}.state"
-        # Disable show_state if the column doesn't exist
-        if show_state and state_col not in df.columns:
-            show_state = False
         for _, row in df.iterrows():
             # Build row columns
             row_parts = []

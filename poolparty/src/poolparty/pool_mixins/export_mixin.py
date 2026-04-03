@@ -3,6 +3,7 @@
 import gzip
 import json
 import re
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -28,13 +29,12 @@ def _open_file(path: Path, mode: str):
 def _make_progress_bar(total, desc="Generating"):
     """Create a tqdm progress bar, or return None if tqdm unavailable."""
     try:
-        # Check config for text_progress setting
         from ..party import get_active_party
 
         party = get_active_party()
-        text_mode = party._config.text_progress if party else False
+        progress_mode = party._config.progress_mode if party else "auto"
 
-        if text_mode:
+        if progress_mode == "text":
             import tqdm as tqdm_module
 
             tqdm_class = tqdm_module.tqdm
@@ -116,8 +116,8 @@ class ExportMixin:
             If True, include region tags (e.g., <region>...</region>) in output.
             If False (default), strip all tags from sequences.
         write_style : bool, default False
-            If True, include inline style annotations in sequences.
-            If False (default), output plain sequences without styles.
+            If True, add an ``_inline_styles`` column containing ``SeqStyle``
+            objects for each row. The ``seq`` column remains plain text.
         seed : int, optional
             Random seed for reproducibility.
         discard_null_seqs : bool, default True
@@ -139,8 +139,8 @@ class ExportMixin:
         Raises
         ------
         ValueError
-            If neither ``num_seqs`` nor ``num_cycles`` is specified, or if
-            ``chunk_size`` is not positive.
+            If neither or both of ``num_seqs``/``num_cycles`` are specified,
+            if either count is non-positive, or if ``chunk_size`` is not positive.
 
         Examples
         --------
@@ -151,6 +151,12 @@ class ExportMixin:
         # Validate arguments
         if num_seqs is None and num_cycles is None:
             raise ValueError("Either num_seqs or num_cycles must be specified")
+        if num_seqs is not None and num_cycles is not None:
+            raise ValueError("Specify only one of num_seqs or num_cycles, not both")
+        if num_seqs is not None and int(num_seqs) <= 0:
+            raise ValueError(f"num_seqs must be positive, got {num_seqs}")
+        if num_cycles is not None and int(num_cycles) <= 0:
+            raise ValueError(f"num_cycles must be positive, got {num_cycles}")
         if chunk_size <= 0:
             raise ValueError(f"chunk_size must be positive, got {chunk_size}")
 
@@ -261,8 +267,10 @@ class ExportMixin:
             If True, include region tags (e.g., <region>...</region>) in output.
             If False (default), strip all tags from sequences.
         write_style : bool, default False
-            If True, include inline style annotations in sequences.
-            If False (default), output plain sequences without styles.
+            If True, add an ``_inline_styles`` column containing ``SeqStyle``
+            objects for each row. The ``seq`` column remains plain text.
+            Has no effect for FASTA format (only ``name`` and ``seq`` are
+            written); a warning is emitted if used with FASTA.
         seed : int, optional
             Random seed for reproducibility.
         discard_null_seqs : bool, default True
@@ -291,8 +299,9 @@ class ExportMixin:
         Raises
         ------
         ValueError
-            If neither ``num_seqs`` nor ``num_cycles`` is specified, if
-            ``chunk_size`` is not positive, or if ``file_type`` is invalid.
+            If neither or both of ``num_seqs``/``num_cycles`` are specified,
+            if either count is non-positive, if ``chunk_size`` is not positive,
+            or if ``file_type`` is invalid.
 
         Examples
         --------
@@ -327,6 +336,12 @@ class ExportMixin:
         # Validate arguments
         if num_seqs is None and num_cycles is None:
             raise ValueError("Either num_seqs or num_cycles must be specified")
+        if num_seqs is not None and num_cycles is not None:
+            raise ValueError("Specify only one of num_seqs or num_cycles, not both")
+        if num_seqs is not None and int(num_seqs) <= 0:
+            raise ValueError(f"num_seqs must be positive, got {num_seqs}")
+        if num_cycles is not None and int(num_cycles) <= 0:
+            raise ValueError(f"num_cycles must be positive, got {num_cycles}")
         if chunk_size <= 0:
             raise ValueError(f"chunk_size must be positive, got {chunk_size}")
 
@@ -340,9 +355,9 @@ class ExportMixin:
 
         # Determine target count
         if num_seqs is not None:
-            target_count = num_seqs
+            target_count = int(num_seqs)
         else:
-            target_count = num_cycles * self.state.num_values
+            target_count = int(num_cycles) * self.state.num_values
 
         # Print export message
         if show_progress:
@@ -487,6 +502,14 @@ class ExportMixin:
         show_progress: bool = False,
     ) -> int:
         """Export to FASTA format."""
+        if write_style:
+            warnings.warn(
+                "write_style=True has no effect for FASTA format "
+                "(only 'name' and 'seq' columns are written)",
+                stacklevel=3,
+            )
+            write_style = False
+
         written = 0
         processed = 0
         first_chunk = True

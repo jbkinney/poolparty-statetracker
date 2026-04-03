@@ -8,6 +8,8 @@ else:
     import tomli as tomllib
 from .types import beartype
 
+VALID_PROGRESS_MODES = ("text", "auto")
+
 
 @beartype
 class Config:
@@ -17,7 +19,7 @@ class Config:
         # General settings
         self.suppress_styles: bool = False
         self.suppress_cards: bool = False
-        self.text_progress: bool = True
+        self.progress_mode: str = "auto"
 
     @classmethod
     def from_toml(cls, filepath: str) -> "Config":
@@ -32,7 +34,12 @@ class Config:
             general = data["general"]
             config.suppress_styles = general.get("suppress_styles", False)
             config.suppress_cards = general.get("suppress_cards", False)
-            config.text_progress = general.get("text_progress", False)
+            progress_mode = general.get("progress_mode", "auto")
+            if progress_mode not in VALID_PROGRESS_MODES:
+                raise ValueError(
+                    f"progress_mode must be one of {VALID_PROGRESS_MODES}, got {progress_mode!r}"
+                )
+            config.progress_mode = progress_mode
 
         return config
 

@@ -3,4 +3,4 @@
 [general]
 suppress_styles = false   # Suppress inline styling
 suppress_cards = false    # Suppress all design cards (global kill switch)
-text_progress = true      # Use text progress bars instead of notebook widgets
+progress_mode = "auto"    # Progress bar style: "auto" (notebook widget) or "text" (terminal)

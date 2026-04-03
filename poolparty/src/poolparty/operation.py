@@ -122,10 +122,7 @@ class Operation:
         self._validate_region(region)
         if region is not None and len(self.parent_pools) == 0:
             raise ValueError("region requires at least one parent pool")
-        # Resolve remove_tags: allow callers to pass None to mean "use Party default"
-        config = getattr(party, "_config", None)
-        party_default_remove = getattr(config, "remove_tags", False) if config is not None else False
-        self._remove_tags = remove_tags if remove_tags is not None else party_default_remove
+        self._remove_tags = remove_tags if remove_tags is not None else False
 
         # Register operation with party after name is set
         party._register_operation(self)
@@ -537,7 +534,7 @@ class Operation:
 
         Args:
             name: Optional name for the copied operation. If None, uses
-                self.name + '.copy' as the default.
+                self.name + '.deepcopy' as the default.
 
         Returns:
             A new Operation with recursively copied parent pools.
@@ -565,7 +562,10 @@ class Operation:
         if "content_pool" in init_params and len(new_parent_pools) > 1:
             init_params["content_pool"] = new_parent_pools[1]
 
-        init_params["name"] = name
+        if name is not None:
+            init_params["name"] = name
+        else:
+            init_params["name"] = self.name + ".deepcopy"
 
         return self.__class__(**init_params)
 

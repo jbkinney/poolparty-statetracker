@@ -41,6 +41,9 @@ def state_slice(
         A Pool containing states selected by applying the provided index or slice to the input Pool's state space.
     """
     if isinstance(key, Integral):
+        n = pool.num_states
+        if key < -n or key >= n:
+            raise IndexError(f"index {key} is out of range for pool with {n} states")
         if key < 0:
             start = key
             stop = key + 1 if key != -1 else None
@@ -52,6 +55,11 @@ def state_slice(
         start = key.start
         stop = key.stop
         step = key.step
+        start_n, stop_n, step_n = slice(start, stop, step).indices(pool.num_states)
+        if len(range(start_n, stop_n, step_n)) == 0:
+            raise ValueError(
+                f"slice produces 0 states for pool with {pool.num_states} states"
+            )
     op = StateSliceOp(
         pool, start=start, stop=stop, step=step, prefix=prefix, name=None, iter_order=iter_order
     )

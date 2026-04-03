@@ -9,15 +9,15 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from .types import Optional, Pool_type, Seq, Union, beartype, is_null_seq
+from .types import Integral, Optional, Pool_type, Seq, Union, beartype, is_null_seq
 
 
 @beartype
 def generate_library(
     pool: Pool_type,
-    num_cycles: int = 1,
-    num_seqs: Optional[int] = None,
-    seed: Optional[int] = None,
+    num_cycles: Integral = 1,
+    num_seqs: Optional[Integral] = None,
+    seed: Optional[Integral] = None,
     init_state: Optional[int] = None,
     seqs_only: bool = False,
     _include_inline_styles: bool = False,
@@ -25,7 +25,7 @@ def generate_library(
     max_iterations: Optional[int] = None,
     min_acceptance_rate: Optional[float] = None,
     attempts_per_rate_assessment: int = 100,
-) -> Union[pd.DataFrame, list[str]]:
+) -> Union[pd.DataFrame, list[str | None]]:
     """Generate sequences from a pool.
 
     Args:
@@ -47,7 +47,8 @@ def generate_library(
 
     Returns:
         DataFrame with columns: name, seq, plus any requested design card columns.
-        Or list of sequences if seqs_only=True.
+        Or list of sequences if seqs_only=True. Entries are None for null
+        rows when discard_null_seqs=False.
 
     Note:
         Design card columns are opt-in via the `cards` parameter on individual
@@ -59,9 +60,29 @@ def generate_library(
     if not hasattr(pool, "_master_seed"):
         pool._master_seed = None
 
+    # Coerce Integral types to native int
+    num_cycles = int(num_cycles)
+    if num_seqs is not None:
+        num_seqs = int(num_seqs)
+    if seed is not None:
+        seed = int(seed)
+
     # Validate arguments
+    if num_cycles <= 0:
+        raise ValueError(f"num_cycles must be positive, got {num_cycles}")
+    if attempts_per_rate_assessment <= 0:
+        raise ValueError(
+            f"attempts_per_rate_assessment must be positive, got {attempts_per_rate_assessment}"
+        )
+    if num_seqs is not None and num_cycles != 1:
+        warnings.warn(
+            "Both num_seqs and num_cycles provided; num_seqs takes precedence.",
+            stacklevel=2,
+        )
     if num_seqs is None:
         num_seqs = num_cycles * pool.state.num_values
+    elif num_seqs <= 0:
+        raise ValueError(f"num_seqs must be positive, got {num_seqs}")
     if init_state is not None:
         pool._current_state = init_state
     if seed is not None:
@@ -103,7 +124,7 @@ def generate_library(
 
         # Check if this row has a null sequence
         seq_value = row.get("seq")
-        is_null = seq_value is None or seq_value == ""
+        is_null = seq_value is None
 
         if discard_null_seqs:
             if not is_null:
@@ -289,7 +310,7 @@ def _compute_one(
     # Get the final sequence
     final_seq = seq_cache[pool.operation.id]
     if is_null_seq(final_seq):
-        row["seq"] = ""
+        row["seq"] = None
     else:
         row["seq"] = final_seq.string
 

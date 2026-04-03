@@ -50,7 +50,9 @@ class ProteinPool(Pool, ProteinMixin):
         show_header : bool, default=True
             Whether to show the pool header line.
         show_state : bool, default=True
-            Whether to show the state column.
+            Whether to show the state column. Requires the pool
+            to have been built with design cards that produce a state column;
+            silently ignored otherwise.
         show_name : bool, default=True
             Whether to show the name column.
         show_seq : bool, default=True
