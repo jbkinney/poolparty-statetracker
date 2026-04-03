@@ -56,13 +56,21 @@ _minted-*/
 
 # Legacy code (archived, not part of release)
 **/legacy/
-notebooks/legacy/
 .cursor/
 
 # Dev notes, prompts, and literature (local only)
 dev/
 prompts/
 literature/
+
+# Dev notebooks, benchmarks, examples (local only)
+/notebooks/
+/poolparty/benchmarks/
+/poolparty/notebooks/
+/poolparty/examples/
+/benchmark.json
+/latex/
+uv.lock
 
 # Manuscript / papers (local only, managed via Overleaf)
 **/manuscript/

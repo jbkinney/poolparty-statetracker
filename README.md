@@ -18,7 +18,6 @@ poolparty-repo/
 │   ├── tests/
 │   ├── docs/
 │   └── pyproject.toml
-└── notebooks/          # shared notebooks
 ```
 
 ## Installation
