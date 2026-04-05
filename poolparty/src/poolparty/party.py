@@ -532,14 +532,14 @@ class Party:
         are printed first, with their upstream DAGs.
 
         Args:
-            style: Display style - 'clean' (default), 'minimal', or 'repr'.
-                - 'clean': Shows names with key attributes
-                    Pool: (name) pool: n=num_states
-                    Op: [name] op: factory_name, mode, n=num_states
-                - 'minimal': Shows just names
-                    Pool: (name)
-                    Op: [name]
-                - 'repr': Shows full repr() of each object
+            style: Display style - ``'clean'`` (default), ``'minimal'``, or ``'repr'``.
+
+                - ``'clean'``: Shows names with key attributes
+                  (e.g., ``(name) pool: n=num_states``,
+                  ``[name] op: factory_name, mode, n=num_states``).
+                - ``'minimal'``: Shows just names
+                  (e.g., ``(name)``, ``[name]``).
+                - ``'repr'``: Shows full ``repr()`` of each object.
         """
         from .text_viz import print_pool_graph
 

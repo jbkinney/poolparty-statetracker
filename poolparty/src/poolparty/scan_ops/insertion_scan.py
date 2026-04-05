@@ -9,7 +9,7 @@ from ..types import CardsType, ModeType, Optional, PositionsType, RegionType, Un
 @beartype
 def insertion_scan(
     pool: Union[Pool, str],
-    ins_pool: Union[Pool, str],
+    insertion_pool: Union[Pool, str],
     positions: PositionsType = None,
     region: RegionType = None,
     replace: bool = False,
@@ -30,8 +30,8 @@ def insertion_scan(
     ----------
     pool : Union[Pool, str]
         Parent pool or sequence string.
-    ins_pool : Union[Pool, str]
-        The insert Pool or sequence string to be inserted.
+    insertion_pool : Union[Pool, str]
+        The pool or sequence string to be inserted.
     positions : PositionsType, default=None
         Positions for insertion/replacement (0-based). If None, all valid positions.
     region : RegionType, default=None
@@ -74,16 +74,15 @@ def insertion_scan(
         if isinstance(pool, str)
         else pool
     )
-    ins_pool = (
-        from_seq(ins_pool, _factory_name=f"{_factory_name}(from_seq)")
-        if isinstance(ins_pool, str)
-        else ins_pool
+    insertion_pool = (
+        from_seq(insertion_pool, _factory_name=f"{_factory_name}(from_seq)")
+        if isinstance(insertion_pool, str)
+        else insertion_pool
     )
 
-    # Validate ins_pool has defined seq_length
-    ins_length = ins_pool.seq_length
+    ins_length = insertion_pool.seq_length
     if ins_length is None:
-        raise ValueError("ins_pool must have a defined seq_length")
+        raise ValueError("insertion_pool must have a defined seq_length")
 
     # Validate bg_pool has defined seq_length (only when no region specified)
     bg_length = pool.seq_length
@@ -91,8 +90,8 @@ def insertion_scan(
         raise ValueError("pool must have a defined seq_length")
 
     # Capture state references for naming
-    ins_pool_state = ins_pool.state
-    ins_pool_num_states = ins_pool.num_states
+    ins_pool_state = insertion_pool.state
+    ins_pool_num_states = insertion_pool.num_states
 
     # Determine marker configuration based on replace mode
     # replace=False: marker_length=0 (insert without removing background)
@@ -123,7 +122,7 @@ def insertion_scan(
     # 2. Replace marker with content
     result = replace_region(
         marked,
-        ins_pool,
+        insertion_pool,
         marker_name,
         iter_order=iter_order,
         _factory_name=f"{_factory_name}(replace_region)",
@@ -167,7 +166,7 @@ def insertion_scan(
 @beartype
 def replacement_scan(
     pool: Union[Pool, str],
-    ins_pool: Union[Pool, str],
+    replacement_pool: Union[Pool, str],
     positions: PositionsType = None,
     region: RegionType = None,
     style: Optional[str] = None,
@@ -187,7 +186,7 @@ def replacement_scan(
     """
     return insertion_scan(
         pool=pool,
-        ins_pool=ins_pool,
+        insertion_pool=replacement_pool,
         positions=positions,
         region=region,
         replace=True,

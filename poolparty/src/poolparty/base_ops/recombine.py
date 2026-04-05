@@ -68,17 +68,22 @@ def recombine(
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
     styles : Optional[list[str]], default=None
-        List of styles to apply to segments. Both modes accept any non-empty list and cycle:
+        List of styles to apply to segments. Both modes accept any non-empty list
+        and cycle. Use empty string '' for segments that shouldn't have additional
+        styling. Styles overlay on top of inherited source pool styles.
+
         - If style_by='order': cycles through styles for segments by position
-          (e.g., with 2 styles and 5 segments: style[0], style[1], style[0], style[1], style[0])
+          (e.g., with 2 styles and 5 segments:
+          ``style[0], style[1], style[0], style[1], style[0]``).
         - If style_by='source': cycles through styles based on source pool index
-          (e.g., with 2 styles and 3 sources: source[0]→style[0], source[1]→style[1], source[2]→style[0])
-        Use empty string '' for segments that shouldn't have additional styling.
-        Styles overlay on top of inherited source pool styles.
+          (e.g., with 2 styles and 3 sources:
+          ``source[0]->style[0], source[1]->style[1], source[2]->style[0]``).
     style_by : StyleByForRecombineType, default='order'
         Determines how styles are assigned to segments:
-        - 'order': styles[i % len(styles)] applied to segment i (cycles through styles by position)
-        - 'source': styles[j % len(styles)] applied to segments from sources[j] (cycles by source index)
+
+        - ``'order'``: ``styles[i % len(styles)]`` applied to segment i (cycles by position).
+        - ``'source'``: ``styles[j % len(styles)]`` applied to segments from
+          ``sources[j]`` (cycles by source index).
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
     cards : list[str] or dict, optional

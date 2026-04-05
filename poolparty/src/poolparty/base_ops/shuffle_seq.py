@@ -36,6 +36,7 @@ def shuffle_seq(
         or None to shuffle entire sequence.
     shuffle_type : Literal["mono", "dinuc"], default="mono"
         Type of shuffle to perform:
+
         - ``"mono"``: random permutation preserving mononucleotide composition.
         - ``"dinuc"``: Euler-path shuffle preserving dinucleotide frequencies.
           The first and last characters are always fixed (mathematical constraint

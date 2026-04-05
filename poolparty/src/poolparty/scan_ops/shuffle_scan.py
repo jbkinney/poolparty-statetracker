@@ -39,6 +39,7 @@ def shuffle_scan(
         Region to constrain the scan to. Can be a marker name or [start, stop] interval.
     shuffle_type : Literal["mono", "dinuc"], default="mono"
         Type of shuffle to perform:
+
         - ``"mono"``: random permutation preserving mononucleotide composition.
         - ``"dinuc"``: Euler-path shuffle preserving dinucleotide frequencies.
           The first and last characters of each window are fixed.

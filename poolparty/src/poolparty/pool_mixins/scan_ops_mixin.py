@@ -161,7 +161,7 @@ class ScanOpsMixin:
 
     def insertion_scan(
         self,
-        ins_pool: Union[Pool_type, str],
+        insertion_pool: Union[Pool_type, str],
         positions: PositionsType = None,
         region: RegionType = None,
         replace: bool = False,
@@ -178,8 +178,8 @@ class ScanOpsMixin:
 
         Parameters
         ----------
-        ins_pool : Union[Pool, str]
-            The insert Pool or sequence string to be inserted.
+        insertion_pool : Union[Pool, str]
+            The pool or sequence string to be inserted.
         positions : PositionsType, default=None
             Positions for insertion (0-based). If None, all valid positions.
         region : RegionType, default=None
@@ -216,7 +216,7 @@ class ScanOpsMixin:
 
         return insertion_scan(
             pool=self,
-            ins_pool=ins_pool,
+            insertion_pool=insertion_pool,
             positions=positions,
             region=region,
             replace=replace,
@@ -232,7 +232,7 @@ class ScanOpsMixin:
 
     def replacement_scan(
         self,
-        ins_pool: Union[Pool_type, str],
+        replacement_pool: Union[Pool_type, str],
         positions: PositionsType = None,
         region: RegionType = None,
         style: Optional[str] = None,
@@ -250,8 +250,8 @@ class ScanOpsMixin:
 
         Parameters
         ----------
-        ins_pool : Union[Pool, str]
-            The insert Pool or sequence string to be inserted.
+        replacement_pool : Union[Pool, str]
+            The pool or sequence string providing replacement content.
         positions : PositionsType, default=None
             Positions for replacement (0-based). If None, all valid positions.
         region : RegionType, default=None
@@ -288,7 +288,7 @@ class ScanOpsMixin:
 
         return replacement_scan(
             pool=self,
-            ins_pool=ins_pool,
+            replacement_pool=replacement_pool,
             positions=positions,
             region=region,
             style=style,
