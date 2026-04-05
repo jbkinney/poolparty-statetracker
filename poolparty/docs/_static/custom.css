@@ -44,10 +44,37 @@ table.docutils td, table.docutils th {
 /* Inserted sequences (green) */
 .pp-ins     { color: #16a34a; font-weight: 600; }
 /* Alternating codon colours */
-.pp-codon-a { color: #7c3aed; }
-.pp-codon-b { color: #db2777; }
+.pp-codon-a { color: #2563eb; }
+.pp-codon-b { color: #dc2626; }
+.pp-codon-c { color: #059669; }
+/* XML tag literals — used in region_scan / region_multiscan output */
+.pp-xtag     { color: #c0392b; }
+.pp-xtag-b   { color: #2980b9; }
+.pp-xtag-cre { color: #16a085; }
 /* Truncation indicator */
 .pp-ellipsis { color: #9ca3af; font-style: italic; }
+
+/* DataFrame-style table inside pp-pool */
+.pp-pool table.pp-df {
+    border-collapse: collapse;
+    width: auto;
+    margin: 0;
+    font-size: 1em;
+    line-height: 1.6;
+}
+.pp-pool table.pp-df th,
+.pp-pool table.pp-df td {
+    padding: 1px 12px 1px 0;
+    text-align: left;
+    border: none;
+    white-space: nowrap;
+}
+.pp-pool table.pp-df th {
+    color: #6b7280;
+    font-weight: 600;
+    border-bottom: 1px solid #d1d5db;
+    padding-bottom: 3px;
+}
 
 /* Improve API reference readability */
 dl.py.function > dt,

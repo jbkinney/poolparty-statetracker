@@ -2,7 +2,8 @@ shuffle_seq
 ===========
 
 Randomly permute the bases of a sequence, optionally restricting the shuffle
-to a named region while leaving flanking sequence untouched.
+to a named region while leaving flanking sequence untouched. Only
+``mode="random"`` is supported; each draw is an independent permutation.
 
 .. code-block:: python
 
@@ -16,7 +17,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -72,27 +73,37 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.shuffle_seq` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
 Shuffle the full sequence
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Each draw is an independent random permutation of all bases.
+With default ``num_states`` (``None`` → ``1``), each library generation
+returns one random permutation of all bases. Use a larger ``num_states`` to
+enumerate several shuffles in one call (see below).
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     wt       = pp.from_seq("ATCGATCG")
-    shuffled = pp.shuffle_seq(wt)
+    shuffled = pp.shuffle_seq(wt, mode="random")
+    shuffled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; random permutation of all 8 bases each draw)</em>
-    CTAGATCG<br>
-    GATCATCG<br>
-    TCGAATCG<br>
-    <span class="pp-ellipsis">... (stochastic; each draw is a unique permutation)</span>
+    <em class="pp-header">shuffled: seq_length=8, num_states=1</em>
+    TGGCAACT
+    <span class="pp-ellipsis">... (stochastic; sequences change each run)</span>
     </div>
 
 Shuffle only a named region
@@ -102,17 +113,19 @@ Only bases inside the tagged region are permuted; flanks are unchanged.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     wt       = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    shuffled = pp.shuffle_seq(wt, region="cre")
+    shuffled = pp.shuffle_seq(wt, region="cre", mode="random")
+    shuffled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; only <em>cre</em> bases shuffled; flanks unchanged)</em>
-    AAAA<span class="pp-region">CGATAATC</span>TTTT<br>
-    AAAA<span class="pp-region">TCAGCGAT</span>TTTT<br>
-    AAAA<span class="pp-region">GATCATCG</span>TTTT<br>
-    <span class="pp-ellipsis">... (AAAA and TTTT always unchanged)</span>
+    <em class="pp-header">shuffled: seq_length=16, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>TGGCAACT<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    <span class="pp-ellipsis">... (stochastic; flanks fixed)</span>
     </div>
 
 Dinucleotide-preserving shuffle
@@ -127,17 +140,20 @@ only one valid Euler path and will always return the same result.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     wt       = pp.from_seq("AACGAACGTTGC")
-    shuffled = pp.shuffle_seq(wt, shuffle_type="dinuc", num_states=3)
+    shuffled = pp.shuffle_seq(wt, shuffle_type="dinuc", num_states=3, mode="random")
+    shuffled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (3 stochastic draws &mdash; dinucleotide frequencies preserved)</em>
-    AAACGCGTTGAC<br>
-    ACGTTGAACGAC<br>
-    AACGTTGCGAAC<br>
-    <span class="pp-ellipsis">... (first A and last C always fixed)</span>
+    <em class="pp-header">shuffled: seq_length=12, num_states=3</em>
+    ACGCGTTGAAAC<br>
+    AAACGTTGCGAC<br>
+    AACGCGTTGAAC
     </div>
 
 Fixing the number of variants with ``num_states``
@@ -148,18 +164,22 @@ one library generation call.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     wt       = pp.from_seq("ATCGATCG")
-    shuffled = pp.shuffle_seq(wt, num_states=5)
+    shuffled = pp.shuffle_seq(wt, num_states=5, mode="random")
+    shuffled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (5 stochastic draws)</em>
-    CTAGATCG<br>
-    GATCTCGA<br>
-    TCGATCAG<br>
-    AGCTCGAT<br>
-    CGATTAGC
+    <em class="pp-header">shuffled: seq_length=8, num_states=5</em>
+    TGGCAACT<br>
+    AGTACGTC<br>
+    GTTAAGCC<br>
+    CACTTGGA<br>
+    TCATGACG
     </div>
 
 See :func:`~poolparty.shuffle_seq`.

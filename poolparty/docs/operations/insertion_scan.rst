@@ -1,7 +1,7 @@
 insertion_scan
 ==============
 
-Insert sequences from ``ins_pool`` at every position along the background
+Insert sequences from ``insertion_pool`` at every position along the background
 sequence (or within a named region). Unlike :func:`~poolparty.replacement_scan`,
 no background bases are removed, so output sequences are longer than the input.
 Set ``replace=True`` to replace a window of ``ins_length`` bases at each
@@ -21,7 +21,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -31,7 +31,7 @@ Parameters
      - ``Pool | str``
      - *(required)*
      - The background Pool to scan. Can also be a plain sequence string.
-   * - ``ins_pool``
+   * - ``insertion_pool``
      - ``Pool``
      - *(required)*
      - Pool whose sequences are inserted at each scanned position. An
@@ -71,11 +71,17 @@ Parameters
      - ``None``
      - Fix the total number of output states.
    * - ``iter_order``
-     - ``list[str] | None``
+     - ``int | None``
      - ``None``
-     - Controls which axis varies fastest, e.g. ``["insert","position"]``.
+     - Iteration priority for downstream multi-pool iteration.
 
 ----
+
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.insertion_scan` in the
+   :doc:`API Reference </api>`.
 
 Examples
 --------
@@ -88,19 +94,22 @@ length 9.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt    = pp.from_seq("ACGTACGT")
     bases = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
-    scan  = wt.insertion_scan(ins_pool=bases, mode="sequential")
+    scan  = wt.insertion_scan(insertion_pool=bases, mode="sequential", style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (36 sequences &mdash; 9 positions &times; 4 single-base inserts; output length 9)</em>
-    <span class="pp-ins">A</span>ACGTACGT<br>
-    <span class="pp-ins">C</span>ACGTACGT<br>
-    <span class="pp-ins">G</span>ACGTACGT<br>
-    <span class="pp-ins">T</span>ACGTACGT<br>
-    A<span class="pp-ins">A</span>CGTACGT<br>
+    <em class="pp-header">scan: seq_length=9, num_states=36</em>
+    <span class="pp-mut">A</span>ACGTACGT<br>
+    A<span class="pp-mut">A</span>CGTACGT<br>
+    AC<span class="pp-mut">A</span>GTACGT<br>
+    ACG<span class="pp-mut">A</span>TACGT<br>
+    ACGT<span class="pp-mut">A</span>ACGT
     <span class="pp-ellipsis">... (36 total)</span>
     </div>
 
@@ -112,19 +121,22 @@ Use ``from_iupac("NN")`` to enumerate all 16 dinucleotide inserts.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     nn   = pp.from_iupac("NN", mode="sequential")
-    scan = wt.insertion_scan(ins_pool=nn, mode="sequential")
+    scan = wt.insertion_scan(insertion_pool=nn, mode="sequential", style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (144 sequences &mdash; 9 positions &times; 16 dinucleotide inserts; length 10)</em>
-    <span class="pp-ins">AA</span>ACGTACGT<br>
-    <span class="pp-ins">AC</span>ACGTACGT<br>
-    <span class="pp-ins">AG</span>ACGTACGT<br>
-    <span class="pp-ins">AT</span>ACGTACGT<br>
-    A<span class="pp-ins">AA</span>CGTACGT<br>
+    <em class="pp-header">scan: seq_length=10, num_states=144</em>
+    <span class="pp-mut">AA</span>ACGTACGT<br>
+    A<span class="pp-mut">AA</span>CGTACGT<br>
+    AC<span class="pp-mut">AA</span>GTACGT<br>
+    ACG<span class="pp-mut">AA</span>TACGT<br>
+    ACGT<span class="pp-mut">AA</span>ACGT
     <span class="pp-ellipsis">... (144 total)</span>
     </div>
 
@@ -138,19 +150,23 @@ valid positions; output length stays 8. This is equivalent to calling
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt    = pp.from_seq("ACGTACGT")
     bases = pp.from_seqs(["AA", "CC", "GG", "TT"], mode="sequential")
-    scan  = wt.insertion_scan(ins_pool=bases, replace=True, mode="sequential")
+    scan  = wt.insertion_scan(insertion_pool=bases, replace=True, mode="sequential",
+                              style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (28 sequences &mdash; 7 positions &times; 4 inserts; 2-base window replaced; output length 8)</em>
-    <span class="pp-ins">AA</span>CGTACGT<br>
-    <span class="pp-ins">CC</span>CGTACGT<br>
-    <span class="pp-ins">GG</span>CGTACGT<br>
-    <span class="pp-ins">TT</span>CGTACGT<br>
-    A<span class="pp-ins">AA</span>GTACGT<br>
+    <em class="pp-header">scan: seq_length=8, num_states=28</em>
+    <span class="pp-mut">AA</span>GTACGT<br>
+    A<span class="pp-mut">AA</span>TACGT<br>
+    AC<span class="pp-mut">AA</span>ACGT<br>
+    ACG<span class="pp-mut">AA</span>CGT<br>
+    ACGT<span class="pp-mut">AA</span>GT
     <span class="pp-ellipsis">... (28 total)</span>
     </div>
 
@@ -162,19 +178,24 @@ valid insertion sites; flanks are never altered.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt    = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     bases = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
-    scan  = wt.insertion_scan(ins_pool=bases, region="cre", mode="sequential")
+    scan  = wt.insertion_scan(insertion_pool=bases, region="cre", mode="sequential",
+                              style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (36 sequences &mdash; 9 positions within <em>cre</em> &times; 4 inserts; output length 17)</em>
-    AAAA<span class="pp-region"><span class="pp-ins">A</span>ATCGATCG</span>TTTT<br>
-    AAAA<span class="pp-region"><span class="pp-ins">C</span>ATCGATCG</span>TTTT<br>
-    AAAA<span class="pp-region"><span class="pp-ins">G</span>ATCGATCG</span>TTTT<br>
-    AAAA<span class="pp-region">A<span class="pp-ins">A</span>TCGATCG</span>TTTT<br>
-    <span class="pp-ellipsis">... (36 total; flanks always unchanged)</span>
+    <em class="pp-header">scan: seq_length=17, num_states=36</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">A</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>A<span class="pp-mut">A</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AT<span class="pp-mut">A</span>CGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATC<span class="pp-mut">A</span>GATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-mut">A</span>ATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    <span class="pp-ellipsis">... (36 total)</span>
     </div>
 
 Explicit position list
@@ -184,19 +205,52 @@ Limit the scan to specific insertion sites.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt    = pp.from_seq("ACGTACGT")
     bases = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
-    scan  = wt.insertion_scan(ins_pool=bases, positions=[0, 4, 8], mode="sequential")
+    scan  = wt.insertion_scan(insertion_pool=bases, positions=[0, 4, 8],
+                              mode="sequential", style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (12 sequences &mdash; 3 positions &times; 4 inserts)</em>
-    <span class="pp-ins">A</span>ACGTACGT<br>
-    <span class="pp-ins">C</span>ACGTACGT<br>
-    ACGT<span class="pp-ins">A</span>ACGT<br>
-    ACGT<span class="pp-ins">C</span>ACGT<br>
+    <em class="pp-header">scan: seq_length=9, num_states=12</em>
+    <span class="pp-mut">A</span>ACGTACGT<br>
+    ACGT<span class="pp-mut">A</span>ACGT<br>
+    ACGTACGT<span class="pp-mut">A</span><br>
+    <span class="pp-mut">C</span>ACGTACGT<br>
+    ACGT<span class="pp-mut">C</span>ACGT
     <span class="pp-ellipsis">... (12 total)</span>
+    </div>
+
+Random motif insertion (mode="random")
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``mode='random'`` draws insertion positions stochastically. Here a degenerate
+6-base IUPAC motif (``R`` = A|G, ``Y`` = C|T) is inserted at random
+positions along a 12-mer.
+
+.. code-block:: python
+
+    import poolparty as pp
+    pp.init()
+    wt    = pp.from_seq("ACGTACGTACGT")
+    motif = pp.from_iupac("RRYYYY")
+    scan  = wt.insertion_scan(insertion_pool=motif, mode="random", num_states=5,
+                              style="red")
+    scan.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">scan: seq_length=18, num_states=5</em>
+    ACGTACGTACGT<span class="pp-mut">GACCCT</span><br>
+    ACGTACGTACGT<span class="pp-mut">GATCTT</span><br>
+    AC<span class="pp-mut">GACCTT</span>GTACGTACGT<br>
+    ACG<span class="pp-mut">AACTTT</span>TACGTACGT<br>
+    ACGTAC<span class="pp-mut">AATTCC</span>GTACGT
     </div>
 
 See :func:`~poolparty.insertion_scan`.

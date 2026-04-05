@@ -17,7 +17,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -68,6 +68,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.get_kmers` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -79,12 +85,18 @@ All dinucleotides (length=2, sequential)
 .. code-block:: python
 
     pool = pp.get_kmers(length=2, mode="sequential")
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (16 sequences &mdash; all dinucleotides in order)</em>
-    AA<br>AC<br>AG<br>AT<br>CA<br>CC<br>CG<br>CT<br>GA<br>GC<br>GG<br>GT<br>TA<br>TC<br>TG<br>TT
+    <em class="pp-header">pool: seq_length=2, num_states=16</em>
+    AA<br>
+    AC<br>
+    AG<br>
+    AT<br>
+    CA
+    <span class="pp-ellipsis">... (16 total)</span>
     </div>
 
 Random subset of 4-mers with ``num_states``
@@ -96,12 +108,20 @@ representative subset without enumerating all 256 4-mers.
 .. code-block:: python
 
     pool = pp.get_kmers(length=4, mode="random", num_states=8)
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (8 of 256 4-mers, random &mdash; stochastic example draw)</em>
-    ACGT<br>TTAA<br>GCGC<br>AACC<br>TGCA<br>CGTA<br>GATC<br>ATAT
+    <em class="pp-header">pool: seq_length=4, num_states=8</em>
+    TGGC<br>
+    TCAC<br>
+    AGCC<br>
+    GTTC<br>
+    ATTC<br>
+    TTAA<br>
+    GGAG<br>
+    TAAG
     </div>
 
 Lowercase k-mers
@@ -113,12 +133,18 @@ when k-mers are joined with uppercase flanking sequences.
 .. code-block:: python
 
     pool = pp.get_kmers(length=2, mode="sequential", case="lower")
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (16 sequences &mdash; all dinucleotides, lowercase)</em>
-    aa<br>ac<br>ag<br>at<br>ca<br>cc<br>cg<br>ct<br>ga<br>gc<br>gg<br>gt<br>ta<br>tc<br>tg<br>tt
+    <em class="pp-header">pool: seq_length=2, num_states=16</em>
+    aa<br>
+    ac<br>
+    ag<br>
+    at<br>
+    ca
+    <span class="pp-ellipsis">... (16 total)</span>
     </div>
 
 Inserting k-mers into a named region
@@ -131,16 +157,44 @@ creating a combinatorial library in one step.
 
     bg   = pp.from_seq("GCGC<insert>XX</insert>GCGC")
     pool = pp.get_kmers(length=2, mode="sequential", pool=bg, region="insert")
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (16 sequences &mdash; all dinucleotides in <em>insert</em> region)</em>
-    GCGC<span class="pp-region">AA</span>GCGC<br>
-    GCGC<span class="pp-region">AC</span>GCGC<br>
-    GCGC<span class="pp-region">AG</span>GCGC<br>
-    GCGC<span class="pp-region">AT</span>GCGC<br>
+    <em class="pp-header">pool: seq_length=10, num_states=16</em>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AG<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AT<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>CA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC
     <span class="pp-ellipsis">... (16 total)</span>
     </div>
 
-See :func:`~poolparty.get_kmers`.
+Pool method shorthand
+~~~~~~~~~~~~~~~~~~~~~
+
+When inserting into a region, the same operation is available as a method
+on any ``DnaPool``.  The call ``bg.insert_kmers(...)`` is equivalent to
+``pp.get_kmers(..., pool=bg)`` — it simply passes ``self`` as the
+background pool.
+
+.. code-block:: python
+
+    bg   = pp.from_seq("GCGC<insert>XX</insert>GCGC")
+    pool = bg.insert_kmers(length=2, region="insert", mode="sequential")
+    pool.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">pool: seq_length=10, num_states=16</em>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AG<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AT<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>CA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC
+    <span class="pp-ellipsis">... (16 total)</span>
+    </div>
+
+See :func:`~poolparty.get_kmers` and :meth:`~poolparty.DnaPool.insert_kmers`.

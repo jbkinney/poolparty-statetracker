@@ -18,7 +18,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -67,6 +67,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.from_motif` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -84,13 +90,13 @@ All positions equal probability — equivalent to sampling random sequences.
          "G": [0.25, 0.25], "T": [0.25, 0.25]}
     )
     pool = pp.from_motif(pfm, num_states=4)
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; uniform over all dinucleotides)</em>
-    AG<br>CT<br>GA<br>TT<br>
-    <span class="pp-ellipsis">... (each draw is independent)</span>
+    <em class="pp-header">pool: seq_length=2, num_states=4</em>
+    GC<br>CC<br>GC<br>TC
     </div>
 
 Biased motif
@@ -108,13 +114,13 @@ Draws cluster near the consensus ``AC`` but vary stochastically.
          "G": [0.10, 0.10], "T": [0.05, 0.05]}
     )
     pool = pp.from_motif(pfm, num_states=5)
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; biased toward AC; consensus = AC)</em>
-    AC<br>AC<br>GC<br>AC<br>AA<br>
-    <span class="pp-ellipsis">... (draws cluster near consensus)</span>
+    <em class="pp-header">pool: seq_length=2, num_states=5</em>
+    AC<br>AC<br>AC<br>AC<br>TC
     </div>
 
 Fixing ``num_states`` for a reproducible library
@@ -134,13 +140,14 @@ Set ``num_states`` to pre-commit the number of draws, then fix the seed in
         "T": [0.05, 0.05, 0.1, 0.7],
     })
     pool = pp.from_motif(pfm4, num_states=5)
+    pool.print_library()
     df   = pool.generate_library(seed=42)
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (5 sequences, seed=42 &mdash; consensus ACGT)</em>
-    ACGT<br>ACGT<br>ACAT<br>GCGT<br>ACGG
+    <em class="pp-header">pool: seq_length=4, num_states=5</em>
+    ACAA<br>ACGG<br>ACGT<br>ACGT<br>TCGT
     </div>
 
 Sampling into a named region
@@ -158,15 +165,46 @@ Provide ``pool`` and ``region`` to draw motif sequences into a fixed context.
     )
     bg   = pp.from_seq("GCGC<insert>XX</insert>GCGC")
     pool = pp.from_motif(pfm, pool=bg, region="insert", num_states=4)
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (4 stochastic draws &mdash; motif sampled into <em>insert</em> region)</em>
-    GCGC<span class="pp-region">AC</span>GCGC<br>
-    GCGC<span class="pp-region">AC</span>GCGC<br>
-    GCGC<span class="pp-region">GC</span>GCGC<br>
-    GCGC<span class="pp-region">AC</span>GCGC
+    <em class="pp-header">pool: seq_length=10, num_states=4</em>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>CA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC
     </div>
 
-See :func:`~poolparty.from_motif`.
+Pool method shorthand
+~~~~~~~~~~~~~~~~~~~~~
+
+When inserting into a region, the same operation is available as a method
+on any ``DnaPool``.  The call ``bg.insert_from_motif(...)`` is equivalent
+to ``pp.from_motif(..., pool=bg)`` — it simply passes ``self`` as the
+background pool.
+
+.. code-block:: python
+
+    import pandas as pd
+
+    pfm = pd.DataFrame(
+        {"A": [0.7, 0.1], "C": [0.1, 0.7],
+         "G": [0.1, 0.1], "T": [0.1, 0.1]}
+    )
+    bg   = pp.from_seq("GCGC<insert>XX</insert>GCGC")
+    pool = bg.insert_from_motif(pfm, region="insert", num_states=4)
+    pool.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">pool: seq_length=10, num_states=4</em>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>CA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC
+    </div>
+
+See :func:`~poolparty.from_motif` and :meth:`~poolparty.DnaPool.insert_from_motif`.

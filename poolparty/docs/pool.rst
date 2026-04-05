@@ -1,17 +1,28 @@
 Pools
-===============
+=====
 
-Every PoolParty operation returns a :class:`~poolparty.Pool`. This page covers
-the attributes available on every pool and the methods for generating and
-exporting sequences.
+Every PoolParty operation returns a **Pool**. A Pool represents a designed
+sequence library: it records which operation was applied and to what inputs,
+forming a directed acyclic graph (DAG) of operations. PoolParty walks this
+graph to generate sequences on demand when you call ``generate_library()``,
+``print_library()``, ``to_df()``, or ``to_file()``.
 
-.. seealso::
+Every operation returns a **new** Pool — the original is never modified. This
+means you can branch a pipeline at any point and apply different operations to
+each branch without interference.
 
-   Pools must be created inside an active context. Call ``pp.init()`` once at
-   the top of a notebook, or use ``with pp.Party():`` for scoped isolation.
-   See :doc:`quickstart` for setup, context management, and configuration.
+Each pool carries a reference to the operation that created it. You can inspect
+it via ``pool.operation`` to check settings like ``operation.mode`` and
+``operation.num_states`` at any point in a pipeline. See :doc:`operations/modes`
+for details.
 
-All examples assume::
+Pools must be created inside an active context. Call ``pp.init()`` once at the
+top of a notebook, or use ``with pp.Party():`` for automatic cleanup when the
+block exits. See :doc:`quickstart` for details.
+
+All examples assume:
+
+.. code-block:: python
 
     import poolparty as pp
     pp.init()
@@ -33,24 +44,43 @@ Properties
      - Human-readable name for this pool. Settable. Defaults to ``"pool[N]"``.
    * - ``num_states``
      - ``int``
-     - Number of distinct states (draws) this pool produces.
+     - Number of distinct sequences this pool produces.
    * - ``seq_length``
      - ``int | None``
      - Fixed sequence length, or ``None`` for variable-length pools.
    * - ``iter_order``
      - ``float``
-     - Iteration priority. Pools with higher values iterate fastest in a
-       joined or stacked pool.
+     - Iteration priority. Controls which pool's sequences change most
+       rapidly when generating combinations in a joined or stacked pool.
    * - ``regions``
      - ``set[Region]``
      - Set of :class:`~poolparty.Region` objects present in this pool's sequences.
+       See :doc:`regions` for details.
    * - ``parents``
      - ``list[Pool]``
-     - Upstream pools that feed into this pool's operation.
+     - Input pools that this pool's operation reads from.
+   * - ``operation``
+     - ``Operation``
+     - The operation that created this pool. Exposes ``operation.mode``,
+       ``operation.num_states``, and ``operation.natural_num_states``.
+
+Note that ``pool.num_states`` and ``pool.operation.num_states`` are different
+values. The pool's ``num_states`` is the total across the entire pipeline,
+while the operation's ``num_states`` is just that operation's contribution
+(see :doc:`operations/modes` and :doc:`operations/library_size`):
+
+.. code-block:: python
+
+    seqs = pp.from_seqs(["AAA", "CCC", "GGG"], mode="sequential")
+    mut  = seqs.mutagenize(num_mutations=1, mode="sequential")
+
+    mut.num_states                    # 27 (3 inputs × 9 mutants)
+    mut.operation.num_states          # 9  (mutagenize alone)
+    mut.operation.natural_num_states  # 9  (before any num_states override)
 
 ----
 
-Naming and Copying
+Naming and copying
 ------------------
 
 ``named(name)``
@@ -73,31 +103,59 @@ breaking a chain.
 ``copy()`` and ``deepcopy()``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``copy()`` creates a parallel branch in the DAG that shares the same
-upstream pools — useful for branching a design at a specific point without
-re-running upstream operations.
+``copy()`` creates a new pool that shares the same input pools — useful for
+branching a design at a specific point without re-running earlier operations.
 
 ``deepcopy()`` creates a fully independent copy of the entire upstream DAG
-— nothing is shared with the original.
+— nothing is shared with the original. In most cases ``copy()`` is sufficient.
+Use ``deepcopy()`` when the two branches must be fully independent and share
+no input pools.
 
 .. code-block:: python
 
     base = pp.from_iupac("NNNN", mode="sequential")
     branch_a = base.mutagenize(num_mutations=1).named("branch_a")
     branch_b = base.copy().mutagenize(num_mutations=2).named("branch_b")
-    # branch_a and branch_b share the same "base" upstream pool
+    # branch_a and branch_b share the same "base" input pool
 
 ----
 
-Generating Sequences
+Operator shortcuts
+------------------
+
+Pools support three Python operators as shorthand for common operations:
+
+``pool_a + pool_b``
+    Equivalent to ``pp.stack([pool_a, pool_b])``. See :doc:`operations/stack`.
+
+``pool * N``
+    Equivalent to ``pp.repeat(pool, times=N)``. See :doc:`operations/repeat`.
+
+``pool[start:stop]``
+    Equivalent to ``pp.slice_states(pool, start=start, stop=stop)``. See
+    :doc:`operations/slice_states`.
+
+.. code-block:: python
+
+    a = pp.from_seqs(["AAA", "CCC"], mode="sequential")
+    b = pp.from_seqs(["GGG", "TTT"], mode="sequential")
+
+    combined = a + b          # 4 states (2 + 2)
+    repeated = a * 3          # 6 states (2 × 3)
+    sliced   = combined[:3]   # 3 states (first 3 of 4)
+
+----
+
+Generating sequences
 --------------------
 
 ``generate_library(...)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Evaluate the pool DAG and return a :class:`pandas.DataFrame`. This is the
-primary way to draw sequences. See :doc:`operations/generate_library` for full
-documentation.
+Generate all sequences from this pool and return them as a
+:class:`pandas.DataFrame`. Best for small to medium pools; for libraries above ~10k
+sequences, use ``to_df`` which streams in chunks. See
+:doc:`operations/generate_library` for full documentation.
 
 .. code-block:: python
 
@@ -108,8 +166,8 @@ documentation.
 ``print_library(...)``
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Print a formatted preview of the pool's sequences to stdout and return
-``self`` for chaining.
+Print a formatted preview of the pool's sequences to stdout. Returns ``self``
+so it can be used mid-pipeline.
 
 .. list-table::
    :widths: 25 15 15 45
@@ -126,8 +184,9 @@ Print a formatted preview of the pool's sequences to stdout and return
    * - ``num_cycles``
      - ``int | None``
      - ``1``
-     - Complete cycles through the state space (used when ``num_seqs`` is
-       not given).
+     - Number of complete passes through the pool's ``num_states`` sequences
+       (used when ``num_seqs`` is not given). One cycle produces
+       ``num_states`` sequences.
    * - ``show_header``
      - ``bool``
      - ``True``
@@ -136,6 +195,14 @@ Print a formatted preview of the pool's sequences to stdout and return
      - ``bool``
      - ``True``
      - Include the sequence name column.
+   * - ``show_seq``
+     - ``bool``
+     - ``True``
+     - Include the sequence column.
+   * - ``show_state``
+     - ``bool``
+     - ``False``
+     - Include the state index column.
    * - ``pad_names``
      - ``bool``
      - ``True``
@@ -144,6 +211,12 @@ Print a formatted preview of the pool's sequences to stdout and return
      - ``int | None``
      - ``None``
      - Random seed for reproducible previews.
+   * - ``discard_null_seqs``
+     - ``bool``
+     - ``False``
+     - Skip sequences removed by a ``filter`` operation (``NullSeq``).
+
+See :class:`~poolparty.Pool` in the :doc:`api` for the full parameter list.
 
 .. code-block:: python
 
@@ -168,8 +241,8 @@ Exporting to a DataFrame — ``to_df(...)``
 
 Generate sequences and collect them into a :class:`pandas.DataFrame` using
 chunked streaming. Prefer ``to_df`` over ``generate_library`` for large
-libraries (> ~10 k sequences) because it processes sequences in batches and
-avoids building the full DataFrame in a single allocation.
+libraries (above ~10k sequences). It processes sequences in batches, keeping
+peak memory proportional to ``chunk_size`` rather than the full library.
 
 .. list-table::
    :widths: 25 15 15 45
@@ -186,7 +259,8 @@ avoids building the full DataFrame in a single allocation.
    * - ``num_cycles``
      - ``int | None``
      - ``None``
-     - Complete cycles through the state space.
+     - Number of complete passes through the pool's ``num_states`` sequences.
+       One cycle produces ``num_states`` sequences.
    * - ``chunk_size``
      - ``int``
      - ``1000``
@@ -204,7 +278,7 @@ avoids building the full DataFrame in a single allocation.
    * - ``discard_null_seqs``
      - ``bool``
      - ``True``
-     - Skip sequences that were filtered out (``NullSeq``).
+     - Skip sequences removed by a ``filter`` operation (``NullSeq``).
    * - ``columns``
      - ``list[str] | None``
      - ``None``
@@ -215,8 +289,9 @@ avoids building the full DataFrame in a single allocation.
      - ``True``
      - Display a ``tqdm`` progress bar during generation.
 
-Basic usage
-~~~~~~~~~~~
+See :class:`~poolparty.Pool` in the :doc:`api` for the full parameter list.
+
+.. rubric:: Basic usage
 
 .. code-block:: python
 
@@ -224,26 +299,24 @@ Basic usage
     df   = pool.to_df(num_cycles=1)
     # 65536 rows, columns: name, seq
 
-Large library with chunked streaming
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. rubric:: Large library with chunked streaming
 
 .. code-block:: python
 
     pool = pp.from_iupac("NNNNNNNNNN")
-    df   = pool.to_df(num_seqs=500_000, chunk_size=10_000, seed=42) # Random sample of 500k sequences from ~1M possibe sequences
+    df   = pool.to_df(num_seqs=500_000, chunk_size=10_000, seed=42) # Random sample of 500k sequences from ~1M possible sequences
 
-Keep only ``name`` and ``seq`` (drop design cards)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. rubric:: Keep only name and seq (drop design cards)
 
 .. code-block:: python
 
-    scored = pp.score(pool, pp.calc_gc, card_key="gc", cards={"gc": "gc"})
+    scored = pool.score(pp.calc_gc, card_key="gc", cards={"gc": "gc"})
     df     = scored.to_df(num_cycles=1, columns=["name", "seq"])
     # "gc" column is excluded
 
 ----
 
-Exporting to File — ``to_file(...)``
+Exporting to file — ``to_file(...)``
 -------------------------------------
 
 Stream sequences directly to disk without ever holding the full library in
@@ -275,7 +348,8 @@ compression.
    * - ``num_cycles``
      - ``int | None``
      - ``None``
-     - Complete cycles through the state space.
+     - Number of complete passes through the pool's ``num_states`` sequences.
+       One cycle produces ``num_states`` sequences.
    * - ``chunk_size``
      - ``int``
      - ``1000``
@@ -291,7 +365,7 @@ compression.
    * - ``discard_null_seqs``
      - ``bool``
      - ``True``
-     - Skip filtered-out (``NullSeq``) sequences.
+     - Skip sequences removed by a ``filter`` operation (``NullSeq``).
    * - ``columns``
      - ``list[str] | None``
      - ``None``
@@ -312,10 +386,10 @@ compression.
      - ``True``
      - Show a ``tqdm`` progress bar.
 
-Returns the number of sequences written.
+Returns the number of sequences written. See :class:`~poolparty.Pool` in the
+:doc:`api` for the full parameter list.
 
-Export to CSV
-~~~~~~~~~~~~~
+.. rubric:: Export to CSV
 
 .. code-block:: python
 
@@ -333,15 +407,13 @@ Export to CSV
     pool[0].4,AAAAAACA
     ...
 
-Export to gzip-compressed CSV
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. rubric:: Export to gzip-compressed CSV
 
 .. code-block:: python
 
     n = pool.to_file("library.csv.gz", num_seqs=1_000_000, chunk_size=50_000)
 
-Export to FASTA
-~~~~~~~~~~~~~~~
+.. rubric:: Export to FASTA
 
 .. code-block:: python
 
@@ -357,12 +429,11 @@ Export to FASTA
     AAAAAAAG
     ...
 
-FASTA with a custom description line
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. rubric:: FASTA with a custom description line
 
 .. code-block:: python
 
-    scored = pp.score(pool, pp.calc_gc, card_key="gc", cards={"gc": "gc"})
+    scored = pool.score(pp.calc_gc, card_key="gc", cards={"gc": "gc"})
     n = scored.to_file(
         "library.fasta",
         num_seqs=1000,
@@ -384,8 +455,8 @@ FASTA with a custom description line
 Visualising the DAG — ``print_dag(...)``
 -----------------------------------------
 
-Print an ASCII tree of the computation graph rooted at this pool and return
-``self`` for chaining.
+Print an ASCII tree of the computation graph rooted at this pool. Returns
+``self`` so it can be used mid-pipeline.
 
 .. list-table::
    :widths: 25 15 15 45
@@ -407,13 +478,16 @@ Print an ASCII tree of the computation graph rooted at this pool and return
 
 .. code-block:: python
 
-    wt  = pp.from_seq("ACGTACGT")
-    mut = pp.mutagenize(wt, num_mutations=2)
-    scored = pp.score(mut, pp.calc_gc, card_key="gc", cards={"gc": "gc"})
+    wt     = pp.from_seq("ACG")
+    mut    = wt.mutagenize(num_mutations=1, mode="sequential")
+    scored = mut.score(pp.calc_gc, card_key="gc", cards={"gc": "gc"})
     scored.print_dag()
 
 .. code-block:: text
 
-    scored
-    └── mutagenize
-        └── from_seq
+    pool[2] (pool, n=9)
+    └── op[2]:score [mode=fixed, n=1]
+        └── pool[1] (pool, n=9)
+            └── op[1]:mutagenize [mode=sequential, n=9]
+                └── pool[0] (pool, n=1)
+                    └── op[0]:from_seq [mode=fixed, n=1]

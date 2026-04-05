@@ -1,27 +1,29 @@
 PoolParty Documentation
 =======================
 
-**PoolParty** is a Python package for declarative design of complex
-oligonucleotide sequence pools. It provides a powerful, composable API
-for generating DNA libraries used in multiplexed assays such as MPRAs,
-deep mutational scanning, and MAVEs.
+**PoolParty** is a Python package for designing complex oligonucleotide
+sequence libraries. It provides a declarative, composable interface for
+generating DNA libraries used in MPRA (massively parallel reporter assays),
+deep mutational scanning, in silico analysis of genomic DNNs, and other
+high-throughput experiments.
 
 Why PoolParty?
 --------------
 
-Designing complex DNA libraries typically requires ad-hoc scripting that is
-difficult to reproduce, validate, and share. PoolParty shifts library design
-from imperative code to a declarative specification using a directed acyclic
-graph (DAG) of composable operations.
+Designing DNA libraries often involves combining multiple types of sequence
+modifications — mutations, insertions, deletions, shuffles — across multiple
+regions with mixed coverage requirements. PoolParty lets you:
 
-**Key benefits:**
-
-- **Declarative design**: Specify *what* you want, not *how* to compute it
-- **Composable operations**: Build complex libraries from simple, reusable parts
-- **Automatic provenance**: Track the origin of every sequence in your library
-- **State algebra**: Leverage `StateTracker <https://statetracker.readthedocs.io>`_
-  for combinatorial enumeration with random access
-- **Region-aware**: Tag and manipulate sequence regions with XML-like syntax
+- **Compose operations**: Chain operations like ``.mutagenize()``,
+  ``.deletion_scan()``, and ``.insertion_scan()`` to build complex libraries
+- **Tag regions**: Use XML-like syntax to mark and manipulate specific regions
+  of sequences
+- **Use lazy evaluation**: Sequences are generated on-demand, enabling libraries
+  with billions of potential variants
+- **Track provenance**: Each sequence comes with a structured record of how it
+  was built — ready for filtering, grouping, and modeling
+- **Style output**: Visual annotations highlight sequence modifications and
+  regions for quick auditing
 
 .. code-block:: python
 
@@ -30,42 +32,45 @@ graph (DAG) of composable operations.
     # Initialize PoolParty
     pp.init()
 
-    # Create a promoter variant pool with single mutations
-    promoter = pp.from_seq("ATCGATCGATCGATCGATCG", region="promoter")
-    variants = promoter.mutagenize(alphabet="ACGT", k=1)
+    # Create a template with tagged regions
+    template = pp.from_seq("ACGT<cre>GGAAAGCGGGCAGTGAGC</cre>TTTT<bc/>GGGG")
 
-    # Add random barcodes
-    barcodes = pp.get_kmers(length=10, alphabet="ACGT")
+    # Generate single-nucleotide mutations in the CRE region
+    mutant_library = template.mutagenize(
+        region="cre",
+        num_mutations=1,
+        mode="sequential"
+    )
 
-    # Combine promoter variants with barcodes
-    library = pp.join([variants, barcodes])
-
-    # Generate the complete library
-    df = library.generate_library(num_seqs=100)
+    # Generate the library as a DataFrame
+    df = mutant_library.generate_library()
     print(f"Generated {len(df)} sequences")
 
-Features
---------
+Operations
+----------
 
-**Base Operations**
+**Source**
     Create sequence pools from sequences, FASTA files, IUPAC codes, motifs,
-    or k-mer enumeration. Apply mutations, shuffling, and recombination.
+    k-mer enumeration, and constrained barcodes.
 
-**Scan Operations**
-    Perform tiled mutagenesis with insertion, deletion, replacement, and
-    shuffle scans across sequence positions.
+**Transformation**
+    Apply nucleotide and codon-level mutagenesis, shuffling, and recombination.
+    Codon-aware operations preserve reading frames for protein-coding sequences.
 
-**Region Operations**
+**Scanning**
+    Perform positional scanning with insertion, deletion, replacement, and
+    mutagenesis scans across sequence regions.
+
+**Region**
     Tag regions with XML-like syntax, extract or replace tagged regions,
-    and perform region-aware scans.
+    and target operations to specific sequence regions.
 
-**State Operations**
-    Slice, shuffle, sample, and repeat library states using StateTracker's
-    composable state algebra.
+**Composition & Control**
+    Combine pools with stack and join. Slice, shuffle, sample, repeat, filter,
+    and synchronize library states.
 
-**ORF Operations**
-    Codon-aware mutagenesis that preserves reading frames for protein-coding
-    sequences.
+**Export**
+    Generate libraries as DataFrames, CSV, or FASTA files.
 
 Installation
 ------------
@@ -80,36 +85,37 @@ Or install from source:
 
 .. code-block:: bash
 
-    git clone https://github.com/jbkinney/poolparty-statecounter.git
-    cd poolparty-statecounter/poolparty
+    git clone https://github.com/jbkinney/poolparty-statetracker.git
+    cd poolparty-statetracker/poolparty
     pip install -e .
 
 Quick Example
 -------------
 
-Design a library with promoter variants and barcodes:
+Stack different variant types into a single barcoded library:
 
 .. code-block:: python
 
     import poolparty as pp
 
-    # Initialize the Party context
     pp.init()
 
-    # Define the wild-type sequence with a tagged region
-    wt_seq = "AAAA<cre>ATCGATCGATCG</cre>TTTT"
-    wt = pp.from_seq(wt_seq)
+    # Create a template with tagged regions
+    template = pp.from_seq("ACGT<cre>GGAAAGCGGGCAGTGAGC</cre>TTTT<bc/>GGGG")
 
-    # Create single-nucleotide variants in the CRE region
-    variants = wt.replacement_scan(
-        region="cre",
-        replacement_seqs=["A", "C", "G", "T"],
-        length=1
-    )
+    # Create different variant pools
+    mutations = template.mutagenize(region="cre", num_mutations=1)
+    deletions = template.deletion_scan(region="cre", deletion_length=5)
 
-    # Generate the library
-    df = variants.generate_library()
-    print(df[["seq", "seq_name"]].head(10))
+    # Combine into one library
+    combined = pp.stack([mutations, deletions])
+
+    # Add barcodes to all variants
+    barcoded = combined.insert_kmers(region="bc", length=10)
+
+    # Generate final library
+    df = barcoded.generate_library()
+    print(f"Generated {len(df)} sequences")
 
 Contents
 --------
@@ -119,9 +125,11 @@ Contents
    :caption: User Guide
 
    quickstart
+   tutorials/index
    pool
+   Sequence Regions <regions>
+   Sequence Metadata <metadata/index>
    operations/index
-   concepts
 
 .. toctree::
    :maxdepth: 2
@@ -136,8 +144,8 @@ Indices and Tables
 * :ref:`modindex`
 * :ref:`search`
 
-Related Projects
-----------------
+See Also
+--------
 
 - `StateTracker <https://statetracker.readthedocs.io>`_: Composable states for
   combinatorial enumeration (used internally by PoolParty)

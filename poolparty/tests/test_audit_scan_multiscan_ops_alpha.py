@@ -61,7 +61,7 @@ class TestStep2RuntimeForwarding:
                 cards={"start": "del_start", "end": "del_end"},
             )
             insertion = base.insertion_scan(
-                ins_pool="X",
+                insertion_pool="X",
                 positions=[0, 1],
                 region="core",
                 replace=False,
@@ -75,7 +75,7 @@ class TestStep2RuntimeForwarding:
                 cards={"start": "ins_start", "end": "ins_end"},
             )
             replacement = base.replacement_scan(
-                ins_pool="X",
+                replacement_pool="X",
                 positions=[0, 1],
                 region="core",
                 style="purple",
@@ -889,7 +889,7 @@ class TestStep4AssumptionInversionHighRisk:
     def test_insertion_scan_assumption_insert_seq_length_known(self):
         with pp.Party():
             variable_insert = pp.from_seqs(["A", "TT"], mode="sequential")
-            with pytest.raises(ValueError, match="ins_pool must have a defined seq_length"):
+            with pytest.raises(ValueError, match="insertion_pool must have a defined seq_length"):
                 pp.insertion_scan("AACCGGTT", variable_insert, mode="sequential")
 
     def test_insertion_scan_assumption_named_region_exists(self):

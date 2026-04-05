@@ -11,12 +11,6 @@ Hamming distance (fixed-length only), GC content range, maximum
 homopolymer run length, and minimum edit distance from a set of
 user-supplied sequences to avoid (e.g. adapters).
 
-.. note::
-
-   ``get_barcodes`` must be called inside an active
-   :class:`~poolparty.Party` context (i.e. within a ``with pp.Party()``
-   block).
-
 .. code-block:: python
 
     import poolparty as pp
@@ -29,7 +23,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -100,6 +94,10 @@ Parameters
      - ``100000``
      - Maximum candidate attempts before raising a ``ValueError``. Raise
        this or relax constraints if generation fails.
+   * - ``name``
+     - ``str | None``
+     - ``None``
+     - Operation name.
    * - ``style``
      - ``str | None``
      - ``None``
@@ -120,6 +118,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.get_barcodes` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -130,22 +134,28 @@ Generate 10 length-8 barcodes with minimum edit distance 3.
 
 .. code-block:: python
 
-    with pp.Party() as party:
-        barcodes = pp.get_barcodes(
-            num_barcodes=10,
-            length=8,
-            min_edit_distance=3,
-            seed=42,
-        )
+    barcodes = pp.get_barcodes(
+        num_barcodes=10,
+        length=8,
+        min_edit_distance=3,
+        seed=42,
+    )
+    barcodes.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (10 barcodes, sequential &mdash; min edit distance 3)</em>
-    ACGTACGT<br>
-    TTGACCAG<br>
-    GGCATCGA<br>
-    <span class="pp-ellipsis">... (10 total; pairwise edit distance &ge; 3)</span>
+    <em class="pp-header">barcodes: seq_length=8, num_states=10</em>
+    AAGCCCAA<br>
+    TAAACCAC<br>
+    TCTGACTG<br>
+    GCCGAATA<br>
+    GGGATATA<br>
+    GGCAACGA<br>
+    CATGTGCG<br>
+    GCGACCCT<br>
+    TGCGACAG<br>
+    TGACGCTT
     </div>
 
 GC content and homopolymer constraints
@@ -156,22 +166,25 @@ bases.
 
 .. code-block:: python
 
-    with pp.Party() as party:
-        barcodes = pp.get_barcodes(
-            num_barcodes=20,
-            length=10,
-            min_edit_distance=3,
-            gc_range=(0.4, 0.6),
-            max_homopolymer=2,
-            seed=0,
-        )
+    barcodes = pp.get_barcodes(
+        num_barcodes=20,
+        length=10,
+        min_edit_distance=3,
+        gc_range=(0.4, 0.6),
+        max_homopolymer=2,
+        seed=0,
+    )
+    barcodes.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (20 barcodes &mdash; 40&ndash;60% GC, no homopolymer run &gt; 2)</em>
-    ACGATCGATC<br>
-    GCTAGCTAGC<br>
+    <em class="pp-header">barcodes: seq_length=10, num_states=20</em>
+    TTAGTTGTGC<br>
+    TAGTGCTTGA<br>
+    AATATGCGAC<br>
+    GAGCGTATGC<br>
+    CAATGCCTGT<br>
     <span class="pp-ellipsis">... (20 total)</span>
     </div>
 
@@ -184,48 +197,85 @@ sequences to prevent ligation artefacts.
 .. code-block:: python
 
     adapters = ["AGATCGGAAG", "CTGTCTCTTA"]
-    with pp.Party() as party:
-        barcodes = pp.get_barcodes(
-            num_barcodes=50,
-            length=8,
-            min_edit_distance=3,
-            avoid_sequences=adapters,
-            avoid_min_distance=4,
-            seed=1,
-        )
+    barcodes = pp.get_barcodes(
+        num_barcodes=50,
+        length=8,
+        min_edit_distance=3,
+        avoid_sequences=adapters,
+        avoid_min_distance=4,
+        seed=1,
+    )
+    barcodes.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (50 barcodes &mdash; edit distance &ge; 4 from adapter sequences)</em>
-    <span class="pp-ellipsis">... (50 total; no barcode within edit distance 4 of either adapter)</span>
+    <em class="pp-header">barcodes: seq_length=8, num_states=50</em>
+    CAGATTTT<br>
+    GCAGAAAA<br>
+    TCTACTTC<br>
+    GCCTGATA<br>
+    CGAGTCGG<br>
+    <span class="pp-ellipsis">... (50 total)</span>
     </div>
 
 Variable-length barcodes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Mix 6-mer and 8-mer barcodes in a 1:1 ratio; shorter barcodes are
-right-padded with ``-``.
+right-padded with ``-``. To obtain the unpadded sequences, apply
+``clear_gaps()`` before calling ``generate_library()``.
 
 .. code-block:: python
 
-    with pp.Party() as party:
-        barcodes = pp.get_barcodes(
-            num_barcodes=10,
-            length=[6, 8],
-            length_proportions=[0.5, 0.5],
-            min_edit_distance=3,
-            seed=7,
-        )
+    barcodes = pp.get_barcodes(
+        num_barcodes=10,
+        length=[6, 8],
+        length_proportions=[0.5, 0.5],
+        min_edit_distance=3,
+        seed=7,
+        prefix="bc",
+    )
+    barcodes.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (10 barcodes &mdash; 5 &times; 6-mer padded to 8, 5 &times; 8-mer)</em>
+    <em class="pp-header">barcodes: seq_length=8, num_states=10</em>
     CTAAAGAC<br>
     ATTACA--<br>
     AACATACA<br>
-    <span class="pp-ellipsis">... (10 total; 6-mers right-padded with &ldquo;--&rdquo;)</span>
+    GTCAGC--<br>
+    CGAAAC--<br>
+    TGTTGGCC<br>
+    AGTGTG--<br>
+    ATCGCT--<br>
+    AAGGGTTA<br>
+    GTAAGTGT
+    </div>
+
+.. code-block:: python
+
+    cleaned = barcodes.clear_gaps()
+    df = cleaned.generate_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">df — 10 rows × 2 columns</em>
+    <table class="pp-df">
+    <tr><th>name</th><th>seq</th></tr>
+    <tr><td>bc_0</td><td>CTAAAGAC</td></tr>
+    <tr><td>bc_1</td><td>ATTACA</td></tr>
+    <tr><td>bc_2</td><td>AACATACA</td></tr>
+    <tr><td>bc_3</td><td>GTCAGC</td></tr>
+    <tr><td>bc_4</td><td>CGAAAC</td></tr>
+    <tr><td>bc_5</td><td>TGTTGGCC</td></tr>
+    <tr><td>bc_6</td><td>AGTGTG</td></tr>
+    <tr><td>bc_7</td><td>ATCGCT</td></tr>
+    <tr><td>bc_8</td><td>AAGGGTTA</td></tr>
+    <tr><td>bc_9</td><td>GTAAGTGT</td></tr>
+    </table>
     </div>
 
 See :func:`~poolparty.get_barcodes`.

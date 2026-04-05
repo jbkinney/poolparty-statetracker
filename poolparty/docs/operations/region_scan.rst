@@ -19,7 +19,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -29,7 +29,7 @@ Parameters
      - ``Pool | str``
      - *(required)*
      - The Pool to scan. Can also be a plain sequence string.
-   * - ``region``
+   * - ``tag_name``
      - ``str``
      - ``'region'``
      - Name for the scanning region tag inserted at each position.
@@ -38,7 +38,7 @@ Parameters
      - ``None``
      - Explicit list of 0-based positions to visit. ``None`` = all valid
        positions.
-   * - ``region_constraint``
+   * - ``region``
      - ``str | list | None``
      - ``None``
      - Restrict the scan to a named region (string) or a
@@ -46,7 +46,7 @@ Parameters
    * - ``remove_tags``
      - ``bool | None``
      - ``None``
-     - When ``True`` and ``region_constraint`` is a region name, strip the
+     - When ``True`` and ``region`` is a region name, strip the
        constraint region tags from the output.
    * - ``region_length``
      - ``int``
@@ -77,6 +77,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.region_scan` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -89,22 +95,23 @@ positions in an 8-mer (between and at the ends of every base).
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCG")
-    scan = pp.region_scan(wt, region="ins", region_length=0,
+    scan = pp.region_scan(wt, tag_name="ins", region_length=0,
                           mode="sequential")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (9 sequences &mdash; point tag at each inter-base position)</em>
-    <span class="pp-region"></span>ATCGATCG<br>
-    A<span class="pp-region"></span>TCGATCG<br>
-    AT<span class="pp-region"></span>CGATCG<br>
-    ATC<span class="pp-region"></span>GATCG<br>
-    ATCG<span class="pp-region"></span>ATCG<br>
-    ATCGA<span class="pp-region"></span>TCG<br>
-    ATCGAT<span class="pp-region"></span>CG<br>
-    ATCGATC<span class="pp-region"></span>G<br>
-    ATCGATCG<span class="pp-region"></span>
+    <em class="pp-header">scan: seq_length=8, num_states=9</em>
+    <span class="pp-xtag">&lt;ins/&gt;</span>ATCGATCG<br>
+    A<span class="pp-xtag">&lt;ins/&gt;</span>TCGATCG<br>
+    AT<span class="pp-xtag">&lt;ins/&gt;</span>CGATCG<br>
+    ATC<span class="pp-xtag">&lt;ins/&gt;</span>GATCG<br>
+    ATCG<span class="pp-xtag">&lt;ins/&gt;</span>ATCG<br>
+    ATCGA<span class="pp-xtag">&lt;ins/&gt;</span>TCG<br>
+    ATCGAT<span class="pp-xtag">&lt;ins/&gt;</span>CG<br>
+    ATCGATC<span class="pp-xtag">&lt;ins/&gt;</span>G<br>
+    ATCGATCG<span class="pp-xtag">&lt;ins/&gt;</span>
     </div>
 
 2-base spanning window (region_length=2)
@@ -116,40 +123,42 @@ bases at each scan position.
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCG")
-    scan = pp.region_scan(wt, region="win", region_length=2,
+    scan = pp.region_scan(wt, tag_name="win", region_length=2,
                           mode="sequential")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (7 sequences &mdash; 2-base window at each position)</em>
-    <span class="pp-region">AT</span>CGATCG<br>
-    A<span class="pp-region">TC</span>GATCG<br>
-    AT<span class="pp-region">CG</span>ATCG<br>
-    ATC<span class="pp-region">GA</span>TCG<br>
-    ATCG<span class="pp-region">AT</span>CG<br>
-    ATCGA<span class="pp-region">TC</span>G<br>
-    ATCGAT<span class="pp-region">CG</span>
+    <em class="pp-header">scan: seq_length=8, num_states=7</em>
+    <span class="pp-xtag">&lt;win&gt;</span>AT<span class="pp-xtag">&lt;/win&gt;</span>CGATCG<br>
+    A<span class="pp-xtag">&lt;win&gt;</span>TC<span class="pp-xtag">&lt;/win&gt;</span>GATCG<br>
+    AT<span class="pp-xtag">&lt;win&gt;</span>CG<span class="pp-xtag">&lt;/win&gt;</span>ATCG<br>
+    ATC<span class="pp-xtag">&lt;win&gt;</span>GA<span class="pp-xtag">&lt;/win&gt;</span>TCG<br>
+    ATCG<span class="pp-xtag">&lt;win&gt;</span>AT<span class="pp-xtag">&lt;/win&gt;</span>CG<br>
+    ATCGA<span class="pp-xtag">&lt;win&gt;</span>TC<span class="pp-xtag">&lt;/win&gt;</span>G<br>
+    ATCGAT<span class="pp-xtag">&lt;win&gt;</span>CG<span class="pp-xtag">&lt;/win&gt;</span>
     </div>
 
-Scan constrained to a named region (region_constraint)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Scan constrained to a named region (region)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Restrict the window scan to the ``cre`` region; flanks are fixed.
 
 .. code-block:: python
 
     wt   = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    scan = pp.region_scan(wt, region="win", region_length=2,
-                          region_constraint="cre", mode="sequential")
+    scan = pp.region_scan(wt, tag_name="win", region_length=2,
+                          region="cre", mode="sequential")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (7 sequences &mdash; 2-base window confined to <em>cre</em>; flanks fixed)</em>
-    AAAA<span class="pp-region">AT</span>CGATCGTTTT<br>
-    AAAAA<span class="pp-region">TC</span>GATCGTTTT<br>
-    AAAAATCG<span class="pp-region">AT</span>CGTTTT<br>
+    <em class="pp-header">scan: seq_length=16, num_states=7</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-xtag">&lt;win&gt;</span>AT<span class="pp-xtag">&lt;/win&gt;</span>CGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>A<span class="pp-xtag">&lt;win&gt;</span>TC<span class="pp-xtag">&lt;/win&gt;</span>GATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AT<span class="pp-xtag">&lt;win&gt;</span>CG<span class="pp-xtag">&lt;/win&gt;</span>ATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
     <span class="pp-ellipsis">... (7 total)</span>
     </div>
 
@@ -162,17 +171,18 @@ window tag in the output.
 .. code-block:: python
 
     wt   = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    scan = pp.region_scan(wt, region="win", region_length=2,
-                          region_constraint="cre", remove_tags=True,
+    scan = pp.region_scan(wt, tag_name="win", region_length=2,
+                          region="cre", remove_tags=True,
                           mode="sequential")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (7 sequences &mdash; <em>cre</em> tags stripped; <em>win</em> tag present)</em>
-    AAAA<span class="pp-region">AT</span>CGATCGTTTT<br>
-    AAAAA<span class="pp-region">TC</span>GATCGTTTT<br>
-    AAAAATCGAT<span class="pp-region">CG</span>TTTT<br>
+    <em class="pp-header">scan: seq_length=16, num_states=7</em>
+    AAAA<span class="pp-xtag">&lt;win&gt;</span>AT<span class="pp-xtag">&lt;/win&gt;</span>CGATCGTTTT<br>
+    AAAAA<span class="pp-xtag">&lt;win&gt;</span>TC<span class="pp-xtag">&lt;/win&gt;</span>GATCGTTTT<br>
+    AAAAAT<span class="pp-xtag">&lt;win&gt;</span>CG<span class="pp-xtag">&lt;/win&gt;</span>ATCGTTTT<br>
     <span class="pp-ellipsis">... (7 total)</span>
     </div>
 
@@ -184,16 +194,17 @@ Pass an explicit list to ``positions`` to visit only chosen window starts.
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCG")
-    scan = pp.region_scan(wt, region="win", region_length=2,
+    scan = pp.region_scan(wt, tag_name="win", region_length=2,
                           positions=[0, 3, 6], mode="sequential")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (3 sequences &mdash; window at positions 0, 3, and 6 only)</em>
-    <span class="pp-region">AT</span>CGATCG<br>
-    ATC<span class="pp-region">GA</span>TCG<br>
-    ATCGAT<span class="pp-region">CG</span>
+    <em class="pp-header">scan: seq_length=8, num_states=3</em>
+    <span class="pp-xtag">&lt;win&gt;</span>AT<span class="pp-xtag">&lt;/win&gt;</span>CGATCG<br>
+    ATC<span class="pp-xtag">&lt;win&gt;</span>GA<span class="pp-xtag">&lt;/win&gt;</span>TCG<br>
+    ATCGAT<span class="pp-xtag">&lt;win&gt;</span>CG<span class="pp-xtag">&lt;/win&gt;</span>
     </div>
 
 See :func:`~poolparty.region_scan`.

@@ -15,7 +15,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -43,6 +43,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.state_slice` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -54,13 +60,14 @@ eight 2-mers that begin with ``A`` or ``C``.
 
 .. code-block:: python
 
-    kmers  = pp.get_kmers(length=2, alphabet="ACGT")  # 16 states: AA…TT
+    kmers  = pp.get_kmers(length=2, mode="sequential")
     first8 = pp.state_slice(kmers, slice(0, 8))
+    first8.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (8 sequences &mdash; states 0&ndash;7 of 16 2-mers)</em>
+    <em class="pp-header">first8: seq_length=2, num_states=8</em>
     AA<br>AC<br>AG<br>AT<br>CA<br>CC<br>CG<br>CT
     </div>
 
@@ -72,13 +79,14 @@ sub-range of sequences without regenerating the entire pool.
 
 .. code-block:: python
 
-    kmers   = pp.get_kmers(length=2, alphabet="ACGT")  # 16 states
-    mid     = pp.state_slice(kmers, slice(10, 15))
+    kmers = pp.get_kmers(length=2, mode="sequential")
+    mid   = pp.state_slice(kmers, slice(10, 15))
+    mid.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (5 sequences &mdash; states 10&ndash;14 of 16 2-mers)</em>
+    <em class="pp-header">mid: seq_length=2, num_states=5</em>
     GG<br>GT<br>TA<br>TC<br>TG
     </div>
 
@@ -90,13 +98,14 @@ slicing conventions.
 
 .. code-block:: python
 
-    kmers = pp.get_kmers(length=2, alphabet="ACGT")  # 16 states
+    kmers = pp.get_kmers(length=2, mode="sequential")
     last4 = pp.state_slice(kmers, slice(-4, None))
+    last4.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (4 sequences &mdash; last 4 of 16 2-mers)</em>
+    <em class="pp-header">last4: seq_length=2, num_states=4</em>
     TA<br>TC<br>TG<br>TT
     </div>
 

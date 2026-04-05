@@ -19,7 +19,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -72,6 +72,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.deletion_scan` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -84,12 +90,13 @@ are marked with ``-``.
 .. code-block:: python
 
     wt   = pp.from_seq("ACGTACGT")
-    dels = wt.deletion_scan(deletion_length=1, mode="sequential")
+    dels = wt.deletion_scan(deletion_length=1, mode="sequential", style="grey")
+    dels.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (8 sequences &mdash; one 1-base deletion per position)</em>
+    <em class="pp-header">dels: seq_length=8, num_states=8</em>
     <span class="pp-del">-</span>CGTACGT<br>
     A<span class="pp-del">-</span>GTACGT<br>
     AC<span class="pp-del">-</span>TACGT<br>
@@ -110,11 +117,12 @@ shorter than the input.
 
     wt   = pp.from_seq("ACGTACGT")
     dels = wt.deletion_scan(deletion_length=2, deletion_marker=None, mode="sequential")
+    dels.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (7 sequences &mdash; 2 bases removed, output length 6)</em>
+    <em class="pp-header">dels: seq_length=6, num_states=7</em>
     GTACGT<br>
     ATACGT<br>
     ACACGT<br>
@@ -132,12 +140,13 @@ Delete two consecutive bases at each position. An 8-mer yields 7 variants.
 .. code-block:: python
 
     wt   = pp.from_seq("ACGTACGT")
-    dels = wt.deletion_scan(deletion_length=2, mode="sequential")
+    dels = wt.deletion_scan(deletion_length=2, mode="sequential", style="grey")
+    dels.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (7 sequences &mdash; 2-base deletion at each position)</em>
+    <em class="pp-header">dels: seq_length=8, num_states=7</em>
     <span class="pp-del">--</span>GTACGT<br>
     A<span class="pp-del">--</span>TACGT<br>
     AC<span class="pp-del">--</span>ACGT<br>
@@ -156,19 +165,21 @@ are always returned unchanged.
 .. code-block:: python
 
     wt   = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    dels = wt.deletion_scan(deletion_length=2, region="cre", mode="sequential")
+    dels = wt.deletion_scan(deletion_length=2, region="cre", mode="sequential",
+                            style="grey")
+    dels.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (7 sequences &mdash; 2-base deletions within <em>cre</em> only)</em>
-    AAAA<span class="pp-region"><span class="pp-del">--</span>CGATCG</span>TTTT<br>
-    AAAA<span class="pp-region">A<span class="pp-del">--</span>GATCG</span>TTTT<br>
-    AAAA<span class="pp-region">AT<span class="pp-del">--</span>ATCG</span>TTTT<br>
-    AAAA<span class="pp-region">ATC<span class="pp-del">--</span>TCG</span>TTTT<br>
-    AAAA<span class="pp-region">ATCG<span class="pp-del">--</span>CG</span>TTTT<br>
-    AAAA<span class="pp-region">ATCGA<span class="pp-del">--</span>G</span>TTTT<br>
-    AAAA<span class="pp-region">ATCGAT<span class="pp-del">--</span></span>TTTT
+    <em class="pp-header">dels: seq_length=16, num_states=7</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-del">--</span>CGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>A<span class="pp-del">--</span>GATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AT<span class="pp-del">--</span>ATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATC<span class="pp-del">--</span>TCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-del">--</span>CG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGA<span class="pp-del">--</span>G<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGAT<span class="pp-del">--</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
 
 Scan only specific positions
@@ -179,15 +190,41 @@ Supply an explicit ``positions`` list to delete at chosen sites only.
 .. code-block:: python
 
     wt   = pp.from_seq("ACGTACGT")
-    dels = wt.deletion_scan(deletion_length=1, positions=[1, 3, 5], mode="sequential")
+    dels = wt.deletion_scan(deletion_length=1, positions=[1, 3, 5], mode="sequential",
+                            style="grey")
+    dels.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (3 sequences &mdash; 1-base deletion at positions 1, 3, and 5 only)</em>
+    <em class="pp-header">dels: seq_length=8, num_states=3</em>
     A<span class="pp-del">-</span>GTACGT<br>
     ACG<span class="pp-del">-</span>ACGT<br>
     ACGTA<span class="pp-del">-</span>GT
+    </div>
+
+Random deletion positions (mode="random")
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``mode='random'`` draws deletion positions stochastically. Here a 3-base
+deletion window samples 5 random positions along a 12-mer.
+
+.. code-block:: python
+
+    wt   = pp.from_seq("ACGTACGTACGT")
+    dels = wt.deletion_scan(deletion_length=3, mode="random", num_states=5,
+                            style="grey")
+    dels.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">dels: seq_length=12, num_states=5</em>
+    ACGTA<span class="pp-del">---</span>ACGT<br>
+    ACGTAC<span class="pp-del">---</span>CGT<br>
+    ACGTA<span class="pp-del">---</span>ACGT<br>
+    A<span class="pp-del">---</span>ACGTACGT<br>
+    A<span class="pp-del">---</span>ACGTACGT
     </div>
 
 See :func:`~poolparty.deletion_scan`.

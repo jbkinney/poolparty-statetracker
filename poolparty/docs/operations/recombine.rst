@@ -1,9 +1,11 @@
 recombine
 =========
 
-Produce chimeric sequences by slicing multiple source sequences at breakpoints
+Produce chimeric sequences by slicing multiple source pools at breakpoints
 and stitching together alternating segments. Requires at least two source pools
-of equal sequence length.
+of equal sequence length. Use ``mode='sequential'`` to enumerate all breakpoint
+combinations deterministically, or ``mode='random'`` (default) to draw chimeras
+stochastically.
 
 .. code-block:: python
 
@@ -17,12 +19,17 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
      - Default
      - Description
+   * - ``pool``
+     - ``Pool | str | None``
+     - ``None``
+     - Parent pool for region-based recombination. If provided with
+       ``region``, the recombined sequences replace the region content.
    * - ``sources``
      - ``list[Pool]``
      - *(required)*
@@ -36,8 +43,8 @@ Parameters
    * - ``positions``
      - ``list[int] | None``
      - ``None``
-     - Explicit list of breakpoint positions. ``None`` = random positions each
-       draw.
+     - Explicit list of breakpoint positions. ``None`` = positions chosen by
+       the current ``mode``.
    * - ``styles``
      - ``list[str] | None``
      - ``None``
@@ -55,7 +62,8 @@ Parameters
    * - ``mode``
      - ``str``
      - ``'random'``
-     - ``'random'`` selects breakpoints randomly; ``'sequential'`` enumerates.
+     - ``'random'`` selects breakpoints randomly; ``'sequential'`` enumerates
+       all breakpoint positions; ``'fixed'`` uses ``positions`` exactly once.
    * - ``num_states``
      - ``int | None``
      - ``None``
@@ -71,76 +79,120 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.recombine` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
-Two sources, single breakpoint (default)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Two sources, single breakpoint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Each draw picks a random crossover position and returns a two-segment chimera.
+Enumerate all single-crossover chimeras between two 10-base sequences. Each
+breakpoint position produces two states (one per source ordering), yielding
+18 chimeras total.
 
 .. code-block:: python
 
     src_a = pp.from_seq("AAAAAAAAAA")
     src_b = pp.from_seq("CCCCCCCCCC")
-    rec   = pp.recombine(sources=[src_a, src_b])
+    rec   = pp.recombine(sources=[src_a, src_b], mode="sequential")
+    rec.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; single crossover between src_a and src_b)</em>
-    AAAA<span class="pp-mut">CCCCCC</span><br>
-    AA<span class="pp-mut">CCCCCCCC</span><br>
-    AAAAAAA<span class="pp-mut">CCC</span><br>
-    <span class="pp-ellipsis">... (breakpoint position varies each draw)</span>
+    <em class="pp-header">rec: seq_length=10, num_states=18</em>
+    ACCCCCCCCC<br>
+    CAAAAAAAAA<br>
+    AACCCCCCCC<br>
+    CCAAAAAAAA<br>
+    AAACCCCCCC
+    <span class="pp-ellipsis">... (18 total)</span>
+    </div>
+
+Random chimeras (mode="random")
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``mode='random'`` draws breakpoints stochastically, producing a different
+chimera each draw. Use ``num_states`` to sample several chimeras at once.
+
+.. code-block:: python
+
+    src_a = pp.from_seq("AAAAAAAAAA")
+    src_b = pp.from_seq("CCCCCCCCCC")
+    rec   = pp.recombine(sources=[src_a, src_b], mode="random", num_states=5)
+    rec.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">rec: seq_length=10, num_states=5</em>
+    AAAAAAAAAC<br>
+    CCCCCCCCCA<br>
+    AACCCCCCCC<br>
+    CCCAAAAAAA<br>
+    CCCCCAAAAA
     </div>
 
 Two breakpoints (num_breakpoints=2)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Two crossover points divide each chimera into three segments.
+Two crossover points divide each chimera into three segments. With
+``mode='sequential'`` every combination of two breakpoint positions is
+enumerated.
 
 .. code-block:: python
 
     src_a = pp.from_seq("AAAAAAAAAA")
     src_b = pp.from_seq("CCCCCCCCCC")
-    rec   = pp.recombine(sources=[src_a, src_b], num_breakpoints=2)
+    rec   = pp.recombine(sources=[src_a, src_b], num_breakpoints=2,
+                         mode="sequential")
+    rec.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 3-segment chimeras)</em>
-    AA<span class="pp-mut">CCCC</span>AAAA<br>
-    <span class="pp-mut">CCCC</span>AAAA<span class="pp-mut">CC</span><br>
-    AAA<span class="pp-mut">CCC</span>AAAA<br>
-    <span class="pp-ellipsis">... (two random breakpoints chosen each draw)</span>
+    <em class="pp-header">rec: seq_length=10, num_states=72</em>
+    ACAAAAAAAA<br>
+    CACCCCCCCC<br>
+    ACCAAAAAAA<br>
+    CAACCCCCCC<br>
+    ACCCAAAAAA
+    <span class="pp-ellipsis">... (72 total)</span>
     </div>
 
-Fixed breakpoint position (positions parameter)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Fixed breakpoint position (positions)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``positions=[5]`` restricts the breakpoint to position 5, so chimeras always
-cross over after index 5.
+``positions=[5]`` pins the breakpoint after index 5, so chimeras always split
+into a 6-character head and a 4-character tail. With two sources this yields
+exactly 2 states.
 
 .. code-block:: python
 
     src_a = pp.from_seq("AAAAAAAAAA")
     src_b = pp.from_seq("TTTTTTTTTT")
-    rec   = pp.recombine(sources=[src_a, src_b], positions=[5], mode="sequential")
+    rec   = pp.recombine(sources=[src_a, src_b], positions=[5],
+                         mode="sequential")
+    rec.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (2 sequences &mdash; breakpoint fixed after position 5)</em>
-    AAAAAA<span class="pp-mut">TTTT</span><br>
-    <span class="pp-mut">TTTTTT</span>AAAA
+    <em class="pp-header">rec: seq_length=10, num_states=2</em>
+    AAAAAATTTT<br>
+    TTTTTTAAAA
     </div>
 
 Color segments by source (style_by="source")
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``style_by='source'`` applies the same style to all segments originating from
-the same source pool, regardless of their position in the chimera.
+``style_by='source'`` applies the same colour to every segment originating
+from the same source pool, regardless of its position in the chimera.
 
 .. code-block:: python
 
@@ -151,15 +203,20 @@ the same source pool, regardless of their position in the chimera.
         num_breakpoints=2,
         styles=["blue", "red"],
         style_by="source",
+        mode="sequential",
     )
+    rec.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; blue = src_a segments, red = src_b segments)</em>
-    <span style="color:#1d4ed8;font-weight:bold;">AA</span><span style="color:#dc2626;font-weight:bold;">CCCC</span><span style="color:#1d4ed8;font-weight:bold;">AAAA</span><br>
-    <span style="color:#dc2626;font-weight:bold;">CCCC</span><span style="color:#1d4ed8;font-weight:bold;">AAAA</span><span style="color:#dc2626;font-weight:bold;">CC</span><br>
-    <span class="pp-ellipsis">... (src_a segments always blue, src_b segments always red)</span>
+    <em class="pp-header">rec: seq_length=10, num_states=72</em>
+    <span class="pp-codon-a">A</span><span class="pp-codon-b">C</span><span class="pp-codon-a">AAAAAAAA</span><br>
+    <span class="pp-codon-b">C</span><span class="pp-codon-a">A</span><span class="pp-codon-b">CCCCCCCC</span><br>
+    <span class="pp-codon-a">A</span><span class="pp-codon-b">CC</span><span class="pp-codon-a">AAAAAAA</span><br>
+    <span class="pp-codon-b">C</span><span class="pp-codon-a">AA</span><span class="pp-codon-b">CCCCCCC</span><br>
+    <span class="pp-codon-a">A</span><span class="pp-codon-b">CCC</span><span class="pp-codon-a">AAAAAA</span>
+    <span class="pp-ellipsis">... (72 total)</span>
     </div>
 
 See :func:`~poolparty.recombine`.

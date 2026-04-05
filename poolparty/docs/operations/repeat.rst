@@ -46,6 +46,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.repeat` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -57,14 +63,20 @@ in order.
 
 .. code-block:: python
 
-    pool    = pp.from_seqs(["AAAA", "CCCC"])
+    pool    = pp.from_seqs(["AAAA", "CCCC"], mode="sequential")
     tripled = pp.repeat(pool, times=3)
+    tripled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (6 sequences &mdash; each of 2 states repeated 3&times;)</em>
-    AAAA<br>AAAA<br>AAAA<br>CCCC<br>CCCC<br>CCCC
+    <em class="pp-header">tripled: seq_length=4, num_states=6</em>
+    AAAA<br>
+    AAAA<br>
+    AAAA<br>
+    CCCC<br>
+    CCCC<br>
+    CCCC
     </div>
 
 Repeat a Scan Result to Get More Coverage
@@ -77,52 +89,61 @@ sequence.
 .. code-block:: python
 
     wt      = pp.from_seq("ATCGATCG")
-    dels    = wt.deletion_scan(deletion_length=2)   # 7 states
-    doubled = pp.repeat(dels, times=2)              # 14 states
+    dels    = wt.deletion_scan(deletion_length=2, mode="sequential")
+    doubled = pp.repeat(dels, times=2)
+    doubled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (14 sequences &mdash; 7-state deletion scan repeated 2&times;)</em>
-    <span class="pp-del">--</span>CGATCG<br>
-    A<span class="pp-del">--</span>GATCG<br>
-    AT<span class="pp-del">--</span>ATCG<br>
-    ATC<span class="pp-del">--</span>TCG<br>
-    ATCG<span class="pp-del">--</span>CG<br>
-    ATCGA<span class="pp-del">--</span>G<br>
-    ATCGAT<span class="pp-del">--</span><br>
-    <span class="pp-del">--</span>CGATCG<br>
-    A<span class="pp-del">--</span>GATCG<br>
-    <span class="pp-ellipsis">... (14 total &mdash; all 7 deletion variants repeated twice)</span>
+    <em class="pp-header">doubled: seq_length=8, num_states=14</em>
+    --CGATCG<br>
+    --CGATCG<br>
+    A--GATCG<br>
+    A--GATCG<br>
+    AT--ATCG<br>
+    <span class="pp-ellipsis">... (14 total)</span>
     </div>
 
-Difference Between ``repeat`` and the ``*`` Operator
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Operator shorthand (``*``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``repeat(pool, times=N)`` repeats *states* — each sequence is drawn N times
-as a separate library entry. The ``*`` operator concatenates the *sequence*
-with itself N times end-to-end, producing a longer sequence in a single state.
+``pool * N`` is equivalent to ``pp.repeat(pool, times=N)`` — it creates a
+new pool with ``N`` copies of the input pool's states. ``N * pool`` is
+identical to ``pool * N``. This is useful for generating multiple replicates
+of a stochastic draw.
 
 .. code-block:: python
 
-    base = pp.from_seqs(["AC", "GT"])
-
-    # repeat: 4 states, each original sequence drawn twice
-    state_repeated = pp.repeat(base, times=2)
-
-    # * operator: 2 states, each sequence concatenated with itself twice
-    seq_repeated = base * 2
+    wt       = pp.from_seq("ATCGATCG")
+    shuffled = pp.shuffle_seq(wt, mode="random")
+    rep      = shuffled * 5
+    rep.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">state_repeated &mdash; repeat(base, times=2): 4 states, 2-nt sequences</em>
-    AC<br>AC<br>GT<br>GT
+    <em class="pp-header">rep: seq_length=8, num_states=5</em>
+    TGGCAACT<br>
+    AGTACGTC<br>
+    GTTAAGCC<br>
+    CACTTGGA<br>
+    TCATGACG
     </div>
 
+.. code-block:: python
+
+    wt  = pp.from_seq("ATCGATCG")
+    rep = 3 * pp.shuffle_seq(wt, mode="random")
+    rep.print_library()
+
+.. raw:: html
+
     <div class="pp-pool">
-    <em class="pp-header">seq_repeated &mdash; base * 2: 2 states, 4-nt sequences (concatenated)</em>
-    ACAC<br>GTGT
+    <em class="pp-header">rep: seq_length=8, num_states=3</em>
+    TGGCAACT<br>
+    AGTACGTC<br>
+    GTTAAGCC
     </div>
 
 See :func:`~poolparty.repeat`.

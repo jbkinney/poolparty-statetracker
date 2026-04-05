@@ -15,25 +15,76 @@ pattern-based targeting.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :header-rows: 1
+   :widths: auto
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pool``
+     - ``Pool | str``
+     - *(required)*
+     - Parent pool or sequence string to stylize.
+   * - ``region``
+     - ``str | Sequence[int] | None``
+     - ``None``
+     - Region to restrict styling (marker name or ``[start, stop]`` nontag
+       coordinates). ``None`` styles the entire sequence.
+   * - ``style``
+     - ``str``
+     - *(required)*
+     - Style specification (e.g. ``"red bold"``, ``"blue"``, ``"cyan"``).
+   * - ``which``
+     - ``str``
+     - ``'contents'``
+     - Pattern selector when ``regex`` is ``None``: ``'all'``, ``'upper'``,
+       ``'lower'``, ``'gap'``, ``'tags'``, or ``'contents'``.
+   * - ``regex``
+     - ``str | None``
+     - ``None``
+     - Custom regex; when set, overrides ``which``.
+   * - ``iter_order``
+     - ``float | None``
+     - ``None``
+     - Iteration order priority for the operation.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for sequence names in the resulting pool.
+
+----
+
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.stylize` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
 Stylize a named region with a built-in style
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Apply ``bold_red`` to the ``cre`` region so it stands out when the pool is
+Apply ``red bold`` to the ``cre`` region so it stands out when the pool is
 displayed.
 
 .. code-block:: python
 
     wt     = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
-    styled = pp.stylize(wt, region="cre", style="bold_red")
+    styled = pp.stylize(wt, region="cre", style="red bold")
+    styled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; <em>cre</em> region styled bold red)</em>
-    AAAA<span style="color:#dc2626;font-weight:bold;">ATCG</span>TTTT
+    <em class="pp-header">styled: seq_length=12, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><strong class="pp-mut">ATCG</strong><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
 
 Stylize a different region with a different style
@@ -46,12 +97,13 @@ leaving the rest of the sequence unstyled.
 
     wt     = pp.from_seq("GCGCGC<promoter>TATAAT</promoter>ATGAAATTT")
     styled = pp.stylize(wt, region="promoter", style="blue bold")
+    styled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; <em>promoter</em> region styled bold blue)</em>
-    GCGCGC<span style="color:#1d4ed8;font-weight:bold;">TATAAT</span>ATGAAATTT
+    <em class="pp-header">styled: seq_length=21, num_states=1</em>
+    GCGCGC<span class="pp-xtag-cre">&lt;promoter&gt;</span><strong class="pp-codon-a">TATAAT</strong><span class="pp-xtag-cre">&lt;/promoter&gt;</span>ATGAAATTT
     </div>
 
 Stylize the full sequence
@@ -63,11 +115,12 @@ Omit ``region=`` to apply a style to every base in the sequence.
 
     wt     = pp.from_seq("ATCGATCG")
     styled = pp.stylize(wt, style="cyan")
+    styled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; entire sequence styled cyan)</em>
+    <em class="pp-header">styled: seq_length=8, num_states=1</em>
     <span style="color:#0891b2;">ATCGATCG</span>
     </div>
 

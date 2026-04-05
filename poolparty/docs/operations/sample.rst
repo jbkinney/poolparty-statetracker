@@ -16,7 +16,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -56,6 +56,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.sample` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -63,18 +69,27 @@ Sample 5 Sequences from a 256-Sequence Pool
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Draw a small random subset from all 256 4-mers to obtain a manageable
-representative sample.
+representative sample. Without a seed, which sequences appear changes on each
+evaluation.
 
 .. code-block:: python
 
-    kmers  = pp.get_kmers(length=4, alphabet="ACGT")  # 256 states
+    import poolparty as pp
+    pp.init()
+
+    kmers  = pp.get_kmers(length=4, mode="sequential")
     subset = pp.sample(kmers, num_seqs=5)
+    subset.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (5 sequences &mdash; random sample from 256 4-mers, no fixed seed)</em>
-    GCTA<br>TTAC<br>CAGG<br>AGCT<br>TGCA
+    <em class="pp-header">subset: seq_length=4, num_states=5</em>
+    AGTA<br>
+    TTGA<br>
+    ATCG<br>
+    GGTA<br>
+    AGGC
     </div>
 
 Sample with a Fixed Seed for Reproducibility
@@ -85,14 +100,22 @@ pipeline is evaluated.
 
 .. code-block:: python
 
-    kmers  = pp.get_kmers(length=4, alphabet="ACGT")
+    import poolparty as pp
+    pp.init()
+
+    kmers  = pp.get_kmers(length=4, mode="sequential")
     subset = pp.sample(kmers, num_seqs=5, seed=42)
+    subset.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (5 sequences &mdash; deterministic sample, seed=42)</em>
-    CGTA<br>AGTC<br>TTGA<br>GCAC<br>ATCG
+    <em class="pp-header">subset: seq_length=4, num_states=5</em>
+    GGAT<br>
+    AACG<br>
+    CACG<br>
+    ATGC<br>
+    GTTA
     </div>
 
 Sample More Sequences Than the Pool Has States (Cycling)
@@ -104,36 +127,54 @@ always honoured.
 
 .. code-block:: python
 
-    small  = pp.from_seqs(["AAAA", "CCCC", "GGGG"])  # 3 states
-    large  = pp.sample(small, num_seqs=9, seed=0)     # 9 draws with replacement
+    import poolparty as pp
+    pp.init()
+
+    small  = pp.from_seqs(["AAAA", "CCCC", "GGGG"], mode="sequential")
+    large  = pp.sample(small, num_seqs=9, seed=0)
+    large.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (9 sequences &mdash; 3-state pool sampled 9&times; with replacement, seed=0)</em>
-    AAAA<br>GGGG<br>AAAA<br>CCCC<br>GGGG<br>AAAA<br>CCCC<br>GGGG<br>CCCC
+    <em class="pp-header">large: seq_length=4, num_states=9</em>
+    GGGG<br>
+    GGGG<br>
+    CCCC<br>
+    AAAA<br>
+    CCCC<br>
+    CCCC<br>
+    GGGG<br>
+    AAAA<br>
+    CCCC
     </div>
 
 Sample from a Stochastic Pool
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use ``sample`` on a mutagenized pool to select a reproducible subset of
-stochastic draws, combining random mutation with deterministic sampling.
+stochastic draws, combining random mutation with deterministic sampling. The
+mutagenized sequences themselves still vary between runs unless the upstream
+stochastic pool is seeded.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     wt      = pp.from_seq("ATCGATCG")
-    mutants = wt.mutagenize(num_mutations=1)        # stochastic pool
+    mutants = wt.mutagenize(num_mutations=1)
     sampled = pp.sample(mutants, num_seqs=4, seed=7)
+    sampled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (4 sequences &mdash; 4 reproducible draws from mutagenize, seed=7)</em>
-    A<span class="pp-mut">G</span>CGATCG<br>
-    ATCG<span class="pp-mut">C</span>TCG<br>
-    ATCGAT<span class="pp-mut">A</span>G<br>
-    <span class="pp-mut">C</span>TCGATCG
+    <em class="pp-header">sampled: seq_length=8, num_states=4</em>
+    ATCGACCG<br>
+    ATCGTTCG<br>
+    ATGGATCG<br>
+    GTCGATCG
     </div>
 
 See :func:`~poolparty.sample`.

@@ -16,7 +16,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -38,6 +38,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.add_prefix` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -47,18 +53,15 @@ Label sequences from different branches
 .. code-block:: python
 
     wt     = pp.from_seq("ACGTACGT")
-    branch = pp.mutagenize(wt, num_mutations=1, prefix="mut")
+    branch = pp.mutagenize(wt, num_mutations=1, prefix="mut", mode="random")
     tagged = pp.add_prefix(branch, "experiment1")
-    df     = tagged.generate_library(num_seqs=3)
-    # name column: mut.0001.experiment1, mut.0002.experiment1, ...
+    tagged.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; sequences unchanged, names prefixed)</em>
-    A<span class="pp-mut">G</span>CGATCG &nbsp;<em style="color:#6b7280;">mut.0001.experiment1</em><br>
-    ACGT<span class="pp-mut">T</span>CGT &nbsp;<em style="color:#6b7280;">mut.0002.experiment1</em><br>
-    <span class="pp-mut">G</span>CGTACGT &nbsp;<em style="color:#6b7280;">mut.0003.experiment1</em>
+    <em class="pp-header">tagged: seq_length=8, num_states=1</em>
+    ACGTGCGT
     </div>
 
 See :func:`~poolparty.add_prefix`.

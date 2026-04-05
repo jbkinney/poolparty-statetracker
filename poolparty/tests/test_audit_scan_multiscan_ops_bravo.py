@@ -1223,7 +1223,7 @@ class TestMixinForwarding:
             pool = pp.from_seq("ACGTACGT")
             ins = pp.from_seq("NN")
             result = pool.insertion_scan(
-                ins_pool=ins, positions=[0, 1, 2],
+                insertion_pool=ins, positions=[0, 1, 2],
                 region=None, replace=False,
                 style="blue", prefix="ins",
                 prefix_position="pos", prefix_insert="content",
@@ -1238,7 +1238,7 @@ class TestMixinForwarding:
             pool = pp.from_seq("ACGTACGT")
             ins = pp.from_seq("NN")
             result = pool.replacement_scan(
-                ins_pool=ins, positions=[0, 1, 2],
+                replacement_pool=ins, positions=[0, 1, 2],
                 region=None, style="blue",
                 prefix="rep", prefix_position="pos",
                 prefix_insert="content", mode="sequential",
@@ -1776,7 +1776,7 @@ class TestInsertionScanAssumptionInversion:
     Assumptions from reading the code:
     A1. "Parent sequence has at least region_length nontag characters"
     A2. "Marker name _ins/_rep is unique in the Party"
-    A3. "ins_pool is a simple single-op pool"
+    A3. "insertion_pool is a simple single-op pool"
     """
 
     def test_A1_scan_length_equals_seq_length(self):
@@ -1799,7 +1799,7 @@ class TestInsertionScanAssumptionInversion:
     def test_A1_replacement_length_equals_seq_length(self):
         """Boundary: replacement length equals entire sequence.
 
-        replacement_scan with ins_pool of same length as bg replaces
+        replacement_scan with replacement_pool of same length as bg replaces
         entire content. Only 1 valid position.
         """
         with pp.Party():
@@ -1828,10 +1828,10 @@ class TestInsertionScanAssumptionInversion:
             df = r2.generate_library()
             assert len(df) == r2.num_states
 
-    def test_A3_chained_ins_pool(self):
-        """ins_pool is itself a chained pool (from_seqs → mutagenize).
+    def test_A3_chained_insertion_pool(self):
+        """insertion_pool is itself a chained pool (from_seqs → mutagenize).
 
-        Code captures ins_pool.state — verify this works for complex pools.
+        Code captures insertion_pool.state — verify this works for complex pools.
         """
         with pp.Party():
             bg = pp.from_seq("ACGTACGT")

@@ -19,14 +19,14 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
      - Default
      - Description
    * - ``fasta_path``
-     - ``str | Path``
+     - ``str``
      - *(required)*
      - Path to the FASTA file. Indexed via ``pyfaidx`` on first use; a
        ``.fai`` index file is created automatically if absent.
@@ -77,6 +77,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.from_fasta` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -91,13 +97,19 @@ Extract 20 bases from chromosome 1, forward strand.
         "genome.fa",
         coordinates=("chr1", 1000, 1020, "+"),
     )
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; chr1:1000&ndash;1020(+))</em>
+    <em class="pp-header">pool: seq_length=20, num_states=1</em>
     ATCGATCGATCGATCGATCG
     </div>
+
+.. note::
+
+   Output above is illustrative — actual sequences depend on the content of
+   the FASTA file.
 
 Reverse-strand extraction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,11 +123,12 @@ Reverse-strand extraction
         "genome.fa",
         coordinates=("chr2", 5000, 5010, "-"),
     )
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; chr2:5000&ndash;5010(-), reverse complemented)</em>
+    <em class="pp-header">pool: seq_length=10, num_states=1</em>
     CGTAGCTAGC
     </div>
 
@@ -133,14 +146,15 @@ automatically; ``prefix`` prepends a custom label.
         ("chr3", 200,  210,  "+"),
     ]
     pool = pp.from_fasta("genome.fa", coordinates=coords, prefix="enh")
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (3 sequences, sequential)</em>
-    ATCGATCGAT &nbsp;<em style="color:#6b7280;">enh_chr1:1000-1010(+)</em><br>
-    CGTAGCTAGC &nbsp;<em style="color:#6b7280;">enh_chr2:5000-5010(-)</em><br>
-    GCATGCATGC &nbsp;<em style="color:#6b7280;">enh_chr3:200-210(+)</em>
+    <em class="pp-header">pool: seq_length=10, num_states=3</em>
+    ATCGATCGAT<br>
+    CGTAGCTAGC<br>
+    GCATGCATGC
     </div>
 
 Inserting into a named region
@@ -155,13 +169,14 @@ flanking context — useful for tiling genomic sequences into a library vector.
     coords = [("chr1", 1000, 1010, "+"), ("chr1", 2000, 2010, "+")]
     pool   = pp.from_fasta("genome.fa", coordinates=coords,
                            pool=vector, region="insert")
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (2 sequences &mdash; genomic tiles in <em>insert</em> region)</em>
-    GCGCGC<span class="pp-region">ATCGATCGAT</span>GCGCGC<br>
-    GCGCGC<span class="pp-region">TTGGAACCTA</span>GCGCGC
+    <em class="pp-header">pool: seq_length=22, num_states=2</em>
+    GCGCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>ATCGATCGAT<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGCGC<br>
+    GCGCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>TTGGAACCTA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGCGC
     </div>
 
 See :func:`~poolparty.from_fasta`.

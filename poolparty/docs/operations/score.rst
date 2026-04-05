@@ -22,7 +22,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -58,6 +58,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.score` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -75,16 +81,18 @@ this.
 
     wt     = pp.from_iupac("NNNN", mode="sequential")
     scored = pp.score(wt, pp.calc_gc, card_key="gc", cards={"gc": "gc"})
-    df     = scored.generate_library()
-    # df["gc"] contains the GC fraction for each sequence
+    scored.print_library()
+    # scored.generate_library() adds a "gc" column per sequence
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (256 sequences, unchanged &mdash; "gc" column added to library output)</em>
-    AAAA &nbsp;<em style="color:#6b7280;">gc=0.00</em><br>
-    AAAC &nbsp;<em style="color:#6b7280;">gc=0.25</em><br>
-    AAAG &nbsp;<em style="color:#6b7280;">gc=0.25</em><br>
+    <em class="pp-header">scored: seq_length=4, num_states=256</em>
+    AAAA<br>
+    AAAC<br>
+    AAAG<br>
+    AAAT<br>
+    AACA<br>
     <span class="pp-ellipsis">... (256 total)</span>
     </div>
 
@@ -98,14 +106,15 @@ Any callable works. Here a lambda counts A/T bases for AT richness.
     wt     = pp.from_seqs(["AAAA", "GCGC", "ATCG"], mode="sequential")
     scored = pp.score(wt, lambda s: s.count("A") + s.count("T"),
                      card_key="at_count", cards=["at_count"])
+    scored.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (3 sequences, unchanged &mdash; "at_count" column added)</em>
-    AAAA &nbsp;<em style="color:#6b7280;">at_count=4</em><br>
-    GCGC &nbsp;<em style="color:#6b7280;">at_count=0</em><br>
-    ATCG &nbsp;<em style="color:#6b7280;">at_count=2</em>
+    <em class="pp-header">scored: seq_length=4, num_states=3</em>
+    AAAA<br>
+    GCGC<br>
+    ATCG
     </div>
 
 Built-in scoring functions
@@ -123,39 +132,45 @@ with ``score``:
     wt     = pp.from_iupac("NNNNNNNN", mode="sequential", num_states=5)
     scored = pp.score(wt, pp.calc_complexity, card_key="complexity",
                      cards={"complexity": "complexity"})
-    df     = scored.generate_library()
-    # df["complexity"] contains the linguistic complexity for each sequence
+    scored.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (5 sequences, unchanged &mdash; "complexity" column added)</em>
-    AAAAAAAA &nbsp;<em style="color:#6b7280;">complexity=0.187</em><br>
-    AAAAAAAC &nbsp;<em style="color:#6b7280;">complexity=0.373</em><br>
-    AAAAAAAG &nbsp;<em style="color:#6b7280;">complexity=0.373</em><br>
-    AAAAAAAT &nbsp;<em style="color:#6b7280;">complexity=0.373</em><br>
-    AAAAAACA &nbsp;<em style="color:#6b7280;">complexity=0.476</em>
+    <em class="pp-header">scored: seq_length=8, num_states=5</em>
+    AAAAAAAA<br>
+    AAAAAAAC<br>
+    AAAAAAAG<br>
+    AAAAAAAT<br>
+    AAAAAACA
     </div>
 
 Score only a named region
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``region`` restricts scoring to the tagged segment; the full sequence
-still passes through unchanged.
+still passes through unchanged. With ``mutagenize(..., mode="random")``,
+set ``num_states`` if you want more than one independent draw (the
+default is a single random mutant).
 
 .. code-block:: python
 
     wt     = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    muts   = pp.mutagenize(wt, num_mutations=1, region="cre")
+    muts   = pp.mutagenize(wt, num_mutations=1, region="cre",
+                          mode="random", num_states=5)
     scored = pp.score(muts, pp.calc_gc, region="cre", card_key="cre_gc",
                      cards=["cre_gc"])
+    scored.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; GC of <em>cre</em> region scored; full sequence unchanged)</em>
-    AAAA<span class="pp-region">A<span class="pp-mut">G</span>CGATCG</span>TTTT &nbsp;<em style="color:#6b7280;">cre_gc≈0.63</em><br>
-    <span class="pp-ellipsis">... (GC computed from region content only)</span>
+    <em class="pp-header">scored: seq_length=16, num_states=5</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGGTCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGAACG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGCTCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>GTCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ACCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
 
 Multiple scores in a pipeline
@@ -169,28 +184,32 @@ Chain two ``score`` calls to record multiple metrics in one library.
     scored = pp.score(wt,     pp.calc_gc,        card_key="gc",         cards={"gc": "gc"})
     scored = pp.score(scored, pp.calc_complexity, card_key="complexity", cards=["complexity"])
     df     = scored.generate_library()
-    # df has both "gc" and "complexity" columns
+    print(df.to_string())
+    # df has both "gc" and "op[...]:score.complexity" columns
 
 .. raw:: html
 
-    <table style="border-collapse:collapse;font-size:0.85em;font-family:monospace;margin:0.5em 0">
-    <thead><tr style="border-bottom:1px solid #d1d5db">
-      <th style="padding:4px 12px 4px 4px;text-align:right;color:#6b7280">&nbsp;</th>
-      <th style="padding:4px 12px;text-align:left">seq</th>
-      <th style="padding:4px 12px;text-align:right">gc</th>
-      <th style="padding:4px 12px;text-align:right">op[42]:score.complexity</th>
-    </tr></thead>
+    <table>
+    <thead>
+    <tr>
+      <th>name</th>
+      <th>seq</th>
+      <th>gc</th>
+      <th>op[2]:score.complexity</th>
+    </tr>
+    </thead>
     <tbody>
-    <tr><td style="padding:2px 12px 2px 4px;color:#6b7280;text-align:right">0</td><td style="padding:2px 12px">AAAAAAAA</td><td style="padding:2px 12px;text-align:right">0.000</td><td style="padding:2px 12px;text-align:right">0.186508</td></tr>
-    <tr><td style="padding:2px 12px 2px 4px;color:#6b7280;text-align:right">1</td><td style="padding:2px 12px">AAAAAAAC</td><td style="padding:2px 12px;text-align:right">0.125</td><td style="padding:2px 12px;text-align:right">0.373016</td></tr>
-    <tr><td style="padding:2px 12px 2px 4px;color:#6b7280;text-align:right">2</td><td style="padding:2px 12px">AAAAAAAG</td><td style="padding:2px 12px;text-align:right">0.125</td><td style="padding:2px 12px;text-align:right">0.373016</td></tr>
-    <tr><td style="padding:2px 12px 2px 4px;color:#6b7280;text-align:right">3</td><td style="padding:2px 12px">AAAAAAAT</td><td style="padding:2px 12px;text-align:right">0.000</td><td style="padding:2px 12px;text-align:right">0.373016</td></tr>
-    <tr><td style="padding:2px 12px 2px 4px;color:#6b7280;text-align:right">4</td><td style="padding:2px 12px">AAAAAACA</td><td style="padding:2px 12px;text-align:right">0.125</td><td style="padding:2px 12px;text-align:right">0.476190</td></tr>
-    <tr><td style="padding:2px 12px 2px 4px;color:#6b7280;text-align:right">5</td><td style="padding:2px 12px">AAAAAACC</td><td style="padding:2px 12px;text-align:right">0.250</td><td style="padding:2px 12px;text-align:right">0.476190</td></tr>
-    <tr><td style="padding:2px 12px 2px 4px;color:#6b7280;text-align:right">6</td><td style="padding:2px 12px">AAAAAACG</td><td style="padding:2px 12px;text-align:right">0.250</td><td style="padding:2px 12px;text-align:right">0.559524</td></tr>
-    <tr><td style="padding:2px 12px 2px 4px;color:#6b7280;text-align:right">7</td><td style="padding:2px 12px">AAAAAACT</td><td style="padding:2px 12px;text-align:right">0.125</td><td style="padding:2px 12px;text-align:right">0.559524</td></tr>
-    <tr><td style="padding:2px 12px 2px 4px;color:#6b7280;text-align:right">8</td><td style="padding:2px 12px">AAAAAAGA</td><td style="padding:2px 12px;text-align:right">0.125</td><td style="padding:2px 12px;text-align:right">0.476190</td></tr>
-    <tr><td style="padding:2px 12px 2px 4px;color:#6b7280;text-align:right">9</td><td style="padding:2px 12px">AAAAAAGC</td><td style="padding:2px 12px;text-align:right">0.250</td><td style="padding:2px 12px;text-align:right">0.559524</td></tr>
-    </tbody></table>
+    <tr><td>None</td><td>AAAAAAAA</td><td>0.000</td><td>0.186508</td></tr>
+    <tr><td>None</td><td>AAAAAAAC</td><td>0.125</td><td>0.373016</td></tr>
+    <tr><td>None</td><td>AAAAAAAG</td><td>0.125</td><td>0.373016</td></tr>
+    <tr><td>None</td><td>AAAAAAAT</td><td>0.000</td><td>0.373016</td></tr>
+    <tr><td>None</td><td>AAAAAACA</td><td>0.125</td><td>0.476190</td></tr>
+    <tr><td>None</td><td>AAAAAACC</td><td>0.250</td><td>0.476190</td></tr>
+    <tr><td>None</td><td>AAAAAACG</td><td>0.250</td><td>0.559524</td></tr>
+    <tr><td>None</td><td>AAAAAACT</td><td>0.125</td><td>0.559524</td></tr>
+    <tr><td>None</td><td>AAAAAAGA</td><td>0.125</td><td>0.476190</td></tr>
+    <tr><td>None</td><td>AAAAAAGC</td><td>0.250</td><td>0.559524</td></tr>
+    </tbody>
+    </table>
 
 See :func:`~poolparty.score`.

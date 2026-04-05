@@ -22,7 +22,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -38,6 +38,12 @@ Returns ``None`` — pools are modified in-place.
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.sync` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -49,18 +55,17 @@ product). After syncing, only the 3 matched pairs are drawn.
 
 .. code-block:: python
 
-    left  = pp.from_seqs(["AAA", "CCC", "GGG"])
-    right = pp.from_seqs(["TTT", "AAA", "CCC"])
+    left  = pp.from_seqs(["AAA", "CCC", "GGG"], mode="sequential")
+    right = pp.from_seqs(["TTT", "AAA", "CCC"], mode="sequential")
 
     pp.sync([left, right])
     paired = pp.join([left, right])
-    df     = paired.generate_library()
-    # 3 rows: AAATTT, CCCAAA, GGGCCC
+    paired.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (3 sequences &mdash; synced left + right, 1:1 pairing)</em>
+    <em class="pp-header">paired: seq_length=6, num_states=3</em>
     AAATTT<br>
     CCCAAA<br>
     GGGCCC
@@ -75,22 +80,25 @@ position is paired with a specific mutation draw.
 .. code-block:: python
 
     wt   = pp.from_seq("ACGTACGT")
-    dels = wt.deletion_scan(deletion_length=1, mode="sequential")  # 8 states
-    muts = pp.sample(wt.mutagenize(num_mutations=1), num_seqs=8, seed=0)
+    dels = wt.deletion_scan(deletion_length=1, mode="sequential")
+    muts = pp.sample(wt.mutagenize(num_mutations=1, mode="random"), num_seqs=8, seed=0)
 
     pp.sync([dels, muts])
     combined = pp.join([dels, muts])
-    df       = combined.generate_library()
-    # 8 rows — each deletion variant paired with a specific mutant
+    combined.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (8 sequences &mdash; synced deletion + mutation, matched by state)</em>
-    <span class="pp-del">-</span>CGTACGT&nbsp;A<span class="pp-mut">G</span>GTACGT<br>
-    A<span class="pp-del">-</span>GTACGT&nbsp;ACGT<span class="pp-mut">T</span>CGT<br>
-    AC<span class="pp-del">-</span>TACGT&nbsp;<span class="pp-mut">G</span>CGTACGT<br>
-    <span class="pp-ellipsis">... (8 total &mdash; each pair drawn together)</span>
+    <em class="pp-header">combined: seq_length=16, num_states=8</em>
+    -CGTACGTACGAACGT<br>
+    A-GTACGTACGTAGGT<br>
+    AC-TACGTATGTACGT<br>
+    ACG-ACGTACGTACTT<br>
+    ACGT-CGTACTTACGT<br>
+    ACGTA-GTGCGTACGT<br>
+    ACGTAC-TACGTCCGT<br>
+    ACGTACG-ACGAACGT
     </div>
 
 See :func:`~poolparty.sync`.

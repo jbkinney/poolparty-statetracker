@@ -18,7 +18,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -54,6 +54,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.annotate_region` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -66,12 +72,13 @@ Mark positions 4–12 as the ``cre`` region with default rendering.
 
     wt        = pp.from_seq("AAAAATCGATCGTTTT")
     annotated = pp.annotate_region(wt, "cre", extent=(4, 12))
+    annotated.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; <em>cre</em> tagged at positions 4&ndash;12)</em>
-    AAAA<span class="pp-region">ATCGATCG</span>TTTT
+    <em class="pp-header">annotated: seq_length=16, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
 
 Annotate entire sequence (extent omitted)
@@ -83,12 +90,13 @@ Omit ``extent`` to tag the full sequence as a single named region.
 
     wt        = pp.from_seq("ATCGATCG")
     annotated = pp.annotate_region(wt, "full")
+    annotated.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; entire sequence tagged as <em>full</em>)</em>
-    <span class="pp-region">ATCGATCG</span>
+    <em class="pp-header">annotated: seq_length=8, num_states=1</em>
+    <span class="pp-xtag-cre">&lt;full&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/full&gt;</span>
     </div>
 
 Annotate with a named style
@@ -100,13 +108,14 @@ Annotate with a named style
 
     wt        = pp.from_seq("AAAAATCGATCGTTTT")
     annotated = pp.annotate_region(wt, "cre", extent=(4, 12),
-                                   style="bold_green")
+                                   style="green bold")
+    annotated.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; <em>cre</em> tagged and styled bold green)</em>
-    AAAA<span style="color:#15803d;font-weight:bold;">ATCGATCG</span>TTTT
+    <em class="pp-header">annotated: seq_length=16, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><strong class="pp-codon-c">ATCGATCG</strong><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
 
 Two regions with different styles
@@ -118,13 +127,14 @@ Chain two calls to give adjacent segments distinct colours.
 
     wt    = pp.from_seq("AAAAATCGGGGGCCCTTTT")
     step1 = pp.annotate_region(wt,    "left",  extent=(4, 8),   style="blue bold")
-    step2 = pp.annotate_region(step1, "right", extent=(13, 17), style="bold_red")
+    step2 = pp.annotate_region(step1, "right", extent=(13, 17), style="red bold")
+    step2.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; <em>left</em> blue, <em>right</em> red)</em>
-    AAAA<span style="color:#1d4ed8;font-weight:bold;">ATCG</span>GGGGG<span style="color:#dc2626;font-weight:bold;">CCCT</span>TTT
+    <em class="pp-header">step2: seq_length=19, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;left&gt;</span><strong class="pp-codon-a">ATCG</strong><span class="pp-xtag-cre">&lt;/left&gt;</span>GGGGC<span class="pp-xtag-cre">&lt;right&gt;</span><strong class="pp-mut">CCTT</strong><span class="pp-xtag-cre">&lt;/right&gt;</span>TT
     </div>
 
 Apply a style to an existing region (extent=None)
@@ -137,12 +147,13 @@ to add colour without re-tagging.
 
     wt     = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     styled = pp.annotate_region(wt, "cre", style="red")
+    styled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; existing <em>cre</em> region styled red)</em>
-    AAAA<span style="color:#dc2626;">ATCGATCG</span>TTTT
+    <em class="pp-header">styled: seq_length=16, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">ATCGATCG</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
 
 See :func:`~poolparty.annotate_region`.

@@ -6,14 +6,16 @@ regions, and other features are visually highlighted when printed. Styles
 are tracked per-character through the entire DAG and rendered as ANSI
 escape codes in terminal output.
 
-All examples assume::
+All examples assume:
+
+.. code-block:: python
 
     import poolparty as pp
     pp.init()
 
 ----
 
-Style Specifications
+Style specifications
 --------------------
 
 A style is a space-separated string of one or more tokens. Tokens can be
@@ -60,11 +62,10 @@ To see every available colour printed in its own colour, call:
 
 ----
 
-Applying Styles
+Applying styles
 ---------------
 
-The ``pp.stylize()`` operation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. rubric:: The ``stylize`` operation
 
 Apply a style to an entire sequence, a named region, or characters
 matching a pattern.
@@ -72,8 +73,15 @@ matching a pattern.
 .. code-block:: python
 
     wt     = pp.from_seq("ATCGATCG")
-    styled = pp.stylize(wt, style="red")
+    styled = wt.stylize(style="red")
     styled.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">styled: seq_length=8, num_states=1</em>
+    <span class="pp-mut">ATCGATCG</span>
+    </div>
 
 The ``which`` parameter selects which characters are styled:
 
@@ -98,33 +106,57 @@ The ``which`` parameter selects which characters are styled:
 
 .. code-block:: python
 
+    # Style a named region
+    wt     = pp.from_seq("GCGC<cre>TATAAT</cre>ATGAAATTT")
+    styled = wt.stylize(region="cre", style="blue bold")
+    styled.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">styled: seq_length=14, num_states=1</em>
+    GCGC<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-region">TATAAT</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>ATGAAATTT
+    </div>
+
+.. code-block:: python
+
     # Style only uppercase characters
     mixed  = pp.from_seq("AcGtAcGt")
-    styled = pp.stylize(mixed, style="bold", which="upper")
-
-    # Style a named region
-    wt     = pp.from_seq("GCGCGC<promoter>TATAAT</promoter>ATGAAATTT")
-    styled = pp.stylize(wt, region="promoter", style="blue bold")
+    styled = mixed.stylize(style="bold", which="upper")
 
     # Style characters matching a regex
-    styled = pp.stylize(wt, style="cyan", regex="[GC]")
+    styled = wt.stylize(style="cyan", regex="[GC]")
 
-Styles on other operations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. rubric:: Styles on other operations
 
 Many operations accept a ``style`` parameter that automatically highlights
 the modified positions:
 
 .. code-block:: python
 
-    # Mutations shown in red
-    muts = pp.mutagenize(wt, num_mutations=1, style="red")
+    wt   = pp.from_seq("GCGC<cre>TATAAT</cre>ATGAAATTT")
+    muts = wt.mutagenize(num_mutations=1, style="red")
+    muts.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">muts: seq_length=14, num_states=1</em>
+    <span class="pp-ellipsis"># mutated positions shown in red</span><br>
+    <span class="pp-mut">A</span>CGC<span class="pp-xtag-cre">&lt;cre&gt;</span>TATAAT<span class="pp-xtag-cre">&lt;/cre&gt;</span>ATGAAATTT<br>
+    G<span class="pp-mut">A</span>GC<span class="pp-xtag-cre">&lt;cre&gt;</span>TATAAT<span class="pp-xtag-cre">&lt;/cre&gt;</span>ATGAAATTT<br>
+    GC<span class="pp-mut">A</span>C<span class="pp-xtag-cre">&lt;cre&gt;</span>TATAAT<span class="pp-xtag-cre">&lt;/cre&gt;</span>ATGAAATTT<br>
+    <span class="pp-ellipsis">...</span>
+    </div>
+
+.. code-block:: python
 
     # Deletion markers shown in grey
-    dels = pp.deletion_scan(wt, deletion_length=2, style="grey")
+    dels = wt.deletion_scan(deletion_length=2, style="grey")
 
     # Inserted content shown in green
-    scan = pp.insertion_scan(wt, ins_pool, style="green")
+    ins  = pp.from_seqs(["AA", "CC", "GG"], mode="sequential")
+    scan = wt.insertion_scan(ins, style="green")
 
 The ``style`` parameter on ``pp.from_seq`` colours the entire sequence:
 
@@ -134,7 +166,7 @@ The ``style`` parameter on ``pp.from_seq`` colours the entire sequence:
 
 ----
 
-How Styles Render
+How styles render
 -----------------
 
 **Terminal / ``print_library()``**
@@ -155,7 +187,7 @@ How Styles Render
 
 ----
 
-Suppressing Styles
+Suppressing styles
 ------------------
 
 To disable style tracking for better performance (e.g. large libraries

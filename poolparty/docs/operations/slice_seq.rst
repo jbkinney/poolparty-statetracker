@@ -16,7 +16,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -66,6 +66,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.slice_seq` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -78,11 +84,12 @@ Extract bases 2–6 from an 8-mer.
 
     pool   = pp.from_seq("ACGTACGT")
     sliced = pp.slice_seq(pool, start=2, stop=6)
+    sliced.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; positions [2:6])</em>
+    <em class="pp-header">sliced: seq_length=4, num_states=1</em>
     GTAC
     </div>
 
@@ -95,11 +102,12 @@ Pull the content of a tagged region into its own pool.
 
     pool = pp.from_seq("AAA<orf>ATGCCC</orf>TTT")
     orf  = pp.slice_seq(pool, region="orf")
+    orf.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; content of <em>orf</em>)</em>
+    <em class="pp-header">orf: seq_length=6, num_states=1</em>
     ATGCCC
     </div>
 
@@ -113,11 +121,12 @@ take only the first codon.
 
     pool   = pp.from_seq("AAA<orf>ATGCCC</orf>TTT")
     codon1 = pp.slice_seq(pool, region="orf", start=0, stop=3)
+    codon1.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; first 3 bases of <em>orf</em>)</em>
+    <em class="pp-header">codon1: seq_length=3, num_states=1</em>
     ATG
     </div>
 
@@ -131,11 +140,12 @@ original flanking sequence.
 
     pool   = pp.from_seq("AAA<orf>ATGCCC</orf>TTT")
     sliced = pp.slice_seq(pool, region="orf", start=0, stop=3, keep_context=True)
+    sliced.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; first codon of <em>orf</em> with flanks)</em>
+    <em class="pp-header">sliced: seq_length=9, num_states=1</em>
     AAAATGTTT
     </div>
 

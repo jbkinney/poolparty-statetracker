@@ -25,11 +25,12 @@ Convert every base of a lowercase sequence to uppercase.
 
     wt = pp.from_seq("atcgatcg")
     up = pp.upper(wt)
+    up.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; all bases uppercased)</em>
+    <em class="pp-header">up: seq_length=8, num_states=1</em>
     ATCGATCG
     </div>
 
@@ -43,12 +44,13 @@ bases remain unchanged.
 
     wt = pp.from_seq("aaaa<cre>atcgatcg</cre>tttt")
     up = pp.upper(wt, region="cre")
+    up.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; only the <em>cre</em> region uppercased)</em>
-    aaaa<span class="pp-region">ATCGATCG</span>tttt
+    <em class="pp-header">up: seq_length=8, num_states=1</em>
+    aaaa<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>tttt
     </div>
 
 lower: lowercase a full sequence
@@ -60,11 +62,12 @@ Convert every base of an uppercase sequence to lowercase.
 
     wt = pp.from_seq("ATCGATCG")
     lo = pp.lower(wt)
+    lo.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; all bases lowercased)</em>
+    <em class="pp-header">lo: seq_length=8, num_states=1</em>
     atcgatcg
     </div>
 
@@ -78,12 +81,13 @@ are returned unchanged.
 
     wt = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     lo = pp.lower(wt, region="cre")
+    lo.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; only the <em>cre</em> region lowercased)</em>
-    AAAA<span class="pp-region">atcgatcg</span>TTTT
+    <em class="pp-header">lo: seq_length=8, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>atcgatcg<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
 
 swapcase: swap a mixed-case sequence
@@ -95,11 +99,12 @@ Invert the case of every base: uppercase becomes lowercase and vice versa.
 
     wt = pp.from_seq("ATCGatcg")
     sw = pp.swapcase(wt)
+    sw.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; case of each base inverted)</em>
+    <em class="pp-header">sw: seq_length=8, num_states=1</em>
     atcgATCG
     </div>
 
@@ -114,12 +119,13 @@ Apply ``lower`` to the full sequence, then ``swapcase`` restricted to the
     wt = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     lo = pp.lower(wt)
     hi = pp.swapcase(lo, region="cre")
+    hi.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; flanks lowercase, <em>cre</em> region uppercase)</em>
-    aaaa<span class="pp-region">ATCGATCG</span>tttt
+    <em class="pp-header">hi: seq_length=8, num_states=1</em>
+    aaaa<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>tttt
     </div>
 
 See :func:`~poolparty.swapcase`.

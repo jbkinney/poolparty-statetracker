@@ -184,7 +184,7 @@ def test_insertion_scan_naming():
         sites = pp.from_seqs(["AAA", "TTT"], mode="sequential", prefix="site")
         pool = pp.from_seq("GGG<reg>CCCCCC</reg>GGG").insertion_scan(
             region="reg",
-            ins_pool=sites,
+            insertion_pool=sites,
             positions=[0, 3],
             mode="sequential",
             prefix="ins",

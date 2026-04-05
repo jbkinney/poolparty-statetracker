@@ -16,7 +16,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -47,6 +47,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.remove_tags` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -59,12 +65,13 @@ Strip the ``cre`` tags but leave the four enclosed bases in place.
 
     wt      = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
     cleaned = pp.remove_tags(wt, "cre")
+    cleaned.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; tags stripped, 4 bases kept)</em>
-    AAAATCGTTTT
+    <em class="pp-header">cleaned: seq_length=12, num_states=1</em>
+    AAAAATCGTTTT
     </div>
 
 Drop content (keep_content=False)
@@ -76,11 +83,12 @@ Delete both the tags and the enclosed bases, shortening the sequence.
 
     wt      = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
     dropped = pp.remove_tags(wt, "cre", keep_content=False)
+    dropped.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; tags and 4 enclosed bases deleted)</em>
+    <em class="pp-header">dropped: seq_length=8, num_states=1</em>
     AAAATTTT
     </div>
 
@@ -89,23 +97,27 @@ Strip scan tags while keeping another region
 
 After :func:`~poolparty.region_scan` the scanning tag remains in every
 sequence. Use ``remove_tags`` to strip it while leaving the ``cre`` region
-tag intact.
+tag intact. All seven scan positions collapse to the same visible sequence
+once the ``win`` tag is removed.
 
 .. code-block:: python
 
     wt   = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    scan = pp.region_scan(wt, region="win", region_length=2,
-                          region_constraint="cre", mode="sequential")
+    scan = pp.region_scan(wt, tag_name="win", region_length=2,
+                          region="cre", mode="sequential")
     out  = pp.remove_tags(scan, "win")
+    out.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (7 sequences &mdash; <em>win</em> scan tag removed; <em>cre</em> tag still present)</em>
-    AAAA<span class="pp-region">ATCGATCG</span>TTTT<br>
-    AAAA<span class="pp-region">ATCGATCG</span>TTTT<br>
-    AAAA<span class="pp-region">ATCGATCG</span>TTTT<br>
-    <span class="pp-ellipsis">... (7 total; one per window position)</span>
+    <em class="pp-header">out: seq_length=16, num_states=7</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    <span class="pp-ellipsis">... (7 total)</span>
     </div>
 
 Remove two regions sequentially
@@ -118,11 +130,12 @@ Call ``remove_tags`` once per region name to clear multiple tags.
     wt    = pp.from_seq("AAAA<left>ATCG</left>GGGG<right>CCCT</right>TTT")
     step1 = pp.remove_tags(wt,    "left")
     clean = pp.remove_tags(step1, "right")
+    clean.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; both region tags stripped, all bases kept)</em>
+    <em class="pp-header">clean: seq_length=19, num_states=1</em>
     AAAAATCGGGGGCCCTTTT
     </div>
 

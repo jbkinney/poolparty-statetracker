@@ -16,7 +16,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -94,6 +94,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.insertion_multiscan` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -101,22 +107,23 @@ Two simultaneous single-base insertions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Insert a single random base at each of two independently chosen positions.
+``mode="random"`` makes each ``print_library()`` draw one stochastic
+outcome (``num_states=1`` per preview).
 
 .. code-block:: python
 
     wt     = pp.from_seq("ATCGATCGATCG")
     insert = pp.from_iupac("N")          # any single base
-    scan   = pp.insertion_multiscan(wt, num_insertions=2,
-                                    insertion_pools=insert)
+    scan   = wt.insertion_multiscan(num_insertions=2,
+                                    insertion_pools=insert, mode="random",
+                                    style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 2 simultaneous single-base insertions per draw)</em>
-    <span class="pp-ins">A</span>ATCG<span class="pp-ins">T</span>ATCGATCG<br>
-    AT<span class="pp-ins">C</span>CGATCG<span class="pp-ins">G</span>GATCG<br>
-    ATCGA<span class="pp-ins">T</span>TCGAT<span class="pp-ins">A</span>CG<br>
-    <span class="pp-ellipsis">... each draw inserts 1 base at each of 2 distinct positions</span>
+    <em class="pp-header">scan: seq_length=14, num_states=1</em>
+    ATCGAT<span class="pp-mut">G</span>CGATC<span class="pp-mut">T</span>G
     </div>
 
 Two simultaneous 2-mer insertions
@@ -129,17 +136,16 @@ each of the two chosen positions.
 
     wt     = pp.from_seq("ATCGATCGATCG")
     insert = pp.from_iupac("NN")         # all 16 dinucleotides
-    scan   = pp.insertion_multiscan(wt, num_insertions=2,
-                                    insertion_pools=insert)
+    scan   = wt.insertion_multiscan(num_insertions=2,
+                                    insertion_pools=insert, mode="random",
+                                    style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 2 simultaneous 2-mer insertions per draw)</em>
-    <span class="pp-ins">AT</span>ATCG<span class="pp-ins">GC</span>ATCGATCG<br>
-    A<span class="pp-ins">CC</span>TCGATCG<span class="pp-ins">TT</span>ATCG<br>
-    ATCG<span class="pp-ins">AA</span>ATCG<span class="pp-ins">GT</span>TCG<br>
-    <span class="pp-ellipsis">... each draw inserts a random 2-mer at each of 2 positions</span>
+    <em class="pp-header">scan: seq_length=16, num_states=1</em>
+    ATCGAT<span class="pp-mut">GA</span>CGATC<span class="pp-mut">TT</span>G
     </div>
 
 Multiscan insertion within a named region
@@ -152,18 +158,109 @@ are never modified.
 
     wt     = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     insert = pp.from_iupac("N")
-    scan   = pp.insertion_multiscan(wt, num_insertions=2,
+    scan   = wt.insertion_multiscan(num_insertions=2,
                                     insertion_pools=insert,
-                                    positions=range(4, 13))
+                                    region="cre", mode="random",
+                                    style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 2 single-base insertions confined to <em>cre</em>)</em>
-    AAAA<span class="pp-region"><span class="pp-ins">G</span>ATCG<span class="pp-ins">T</span>ATCG</span>TTTT<br>
-    AAAA<span class="pp-region">A<span class="pp-ins">C</span>TCGAT<span class="pp-ins">A</span>CG</span>TTTT<br>
-    AAAA<span class="pp-region">ATCG<span class="pp-ins">T</span>ATCG<span class="pp-ins">G</span></span>TTTT<br>
-    <span class="pp-ellipsis">... flanks always AAAA...TTTT; insertions inside cre only</span>
+    <em class="pp-header">scan: seq_length=18, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-mut">G</span>ATCG<span class="pp-mut">T</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    </div>
+
+Spacing constraints (min_spacing, max_spacing)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``min_spacing`` and ``max_spacing`` control the gap between insertion sites.
+Here two 6-base motif insertions must be 4–8 bases apart on a 24-mer.
+
+.. code-block:: python
+
+    wt     = pp.from_seq("ATCGATCGATCGATCGATCGATCG")
+    motif  = pp.from_seq("GATTAC")
+    scan   = wt.insertion_multiscan(num_insertions=2,
+                                    insertion_pools=motif,
+                                    min_spacing=4, max_spacing=8,
+                                    mode="sequential", style="red")
+    scan.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">scan: seq_length=36, num_states=95</em>
+    <span class="pp-mut">GATTAC</span>ATCG<span class="pp-mut">GATTAC</span>ATCGATCGATCGATCGATCG<br>
+    <span class="pp-mut">GATTAC</span>ATCGA<span class="pp-mut">GATTAC</span>TCGATCGATCGATCGATCG<br>
+    <span class="pp-mut">GATTAC</span>ATCGAT<span class="pp-mut">GATTAC</span>CGATCGATCGATCGATCG<br>
+    <span class="pp-mut">GATTAC</span>ATCGATC<span class="pp-mut">GATTAC</span>GATCGATCGATCGATCG<br>
+    <span class="pp-mut">GATTAC</span>ATCGATCG<span class="pp-mut">GATTAC</span>ATCGATCGATCGATCG
+    <span class="pp-ellipsis">... (95 total)</span>
+    </div>
+
+PPM-based insertion pool (from_motif)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use :func:`~poolparty.from_motif` to supply a position-probability matrix
+as the inserted content. Each draw samples a different 6-mer from the PPM,
+producing biologically realistic variation at each insertion site.
+
+.. code-block:: python
+
+    import pandas as pd
+
+    pfm = pd.DataFrame({
+        "A": [0.8, 0.1, 0.5, 0.1, 0.7, 0.1],
+        "C": [0.1, 0.7, 0.2, 0.1, 0.1, 0.1],
+        "G": [0.05, 0.1, 0.2, 0.1, 0.1, 0.7],
+        "T": [0.05, 0.1, 0.1, 0.7, 0.1, 0.1],
+    })
+    wt    = pp.from_seq("ATCGATCGATCGATCGATCGATCG")
+    motif = pp.from_motif(pfm)
+    scan  = wt.insertion_multiscan(num_insertions=2,
+                                   insertion_pools=motif, mode="random",
+                                   num_states=5, style="red")
+    scan.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">scan: seq_length=36, num_states=5</em>
+    ATCGATCGATCG<span class="pp-mut">CCGTAG</span>ATCGATCGAT<span class="pp-mut">ACCCAG</span>CG<br>
+    <span class="pp-mut">CCATAT</span>ATCGATCGATCGATCGATCGAT<span class="pp-mut">AGGCAT</span>CG<br>
+    ATCGATCGATCGA<span class="pp-mut">CCGCAG</span>TCGATCGATC<span class="pp-mut">AAATAG</span>G<br>
+    <span class="pp-mut">CCATAT</span>ATCGATCGATCGATCGA<span class="pp-mut">ACATAG</span>TCGATCG<br>
+    ATCGATCGAT<span class="pp-mut">ACATAG</span>CGATCGATCG<span class="pp-mut">ACATAC</span>ATCG
+    </div>
+
+Explicit position sets (positions)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Specify allowed insertion sites for each window, using a distinct pool for
+each site. Below, the first insertion (``GGG``) can occur at position 0, 4,
+or 8 and the second (``AAA``) at position 10 or 14.
+
+.. code-block:: python
+
+    wt    = pp.from_seq("ATCGATCGATCGATCG")
+    pools = [pp.from_seq("GGG"), pp.from_seq("AAA")]
+    scan  = wt.insertion_multiscan(num_insertions=2,
+                                   insertion_pools=pools,
+                                   positions=[[0, 4, 8], [10, 14]],
+                                   mode="sequential", style="red")
+    scan.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">scan: seq_length=22, num_states=6</em>
+    <span class="pp-mut">GGG</span>ATCGATCGAT<span class="pp-mut">AAA</span>CGATCG<br>
+    <span class="pp-mut">GGG</span>ATCGATCGATCGAT<span class="pp-mut">AAA</span>CG<br>
+    ATCG<span class="pp-mut">GGG</span>ATCGAT<span class="pp-mut">AAA</span>CGATCG<br>
+    ATCG<span class="pp-mut">GGG</span>ATCGATCGAT<span class="pp-mut">AAA</span>CG<br>
+    ATCGATCG<span class="pp-mut">GGG</span>AT<span class="pp-mut">AAA</span>CGATCG<br>
+    ATCGATCG<span class="pp-mut">GGG</span>ATCGAT<span class="pp-mut">AAA</span>CG
     </div>
 
 See :func:`~poolparty.insertion_multiscan`.

@@ -263,7 +263,7 @@ class TestLibrary4:
 
             pam_bg = pp.from_seq("NNNNNN")
             pam_scan = pam_bg.replacement_scan(
-                ins_pool="GG",
+                replacement_pool="GG",
                 positions=[0, 1, 2, 3],
                 mode="sequential",
             ).named("pam_scan")
@@ -327,7 +327,7 @@ class TestLibrary5:
             ).named("cre_mutscan")
 
             cre_marker = cre.replacement_scan(
-                ins_pool="GGG",
+                replacement_pool="GGG",
                 positions=[0, 15, 30],
                 mode="sequential",
             ).named("cre_marker")
@@ -388,7 +388,7 @@ class TestLibrary6:
 
             flag_pool = pp.from_seq("GATTACAAAGAC")
             orf_tagged = orf_noisy.replacement_scan(
-                ins_pool=flag_pool,
+                replacement_pool=flag_pool,
                 positions=[0, 3, 6, 9, 12, 15, 18],
                 mode="sequential",
             ).named("flag_scan")
@@ -620,7 +620,7 @@ class TestLibrary10:
             intron = pp.from_seq(intron_50nt)
             bp_pool = pp.from_seq("TTAAC")
             intron_bp = intron.replacement_scan(
-                ins_pool=bp_pool,
+                replacement_pool=bp_pool,
                 positions=[0, 10, 20, 30, 40],
                 mode="sequential",
             ).named("bp_scan")
@@ -732,7 +732,7 @@ class TestLibrary12:
 
             # insertion_scan directly on the replaced pool (previously broke with seq_length=None)
             bg_inserted = bg_filled.insertion_scan(
-                ins_pool="CC",
+                insertion_pool="CC",
                 positions=[5, 15, 25, 35],
                 mode="sequential",
             ).named("cc_insert_scan")

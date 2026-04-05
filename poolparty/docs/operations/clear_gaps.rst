@@ -14,6 +14,47 @@ carry a fixed ``seq_length``.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :header-rows: 1
+   :widths: auto
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pool``
+     - ``Pool | str``
+     - *(required)*
+     - The Pool (or plain sequence string) to clear gaps from.
+   * - ``region``
+     - ``str | list | None``
+     - ``None``
+     - Restrict gap removal to a named region or ``[start, stop]`` pair.
+   * - ``remove_tags``
+     - ``bool | None``
+     - ``None``
+     - When ``True`` and ``region`` is a name, strip the constraint region
+       tags from the output.
+   * - ``iter_order``
+     - ``float | None``
+     - ``None``
+     - Dimension-name ordering for downstream multi-pool iteration.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for auto-generated sequence names.
+
+----
+
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.clear_gaps` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -26,13 +67,14 @@ through ``clear_gaps`` to produce gapless sequences of varying length.
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCG")
-    dels = pp.deletion_scan(wt, deletion_length=2)
+    dels = pp.deletion_scan(wt, deletion_length=2, mode="sequential")
     clean = pp.clear_gaps(dels)
+    clean.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (7 sequences &mdash; gap markers removed; each sequence is 6 nt)</em>
+    <em class="pp-header">clean: seq_length=None, num_states=7</em>
     CGATCG<br>
     AGATCG<br>
     ATATCG<br>
@@ -52,11 +94,12 @@ alignment gaps.
 
     wt    = pp.from_seq("AT--CG--AT")
     clean = pp.clear_gaps(wt)
+    clean.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; four gap characters removed)</em>
+    <em class="pp-header">clean: seq_length=None, num_states=1</em>
     ATCGAT
     </div>
 
@@ -71,11 +114,12 @@ sequences ready for downstream analysis.
     wt    = pp.from_seq("AT--CG")
     clean = pp.clear_gaps(wt)
     rev   = pp.rc(clean)
+    rev.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; gaps removed, then reverse-complemented)</em>
+    <em class="pp-header">rev: seq_length=None, num_states=1</em>
     CGAT
     </div>
 

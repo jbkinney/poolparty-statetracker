@@ -46,7 +46,7 @@ Create a pool containing a single sequence:
 
     # Generate and display
     df = wt.generate_library()
-    print(df[["seq", "seq_name"]])
+    print(df[["seq"]])
 
 From Multiple Sequences
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,17 +59,18 @@ Create a pool that selects from multiple sequences:
     variants = pp.from_seqs(["AAAA", "CCCC", "GGGG", "TTTT"])
 
     df = variants.generate_library()
-    print(df[["seq", "seq_name"]])
+    print(df[["seq"]])
 
 K-mer Pools
 ~~~~~~~~~~~
 
-Generate all k-mers of a given length:
+Generate all k-mers of a given length. The ``mode="sequential"`` argument
+tells PoolParty to enumerate every k-mer rather than sampling randomly
+(see :doc:`operations/modes`).
 
 .. code-block:: python
 
-    # Generate all 3-mers (64 sequences)
-    kmers = pp.get_kmers(length=3, alphabet="ACGT")
+    kmers = pp.get_kmers(length=3, mode="sequential")  # all 64 3-mers
 
     df = kmers.generate_library()
     print(f"Generated {len(df)} sequences")
@@ -89,7 +90,7 @@ Join pools to create composite sequences:
     pp.init()  # Reset to fresh state
 
     promoter = pp.from_seq("ATCG")
-    barcode = pp.get_kmers(length=4, alphabet="ACGT")
+    barcode = pp.get_kmers(length=4, mode="sequential")  # all 256 4-mers
 
     # Join them together
     library = pp.join([promoter, barcode])
@@ -122,7 +123,8 @@ Mutagenesis
 Random Mutations
 ~~~~~~~~~~~~~~~~
 
-Apply random mutations to a sequence:
+Apply random mutations to a sequence. Operations can be called as methods on
+a Pool — ``wt.mutagenize(...)`` is equivalent to ``pp.mutagenize(wt, ...)``.
 
 .. code-block:: python
 
@@ -132,11 +134,11 @@ Apply random mutations to a sequence:
     wt = pp.from_seq("ATCGATCGATCG")
 
     # Create single-mutation variants
-    mutants = wt.mutagenize(alphabet="ACGT", k=1)
+    mutants = wt.mutagenize(num_mutations=1)
 
     df = mutants.generate_library()
     print(f"Generated {len(df)} single mutants")
-    print(df[["seq", "seq_name"]].head(10))
+    print(df[["seq"]].head(10))
 
 Scan Operations
 ---------------
@@ -152,16 +154,14 @@ Replace each position with alternative bases:
 
     pp.init()
 
-    wt = pp.from_seq("ATCG")
+    wt  = pp.from_seq("ATCG")
+    alt = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
 
     # Replace each position with all 4 bases
-    scan = wt.replacement_scan(
-        replacement_seqs=["A", "C", "G", "T"],
-        length=1
-    )
+    scan = wt.replacement_scan(replacement_pool=alt, mode="sequential")
 
     df = scan.generate_library()
-    print(df[["seq", "seq_name"]])
+    print(df[["name", "seq"]])
 
 Deletion Scan
 ~~~~~~~~~~~~~
@@ -175,15 +175,17 @@ Systematically delete portions of a sequence:
     wt = pp.from_seq("ATCGATCG")
 
     # Delete 2-nt windows across the sequence
-    deletions = wt.deletion_scan(length=2, step=1)
+    deletions = wt.deletion_scan(deletion_length=2, mode="sequential")
 
     df = deletions.generate_library()
-    print(df[["seq", "seq_name"]])
+    print(df[["name", "seq"]])
 
 Working with Regions
 --------------------
 
-PoolParty supports XML-like region tagging for targeting specific parts of sequences.
+PoolParty supports XML-like region tagging for targeting specific parts of
+sequences. See :doc:`regions` for a full explanation of tag syntax and region
+behaviour.
 
 Tagging Regions
 ~~~~~~~~~~~~~~~
@@ -197,7 +199,7 @@ Tagging Regions
     wt = pp.from_seq(seq)
 
     # Apply mutations only to the CRE region
-    mutants = wt.mutagenize(alphabet="ACGT", k=1, region="cre")
+    mutants = wt.mutagenize(num_mutations=1, region="cre")
 
     df = mutants.generate_library()
     print(f"Generated {len(df)} CRE mutants")
@@ -213,9 +215,9 @@ The ``generate_library()`` method produces a pandas DataFrame with sequence info
     pp.init()
 
     # Create a simple library
-    promoter = pp.from_seq("ATCG", region="promoter")
-    barcode = pp.get_kmers(length=3, alphabet="AC", region="barcode")
-    library = pp.join([promoter, barcode])
+    promoter = pp.from_seq("<promoter>ATCG</promoter>")
+    barcode  = pp.from_iupac("MMM", mode="sequential")  # M = A or C
+    library  = pp.join([promoter, barcode])
 
     # Generate with full metadata
     df = library.generate_library()
@@ -223,7 +225,7 @@ The ``generate_library()`` method produces a pandas DataFrame with sequence info
     print("Columns available:")
     print(df.columns.tolist())
     print()
-    print(df[["seq", "seq_name"]].head())
+    print(df[["name", "seq"]].head())
 
 Initialisation and Context Management
 --------------------------------------

@@ -17,7 +17,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -65,6 +65,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.reverse_translate` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -76,12 +82,16 @@ each amino acid, producing a single fixed DNA sequence.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     dna = pp.reverse_translate("MKTL")
+    dna.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; deterministic, most-frequent codons)</em>
+    <em class="pp-header">dna: seq_length=12, num_states=1</em>
     ATGAAGACCCTG
     </div>
 
@@ -93,17 +103,20 @@ may produce a different DNA sequence encoding the same protein.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     dna = pp.reverse_translate("MKTL", codon_selection="random", num_states=4)
+    dna.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (4 sequences &mdash; random synonymous codons for MKTL)</em>
-    ATGAAGACCCTG<br>
-    ATGAAAACTCTT<br>
-    ATGAAGACCCTA<br>
-    ATGAAGACATTG<br>
-    <span class="pp-ellipsis">... (each encodes the same protein)</span>
+    <em class="pp-header">dna: seq_length=12, num_states=4</em>
+    ATGAAAACGCTA<br>
+    ATGAAAACGTTA<br>
+    ATGAAAACGCTC<br>
+    ATGAAGACGTTA
     </div>
 
 Chain: translate then reverse-translate
@@ -114,15 +127,19 @@ differ due to codon degeneracy, but the encoded protein is identical.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     dna     = pp.from_seq("ATGAAACCCGGG")
     protein = pp.translate(dna)
     back    = pp.reverse_translate(protein, codon_selection="first")
+    back.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; round-trip: DNA &rarr; protein &rarr; DNA)</em>
-    ATGAAGCCCGGG
+    <em class="pp-header">back: seq_length=12, num_states=1</em>
+    ATGAAGCCCGGC
     </div>
 
 See :func:`~poolparty.reverse_translate`.

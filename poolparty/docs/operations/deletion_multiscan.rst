@@ -3,6 +3,9 @@ deletion_multiscan
 
 Delete segments at multiple positions simultaneously, placing deletion
 markers at each site. Deletion sites are guaranteed to be non-overlapping.
+Use ``mode='sequential'`` to enumerate arrangements as separate states;
+``mode='random'`` samples one arrangement per draw (default ``num_states``
+is 1 unless you set it higher).
 
 .. code-block:: python
 
@@ -15,7 +18,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -87,6 +90,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.deletion_multiscan` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -99,16 +108,15 @@ deletion marker.
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCGATCG")
-    scan = pp.deletion_multiscan(wt, deletion_length=1, num_deletions=2)
+    scan = wt.deletion_multiscan(deletion_length=1, num_deletions=2,
+                                 mode="random", style="grey")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 2 simultaneous 1-base deletions per draw)</em>
-    <span class="pp-del">-</span>TCGA<span class="pp-del">-</span>CGATCG<br>
-    AT<span class="pp-del">-</span>GATCG<span class="pp-del">-</span>TCG<br>
-    ATCG<span class="pp-del">-</span>TCGAT<span class="pp-del">-</span>G<br>
-    <span class="pp-ellipsis">... each draw places 2 single-base deletions at distinct positions</span>
+    <em class="pp-header">scan: seq_length=12, num_states=1</em>
+    ATCGAT<span class="pp-del">-</span>GAT<span class="pp-del">-</span>G
     </div>
 
 Two simultaneous 2-base deletions
@@ -119,16 +127,15 @@ Delete two non-overlapping dinucleotide windows per draw.
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCGATCG")
-    scan = pp.deletion_multiscan(wt, deletion_length=2, num_deletions=2)
+    scan = wt.deletion_multiscan(deletion_length=2, num_deletions=2,
+                                 mode="random", style="grey")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 2 simultaneous 2-base deletions per draw)</em>
-    <span class="pp-del">--</span>CGAT<span class="pp-del">--</span>GATCG<br>
-    AT<span class="pp-del">--</span>ATCG<span class="pp-del">--</span>CG<br>
-    ATCG<span class="pp-del">--</span>CG<span class="pp-del">--</span>CG<br>
-    <span class="pp-ellipsis">... each draw places 2 non-overlapping 2-base deletions</span>
+    <em class="pp-header">scan: seq_length=12, num_states=1</em>
+    ATCGA<span class="pp-del">--</span>GA<span class="pp-del">--</span>G
     </div>
 
 Multiscan deletion within a named region
@@ -140,17 +147,67 @@ keeping the flanking sequence intact.
 .. code-block:: python
 
     wt   = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    scan = pp.deletion_multiscan(wt, deletion_length=1, num_deletions=2,
-                                 positions=range(4, 12))
+    scan = wt.deletion_multiscan(deletion_length=1, num_deletions=2,
+                                 region="cre", mode="random", style="grey")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 2 single-base deletions confined to <em>cre</em>)</em>
-    AAAA<span class="pp-region"><span class="pp-del">-</span>TCGAT<span class="pp-del">-</span>G</span>TTTT<br>
-    AAAA<span class="pp-region">A<span class="pp-del">-</span>CGAT<span class="pp-del">-</span>G</span>TTTT<br>
-    AAAA<span class="pp-region">ATCG<span class="pp-del">-</span>TCG<span class="pp-del">-</span></span>TTTT<br>
-    <span class="pp-ellipsis">... flanks always AAAA...TTTT; deletions inside cre only</span>
+    <em class="pp-header">scan: seq_length=16, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-del">-</span>TC<span class="pp-del">-</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    </div>
+
+Spacing constraints (min_spacing, max_spacing)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``min_spacing`` and ``max_spacing`` control the gap between deletion windows.
+Two 3-base deletions must be 4–8 bases apart on a 24-mer.
+
+.. code-block:: python
+
+    wt   = pp.from_seq("ATCGATCGATCGATCGATCGATCG")
+    scan = wt.deletion_multiscan(deletion_length=3, num_deletions=2,
+                                 min_spacing=4, max_spacing=8,
+                                 mode="sequential", style="grey")
+    scan.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">scan: seq_length=24, num_states=65</em>
+    <span class="pp-del">---</span>GATC<span class="pp-del">---</span>CGATCGATCGATCG<br>
+    <span class="pp-del">---</span>GATCG<span class="pp-del">---</span>GATCGATCGATCG<br>
+    <span class="pp-del">---</span>GATCGA<span class="pp-del">---</span>ATCGATCGATCG<br>
+    <span class="pp-del">---</span>GATCGAT<span class="pp-del">---</span>TCGATCGATCG<br>
+    <span class="pp-del">---</span>GATCGATC<span class="pp-del">---</span>CGATCGATCG
+    <span class="pp-ellipsis">... (65 total)</span>
+    </div>
+
+Explicit position sets (positions)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Specify allowed starts for each deletion window. Below, the first deletion
+can start at 0, 3, or 6 and the second at 10 or 14.
+
+.. code-block:: python
+
+    wt   = pp.from_seq("ATCGATCGATCGATCG")
+    scan = wt.deletion_multiscan(deletion_length=2, num_deletions=2,
+                                 positions=[[0, 3, 6], [10, 14]],
+                                 mode="sequential", style="grey")
+    scan.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">scan: seq_length=16, num_states=6</em>
+    <span class="pp-del">--</span>CGATCGAT<span class="pp-del">--</span>ATCG<br>
+    <span class="pp-del">--</span>CGATCGATCGAT<span class="pp-del">--</span><br>
+    ATC<span class="pp-del">--</span>TCGAT<span class="pp-del">--</span>ATCG<br>
+    ATC<span class="pp-del">--</span>TCGATCGAT<span class="pp-del">--</span><br>
+    ATCGAT<span class="pp-del">--</span>AT<span class="pp-del">--</span>ATCG<br>
+    ATCGAT<span class="pp-del">--</span>ATCGAT<span class="pp-del">--</span>
     </div>
 
 See :func:`~poolparty.deletion_multiscan`.

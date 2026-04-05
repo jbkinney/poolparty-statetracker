@@ -17,7 +17,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -25,7 +25,7 @@ Parameters
      - Default
      - Description
    * - ``pool``
-     - ``Pool | str``
+     - ``Pool``
      - *(required)*
      - Input pool to materialize.
    * - ``num_seqs``
@@ -74,6 +74,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.materialize` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -98,45 +104,42 @@ scan operations without re-running the mutation logic each time.
     df_a    = pp.generate_library(scan_a, num_seqs=6)
     df_b    = pp.generate_library(scan_b, num_seqs=6)
 
+    cached.print_library()
+
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">cached pool &mdash; 20 materialized single-mutant sequences (seed=42)</em>
-    A<span class="pp-mut">G</span>CGATCG<br>
-    ATCG<span class="pp-mut">C</span>TCG<br>
-    ATCGAT<span class="pp-mut">A</span>G<br>
-    <span class="pp-mut">G</span>TCGATCG<br>
-    AT<span class="pp-mut">T</span>GATCG<br>
+    <em class="pp-header">cached: seq_length=8, num_states=20</em>
+    ATCGAACG<br>
+    ACCGATCG<br>
+    ATCGATCT<br>
+    ATCGACCG<br>
+    ATCGAGCG<br>
     <span class="pp-ellipsis">... (20 total)</span>
     </div>
 
 Reproducible caching with ``seed``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Pass ``seed=`` to fix the random draws so that the same pool is produced every
-time the script is run.
+Pass ``seed=`` so that re-running the same script produces the same
+materialized pool every time.
 
 .. code-block:: python
 
     wt     = pp.from_seq("ATCGATCG")
-    pool   = pp.mutagenize(wt, num_mutations=1)
-
-    cache1 = pp.materialize(pool, num_seqs=5, seed=0)
-    cache2 = pp.materialize(pool, num_seqs=5, seed=0)
-
-    df1    = pp.generate_library(cache1)
-    df2    = pp.generate_library(cache2)
-    assert list(df1["seq"]) == list(df2["seq"])  # always True
+    pool   = pp.mutagenize(wt, num_mutations=1, mode="random")
+    cached = pp.materialize(pool, num_seqs=5, seed=0)
+    cached.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Both caches produce identical sequences (seed=0)</em>
-    A<span class="pp-mut">G</span>CGATCG<br>
-    ATCG<span class="pp-mut">C</span>TCG<br>
-    AT<span class="pp-mut">A</span>GATCG<br>
-    ATCGAT<span class="pp-mut">T</span>G<br>
-    <span class="pp-mut">C</span>TCGATCG
+    <em class="pp-header">cached: seq_length=8, num_states=5</em>
+    ATCGGTCG<br>
+    ATCGAACG<br>
+    ATCGCTCG<br>
+    GTCGATCG<br>
+    ACCGATCG
     </div>
 
 Materialize then apply a deletion scan
@@ -158,19 +161,18 @@ chaining a deletion scan is just as efficient as starting from a plain
     scan    = pp.deletion_scan(cached, deletion_length=2)
     df      = pp.generate_library(scan, num_seqs=8)
 
+    cached.print_library()
+
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">deletion_scan applied to materialized pool (representative draws)</em>
-    <span style="color:#9ca3af;">--</span>CGATCG<br>
-    AT<span style="color:#9ca3af;">--</span>ATCG<br>
-    A<span class="pp-mut">G</span>CG<span style="color:#9ca3af;">--</span>CG<br>
-    ATCG<span class="pp-mut">C</span>T<span style="color:#9ca3af;">--</span><br>
-    <span style="color:#9ca3af;">--</span>TCGATCG<br>
-    AT<span class="pp-mut">T</span>G<span style="color:#9ca3af;">--</span>CG<br>
-    A<span style="color:#9ca3af;">--</span>GATCG<br>
-    ATCGAT<span class="pp-mut">A</span><span style="color:#9ca3af;">--</span><br>
-    <span class="pp-ellipsis">... (upstream mutagenize logic runs only once, at materialize time)</span>
+    <em class="pp-header">cached: seq_length=8, num_states=8</em>
+    ATCGGTCG<br>
+    ATGGATCG<br>
+    ATCGATCA<br>
+    ATCGATCT<br>
+    ATCGATCC<br>
+    <span class="pp-ellipsis">... (8 total)</span>
     </div>
 
 See :func:`~poolparty.materialize` or :meth:`~poolparty.Pool.materialize`.

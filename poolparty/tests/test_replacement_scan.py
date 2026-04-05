@@ -64,7 +64,7 @@ class TestReplacementScanStringInputs:
             assert "TTT" in seq
             assert len(seq) == 10
 
-    def test_ins_pool_as_string(self):
+    def test_replacement_pool_as_string(self):
         """Test insert as string."""
         with pp.Party() as party:
             result = replacement_scan(pp.from_seqs(["AAAAAAAAAA"]), "TTT").named("result")

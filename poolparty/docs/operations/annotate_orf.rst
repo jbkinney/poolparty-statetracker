@@ -1,11 +1,11 @@
 annotate_orf
 ============
 
-Tag an ORF region within a sequence and register its reading frame, optionally
-applying a display style. If the region does not yet exist, ``extent=`` sets
-its boundaries; once registered as an ``OrfRegion``, downstream operations
-such as ``mutagenize_orf`` and ``translate`` can look up the frame
-automatically.
+Register a region as an ``OrfRegion`` so that downstream operations such as
+``mutagenize_orf``, ``stylize_orf``, and ``translate`` can look up the reading
+frame automatically. If the region does not yet exist, ``extent=`` sets its
+boundaries. Optionally apply codon-based styling at the same time via
+``style_codons=`` or ``style_frames=``.
 
 .. code-block:: python
 
@@ -14,69 +14,153 @@ automatically.
 
 ----
 
+Parameters
+----------
+
+.. list-table::
+   :header-rows: 1
+   :widths: auto
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``pool``
+     - ``Pool``
+     - *(required)*
+     - The Pool to annotate.
+   * - ``region_name``
+     - ``str``
+     - *(required)*
+     - Name for the ORF region.
+   * - ``extent``
+     - ``tuple[int, int] | None``
+     - ``None``
+     - ``(start, stop)`` half-open interval defining the region boundaries.
+       If ``None``, the region must already exist as a tagged region in the
+       sequence.
+   * - ``frame``
+     - ``int``
+     - ``1``
+     - Reading frame (1, 2, or 3). Determines which codon grid is used by
+       downstream ORF operations.
+   * - ``style``
+     - ``str | None``
+     - ``None``
+     - A single display style applied uniformly to the ORF region.
+   * - ``style_codons``
+     - ``list[str] | None``
+     - ``None``
+     - List of style names cycled across whole codons within the ORF.
+   * - ``style_frames``
+     - ``list[str] | None``
+     - ``None``
+     - List of style names (length a multiple of 3) applied per base
+       position within each codon.
+   * - ``iter_order``
+     - ``float | None``
+     - ``None``
+     - Dimension-name ordering for downstream multi-pool iteration.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for the operation node name in the pool graph.
+
+----
+
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.annotate_orf` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
-Annotate an ORF within a longer sequence
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Annotate a pre-tagged ORF
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Tag the coding sequence ``ATGAAATTTGGGCCC`` (positions 3&ndash;18) inside a
-sequence that also contains 5-prime and 3-prime UTR flanks.
+When the region already exists as XML tags in the sequence, just pass the
+region name. ``annotate_orf`` registers it as an ``OrfRegion`` (with reading
+frame) without changing the sequence.
 
 .. code-block:: python
 
-    seq = pp.from_seq("TATAATGAAATTTGGGCCCTAA")
-    seq = pp.annotate_orf(seq, "gene", extent=(3, 18))
+    wt  = pp.from_seq("<gene>ATGAAATTTGGGCCC</gene>")
+    orf = pp.annotate_orf(wt, "gene")
+    orf.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; ORF tagged as <em>gene</em> at positions 3&ndash;18)</em>
-    TAT<span class="pp-region">ATGAAATTTGGGCCC</span>TAA
+    <em class="pp-header">orf: seq_length=15, num_states=1</em>
+    <span class="pp-xtag-cre">&lt;gene&gt;</span>ATGAAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>
     </div>
 
-Annotate with a display style
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Define region boundaries with extent
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Apply alternating codon colours at the same time by passing
-``style_codons=`` so the reading frame is immediately visible.
+Use ``extent=(start, stop)`` to tag positions 4 through 19 (half-open) as the
+ORF, without needing XML tags in the original sequence.
 
 .. code-block:: python
 
     seq = pp.from_seq("TATAATGAAATTTGGGCCCTAA")
-    seq = pp.annotate_orf(
-        seq, "gene", extent=(3, 18),
-        style_codons=["codon_a", "codon_b"],
-    )
+    orf = pp.annotate_orf(seq, "gene", extent=(4, 19))
+    orf.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; <em>gene</em> ORF tagged and codon-coloured)</em>
-    TAT<span class="pp-region"><span class="pp-codon-a">ATG</span><span class="pp-codon-b">AAA</span><span class="pp-codon-a">TTT</span><span class="pp-codon-b">GGG</span><span class="pp-codon-a">CCC</span></span>TAA
+    <em class="pp-header">orf: seq_length=22, num_states=1</em>
+    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span>ATGAAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA
     </div>
 
-Chain annotate_orf with mutagenize_orf to visualize mutations in context
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Style the ORF with codon colouring (style_codons)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After tagging the ORF, pass the region name to ``mutagenize_orf`` to mutate
-only within the annotated coding sequence while keeping the UTR flanks intact.
+Pass ``style_codons=`` to apply alternating codon colours at annotation time,
+making the reading frame immediately visible.
+
+.. code-block:: python
+
+    seq    = pp.from_seq("TATAATGAAATTTGGGCCCTAA")
+    styled = pp.annotate_orf(seq, "gene", extent=(4, 19),
+                             style_codons=["blue", "red"])
+    styled.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">styled: seq_length=22, num_states=1</em>
+    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-codon-a">ATG</span><span class="pp-codon-b">AAA</span><span class="pp-codon-a">TTT</span><span class="pp-codon-b">GGG</span><span class="pp-codon-a">CCC</span><span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA
+    </div>
+
+Chain with mutagenize_orf
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After annotating the ORF, ``mutagenize_orf`` can look up the frame
+automatically. Here every single-codon missense variant is enumerated with
+the mutated codon highlighted in red.
 
 .. code-block:: python
 
     seq  = pp.from_seq("TATAATGAAATTTGGGCCCTAA")
-    seq  = pp.annotate_orf(seq, "gene", extent=(3, 18))
-    muts = pp.mutagenize_orf(seq, region="gene", num_mutations=1,
-                             style="bold_red")
+    orf  = pp.annotate_orf(seq, "gene", extent=(4, 19))
+    muts = pp.mutagenize_orf(orf, region="gene", num_mutations=1,
+                             style="red", mode="sequential")
+    muts.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 1 missense mutation inside <em>gene</em>; UTR flanks fixed)</em>
-    TAT<span class="pp-region">ATG<span class="pp-mut">CGT</span>TTTGGGCCC</span>TAA<br>
-    TAT<span class="pp-region">ATGAAA<span class="pp-mut">ACT</span>GGGCCC</span>TAA<br>
-    TAT<span class="pp-region">ATGAAATTT<span class="pp-mut">CAT</span>CCC</span>TAA<br>
-    <span class="pp-ellipsis">... each draw mutates one codon; the <em>gene</em> region frame is reused automatically</span>
+    <em class="pp-header">muts: seq_length=22, num_states=95</em>
+    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-mut">TTC</span>AAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-mut">CTG</span>AAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-mut">ATC</span>AAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-mut">GTG</span>AAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-mut">AGC</span>AAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA
+    <span class="pp-ellipsis">... (95 total)</span>
     </div>
 
 See :func:`~poolparty.annotate_orf`.

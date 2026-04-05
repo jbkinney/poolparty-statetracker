@@ -2,7 +2,7 @@ replacement_scan
 ================
 
 Slide a window across the sequence and, at each position, replace the window
-with every sequence drawn from ``ins_pool``. The output length equals the
+with every sequence drawn from ``replacement_pool``. The output length equals the
 background sequence length.
 
 .. code-block:: python
@@ -17,7 +17,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -27,7 +27,7 @@ Parameters
      - ``Pool | str``
      - *(required)*
      - The background Pool or sequence string that is scanned.
-   * - ``ins_pool``
+   * - ``replacement_pool``
      - ``Pool | str``
      - *(required)*
      - Pool supplying replacement content. Each of this pool's sequences is
@@ -75,6 +75,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.replacement_scan` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -86,43 +92,49 @@ substitutions = 32 sequences.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     alt  = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
-    scan = wt.replacement_scan(ins_pool=alt, mode="sequential")
+    scan = wt.replacement_scan(replacement_pool=alt, mode="sequential", style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (32 sequences &mdash; 8 positions &times; 4 substitutions)</em>
+    <em class="pp-header">scan: seq_length=8, num_states=32</em>
     <span class="pp-mut">A</span>CGTACGT<br>
-    <span class="pp-mut">C</span>CGTACGT<br>
-    <span class="pp-mut">G</span>CGTACGT<br>
     A<span class="pp-mut">A</span>GTACGT<br>
-    A<span class="pp-mut">C</span>GTACGT<br>
+    AC<span class="pp-mut">A</span>TACGT<br>
+    ACG<span class="pp-mut">A</span>ACGT<br>
+    ACGT<span class="pp-mut">A</span>CGT
     <span class="pp-ellipsis">... (32 total)</span>
     </div>
 
 Trinucleotide window scan
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The window width is determined by ``ins_pool`` sequence length. A 3-base
+The window width is determined by ``replacement_pool`` sequence length. A 3-base
 pool scans 6 positions across an 8-mer.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     tri  = pp.from_seqs(["AAA", "CCC", "GGG", "TTT"], mode="sequential")
-    scan = wt.replacement_scan(ins_pool=tri, mode="sequential")
+    scan = wt.replacement_scan(replacement_pool=tri, mode="sequential", style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (24 sequences &mdash; 6 windows &times; 4 trinucleotide substitutions)</em>
+    <em class="pp-header">scan: seq_length=8, num_states=24</em>
     <span class="pp-mut">AAA</span>TACGT<br>
-    <span class="pp-mut">CCC</span>TACGT<br>
-    <span class="pp-mut">GGG</span>TACGT<br>
-    <span class="pp-mut">TTT</span>TACGT<br>
     A<span class="pp-mut">AAA</span>ACGT<br>
+    AC<span class="pp-mut">AAA</span>CGT<br>
+    ACG<span class="pp-mut">AAA</span>GT<br>
+    ACGT<span class="pp-mut">AAA</span>T
     <span class="pp-ellipsis">... (24 total)</span>
     </div>
 
@@ -134,19 +146,22 @@ substitutions = 112 sequences.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     nn   = pp.from_iupac("NN", mode="sequential")
-    scan = wt.replacement_scan(ins_pool=nn, mode="sequential")
+    scan = wt.replacement_scan(replacement_pool=nn, mode="sequential", style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (112 sequences &mdash; 7 windows &times; 16 dinucleotide substitutions)</em>
+    <em class="pp-header">scan: seq_length=8, num_states=112</em>
     <span class="pp-mut">AA</span>GTACGT<br>
-    <span class="pp-mut">AC</span>GTACGT<br>
-    <span class="pp-mut">AG</span>GTACGT<br>
-    <span class="pp-mut">AT</span>GTACGT<br>
     A<span class="pp-mut">AA</span>TACGT<br>
+    AC<span class="pp-mut">AA</span>ACGT<br>
+    ACG<span class="pp-mut">AA</span>CGT<br>
+    ACGT<span class="pp-mut">AA</span>GT
     <span class="pp-ellipsis">... (112 total)</span>
     </div>
 
@@ -158,17 +173,50 @@ are never modified.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt   = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     alt  = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
-    scan = wt.replacement_scan(ins_pool=alt, region="cre", mode="sequential")
+    scan = wt.replacement_scan(replacement_pool=alt, region="cre", mode="sequential",
+                               style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (32 sequences &mdash; 8 positions within <em>cre</em> &times; 4 substitutions)</em>
-    AAAA<span class="pp-region"><span class="pp-mut">A</span>TCGATCG</span>TTTT<br>
-    AAAA<span class="pp-region"><span class="pp-mut">C</span>TCGATCG</span>TTTT<br>
-    AAAA<span class="pp-region"><span class="pp-mut">G</span>TCGATCG</span>TTTT<br>
-    AAAA<span class="pp-region">A<span class="pp-mut">A</span>CGATCG</span>TTTT<br>
-    <span class="pp-ellipsis">... (32 total; flanks always unchanged)</span>
+    <em class="pp-header">scan: seq_length=16, num_states=32</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">A</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>A<span class="pp-mut">A</span>CGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AT<span class="pp-mut">A</span>GATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATC<span class="pp-mut">A</span>ATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-mut">A</span>TCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    <span class="pp-ellipsis">... (32 total)</span>
+    </div>
+
+Random motif replacement (mode="random")
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``mode='random'`` draws a random window position and replacement each time.
+Here a degenerate 6-base IUPAC motif (``R`` = A|G, ``Y`` = C|T) is scanned
+across a 16-mer, with 5 random draws.
+
+.. code-block:: python
+
+    import poolparty as pp
+    pp.init()
+    wt    = pp.from_seq("ACGTACGTACGTACGT")
+    motif = pp.from_iupac("RRYYYY")
+    scan  = wt.replacement_scan(replacement_pool=motif, mode="random",
+                                num_states=5, style="red")
+    scan.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">scan: seq_length=16, num_states=5</em>
+    ACGTACGTAC<span class="pp-mut">GACCCT</span><br>
+    ACGTACGTAC<span class="pp-mut">GATCTT</span><br>
+    A<span class="pp-mut">GACCTT</span>TACGTACGT<br>
+    AC<span class="pp-mut">AACTTT</span>ACGTACGT<br>
+    ACGTA<span class="pp-mut">AATTCC</span>TACGT
     </div>

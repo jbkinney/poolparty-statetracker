@@ -77,7 +77,7 @@ class TestInsertionScanStringInputs:
             assert "TTT" in seq
             assert len(seq) == 13
 
-    def test_ins_pool_as_string(self):
+    def test_insertion_pool_as_string(self):
         """Test insert as string."""
         with pp.Party() as party:
             result = insertion_scan(pp.from_seqs(["AAAAAAAAAA"]), "TTT").named("result")

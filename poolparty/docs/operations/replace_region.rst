@@ -18,7 +18,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -62,6 +62,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.replace_region` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -73,18 +79,23 @@ Enumerate all 256 4-mers inside the ``cre`` region using
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     wt      = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
     inserts = pp.from_iupac("NNNN", mode="sequential")
     library = pp.replace_region(wt, inserts, region_name="cre")
+    library.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (256 sequences &mdash; all 4-mers substituted into <em>cre</em>)</em>
-    AAAA<span class="pp-region">AAAA</span>TTTT<br>
-    AAAA<span class="pp-region">AAAC</span>TTTT<br>
-    AAAA<span class="pp-region">AAAG</span>TTTT<br>
-    AAAA<span class="pp-region">AAAT</span>TTTT<br>
+    <em class="pp-header">library: seq_length=12, num_states=256</em>
+    AAAAAAAATTTT<br>
+    AAAAAAACTTTT<br>
+    AAAAAAAGTTTT<br>
+    AAAAAAATTTTT<br>
+    AAAAAACATTTT<br>
     <span class="pp-ellipsis">... (256 total)</span>
     </div>
 
@@ -95,17 +106,21 @@ Supply :func:`~poolparty.from_seqs` to substitute only specific sequences.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     wt      = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
-    inserts = pp.from_seqs(["AAA", "TTT", "CCC"])
+    inserts = pp.from_seqs(["AAA", "TTT", "CCC"], mode="sequential")
     library = pp.replace_region(wt, inserts, region_name="cre")
+    library.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (3 sequences)</em>
-    AAAA<span class="pp-region">AAA</span>TTTT<br>
-    AAAA<span class="pp-region">TTT</span>TTTT<br>
-    AAAA<span class="pp-region">CCC</span>TTTT
+    <em class="pp-header">library: seq_length=11, num_states=3</em>
+    AAAAAAAATTTT<br>
+    AAAATTTTTTT<br>
+    AAAACCCTTTT
     </div>
 
 Replace a zero-length point tag (pure insertion)
@@ -116,16 +131,20 @@ without deleting any bases.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     wt      = pp.from_seq("AAAA<ins/>TTTT")
-    inserts = pp.from_seqs(["GC", "AT"])
+    inserts = pp.from_seqs(["GC", "AT"], mode="sequential")
     library = pp.replace_region(wt, inserts, region_name="ins")
+    library.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (2 sequences &mdash; dinucleotide inserted at point tag)</em>
-    AAAA<span class="pp-ins">GC</span>TTTT<br>
-    AAAA<span class="pp-ins">AT</span>TTTT
+    <em class="pp-header">library: seq_length=10, num_states=2</em>
+    AAAAGCTTTT<br>
+    AAAAATTTTT
     </div>
 
 Insert reverse-complemented content (rc=True)
@@ -135,17 +154,20 @@ Insert reverse-complemented content (rc=True)
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
+
     wt      = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
     inserts = pp.from_seqs(["GCGC", "ATAT"], mode="sequential")
     library = pp.replace_region(wt, inserts, region_name="cre", rc=True)
-    # GCGC -> GCGC (palindrome); ATAT -> ATAT (palindrome); shown as-is
+    library.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (2 sequences &mdash; content reverse-complemented before insertion)</em>
-    AAAA<span class="pp-region">GCGC</span>TTTT<br>
-    AAAA<span class="pp-region">ATAT</span>TTTT
+    <em class="pp-header">library: seq_length=12, num_states=2</em>
+    AAAAGCGCTTTT<br>
+    AAAAATATTTTT
     </div>
 
 See :func:`~poolparty.replace_region`.

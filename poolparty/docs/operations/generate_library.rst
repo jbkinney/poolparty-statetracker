@@ -1,10 +1,14 @@
+:orphan:
+
 generate_library
 ================
 
 Evaluate a pool pipeline and return the resulting sequences as a
 ``pandas.DataFrame`` with ``name`` and ``seq`` columns (or a plain ``list``
 when ``seqs_only=True``). This is a *terminal* operation: it triggers all
-upstream computation and produces concrete output.
+upstream computation and produces concrete output.  Randomized upstream
+operations (for example ``mutagenize(..., mode="random")``) should set
+``mode`` explicitly so draws match the intent of the example.
 
 .. code-block:: python
 
@@ -25,7 +29,7 @@ Parameters
      - Default
      - Description
    * - ``pool``
-     - ``Pool | str``
+     - ``Pool | DnaPool | ProteinPool``
      - *(required)*
      - Pool to evaluate.
    * - ``num_cycles``
@@ -41,7 +45,7 @@ Parameters
    * - ``seed``
      - ``int | None``
      - ``None``
-     - Random seed for reproducible output.
+     - Random seed for reproducible output (see examples).
    * - ``init_state``
      - ``int | None``
      - ``None``
@@ -71,49 +75,62 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.generate_library` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
 Basic usage: generate sequences from a scan pool
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Build a scan pool and call ``generate_library`` to collect the output into a
-DataFrame.
+Build a mutagenized pool and call ``generate_library`` to collect the output
+into a DataFrame.
 
 .. code-block:: python
 
-    wt  = pp.from_seq("ATCGATCG")
-    pool = pp.mutagenize(wt, num_mutations=1)
-    df  = pp.generate_library(pool, num_seqs=5)
+    wt   = pp.from_seq("ATCGATCG")
+    pool = pp.mutagenize(wt, num_mutations=1, mode="random")
+    df   = pp.generate_library(pool, num_seqs=5)
+    print(df.to_string())
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">DataFrame output (stochastic &mdash; representative draws)</em>
+    <em class="pp-header">print(df.to_string()) &mdash; 5 rows</em>
     <table style="border-collapse:collapse;font-size:0.9em;width:auto;margin-top:4px;">
     <tr>
+      <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;"></th>
       <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;">name</th>
       <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;">seq</th>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">mutagenize.0001</td>
-      <td style="padding:2px 14px 2px 0;">A<span class="pp-mut">G</span>CGATCG</td>
+      <td style="padding:2px 14px 2px 0;">0</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ATCGGTCG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">mutagenize.0002</td>
-      <td style="padding:2px 14px 2px 0;">ATCG<span class="pp-mut">C</span>TCG</td>
+      <td style="padding:2px 14px 2px 0;">1</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ATCGAACG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">mutagenize.0003</td>
-      <td style="padding:2px 14px 2px 0;">ATCGAT<span class="pp-mut">A</span>G</td>
+      <td style="padding:2px 14px 2px 0;">2</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ATCGCTCG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">mutagenize.0004</td>
-      <td style="padding:2px 14px 2px 0;"><span class="pp-mut">G</span>TCGATCG</td>
+      <td style="padding:2px 14px 2px 0;">3</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">GTCGATCG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">mutagenize.0005</td>
-      <td style="padding:2px 14px 2px 0;">AT<span class="pp-mut">T</span>GATCG</td>
+      <td style="padding:2px 14px 2px 0;">4</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ACCGATCG</td>
     </tr>
     </table>
     </div>
@@ -127,30 +144,36 @@ the pool's state-space size.
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCG")
-    pool = pp.mutagenize(wt, num_mutations=1)
+    pool = pp.mutagenize(wt, num_mutations=1, mode="random")
     df   = pp.generate_library(pool, num_seqs=3)
-    print(len(df))  # 3
+    print(len(df))
+    print(df.to_string())
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">DataFrame output (3 rows &mdash; stochastic)</em>
+    <em class="pp-header">len(df) and print(df.to_string())</em>
+    <pre style="margin:4px 0 8px 0;font-size:0.9em;">3</pre>
     <table style="border-collapse:collapse;font-size:0.9em;width:auto;margin-top:4px;">
     <tr>
+      <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;"></th>
       <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;">name</th>
       <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;">seq</th>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">mutagenize.0001</td>
-      <td style="padding:2px 14px 2px 0;">A<span class="pp-mut">C</span>CGATCG</td>
+      <td style="padding:2px 14px 2px 0;">0</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ATCGGTCG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">mutagenize.0002</td>
-      <td style="padding:2px 14px 2px 0;">ATCG<span class="pp-mut">T</span>TCG</td>
+      <td style="padding:2px 14px 2px 0;">1</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ATCGAACG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">mutagenize.0003</td>
-      <td style="padding:2px 14px 2px 0;">ATCGAT<span class="pp-mut">C</span>G</td>
+      <td style="padding:2px 14px 2px 0;">2</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ATCGCTCG</td>
     </tr>
     </table>
     </div>
@@ -158,38 +181,43 @@ the pool's state-space size.
 Reproducible output with ``seed``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Pass ``seed=`` to fix the random number generator; calling with the same seed
-always produces identical sequences.
+Pass ``seed=`` to fix the per-row draw for a given pool.  The same ``seed``
+and the same pool object yield the same rows within one session.  After
+``pp.init()``, rebuilding the pipeline and calling with the same ``seed``
+matches a fresh interpreter run (operation IDs enter the internal seed
+sequence).
 
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCG")
-    pool = pp.mutagenize(wt, num_mutations=1)
-
-    df1  = pp.generate_library(pool, num_seqs=3, seed=42)
-    df2  = pp.generate_library(pool, num_seqs=3, seed=42)
-    assert list(df1["seq"]) == list(df2["seq"])  # always True
+    pool = pp.mutagenize(wt, num_mutations=1, mode="random")
+    df   = pp.generate_library(pool, num_seqs=3, seed=42)
+    print(df.to_string())
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Both calls produce identical rows (seed=42)</em>
+    <em class="pp-header">print(df.to_string()) with seed=42</em>
     <table style="border-collapse:collapse;font-size:0.9em;width:auto;margin-top:4px;">
     <tr>
+      <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;"></th>
       <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;">name</th>
       <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;">seq</th>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">mutagenize.0001</td>
-      <td style="padding:2px 14px 2px 0;">ATCG<span class="pp-mut">G</span>TCG</td>
+      <td style="padding:2px 14px 2px 0;">0</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ATCGAACG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">mutagenize.0002</td>
-      <td style="padding:2px 14px 2px 0;"><span class="pp-mut">C</span>TCGATCG</td>
+      <td style="padding:2px 14px 2px 0;">1</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ACCGATCG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">mutagenize.0003</td>
-      <td style="padding:2px 14px 2px 0;">ATCGAT<span class="pp-mut">G</span>G</td>
+      <td style="padding:2px 14px 2px 0;">2</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ATCGATCT</td>
     </tr>
     </table>
     </div>
@@ -203,19 +231,15 @@ function), set ``seqs_only=True`` to skip DataFrame construction.
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCG")
-    pool = pp.mutagenize(wt, num_mutations=1)
+    pool = pp.mutagenize(wt, num_mutations=1, mode="random")
     seqs = pp.generate_library(pool, num_seqs=4, seed=7, seqs_only=True)
-    # seqs is a plain Python list of strings
     print(seqs)
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Plain list output (seqs_only=True &mdash; stochastic, seed=7)</em>
-    ['A<span class="pp-mut">G</span>CGATCG',
-     'ATCG<span class="pp-mut">C</span>TCG',
-     'AT<span class="pp-mut">A</span>GATCG',
-     '<span class="pp-mut">T</span>TCGATCG']
+    <em class="pp-header">print(seqs) with seed=7, seqs_only=True</em>
+    <pre style="margin:4px 0 0 0;font-size:0.9em;">['ATCGATAG', 'GTCGATCG', 'ATCGAGCG', 'ATCGCTCG']</pre>
     </div>
 
 Chain a full pipeline: mutagenize &rarr; filter &rarr; generate_library
@@ -226,41 +250,48 @@ Compose multiple operations and materialise the result in a single call.
 .. code-block:: python
 
     wt      = pp.from_seq("ATCGATCG")
-    mutants = pp.mutagenize(wt, num_mutations=1)
+    mutants = pp.mutagenize(wt, num_mutations=1, mode="random")
     singles = pp.filter(
         mutants,
         lambda s: sum(a != b for a, b in zip(s, "ATCGATCG")) == 1,
     )
     df      = pp.generate_library(singles, num_seqs=5, seed=0, discard_null_seqs=True)
+    print(df.to_string())
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">DataFrame output (stochastic &mdash; single-mutant sequences only)</em>
+    <em class="pp-header">print(df.to_string()) with seed=0</em>
     <table style="border-collapse:collapse;font-size:0.9em;width:auto;margin-top:4px;">
     <tr>
+      <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;"></th>
       <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;">name</th>
       <th style="border-bottom:1px solid #ccc;padding:2px 14px 2px 0;font-weight:600;">seq</th>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">filter.0001</td>
-      <td style="padding:2px 14px 2px 0;"><span class="pp-mut">G</span>TCGATCG</td>
+      <td style="padding:2px 14px 2px 0;">0</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ATCGGTCG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">filter.0002</td>
-      <td style="padding:2px 14px 2px 0;">A<span class="pp-mut">G</span>CGATCG</td>
+      <td style="padding:2px 14px 2px 0;">1</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ATCGAACG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">filter.0003</td>
-      <td style="padding:2px 14px 2px 0;">AT<span class="pp-mut">A</span>GATCG</td>
+      <td style="padding:2px 14px 2px 0;">2</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ATCGCTCG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">filter.0004</td>
-      <td style="padding:2px 14px 2px 0;">ATCG<span class="pp-mut">C</span>TCG</td>
+      <td style="padding:2px 14px 2px 0;">3</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">GTCGATCG</td>
     </tr>
     <tr>
-      <td style="padding:2px 14px 2px 0;">filter.0005</td>
-      <td style="padding:2px 14px 2px 0;">ATCGAT<span class="pp-mut">T</span>G</td>
+      <td style="padding:2px 14px 2px 0;">4</td>
+      <td style="padding:2px 14px 2px 0;">None</td>
+      <td style="padding:2px 14px 2px 0;">ACCGATCG</td>
     </tr>
     </table>
     </div>

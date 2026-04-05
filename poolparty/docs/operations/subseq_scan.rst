@@ -18,7 +18,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -29,7 +29,7 @@ Parameters
      - ``Pool | str``
      - *(required)*
      - Input pool or sequence string.
-   * - ``seq_length``
+   * - ``subseq_length``
      - ``int``
      - *(required)*
      - Length of the subsequence window to extract at each position.
@@ -67,6 +67,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.subseq_scan` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -77,13 +83,16 @@ A window of length 4 over an 8-base sequence yields 5 subsequences.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     pool    = pp.from_seq("ACGTACGT")
-    submers = pp.subseq_scan(pool, seq_length=4, mode="sequential")
+    submers = pool.subseq_scan(subseq_length=4, mode="sequential")
+    submers.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (5 sequences &mdash; 4-base sliding window)</em>
+    <em class="pp-header">submers: seq_length=4, num_states=5</em>
     ACGT<br>
     CGTA<br>
     GTAC<br>
@@ -98,14 +107,17 @@ Supply ``positions`` to extract from chosen sites only.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     pool    = pp.from_seq("ACGTACGT")
-    submers = pp.subseq_scan(pool, seq_length=3, positions=[0, 3, 5],
-                             mode="sequential")
+    submers = pool.subseq_scan(subseq_length=3, positions=[0, 3, 5],
+                               mode="sequential")
+    submers.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (3 sequences &mdash; 3-base windows at positions 0, 3, 5)</em>
+    <em class="pp-header">submers: seq_length=3, num_states=3</em>
     ACG<br>
     TAC<br>
     CGT
@@ -119,19 +131,47 @@ considered.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     pool    = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    submers = pp.subseq_scan(pool, seq_length=4, region="cre",
-                             mode="sequential")
+    submers = pool.subseq_scan(subseq_length=4, region="cre",
+                               mode="sequential")
+    submers.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (5 sequences &mdash; 4-base windows within <em>cre</em>)</em>
+    <em class="pp-header">submers: seq_length=4, num_states=5</em>
     ATCG<br>
     TCGA<br>
     CGAT<br>
     GATC<br>
     ATCG
+    </div>
+
+Random subsequence sampling (mode="random")
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``mode='random'`` draws window positions stochastically. Use ``num_states``
+to control how many subsequences are sampled.
+
+.. code-block:: python
+
+    import poolparty as pp
+    pp.init()
+    pool    = pp.from_seq("ACGTACGTACGT")
+    submers = pool.subseq_scan(subseq_length=4, mode="random", num_states=5)
+    submers.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">submers: seq_length=4, num_states=5</em>
+    ACGT<br>
+    GTAC<br>
+    ACGT<br>
+    CGTA<br>
+    CGTA
     </div>
 
 See :func:`~poolparty.subseq_scan`.

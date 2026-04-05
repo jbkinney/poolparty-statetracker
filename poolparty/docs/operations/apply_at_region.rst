@@ -1,10 +1,11 @@
 apply_at_region
 ===============
 
-Apply an arbitrary callable to the content of a named region, leaving the
-flanking sequences unchanged. The function receives the region's content as
-a string and must return a string. By default region tags are removed from
-the output; set ``remove_tags=False`` to keep them.
+Apply an arbitrary Pool-to-Pool transform to the content of a named region,
+leaving the flanking sequences unchanged. The function receives the region's
+content as a :class:`~poolparty.Pool` and must return a
+:class:`~poolparty.Pool`. By default region tags are removed from the output;
+set ``remove_tags=False`` to keep them.
 
 .. code-block:: python
 
@@ -18,7 +19,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -35,14 +36,15 @@ Parameters
    * - ``transform_fn``
      - ``callable``
      - *(required)*
-     - Callable ``(str) -> str`` applied to the region content string.
-       Examples: ``str.upper``, ``lambda s: s[::-1]``,
-       ``lambda s: s.replace("A", "T")``.
+     - Callable ``(Pool) -> Pool`` applied to the region content.
+       Examples: ``lambda p: p.upper()``, ``lambda p: p.rc()``,
+       ``lambda p: p.mutagenize(num_mutations=1)``.
    * - ``rc``
      - ``bool``
      - ``False``
      - When ``True``, reverse-complement the region content before passing
        it to ``transform_fn``, then reverse-complement the result back.
+       Useful for minus-strand regions.
    * - ``remove_tags``
      - ``bool``
      - ``True``
@@ -59,43 +61,51 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.apply_at_region` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
 Uppercase a soft-masked region
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``str.upper`` lifts a lowercase region to uppercase without touching the
-flanking bases.
+``p.upper()`` lifts a lowercase region to uppercase without touching the
+flanking bases. Tags are removed by default.
 
 .. code-block:: python
 
     wt         = pp.from_seq("AAAA<cre>atcg</cre>TTTT")
-    uppercased = pp.apply_at_region(wt, "cre", str.upper)
+    uppercased = pp.apply_at_region(wt, "cre", lambda p: p.upper())
+    uppercased.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; lowercase <em>cre</em> content uppercased)</em>
-    AAAA<span class="pp-region">ATCG</span>TTTT
+    <em class="pp-header">uppercased: seq_length=12, num_states=1</em>
+    AAAAATCGTTTT
     </div>
 
-Reverse the region content
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Reverse-complement a region
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A lambda can apply any string transformation. Here the region is reversed
-in place (not reverse-complemented; just the character order).
+``p.rc()`` reverse-complements only the region content (``ATCG`` becomes
+``CGAT``) while the flanking bases remain untouched.
 
 .. code-block:: python
 
-    wt         = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
-    reversed_r = pp.apply_at_region(wt, "cre", lambda s: s[::-1])
+    wt      = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
+    flipped = pp.apply_at_region(wt, "cre", lambda p: p.rc())
+    flipped.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; <em>cre</em> content reversed: ATCG &rarr; GCTA)</em>
-    AAAAGCTATTTT
+    <em class="pp-header">flipped: seq_length=12, num_states=1</em>
+    AAAACGATTTTT
     </div>
 
 Keep region tags in output (remove_tags=False)
@@ -106,54 +116,43 @@ region is still addressable by name downstream.
 
 .. code-block:: python
 
-    wt       = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
-    tagged   = pp.apply_at_region(wt, "cre", lambda s: s[::-1],
-                                  remove_tags=False)
+    wt     = pp.from_seq("AAAA<cre>atcg</cre>TTTT")
+    tagged = pp.apply_at_region(wt, "cre", lambda p: p.upper(),
+                                remove_tags=False)
+    tagged.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; reversed content, <em>cre</em> tags retained)</em>
-    AAAA<span class="pp-region">GCTA</span>TTTT
+    <em class="pp-header">tagged: seq_length=12, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
 
-Substitute bases inside the region (custom lambda)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Mutagenize within a region
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Replace all A with T within the region only.
+Any Pool operation can serve as the transform. Here ``mutagenize`` with
+``mode='sequential'`` generates every single-base substitution inside the
+region while the flanks stay wild-type.
 
 .. code-block:: python
 
-    wt           = pp.from_seq("AAAA<cre>AACGAAT</cre>TTTT")
-    substituted  = pp.apply_at_region(
-        wt, "cre", lambda s: s.replace("A", "T")
-    )
+    wt     = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
+    mutant = pp.apply_at_region(wt, "cre",
+                 lambda p: p.mutagenize(num_mutations=1,
+                                        mode="sequential"))
+    mutant.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; A&rarr;T inside <em>cre</em> only; flanks unchanged)</em>
-    AAAATCGTTTTTT
-    </div>
-
-Operate on reverse complement of region (rc=True)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-``rc=True`` reverse-complements the region content before passing it to
-``transform_fn``, then reverse-complements the result back. Useful when
-the region was defined relative to the minus strand.
-
-.. code-block:: python
-
-    wt          = pp.from_seq("AAAA<cre>atcg</cre>TTTT")
-    transformed = pp.apply_at_region(wt, "cre", str.upper, rc=True)
-    # RC of "atcg" = "cgat", upper = "CGAT", RC back = "ATCG"
-
-.. raw:: html
-
-    <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; uppercased via RC round-trip; content is unchanged)</em>
-    AAAAATCGTTTT
+    <em class="pp-header">mutant: seq_length=12, num_states=12</em>
+    AAAACTCGTTTT<br>
+    AAAAGTCGTTTT<br>
+    AAAATTCGTTTT<br>
+    AAAAAACGTTTT<br>
+    AAAAACCGTTTT
+    <span class="pp-ellipsis">... (12 total)</span>
     </div>
 
 See :func:`~poolparty.apply_at_region`.

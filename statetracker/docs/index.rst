@@ -9,7 +9,7 @@ Why StateTracker?
 -----------------
 
 StateTracker was developed to support the design of complex DNA sequence
-libraries (see `PoolParty <https://github.com/jkinney/poolparty>`_), but it
+libraries (see `PoolParty <https://github.com/jbkinney/poolparty-statetracker/tree/main/poolparty>`_), but it
 solves a general problem: **random access to combinatorial spaces**.
 
 If you've ever written nested loops to enumerate a Cartesian product and then
@@ -75,8 +75,8 @@ Or install from source:
 
 .. code-block:: bash
 
-    git clone https://github.com/jkinney/statetracker.git
-    cd statetracker
+    git clone https://github.com/jbkinney/poolparty-statetracker.git
+    cd poolparty-statetracker/statetracker
     pip install -e .
 
 Quick Example

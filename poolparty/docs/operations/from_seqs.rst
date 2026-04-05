@@ -17,7 +17,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -73,22 +73,33 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.from_seqs` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
 Basic list, random mode
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Default random mode — each draw picks one sequence uniformly at random.
+``mode='random'`` (the default) — each draw picks one sequence uniformly at
+random. This example sets it explicitly and shows one representative draw.
 
 .. code-block:: python
 
-    pool = pp.from_seqs(["AAAA", "CCCC", "GGGG", "TTTT"])
+    pool = pp.from_seqs(
+        ["AAAA", "CCCC", "GGGG", "TTTT"],
+        mode="random",
+    )
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence, random)</em>
+    <em class="pp-header">pool: seq_length=4, num_states=1</em>
     TTTT
     </div>
 
@@ -104,12 +115,15 @@ reproducible, ordered enumeration of a fixed variant set.
         ["ATCG", "CGTA", "GCAT"],
         mode="sequential",
     )
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (3 sequences, sequential)</em>
-    ATCG<br>CGTA<br>GCAT
+    <em class="pp-header">pool: seq_length=4, num_states=3</em>
+    ATCG<br>
+    CGTA<br>
+    GCAT
     </div>
 
 Custom sequence names
@@ -124,14 +138,15 @@ Custom sequence names
         seq_names=["wt", "mut_A", "mut_B"],
         mode="sequential",
     )
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (3 named sequences)</em>
-    ATCG &nbsp;<em style="color:#6b7280;">wt</em><br>
-    CGTA &nbsp;<em style="color:#6b7280;">mut_A</em><br>
-    GCAT &nbsp;<em style="color:#6b7280;">mut_B</em>
+    <em class="pp-header">pool: seq_length=4, num_states=3</em>
+    wt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ATCG<br>
+    mut_A&nbsp;&nbsp;ATAG<br>
+    mut_B&nbsp;&nbsp;AACG
     </div>
 
 Cycling with ``num_states``
@@ -147,12 +162,18 @@ the list to produce the requested number of output rows.
         mode="sequential",
         num_states=6,
     )
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (6 states &mdash; 2 sequences cycled 3&times;)</em>
-    AAAA<br>CCCC<br>AAAA<br>CCCC<br>AAAA<br>CCCC
+    <em class="pp-header">pool: seq_length=4, num_states=6</em>
+    AAAA<br>
+    CCCC<br>
+    AAAA<br>
+    CCCC<br>
+    AAAA<br>
+    CCCC
     </div>
 
 Inserting into a named region
@@ -163,15 +184,21 @@ Provide ``pool`` and ``region`` to insert each sequence into a fixed context.
 .. code-block:: python
 
     bg   = pp.from_seq("AAAA<cre>XXXX</cre>TTTT")
-    pool = pp.from_seqs(["ACGT", "TGCA", "GGCC"], pool=bg, region="cre")
+    pool = pp.from_seqs(
+        ["ACGT", "TGCA", "GGCC"],
+        pool=bg,
+        region="cre",
+        mode="sequential",
+    )
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (3 sequences &mdash; each inserted into <em>cre</em> region)</em>
-    AAAA<span class="pp-region">ACGT</span>TTTT<br>
-    AAAA<span class="pp-region">TGCA</span>TTTT<br>
-    AAAA<span class="pp-region">GGCC</span>TTTT
+    <em class="pp-header">pool: seq_length=4, num_states=3</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ACGT<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>TGCA<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>GGCC<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
 
 See :func:`~poolparty.from_seqs`.

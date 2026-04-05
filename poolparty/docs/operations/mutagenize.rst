@@ -18,7 +18,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -72,6 +72,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.mutagenize` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -84,16 +90,14 @@ position.
 .. code-block:: python
 
     wt      = pp.from_seq("ATCGATCG")
-    mutants = pp.mutagenize(wt, num_mutations=1)
+    mutants = wt.mutagenize(num_mutations=1, mode="random", style="red")
+    mutants.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 1 random point mutation per draw)</em>
-    A<span class="pp-mut">G</span>CGATCG<br>
-    ATCG<span class="pp-mut">C</span>TCG<br>
-    ATCGAT<span class="pp-mut">A</span>G<br>
-    <span class="pp-ellipsis">... (stochastic; each draw carries one substitution)</span>
+    <em class="pp-header">mutants: seq_length=8, num_states=1</em>
+    ATCG<span class="pp-mut">G</span>TCG
     </div>
 
 Multiple independent mutants with ``num_states``
@@ -105,17 +109,18 @@ one ``generate_library`` call.
 .. code-block:: python
 
     wt      = pp.from_seq("ATCGATCG")
-    mutants = pp.mutagenize(wt, num_mutations=1, num_states=5)
+    mutants = wt.mutagenize(num_mutations=1, num_states=5, mode="random", style="red")
+    mutants.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (5 states &mdash; 5 independent single-mutation draws)</em>
-    A<span class="pp-mut">G</span>CGATCG<br>
+    <em class="pp-header">mutants: seq_length=8, num_states=5</em>
+    ATCG<span class="pp-mut">T</span>TCG<br>
+    ATCGATC<span class="pp-mut">T</span><br>
     ATCG<span class="pp-mut">C</span>TCG<br>
-    ATCGAT<span class="pp-mut">A</span>G<br>
-    <span class="pp-mut">G</span>TCGATCG<br>
-    AT<span class="pp-mut">T</span>GATCG
+    ATCGA<span class="pp-mut">A</span>CG<br>
+    ATCGAT<span class="pp-mut">G</span>G
     </div>
 
 Per-base mutation rate (mutation_rate=0.1)
@@ -127,37 +132,40 @@ of substitutions per draw follows a Binomial distribution and may be zero.
 .. code-block:: python
 
     wt      = pp.from_seq("ATCGATCG")
-    mutants = pp.mutagenize(wt, mutation_rate=0.1)
+    mutants = wt.mutagenize(mutation_rate=0.1, mode="random", style="red")
+    mutants.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; each base mutated independently with p=0.1)</em>
-    A<span class="pp-mut">G</span>CGATCG<br>
-    ATCGATCG<br>
-    ATCGAT<span class="pp-mut">T</span>G<br>
-    <span class="pp-ellipsis">... (number of mutations per draw follows Binomial(8, 0.1))</span>
+    <em class="pp-header">mutants: seq_length=8, num_states=1</em>
+    A<span class="pp-mut">C</span>CGATCG
     </div>
 
 Mutate only within a named region
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``region`` confines all mutations to the tagged segment; flanks are returned
-unchanged.
+unchanged. With ``mode='sequential'``, every single-base variant within the
+region is enumerated.
 
 .. code-block:: python
 
     wt      = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    mutants = pp.mutagenize(wt, num_mutations=1, region="cre")
+    mutants = wt.mutagenize(num_mutations=1, region="cre", mode="sequential",
+                            style="red")
+    mutants.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 1 mutation per draw, restricted to <em>cre</em>)</em>
-    AAAA<span class="pp-region">A<span class="pp-mut">G</span>CGATCG</span>TTTT<br>
-    AAAA<span class="pp-region">ATCG<span class="pp-mut">C</span>TCG</span>TTTT<br>
-    AAAA<span class="pp-region">ATCGAT<span class="pp-mut">A</span>G</span>TTTT<br>
-    <span class="pp-ellipsis">... flanks AAAA and TTTT are always unchanged</span>
+    <em class="pp-header">mutants: seq_length=16, num_states=24</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">C</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">G</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">T</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>A<span class="pp-mut">A</span>CGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>A<span class="pp-mut">C</span>CGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    <span class="pp-ellipsis">... (24 total)</span>
     </div>
 
 Restrict substitutions with ``allowed_chars``
@@ -165,20 +173,27 @@ Restrict substitutions with ``allowed_chars``
 
 ``allowed_chars="SSSSSSSS"`` (S = {G,C}) restricts mutations to G&harr;C
 swaps at every position; no A or T substitutions are made.
+``mode='sequential'`` enumerates every allowed swap.
 
 .. code-block:: python
 
     wt      = pp.from_seq("GCGCGCGC")
-    mutants = pp.mutagenize(wt, num_mutations=1, allowed_chars="SSSSSSSS")
+    mutants = wt.mutagenize(num_mutations=1, allowed_chars="SSSSSSSS",
+                            mode="sequential", style="red")
+    mutants.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; only G&harr;C swaps; no A or T mutations)</em>
+    <em class="pp-header">mutants: seq_length=8, num_states=8</em>
     <span class="pp-mut">C</span>CGCGCGC<br>
+    G<span class="pp-mut">G</span>GCGCGC<br>
     GC<span class="pp-mut">C</span>CGCGC<br>
+    GCG<span class="pp-mut">G</span>GCGC<br>
+    GCGC<span class="pp-mut">C</span>CGC<br>
+    GCGCG<span class="pp-mut">G</span>GC<br>
     GCGCGC<span class="pp-mut">C</span>C<br>
-    <span class="pp-ellipsis">... (stochastic; each draw swaps exactly one G&harr;C)</span>
+    GCGCGCG<span class="pp-mut">G</span>
     </div>
 
 Sequential enumeration (mode="sequential")
@@ -190,21 +205,19 @@ variant in deterministic order, covering all positions and non-wild-type bases.
 .. code-block:: python
 
     wt      = pp.from_seq("ACGT")
-    mutants = pp.mutagenize(wt, num_mutations=1, mode="sequential")
+    mutants = wt.mutagenize(num_mutations=1, mode="sequential", style="red")
+    mutants.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (9 sequences &mdash; all single-point variants in order)</em>
+    <em class="pp-header">mutants: seq_length=4, num_states=12</em>
     <span class="pp-mut">C</span>CGT<br>
     <span class="pp-mut">G</span>CGT<br>
     <span class="pp-mut">T</span>CGT<br>
     A<span class="pp-mut">A</span>GT<br>
-    A<span class="pp-mut">G</span>GT<br>
-    A<span class="pp-mut">T</span>GT<br>
-    AC<span class="pp-mut">A</span>T<br>
-    AC<span class="pp-mut">C</span>T<br>
-    <span class="pp-ellipsis">... (9 total &mdash; 4 positions &times; 3 non-wt bases each)</span>
+    A<span class="pp-mut">G</span>GT
+    <span class="pp-ellipsis">... (12 total)</span>
     </div>
 
 See :func:`~poolparty.mutagenize`.

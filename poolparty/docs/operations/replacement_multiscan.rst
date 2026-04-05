@@ -16,7 +16,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -89,6 +89,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.replacement_multiscan` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -101,40 +107,45 @@ sequence.
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCGATCG")
-    alt  = pp.from_seqs(["A", "C", "G", "T"])
-    scan = pp.replacement_multiscan(wt, num_replacements=2,
-                                    replacement_pools=alt)
+    alt  = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
+    scan = wt.replacement_multiscan(num_replacements=2,
+                                    replacement_pools=alt, mode="random",
+                                    style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 2 simultaneous non-overlapping substitutions per draw)</em>
-    <span class="pp-mut">C</span>TCGA<span class="pp-mut">G</span>CATCG<br>
-    A<span class="pp-mut">A</span>CGAT<span class="pp-mut">T</span>GATCG<br>
-    ATCG<span class="pp-mut">C</span>TCG<span class="pp-mut">A</span>TCG<br>
-    <span class="pp-ellipsis">... each draw places 2 substitutions at distinct positions</span>
+    <em class="pp-header">scan: seq_length=12, num_states=16</em>
+    ATCGAT<span class="pp-mut">A</span>GAT<span class="pp-mut">A</span>G<br>
+    <span class="pp-mut">A</span>TCGATCGATC<span class="pp-mut">C</span><br>
+    ATCGAT<span class="pp-mut">A</span>GATC<span class="pp-mut">G</span><br>
+    <span class="pp-mut">A</span>TCGATCG<span class="pp-mut">T</span>TCG<br>
+    ATCGA<span class="pp-mut">C</span>CGA<span class="pp-mut">A</span>CG
+    <span class="pp-ellipsis">... (16 total)</span>
     </div>
 
-Three simultaneous replacements on a longer sequence
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Two simultaneous degenerate motif replacements
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Scale to three concurrent substitutions across a 16-mer background.
+Replace with a degenerate 6-base IUPAC motif (``R`` = A|G, ``Y`` = C|T) at
+two random positions on a 24-mer. Each draw samples independently from the
+64 possible ``RRYYYY`` sequences.
 
 .. code-block:: python
 
-    wt   = pp.from_seq("ATCGATCGATCGATCG")
-    alt  = pp.from_seqs(["A", "C", "G", "T"])
-    scan = pp.replacement_multiscan(wt, num_replacements=3,
-                                    replacement_pools=alt)
+    wt    = pp.from_seq("ATCGATCGATCGATCGATCGATCG")
+    motif = pp.from_iupac("RRYYYY")
+    scan  = wt.replacement_multiscan(num_replacements=2,
+                                     replacement_pools=motif, mode="random",
+                                     style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 3 simultaneous substitutions per draw on 16-mer)</em>
-    <span class="pp-mut">G</span>TCG<span class="pp-mut">C</span>TCGAT<span class="pp-mut">T</span>GCG<br>
-    ATCG<span class="pp-mut">A</span>TCG<span class="pp-mut">G</span>TCG<span class="pp-mut">C</span>TCG<br>
-    A<span class="pp-mut">T</span>CGAT<span class="pp-mut">A</span>GATCG<span class="pp-mut">G</span>CG<br>
-    <span class="pp-ellipsis">... each draw has 3 substitutions at non-overlapping positions</span>
+    <em class="pp-header">scan: seq_length=24, num_states=1</em>
+    ATCGATCGA<span class="pp-mut">GACCCT</span>GA<span class="pp-mut">GGTTTC</span>G
     </div>
 
 Multiscan within a named region
@@ -145,20 +156,117 @@ never touched.
 
 .. code-block:: python
 
-    wt   = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    alt  = pp.from_seqs(["A", "C", "G", "T"])
-    scan = pp.replacement_multiscan(wt, num_replacements=2,
+    wt   = pp.from_seq("AAAA<cre>ATCGATCGATCG</cre>TTTT")
+    alt  = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
+    scan = wt.replacement_multiscan(num_replacements=2,
                                     replacement_pools=alt,
-                                    positions=range(4, 12))
+                                    region="cre", mode="random",
+                                    style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 2 simultaneous substitutions confined to <em>cre</em>)</em>
-    AAAA<span class="pp-region"><span class="pp-mut">G</span>TCGAT<span class="pp-mut">A</span>G</span>TTTT<br>
-    AAAA<span class="pp-region">A<span class="pp-mut">A</span>CG<span class="pp-mut">C</span>TCG</span>TTTT<br>
-    AAAA<span class="pp-region">ATCG<span class="pp-mut">C</span>T<span class="pp-mut">T</span>G</span>TTTT<br>
-    <span class="pp-ellipsis">... flanks always AAAA...TTTT; 2 mutations inside cre</span>
+    <em class="pp-header">scan: seq_length=20, num_states=16</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGAT<span class="pp-mut">A</span>GAT<span class="pp-mut">A</span>G<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">A</span>TCGATCGATC<span class="pp-mut">C</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGAT<span class="pp-mut">A</span>GATC<span class="pp-mut">G</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">A</span>TCGATCG<span class="pp-mut">T</span>TCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGA<span class="pp-mut">C</span>CGA<span class="pp-mut">A</span>CG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    <span class="pp-ellipsis">... (16 total)</span>
+    </div>
+
+Spacing constraints (min_spacing, max_spacing)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``min_spacing`` and ``max_spacing`` control the gap between replacement
+windows. Here two 6-base motif replacements must be 3–6 bases apart on a
+24-mer.
+
+.. code-block:: python
+
+    wt    = pp.from_seq("ATCGATCGATCGATCGATCGATCG")
+    motif = pp.from_seq("GATTAC")
+    scan  = wt.replacement_multiscan(num_replacements=2,
+                                     replacement_pools=motif,
+                                     min_spacing=3, max_spacing=6,
+                                     mode="sequential", style="red")
+    scan.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">scan: seq_length=24, num_states=34</em>
+    <span class="pp-mut">GATTAC</span>CGA<span class="pp-mut">GATTAC</span>GATCGATCG<br>
+    <span class="pp-mut">GATTAC</span>CGAT<span class="pp-mut">GATTAC</span>ATCGATCG<br>
+    <span class="pp-mut">GATTAC</span>CGATC<span class="pp-mut">GATTAC</span>TCGATCG<br>
+    <span class="pp-mut">GATTAC</span>CGATCG<span class="pp-mut">GATTAC</span>CGATCG<br>
+    A<span class="pp-mut">GATTAC</span>GAT<span class="pp-mut">GATTAC</span>ATCGATCG
+    <span class="pp-ellipsis">... (34 total)</span>
+    </div>
+
+PPM-based replacement pool (from_motif)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use :func:`~poolparty.from_motif` to supply a position-probability matrix
+as the replacement content. Each draw samples a different 6-mer from the
+PPM, producing biologically realistic variation at each window.
+
+.. code-block:: python
+
+    import pandas as pd
+
+    pfm = pd.DataFrame({
+        "A": [0.8, 0.1, 0.5, 0.1, 0.7, 0.1],
+        "C": [0.1, 0.7, 0.2, 0.1, 0.1, 0.1],
+        "G": [0.05, 0.1, 0.2, 0.1, 0.1, 0.7],
+        "T": [0.05, 0.1, 0.1, 0.7, 0.1, 0.1],
+    })
+    wt    = pp.from_seq("ATCGATCGATCGATCGATCGATCG")
+    motif = pp.from_motif(pfm)
+    scan  = wt.replacement_multiscan(num_replacements=2,
+                                     replacement_pools=motif, mode="random",
+                                     num_states=5, style="red")
+    scan.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">scan: seq_length=24, num_states=5</em>
+    ATCGATCGA<span class="pp-mut">CCGTAG</span>GA<span class="pp-mut">ACCCAG</span>G<br>
+    <span class="pp-mut">CCATAT</span>CGATCGATCGA<span class="pp-mut">AGGCAT</span>G<br>
+    ATCGATCGAT<span class="pp-mut">CCGCAG</span>A<span class="pp-mut">AAATAG</span>G<br>
+    <span class="pp-mut">CCATAT</span>CGATCGA<span class="pp-mut">ACATAG</span>GATCG<br>
+    ATCGATCG<span class="pp-mut">ACATAG</span>C<span class="pp-mut">ACATAC</span>TCG
+    </div>
+
+Explicit position sets (positions)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Specify allowed starts for each window independently, using a distinct pool
+for each site. Below, the first replacement (``GGG``) can start at position
+0, 3, or 6, while the second (``AAA``) can start at position 9 or 13.
+
+.. code-block:: python
+
+    wt    = pp.from_seq("ATCGATCGATCGATCG")
+    pools = [pp.from_seq("GGG"), pp.from_seq("AAA")]
+    scan  = wt.replacement_multiscan(num_replacements=2,
+                                     replacement_pools=pools,
+                                     positions=[[0, 3, 6], [9, 13]],
+                                     mode="sequential", style="red")
+    scan.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">scan: seq_length=16, num_states=6</em>
+    <span class="pp-mut">GGG</span>GATCGA<span class="pp-mut">AAA</span>ATCG<br>
+    <span class="pp-mut">GGG</span>GATCGATCGA<span class="pp-mut">AAA</span><br>
+    ATC<span class="pp-mut">GGG</span>CGA<span class="pp-mut">AAA</span>ATCG<br>
+    ATC<span class="pp-mut">GGG</span>CGATCGA<span class="pp-mut">AAA</span><br>
+    ATCGAT<span class="pp-mut">GGGAAA</span>ATCG<br>
+    ATCGAT<span class="pp-mut">GGG</span>TCGA<span class="pp-mut">AAA</span>
     </div>
 
 See :func:`~poolparty.replacement_multiscan`.

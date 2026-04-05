@@ -18,7 +18,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -52,6 +52,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.insert_tags` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -62,14 +68,17 @@ Mark positions 4–12 of a 16-mer as the ``cre`` region.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt     = pp.from_seq("AAAAATCGATCGTTTT")
     tagged = pp.insert_tags(wt, "cre", start=4, stop=12)
+    tagged.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; <em>cre</em> tagged at positions 4&ndash;12)</em>
-    AAAA<span class="pp-region">ATCGATCG</span>TTTT
+    <em class="pp-header">tagged: seq_length=16, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
 
 Zero-length point tag (stop omitted)
@@ -80,14 +89,17 @@ any bases — useful as a landmark for :func:`~poolparty.replace_region`.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt    = pp.from_seq("AAAAATCGATCGTTTT")
     point = pp.insert_tags(wt, "ins", start=4)
+    point.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; zero-length point tag at position 4)</em>
-    AAAA<span class="pp-region"></span>ATCGATCGTTTT
+    <em class="pp-header">point: seq_length=16, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;ins/&gt;</span>ATCGATCGTTTT
     </div>
 
 Two non-overlapping regions in the same sequence
@@ -97,36 +109,45 @@ Apply ``insert_tags`` twice to define ``left`` and ``right`` regions.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt    = pp.from_seq("AAAAATCGGGGGCCCTTTT")
     step1 = pp.insert_tags(wt,    "left",  start=4,  stop=8)
     step2 = pp.insert_tags(step1, "right", start=13, stop=17)
+    step2.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; two independent named regions)</em>
-    AAAA<span class="pp-region">ATCG</span>GGGGG<span class="pp-region">CCCT</span>TTT
+    <em class="pp-header">step2: seq_length=19, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;left&gt;</span>ATCG<span class="pp-xtag-cre">&lt;/left&gt;</span>GGGGC<span class="pp-xtag-cre">&lt;right&gt;</span>CCTT<span class="pp-xtag-cre">&lt;/right&gt;</span>TT
     </div>
 
 Chain into mutagenize to restrict mutations to the tagged region
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Tag a region then mutagenize only that segment; the flanks stay intact.
+Use ``mode="sequential"`` for deterministic ordering of single mutants.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt      = pp.from_seq("AAAAATCGATCGTTTT")
     tagged  = pp.insert_tags(wt, "cre", start=4, stop=12)
-    mutants = pp.mutagenize(tagged, num_mutations=1, region="cre")
+    mutants = pp.mutagenize(tagged, num_mutations=1, region="cre", mode="sequential")
+    mutants.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 1 mutation per draw, restricted to <em>cre</em>)</em>
-    AAAA<span class="pp-region">A<span class="pp-mut">G</span>CGATCG</span>TTTT<br>
-    AAAA<span class="pp-region">ATCG<span class="pp-mut">C</span>TCG</span>TTTT<br>
-    AAAA<span class="pp-region">ATCGAT<span class="pp-mut">A</span>G</span>TTTT<br>
-    <span class="pp-ellipsis">... (stochastic; flanks always unchanged)</span>
+    <em class="pp-header">mutants: seq_length=16, num_states=24</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>CTCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>GTCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>TTCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AACGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ACCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    <span class="pp-ellipsis">... (24 total)</span>
     </div>
 
 See :func:`~poolparty.insert_tags`.

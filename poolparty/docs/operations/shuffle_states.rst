@@ -16,7 +16,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -48,6 +48,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.state_shuffle` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -59,14 +65,22 @@ permutation is deterministic and reproducible.
 
 .. code-block:: python
 
-    kmers    = pp.get_kmers(length=2, alphabet="ACGT")  # 16 states in order
+    import poolparty as pp
+    pp.init()
+    kmers    = pp.get_kmers(length=2, mode="sequential")
     shuffled = pp.state_shuffle(kmers, seed=0)
+    shuffled.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (16 sequences &mdash; all 2-mers in shuffled order, seed=0)</em>
-    TG<br>AT<br>GA<br>CT<br>CG<br>TA<br>GC<br>CA<br>TC<br>GT<br>GG<br>CC<br>AA<br>TT<br>AC<br>AG
+    <em class="pp-header">shuffled: seq_length=2, num_states=16</em>
+    GG<br>
+    TG<br>
+    CC<br>
+    AC<br>
+    GC
+    <span class="pp-ellipsis">... (16 total)</span>
     </div>
 
 Shuffle Then Slice to Get a Random Subset
@@ -77,15 +91,23 @@ subset without replacement — equivalent to a seeded random sample.
 
 .. code-block:: python
 
-    kmers   = pp.get_kmers(length=2, alphabet="ACGT")
+    import poolparty as pp
+    pp.init()
+    kmers   = pp.get_kmers(length=2, mode="sequential")
     shuffled = pp.state_shuffle(kmers, seed=0)
-    subset  = pp.state_slice(shuffled, slice(0, 6))  # first 6 of the shuffle
+    subset  = pp.state_slice(shuffled, slice(0, 6))
+    subset.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (6 sequences &mdash; first 6 states of seed=0 shuffle, no replacement)</em>
-    TG<br>AT<br>GA<br>CT<br>CG<br>TA
+    <em class="pp-header">subset: seq_length=2, num_states=6</em>
+    GG<br>
+    TG<br>
+    CC<br>
+    AC<br>
+    GC<br>
+    AG
     </div>
 
 Two Shuffles with Different Seeds Produce Different Orders
@@ -96,22 +118,34 @@ output order is fully determined by the seed value.
 
 .. code-block:: python
 
-    kmers      = pp.get_kmers(length=2, alphabet="ACGT")
+    import poolparty as pp
+    pp.init()
+    kmers      = pp.get_kmers(length=2, mode="sequential")
     shuffled_0 = pp.state_shuffle(kmers, seed=0)
+    shuffled_0.print_library()
     shuffled_1 = pp.state_shuffle(kmers, seed=1)
+    shuffled_1.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">shuffled_0 &mdash; seed=0 (first 6 states shown)</em>
-    TG<br>AT<br>GA<br>CT<br>CG<br>TA<br>
+    <em class="pp-header">shuffled_0: seq_length=2, num_states=16</em>
+    GG<br>
+    TG<br>
+    CC<br>
+    AC<br>
+    GC
     <span class="pp-ellipsis">... (16 total)</span>
     </div>
 
     <div class="pp-pool">
-    <em class="pp-header">shuffled_1 &mdash; seed=1 (first 6 states shown, different order)</em>
-    AC<br>TT<br>GG<br>CA<br>AG<br>TC<br>
-    <span class="pp-ellipsis">... (16 total, independent permutation)</span>
+    <em class="pp-header">shuffled_1: seq_length=2, num_states=16</em>
+    AG<br>
+    GG<br>
+    AA<br>
+    TG<br>
+    CG
+    <span class="pp-ellipsis">... (16 total)</span>
     </div>
 
 See :func:`~poolparty.state_shuffle`.

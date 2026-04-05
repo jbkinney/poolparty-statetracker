@@ -22,7 +22,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -71,6 +71,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.from_iupac` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -82,14 +88,17 @@ Random mode draws one sequence per call.
 
 .. code-block:: python
 
-    pool = pp.from_iupac("WN", num_states=4)
+    pool = pp.from_iupac("WN", mode="random", num_states=4)
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (8 possible sequences, random &mdash; W={A,T} N={A,C,G,T})</em>
-    AA<br>TG<br>AC<br>TC<br>
-    <span class="pp-ellipsis">... (stochastic &mdash; draws sample uniformly from all 8 combinations)</span>
+    <em class="pp-header">pool: seq_length=2, num_states=4</em>
+    TG<br>
+    TT<br>
+    AC<br>
+    TC
     </div>
 
 Sequential enumeration
@@ -101,13 +110,17 @@ giving exactly one draw per combination.
 .. code-block:: python
 
     pool = pp.from_iupac("RY", mode="sequential")
+    pool.print_library()
     # R={A,G}, Y={C,T}: 2x2=4 combinations
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (4 sequences, sequential &mdash; R={A,G} Y={C,T})</em>
-    AC<br>AT<br>GC<br>GT
+    <em class="pp-header">pool: seq_length=2, num_states=4</em>
+    AC<br>
+    AT<br>
+    GC<br>
+    GT
     </div>
 
 Capping with ``num_states``
@@ -118,14 +131,22 @@ combinations — useful for prototyping with a large degenerate sequence.
 
 .. code-block:: python
 
-    pool = pp.from_iupac("NNNN", mode="sequential")
+    pool = pp.from_iupac("NNNN", mode="sequential", num_states=8)
+    pool.print_library()
     # NNNN has 256 total; take first 8
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (8 of 256 sequences &mdash; first 8 in lexicographic order)</em>
-    AAAA<br>AAAC<br>AAAG<br>AAAT<br>AACA<br>AACC<br>AACG<br>AACT
+    <em class="pp-header">pool: seq_length=4, num_states=8</em>
+    AAAA<br>
+    AAAC<br>
+    AAAG<br>
+    AAAT<br>
+    AACA<br>
+    AACC<br>
+    AACG<br>
+    AACT
     </div>
 
 Inserting into a named region
@@ -138,16 +159,44 @@ fixed flanking context.
 
     bg   = pp.from_seq("AAAA<cre>XXX</cre>TTTT")
     pool = pp.from_iupac("NNN", mode="sequential", pool=bg, region="cre")
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (64 sequences &mdash; all 3-mers in <em>cre</em> region)</em>
-    AAAA<span class="pp-region">AAA</span>TTTT<br>
-    AAAA<span class="pp-region">AAC</span>TTTT<br>
-    AAAA<span class="pp-region">AAG</span>TTTT<br>
-    AAAA<span class="pp-region">AAT</span>TTTT<br>
+    <em class="pp-header">pool: seq_length=11, num_states=64</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AAA<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AAC<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AAG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AAT<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ACA<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     <span class="pp-ellipsis">... (64 total)</span>
     </div>
 
-See :func:`~poolparty.from_iupac`.
+Pool method shorthand
+~~~~~~~~~~~~~~~~~~~~~
+
+When inserting into a region, the same operation is available as a method
+on any ``DnaPool``.  The call ``bg.insert_from_iupac(...)`` is equivalent
+to ``pp.from_iupac(..., pool=bg)`` — it simply passes ``self`` as the
+background pool.
+
+.. code-block:: python
+
+    bg   = pp.from_seq("AAAA<cre>XXX</cre>TTTT")
+    pool = bg.insert_from_iupac("NNN", region="cre", mode="sequential")
+    pool.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">pool: seq_length=11, num_states=64</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AAA<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AAC<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AAG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AAT<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ACA<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    <span class="pp-ellipsis">... (64 total)</span>
+    </div>
+
+See :func:`~poolparty.from_iupac` and :meth:`~poolparty.DnaPool.insert_from_iupac`.

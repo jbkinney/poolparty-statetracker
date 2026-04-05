@@ -23,16 +23,20 @@ poolparty-statetracker/
 
 ## Installation
 
-Each package can be installed independently. For development, install in editable mode:
+Each package can be installed independently from PyPI:
 
 ```bash
-# Install statetracker
-cd statetracker
-pip install -e ".[dev]"
+pip install poolparty      # includes statetracker as a dependency
+pip install statetracker   # standalone
+```
 
-# Install poolparty
-cd ../poolparty
-pip install -e ".[dev]"
+For development, clone the repo and install both in editable mode:
+
+```bash
+git clone https://github.com/jbkinney/poolparty-statetracker.git
+cd poolparty-statetracker
+pip install -e ./statetracker[dev]
+pip install -e ./poolparty[dev]
 ```
 
 ## Running Tests

@@ -2,9 +2,11 @@ shuffle_scan
 ============
 
 Slide a window of fixed length across the sequence (or a named region) and,
-at each position, randomly shuffle the bases within that window. Bases outside
-the window are returned unchanged, making this useful for dinucleotide-controlled
-scramble controls.
+at each position, shuffle the bases within that window. Bases outside the window
+are unchanged. Use ``mode='sequential'`` to enumerate every window start as its
+own state; ``mode='random'`` (the default) samples window positions according to
+``num_states`` (default ``1`` for a single draw). Pair with
+``shuffles_per_position`` to list several independent shuffles per draw.
 
 .. code-block:: python
 
@@ -18,7 +20,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -82,92 +84,133 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.shuffle_scan` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
 3-base shuffle window across an 8-mer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A length-3 window slides across 6 positions; one stochastic shuffle per
-position.
+Six starts are valid for a length-3 window on an 8-mer. With ``mode='random'``
+and default ``num_states``, the pool has a single state, so ``print_library()``
+shows one shuffled draw (reproducible after ``pp.init()`` with default library
+generation seeding).
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt   = pp.from_seq("ACGTACGT")
-    scan = wt.shuffle_scan(shuffle_length=3)
+    scan = wt.shuffle_scan(shuffle_length=3, mode="random", style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 6 window positions, each window independently shuffled)</em>
-    <span class="pp-mut">CAG</span>TACGT<br>
-    A<span class="pp-mut">GTC</span>ACGT<br>
-    AC<span class="pp-mut">TGC</span>CGT<br>
-    ACG<span class="pp-mut">ATG</span>GT<br>
-    <span class="pp-ellipsis">... (6 positions, each stochastic)</span>
+    <em class="pp-header">scan: seq_length=8, num_states=1</em>
+    ACG<span class="pp-mut">CAT</span>GT
     </div>
 
 Multiple shuffles per position (shuffles_per_position)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``shuffles_per_position=3`` generates three independent shuffles at each
-position, tripling the library size to 18.
+``shuffles_per_position=3`` attaches three independent shuffles to the drawn
+window; the preview lists each of the three pool states.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt   = pp.from_seq("ACGTACGT")
-    scan = wt.shuffle_scan(shuffle_length=3, shuffles_per_position=3)
+    scan = wt.shuffle_scan(shuffle_length=3, shuffles_per_position=3, mode="random",
+                           style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 6 positions &times; 3 shuffles = 18 variants)</em>
-    <span class="pp-mut">CAG</span>TACGT<br>
-    <span class="pp-mut">GAC</span>TACGT<br>
-    <span class="pp-mut">GCA</span>TACGT<br>
-    A<span class="pp-mut">GTC</span>ACGT<br>
-    A<span class="pp-mut">CTG</span>ACGT<br>
-    <span class="pp-ellipsis">... (18 total)</span>
+    <em class="pp-header">scan: seq_length=8, num_states=3</em>
+    ACG<span class="pp-mut">CAT</span>GT<br>
+    ACGT<span class="pp-mut">ACG</span>T<br>
+    ACG<span class="pp-mut">TCA</span>GT
     </div>
 
 Explicit position list
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Pass ``positions=[0, 3, 6]`` to shuffle only three specific windows.
+Pass ``positions=[0, 3, 6]`` so the shuffle window may start only at those
+indices. With ``mode='random'`` and default ``num_states``, one of those starts
+is drawn per state (here the preview is a single row).
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt   = pp.from_seq("ACGTACGT")
-    scan = wt.shuffle_scan(shuffle_length=2, positions=[0, 3, 6])
+    scan = wt.shuffle_scan(shuffle_length=2, positions=[0, 3, 6], mode="random",
+                           style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 3 explicit positions, 2-base window shuffled at each)</em>
-    <span class="pp-mut">CA</span>GTACGT<br>
-    ACG<span class="pp-mut">TA</span>CGT<br>
-    ACGTAC<span class="pp-mut">TG</span>
+    <em class="pp-header">scan: seq_length=8, num_states=1</em>
+    ACG<span class="pp-mut">TA</span>CGT
     </div>
 
 Shuffle scan within a named region
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Restrict the scan to the ``cre`` region; flanking sequences are always
-unchanged.
+Restrict the scan to the ``cre`` region; flanking sequences are never
+shuffled. Literal tags appear in the printed sequence; below they are escaped
+for HTML.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt   = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
-    scan = wt.shuffle_scan(shuffle_length=3, region="cre")
+    scan = wt.shuffle_scan(shuffle_length=3, region="cre", mode="random",
+                           style="red")
+    scan.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (stochastic &mdash; 6 window positions within <em>cre</em>; flanks unchanged)</em>
-    AAAA<span class="pp-region"><span class="pp-mut">CAT</span>GATCG</span>TTTT<br>
-    AAAA<span class="pp-region">A<span class="pp-mut">GTC</span>ATCG</span>TTTT<br>
-    AAAA<span class="pp-region">AT<span class="pp-mut">ACG</span>TCG</span>TTTT<br>
-    <span class="pp-ellipsis">... (6 positions; AAAA and TTTT always unchanged)</span>
+    <em class="pp-header">scan: seq_length=16, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATC<span class="pp-mut">TAG</span>CG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    </div>
+
+Sequential mode — all window positions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``mode='sequential'`` enumerates every window start position left-to-right,
+producing one shuffled state per position. With a 3-base window on an 8-mer,
+there are 6 positions.
+
+.. code-block:: python
+
+    import poolparty as pp
+    pp.init()
+    wt   = pp.from_seq("ACGTACGT")
+    scan = wt.shuffle_scan(shuffle_length=3, mode="sequential", style="red")
+    scan.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">scan: seq_length=8, num_states=6</em>
+    <span class="pp-mut">GCA</span>TACGT<br>
+    A<span class="pp-mut">CGT</span>ACGT<br>
+    AC<span class="pp-mut">GAT</span>CGT<br>
+    ACG<span class="pp-mut">CAT</span>GT<br>
+    ACGT<span class="pp-mut">ACG</span>T<br>
+    ACGTA<span class="pp-mut">TGC</span>
     </div>
 
 See :func:`~poolparty.shuffle_scan`.

@@ -779,7 +779,7 @@ class TestInsertionScanStylePropagation:
             inserts = pp.from_seqs(["XXXXXXXX"], mode="sequential").named("inserts")
             # Apply insertion scan with replace
             inserted = bg.insertion_scan(
-                region="test", ins_pool=inserts, positions=[0], replace=True, mode="sequential"
+                region="test", insertion_pool=inserts, positions=[0], replace=True, mode="sequential"
             ).named("inserted")
 
         df = inserted.generate_library(
@@ -803,7 +803,7 @@ class TestInsertionScanStylePropagation:
             # Insert replaces with same-length content
             inserts = pp.from_seqs(["GGGG"], mode="sequential").named("inserts")
             inserted = bg.insertion_scan(
-                region="ins", ins_pool=inserts, positions=[0], replace=True, mode="sequential"
+                region="ins", insertion_pool=inserts, positions=[0], replace=True, mode="sequential"
             ).named("inserted")
 
         df = inserted.generate_library(
@@ -829,7 +829,7 @@ class TestInsertionScanStylePropagation:
                 pp.from_seqs(["GGGG"], mode="sequential").stylize(style="magenta").named("inserts")
             )
             inserted = bg.insertion_scan(
-                region="ins", ins_pool=inserts, positions=[0], replace=True, mode="sequential"
+                region="ins", insertion_pool=inserts, positions=[0], replace=True, mode="sequential"
             ).named("inserted")
 
         df = inserted.generate_library(
@@ -856,7 +856,7 @@ class TestInsertionScanStylePropagation:
                 pp.from_seqs(["GG", "CC"], mode="sequential").stylize(style="cyan").named("inserts")
             )
             inserted = bg.insertion_scan(
-                region="ins", ins_pool=inserts, positions=[0], replace=True, mode="sequential"
+                region="ins", insertion_pool=inserts, positions=[0], replace=True, mode="sequential"
             ).named("inserted")
 
         df = inserted.generate_library(

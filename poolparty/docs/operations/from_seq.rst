@@ -17,7 +17,7 @@ Parameters
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 18 12 50
+   :widths: auto
 
    * - Parameter
      - Type
@@ -56,6 +56,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.from_seq` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -67,11 +73,12 @@ Create a pool from a plain sequence string.
 .. code-block:: python
 
     pool = pp.from_seq("ACGTACGT")
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence)</em>
+    <em class="pp-header">pool: seq_length=8, num_states=1</em>
     ACGTACGT
     </div>
 
@@ -83,12 +90,13 @@ Inline tags define named regions that downstream operations can target.
 .. code-block:: python
 
     wt = pp.from_seq("AAAA<promoter>TATAAA</promoter><core>ATCGATCG</core>TTTT")
+    wt.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; regions: <em>promoter</em>, <em>core</em>)</em>
-    AAAA<span class="pp-region">TATAAA</span><span class="pp-region">ATCGATCG</span>TTTT
+    <em class="pp-header">wt: seq_length=22, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;promoter&gt;</span>TATAAA<span class="pp-xtag-cre">&lt;/promoter&gt;</span><span class="pp-xtag-cre">&lt;core&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/core&gt;</span>TTTT
     </div>
 
 Applying a display style
@@ -99,12 +107,13 @@ Applying a display style
 .. code-block:: python
 
     pool = pp.from_seq("ACGTACGT", style="blue bold")
+    pool.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; bold blue style)</em>
-    <strong style="color:#3b82f6;">ACGTACGT</strong>
+    <em class="pp-header">pool: seq_length=8, num_states=1</em>
+    <span class="pp-codon-a">ACGTACGT</span>
     </div>
 
 Replacing a named region in a background pool
@@ -114,18 +123,22 @@ Provide ``pool`` and ``region`` to substitute the content of a tagged region.
 
 .. code-block:: python
 
+    import poolparty as pp
+    pp.init()
     wt     = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
     mutant = pp.from_seq("GGGG", pool=wt, region="cre")
+    wt.print_library()
+    mutant.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">wt</em>
-    AAAA<span class="pp-region">ATCG</span>TTTT
+    <em class="pp-header">wt: seq_length=12, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
     <div class="pp-pool">
-    <em class="pp-header">mutant &mdash; <em>cre</em> replaced with GGGG</em>
-    AAAA<span class="pp-region">GGGG</span>TTTT
+    <em class="pp-header">mutant: seq_length=4, num_states=1</em>
+    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>GGGG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
     </div>
 
 See :func:`~poolparty.from_seq`.

@@ -1,26 +1,26 @@
 Design Cards
 ============
 
-When sequences are generated using PoolParty, each is automatically paired with a design card. 
-Design cards are data frames provide a **structured record of how each sequence was
-constructed**. Each row can include columns that
-report the specific changes applied by each operation — mutation positions,
-substituted characters, scores, orientations, and more. Because this
-information is recorded automatically during generation, downstream
+PoolParty can automatically pair each generated sequence with a **design
+card** — a DataFrame row that records how the sequence was constructed.
+Columns report the changes applied by each operation: mutation positions,
+substituted characters, scores, orientations, and more. Downstream
 analysis can filter, group, and model sequences using these columns
 directly, without parsing the sequences themselves.
 
 Design cards are opt-in: unless you pass the ``cards`` parameter, the
 output contains only ``name`` and ``seq``.
 
-All examples assume::
+All examples assume:
+
+.. code-block:: python
 
     import poolparty as pp
     pp.init()
 
 ----
 
-Why Use Design Cards?
+Why use design cards?
 ---------------------
 
 Design cards are especially useful when the parameters that vary across a
@@ -38,7 +38,7 @@ library are themselves the object of study. For example:
 
 ----
 
-Requesting Cards
+Requesting cards
 ----------------
 
 The ``cards`` parameter accepts three forms:
@@ -55,18 +55,20 @@ The ``cards`` parameter accepts three forms:
 
 .. code-block:: python
 
+    pool = pp.from_iupac("NNNN", mode="sequential")
+
     # List-style — column is "op[1]:score.gc"
-    scored = pp.score(pool, pp.calc_gc, card_key="gc", cards=["gc"])
+    scored = pool.score(pp.calc_gc, card_key="gc", cards=["gc"])
 
     # Dict-style — column is just "gc"
-    scored = pp.score(pool, pp.calc_gc, card_key="gc", cards={"gc": "gc"})
+    scored = pool.score(pp.calc_gc, card_key="gc", cards={"gc": "gc"})
 
 Use the **dict form** when you want clean, predictable column names in
 your output.
 
 ----
 
-Universal Card Keys
+Universal card keys
 -------------------
 
 Every operation supports two universal keys, regardless of type:
@@ -86,18 +88,30 @@ Every operation supports two universal keys, regardless of type:
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCG")
-    muts = pp.mutagenize(wt, num_mutations=1, num_states=5,
+    muts = wt.mutagenize(num_mutations=1, num_states=5,
                          cards={"state": "mut_state", "seq": "mut_seq"})
     df   = muts.generate_library()
-    # df has columns: name, seq, mut_state, mut_seq
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">df — 5 rows × 4 columns</em>
+    <table class="pp-df">
+    <tr><th>name</th><th>seq</th><th>mut_state</th><th>mut_seq</th></tr>
+    <tr><td>None</td><td>CTCGATCG</td><td>0</td><td>CTCGATCG</td></tr>
+    <tr><td>None</td><td>GTCGATCG</td><td>1</td><td>GTCGATCG</td></tr>
+    <tr><td>None</td><td>TTCGATCG</td><td>2</td><td>TTCGATCG</td></tr>
+    <tr><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td></tr>
+    </table>
+    </div>
 
 ----
 
-Operation-Specific Card Keys
------------------------------
+Operation-specific card keys
+----------------------------
 
-Each operation advertises which additional keys it can produce. Requesting
-an invalid key raises ``ValueError``.
+Each operation defines which additional keys it supports. Requesting an
+invalid key raises ``ValueError``.
 
 .. list-table::
    :widths: 25 25 50
@@ -156,13 +170,12 @@ an invalid key raises ``ValueError``.
 Examples
 --------
 
-Track mutation details
-~~~~~~~~~~~~~~~~~~~~~~~
+.. rubric:: Track mutation details
 
 .. code-block:: python
 
     wt   = pp.from_seq("ATCGATCG")
-    muts = pp.mutagenize(wt, num_mutations=2, num_states=5,
+    muts = wt.mutagenize(num_mutations=2, num_states=5,
                          cards={"positions": "mut_pos",
                                 "wt_chars": "wt",
                                 "mut_chars": "mut"})
@@ -171,39 +184,62 @@ Track mutation details
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">DataFrame columns: name, seq, mut_pos, wt, mut</em>
-    <span class="pp-ellipsis">mut_pos=(0, 5) &nbsp; wt=('A', 'T') &nbsp; mut=('G', 'C')</span><br>
-    <span class="pp-ellipsis">mut_pos=(2, 7) &nbsp; wt=('C', 'G') &nbsp; mut=('T', 'A')</span><br>
-    <span class="pp-ellipsis">... (5 rows total)</span>
+    <em class="pp-header">df — 5 rows × 5 columns</em>
+    <table class="pp-df">
+    <tr><th>name</th><th>seq</th><th>mut_pos</th><th>wt</th><th>mut</th></tr>
+    <tr><td>None</td><td>GTCGACCG</td><td>(0, 5)</td><td>('A', 'T')</td><td>('G', 'C')</td></tr>
+    <tr><td>None</td><td>ATCAATCG</td><td>(3, 4)</td><td>('G', 'A')</td><td>('A', 'A')</td></tr>
+    <tr><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td></tr>
+    </table>
     </div>
 
-Score with a clean column name
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. rubric:: Score with a clean column name
 
 .. code-block:: python
 
     wt     = pp.from_iupac("NNNN", mode="sequential")
-    scored = pp.score(wt, pp.calc_gc, card_key="gc", cards={"gc": "gc"})
+    scored = wt.score(pp.calc_gc, card_key="gc", cards={"gc": "gc"})
     df     = scored.generate_library()
-    # df["gc"] contains the GC fraction — no "op[N]:score." prefix
 
-Multiple cards across a pipeline
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">df — 256 rows × 3 columns (no "op[N]:score." prefix)</em>
+    <table class="pp-df">
+    <tr><th>name</th><th>seq</th><th>gc</th></tr>
+    <tr><td>None</td><td>AAAA</td><td>0.00</td></tr>
+    <tr><td>None</td><td>AAAC</td><td>0.25</td></tr>
+    <tr><td>None</td><td>AAAG</td><td>0.25</td></tr>
+    <tr><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td></tr>
+    </table>
+    </div>
+
+.. rubric:: Multiple cards across a pipeline
 
 Each operation in the pipeline can export its own cards independently.
 
 .. code-block:: python
 
     wt     = pp.from_iupac("NNNNNNNN", mode="sequential", num_states=10)
-    scored = pp.score(wt,     pp.calc_gc,        card_key="gc",
-                     cards={"gc": "gc"})
-    scored = pp.score(scored, pp.calc_complexity, card_key="complexity",
-                     cards={"complexity": "complexity"})
+    scored = (wt
+        .score(pp.calc_gc,        card_key="gc",         cards={"gc": "gc"})
+        .score(pp.calc_complexity, card_key="complexity", cards={"complexity": "complexity"})
+    )
     df = scored.generate_library()
-    # df has columns: name, seq, gc, complexity
 
-Identify which pool produced each sequence
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">df — 10 rows × 4 columns</em>
+    <table class="pp-df">
+    <tr><th>name</th><th>seq</th><th>gc</th><th>complexity</th></tr>
+    <tr><td>None</td><td>AAAAAAAA</td><td>0.00</td><td>0.25</td></tr>
+    <tr><td>None</td><td>AAAAAAAC</td><td>0.125</td><td>0.34</td></tr>
+    <tr><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td></tr>
+    </table>
+    </div>
+
+.. rubric:: Identify which pool produced each sequence
 
 .. code-block:: python
 
@@ -212,10 +248,21 @@ Identify which pool produced each sequence
     combined = pp.stack([pool_a, pool_b],
                         cards={"active_parent": "source"})
     df = combined.generate_library()
-    # df["source"]: 0, 0, 1, 1
 
-DMS library with codon-level cards
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">df — 4 rows × 3 columns</em>
+    <table class="pp-df">
+    <tr><th>name</th><th>seq</th><th>source</th></tr>
+    <tr><td>None</td><td>AAAA</td><td>0</td></tr>
+    <tr><td>None</td><td>CCCC</td><td>0</td></tr>
+    <tr><td>None</td><td>GGGG</td><td>1</td></tr>
+    <tr><td>None</td><td>TTTT</td><td>1</td></tr>
+    </table>
+    </div>
+
+.. rubric:: DMS library with codon-level cards
 
 In a deep mutational scanning library, ``mutagenize_orf`` cards record the
 amino-acid-level changes for each variant — no sequence parsing needed.
@@ -223,23 +270,34 @@ amino-acid-level changes for each variant — no sequence parsing needed.
 .. code-block:: python
 
     orf  = pp.from_seq("ATGAAATTTGGGCCCTAA")
-    cds  = pp.annotate_orf(orf)
-    muts = pp.mutagenize_orf(cds, num_mutations=1, mode="sequential",
-                             cards={"codon_positions": "position",
-                                    "wt_aas": "wt_aa",
-                                    "mut_aas": "mut_aa"})
+    muts = (orf
+        .annotate_orf("gene")
+        .mutagenize_orf(num_mutations=1, mode="sequential",
+                        cards={"codon_positions": "position",
+                               "wt_aas": "wt_aa",
+                               "mut_aas": "mut_aa"})
+    )
     df = muts.generate_library()
-    # df has columns: name, seq, position, wt_aa, mut_aa
-    # Each row records exactly which amino acid was changed and where
 
-Cards as covariates for modeling
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. raw:: html
 
-Because card columns are ordinary DataFrame columns, they can be passed
-directly to statistical or machine-learning models as covariates. This
-pattern — using design parameters as regression features without post-hoc
-sequence parsing — is especially powerful for surrogate modeling of
-genomic AI predictions.
+    <div class="pp-pool">
+    <em class="pp-header">df — each row records the amino acid change and position</em>
+    <table class="pp-df">
+    <tr><th>name</th><th>seq</th><th>position</th><th>wt_aa</th><th>mut_aa</th></tr>
+    <tr><td>None</td><td>ATGCAATTTGGGCCCTAA</td><td>(1,)</td><td>('K',)</td><td>('Q',)</td></tr>
+    <tr><td>None</td><td>ATGGAATTTGGGCCCTAA</td><td>(1,)</td><td>('K',)</td><td>('E',)</td></tr>
+    <tr><td>None</td><td>ATGAAAGTTGGGCCCTAA</td><td>(2,)</td><td>('F',)</td><td>('V',)</td></tr>
+    <tr><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td></tr>
+    </table>
+    </div>
+
+.. rubric:: Cards as covariates for modeling
+
+Card columns are ordinary DataFrame columns, so they can be used directly
+as covariates in statistical or machine-learning models. This avoids
+post-hoc sequence parsing: the design parameters are already structured
+as regression features.
 
 .. code-block:: python
 
@@ -255,8 +313,8 @@ genomic AI predictions.
 
 ----
 
-Disabling Cards Globally
--------------------------
+Disabling cards globally
+------------------------
 
 To suppress all card computation for performance:
 

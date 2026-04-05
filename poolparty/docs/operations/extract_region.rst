@@ -15,7 +15,7 @@ Parameters
 ----------
 
 .. list-table::
-   :widths: 20 18 12 50
+   :widths: auto
    :header-rows: 1
 
    * - Parameter
@@ -45,6 +45,12 @@ Parameters
 
 ----
 
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.extract_region` in the
+   :doc:`API Reference </api>`.
+
 Examples
 --------
 
@@ -57,11 +63,12 @@ Pull the content of the ``cre`` region out of a flanked sequence.
 
     bg      = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     content = pp.extract_region(bg, "cre")
+    content.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; content of <em>cre</em>)</em>
+    <em class="pp-header">content: seq_length=8, num_states=1</em>
     ATCGATCG
     </div>
 
@@ -75,11 +82,12 @@ for antisense constructs.
 
     bg         = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     content_rc = pp.extract_region(bg, "cre", rc=True)
+    content_rc.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (1 sequence &mdash; reverse complement of <em>cre</em>)</em>
+    <em class="pp-header">content_rc: seq_length=8, num_states=1</em>
     CGATCGAT
     </div>
 
@@ -93,17 +101,20 @@ extracted independently.
 
     bg      = pp.from_seq("AAAA<ins>NNNN</ins>TTTT")
     filled  = pp.replace_region(bg, pp.from_iupac("NNNN", mode="sequential"),
-                                region_name="ins")
+                                region_name="ins", keep_tags=True)
     content = pp.extract_region(filled, "ins")
+    content.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">Pool (256 sequences &mdash; extracted <em>ins</em> content from each state)</em>
+    <em class="pp-header">content: seq_length=4, num_states=256</em>
     AAAA<br>
     AAAC<br>
     AAAG<br>
-    <span class="pp-ellipsis">... (256 total &mdash; flanks discarded)</span>
+    AAAT<br>
+    AACA<br>
+    <span class="pp-ellipsis">... (256 total)</span>
     </div>
 
 See :func:`~poolparty.extract_region`.
