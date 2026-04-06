@@ -119,8 +119,8 @@ Contents
    :caption: User Guide
 
    quickstart
-   operations/index
    pool
+   operations/index
    concepts
 
 .. toctree::
