@@ -1,5 +1,4 @@
 [![DOI](https://zenodo.org/badge/1124788134.svg)](https://doi.org/10.5281/zenodo.19445097)
-
 # poolparty-statetracker
 
 This monorepo contains two related Python packages:
