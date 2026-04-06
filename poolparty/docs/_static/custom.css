@@ -1,5 +1,30 @@
 /* Custom CSS for PoolParty documentation */
 
+/* White background for the logo area */
+.wy-side-nav-search {
+    background-color: #ffffff;
+}
+
+/* Hide the home icon and project name text, keep the link for the logo */
+.wy-side-nav-search > a {
+    font-size: 0;
+}
+
+/* Hide the home icon */
+.wy-side-nav-search > a .icon-home:before {
+    content: none;
+}
+
+/* Ensure the logo displays properly and is clickable */
+.wy-side-nav-search > a img.logo {
+    display: block;
+}
+
+/* Hide version text */
+.wy-side-nav-search > div.version {
+    display: none;
+}
+
 /* Improve code block styling */
 .highlight {
     background: #f8f8f8;

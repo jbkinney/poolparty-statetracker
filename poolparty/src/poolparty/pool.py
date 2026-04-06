@@ -360,8 +360,8 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
                     row_parts.append(f"{name}")
             if show_seq:
                 seq = row["seq"]
-                # Handle None (filtered) sequences
-                if seq is None:
+                # Handle None/NaN (filtered) sequences
+                if seq is None or (isinstance(seq, float) and pd.isna(seq)):
                     row_parts.append("None")
                 else:
                     from .utils.style_utils import SeqStyle
@@ -369,7 +369,9 @@ class Pool(CommonOpsMixin, ScanOpsMixin, GenericFixedOpsMixin, StateOpsMixin, Re
                     # Get per-sequence inline styles (from operation style parameters)
                     inline_styles = row.get("_inline_styles", SeqStyle.empty(0))
                     # Apply inline styles if present
-                    if inline_styles is not None:
+                    if inline_styles is not None and not (
+                        isinstance(inline_styles, float) and pd.isna(inline_styles)
+                    ):
                         seq = inline_styles.apply(seq)
                     row_parts.append(seq)
             print("  ".join(row_parts))

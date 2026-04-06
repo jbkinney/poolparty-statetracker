@@ -188,6 +188,17 @@ def generate_library(
     # Build DataFrame
     df = pd.DataFrame(rows)
 
+    # Pandas >=3.0 infers StringDtype for string columns, which coerces None
+    # to NaN. Restore None by forcing object dtype so downstream code sees
+    # None (not NaN) for null values.
+    for col in df.columns:
+        if df[col].isna().any():
+            df[col] = pd.Series(
+                [None if pd.isna(v) else v for v in df[col]],
+                dtype=object,
+                index=df.index,
+            )
+
     # Handle empty DataFrame case
     if len(df) == 0:
         if seqs_only:

@@ -32,6 +32,7 @@ html_theme_options = {
     "navigation_depth": 3,
 }
 html_static_path = ["_static"]
+html_logo = "poolparty_cartoon.png"
 html_css_files = ["custom.css"]
 
 # Create _static directory if it doesn't exist (avoids warning)

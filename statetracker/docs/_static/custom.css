@@ -1,13 +1,13 @@
-/* Custom styling for StateCounter documentation */
+/* Custom styling for StateTracker documentation */
 
 /* White background for the logo area */
 .wy-side-nav-search {
     background-color: #ffffff;
 }
 
-/* Hide the home icon and project name text, but keep the link for the logo */
+/* Hide the home icon and project name text, keep the link for the logo */
 .wy-side-nav-search > a {
-    font-size: 0;  /* Hide text */
+    font-size: 0;
 }
 
 /* Hide the home icon */

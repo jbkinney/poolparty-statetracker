@@ -359,8 +359,8 @@ class TestRegionMultiscanDesignCard:
             )
         df = result.generate_library(num_seqs=5, seed=42)
         col = _find_card_col(df, ".combination_index")
-        for _, row in df.iterrows():
-            assert row[col] is None
+        for val in df[col]:
+            assert val is None
 
 
 # ---------------------------------------------------------------------------

@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 
 # -- Project information -----------------------------------------------------
-project = "StateCounter"
+project = "StateTracker"
 copyright = "2025, Justin Kinney"
 author = "Justin Kinney"
 release = "0.1.0"
@@ -32,7 +32,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # -- Options for HTML output -------------------------------------------------
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
-html_logo = "statecounter_logo2.jpg"
+html_logo = "statetracker_cartoon.png"
 html_css_files = ["custom.css"]
 
 # Create _static directory if it doesn't exist (avoids warning)
