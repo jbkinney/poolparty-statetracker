@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "statetracker"
-version = "0.1.0"
+version = "0.1.1"
 description = "Composable states with unidirectional value propagation for enumerating combinatorial spaces"
 readme = "README.md"
 requires-python = ">=3.10"
