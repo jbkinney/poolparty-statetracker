@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 project = "StateTracker"
 copyright = "2025, Justin Kinney"
 author = "Justin Kinney"
-release = "0.1.0"
+release = "0.1.1"
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -19,12 +19,8 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx_autodoc_typehints",
-    "nbsphinx",
     "sphinx_copybutton",
 ]
-
-# Do NOT automatically execute notebooks when building.
-nbsphinx_execute = "never"
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

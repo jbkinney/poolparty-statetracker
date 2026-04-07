@@ -69,6 +69,8 @@ Synchronize
 
 .. autofunction:: statetracker.sync
 
+.. autofunction:: statetracker.synced_to
+
 Slice
 ~~~~~
 

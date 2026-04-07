@@ -13,7 +13,7 @@ libraries (see `PoolParty <https://github.com/jbkinney/poolparty-statetracker/tr
 solves a general problem: **random access to combinatorial spaces**.
 
 Statetracker enables you to build flexible combinatorial structures without having to keep track
-of the index math yourself. By automatically managing :ref:`States <concepts.ipynb#States-and-States>` and their relationships,
+of the index math yourself. By automatically managing :ref:`States <concepts-states>` and their relationships,
 StateTracker facilitates processes like shuffling, sampling, and splitting samples in a
 combinatorial space.
 
@@ -131,7 +131,7 @@ Contents
    motivation
    quickstart
    concepts
-   operations
+   operations/index
    alternatives
 
 .. toctree::
