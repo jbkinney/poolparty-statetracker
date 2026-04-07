@@ -3,7 +3,7 @@ Deep Mutational Scanning: Protein GB1
 
 This tutorial builds a deep mutational scanning (DMS) library for the
 IgG-binding domain of protein G (GB1), a 56-amino-acid protein domain.
-This library extends the GB1 DMS study by Olson et al. (*PNAS*, 2014)
+This library extends the GB1 DMS study by Olson et al. (*Current Biology*, 2014)
 by considering:
 
 - All single amino acid substitutions
