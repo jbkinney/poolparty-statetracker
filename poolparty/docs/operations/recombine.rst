@@ -28,8 +28,9 @@ Parameters
    * - ``pool``
      - ``Pool | str | None``
      - ``None``
-     - Parent pool for region-based recombination. If provided with
-       ``region``, the recombined sequences replace the region content.
+     - Parent pool or sequence string for region-based recombination. If
+       provided with ``region``, the recombined sequences replace the
+       region content.
    * - ``sources``
      - ``list[Pool]``
      - *(required)*
@@ -48,8 +49,8 @@ Parameters
    * - ``styles``
      - ``list[str] | None``
      - ``None``
-     - List of display styles, one per segment (length = ``num_breakpoints``
-       + 1).
+     - List of display styles cycled across segments. Any non-empty list is
+       accepted; styles wrap around if shorter than the segment count.
    * - ``style_by``
      - ``str``
      - ``'order'``
@@ -58,7 +59,9 @@ Parameters
    * - ``region``
      - ``str | None``
      - ``None``
-     - Name of a tagged region to restrict recombination to.
+     - Region to restrict recombination to: a tag name (``str``), an
+       explicit ``[start, stop]`` interval, or ``None`` for the full
+       sequence.
    * - ``mode``
      - ``str``
      - ``'random'``
@@ -67,7 +70,8 @@ Parameters
    * - ``num_states``
      - ``int | None``
      - ``None``
-     - Fix the total number of output states.
+     - Number of output states. ``None`` auto-computes in sequential mode
+       or defaults to 1 in random mode.
    * - ``iter_order``
      - ``int | None``
      - ``None``

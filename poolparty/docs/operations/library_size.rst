@@ -80,7 +80,11 @@ Per-category behaviour
      - ``deletion_scan``, ``insertion_scan``, ``replacement_scan``, ``shuffle_scan``, ``mutagenize_scan``, ``subseq_scan``, and multi-window variants
    * - Regions
      - multiplies
-     - ``replace_region``, ``region_scan``, ``region_multiscan``
+     - ``region_scan``, ``region_multiscan``
+   * - Regions
+     - multiplies or unchanged
+     - ``replace_region`` — multiplies with ``sync=False`` (Cartesian product);
+       unchanged with ``sync=True`` (default, 1:1 pairing)
    * - Regions
      - unchanged
      - ``insert_tags``, ``remove_tags``, ``annotate_region``, ``apply_at_region``, ``extract_region``

@@ -44,6 +44,7 @@ Parameters
      - ``int | None``
      - ``None``
      - Number of states. Only relevant with ``codon_selection="random"``.
+       ``None`` generates sequences on-the-fly.
    * - ``genetic_code``
      - ``str | dict``
      - ``"standard"``

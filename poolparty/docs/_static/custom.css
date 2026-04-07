@@ -51,6 +51,7 @@ table.docutils td, table.docutils th {
     font-size: 0.87em;
     line-height: 1.75;
     border-radius: 0 4px 4px 0;
+    overflow-x: auto;
 }
 .pp-header {
     display: block;
@@ -73,9 +74,15 @@ table.docutils td, table.docutils th {
 .pp-codon-b { color: #dc2626; }
 .pp-codon-c { color: #059669; }
 /* XML tag literals — used in region_scan / region_multiscan output */
-.pp-xtag     { color: #c0392b; }
-.pp-xtag-b   { color: #2980b9; }
-.pp-xtag-cre { color: #16a085; }
+.pp-xtag       { color: #c0392b; }
+.pp-xtag-b     { color: #2980b9; }
+.pp-xtag-cre   { color: #16a085; }
+.pp-xtag-light { color: #b0b0b0; }
+/* User-specified styles (tutorials / custom output) */
+.pp-style-blue   { color: #2563eb; }
+.pp-style-purple { color: #800080; }
+.pp-style-orange { color: #ff8c00; }
+.pp-style-bold   { font-weight: bold; }
 /* Truncation indicator */
 .pp-ellipsis { color: #9ca3af; font-style: italic; }
 

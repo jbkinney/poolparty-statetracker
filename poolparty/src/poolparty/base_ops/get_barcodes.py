@@ -1,6 +1,5 @@
 """GetBarcodes operation - generate DNA barcodes with distance and quality constraints."""
 
-import random
 from numbers import Real
 from typing import Literal, Union
 
@@ -8,11 +7,11 @@ import numpy as np
 
 from ..dna_pool import DnaPool
 from ..operation import Operation
-from ..types import CardsType, Optional, Pool_type, Seq, Sequence, beartype
+from ..types import CardsType, Optional, Seq, Sequence, beartype
 from ..utils.dna_seq import DnaSeq
 
 
-ALPHABET = ["A", "C", "G", "T"]
+_INT_TO_BASE = np.array(list("ACGT"))
 
 
 def _hamming_distance(s1: str, s2: str) -> int:
@@ -38,28 +37,55 @@ def _edit_distance(s1: str, s2: str) -> int:
     return prev_row[m]
 
 
-def _check_homopolymer(seq: str, max_homopolymer: int) -> bool:
-    """True if no homopolymer run exceeds max_homopolymer."""
-    if len(seq) <= max_homopolymer:
-        return True
-    run_length = 1
-    for i in range(1, len(seq)):
-        if seq[i] == seq[i - 1]:
-            run_length += 1
-            if run_length > max_homopolymer:
-                return False
-        else:
-            run_length = 1
-    return True
+def _gc_filter_batch(candidates: np.ndarray, gc_range: tuple[float, float]) -> np.ndarray:
+    """Boolean mask for candidates within GC range. Encoding: C=1, G=2."""
+    gc_count = ((candidates == 1) | (candidates == 2)).sum(axis=1)
+    gc_frac = gc_count / candidates.shape[1]
+    return (gc_frac >= gc_range[0]) & (gc_frac <= gc_range[1])
 
 
-def _check_gc_content(seq: str, min_gc: float, max_gc: float) -> bool:
-    """True if GC content is within [min_gc, max_gc]."""
-    if not seq:
-        return True
-    gc_count = sum(1 for base in seq if base in ("G", "C"))
-    gc_frac = gc_count / len(seq)
-    return min_gc <= gc_frac <= max_gc
+def _homopolymer_filter_batch(candidates: np.ndarray, max_homopolymer: int) -> np.ndarray:
+    """Boolean mask: True where no homopolymer run exceeds max_homopolymer."""
+    n, L = candidates.shape
+    if max_homopolymer < 1:
+        return np.zeros(n, dtype=bool)
+    if max_homopolymer >= L:
+        return np.ones(n, dtype=bool)
+    # same[i,j] is True when base j equals base j+1
+    same = candidates[:, :-1] == candidates[:, 1:]
+    window = max_homopolymer
+    if window > same.shape[1]:
+        return np.ones(n, dtype=bool)
+    # Sliding-window sum via cumulative sum detects runs > max_homopolymer
+    cumsum = np.zeros((n, same.shape[1] + 1), dtype=np.int32)
+    cumsum[:, 1:] = np.cumsum(same, axis=1)
+    window_sums = cumsum[:, window:] - cumsum[:, :-window]
+    return ~(window_sums == window).any(axis=1)
+
+
+def _generate_candidate_batch(
+    rng: np.random.Generator,
+    batch_size: int,
+    length: int,
+    gc_range: Optional[tuple[float, float]],
+    max_homopolymer: Optional[int],
+) -> np.ndarray:
+    """Generate a batch of uint8 candidates, pre-filtered by GC and homopolymer."""
+    candidates = rng.integers(0, 4, size=(batch_size, length), dtype=np.uint8)
+    if gc_range is not None:
+        candidates = candidates[_gc_filter_batch(candidates, gc_range)]
+    if max_homopolymer is not None and len(candidates) > 0:
+        candidates = candidates[_homopolymer_filter_batch(candidates, max_homopolymer)]
+    return candidates
+
+
+def _raise_insufficient(n_found: int, max_attempts: int, num_barcodes: int) -> None:
+    raise ValueError(
+        f"Could only generate {n_found} barcodes satisfying constraints "
+        f"within {max_attempts} attempts (requested {num_barcodes}). "
+        "Try relaxing constraints (lower min_edit_distance, wider gc_range, etc.) "
+        "or increasing max_attempts."
+    )
 
 
 def _generate_barcodes(
@@ -75,50 +101,191 @@ def _generate_barcodes(
     seed: Optional[int],
     max_attempts: int,
 ) -> list[str]:
-    """Generate barcodes using greedy random algorithm."""
-    rng = random.Random(seed)
-    accepted: list[str] = []
+    """Generate barcodes using vectorized batch generation with greedy selection."""
+    if len(lengths) == 1:
+        return _generate_fixed_length(
+            num_barcodes, lengths[0], min_edit_distance, min_hamming_distance,
+            max_homopolymer, gc_range, avoid_sequences, avoid_min_distance,
+            seed, max_attempts,
+        )
+    return _generate_variable_length(
+        num_barcodes, lengths, length_proportions, min_edit_distance,
+        min_hamming_distance, max_homopolymer, gc_range, avoid_sequences,
+        avoid_min_distance, seed, max_attempts,
+    )
 
-    if len(lengths) > 1 and length_proportions is not None:
-        length_quotas = {}
+
+def _generate_fixed_length(
+    num_barcodes: int,
+    length: int,
+    min_edit_distance: Optional[int],
+    min_hamming_distance: Optional[int],
+    max_homopolymer: Optional[int],
+    gc_range: Optional[tuple[float, float]],
+    avoid_sequences: list[str],
+    avoid_min_distance: Optional[int],
+    seed: Optional[int],
+    max_attempts: int,
+) -> list[str]:
+    """Vectorized generation for fixed-length barcodes.
+
+    Optimisation tiers (each subsumes the previous):
+    1. min_distance <= 1  → set-based uniqueness, no pairwise check
+    2. min_distance >= 2  → vectorized numpy hamming against accepted array
+    3. min_edit >= 3      → hamming pre-filter (edit <= hamming rejects fast)
+                            + full Levenshtein for survivors
+    """
+    rng = np.random.default_rng(seed)
+
+    eff_edit = min_edit_distance or 0
+    eff_hamming = min_hamming_distance or 0
+
+    # For same-length strings, edit_distance <= hamming_distance.
+    # edit=0 iff hamming=0; edit=1 iff hamming=1 (substitution only).
+    # So for D <= 2: min_edit=D <=> min_hamming=D on same-length strings.
+    # For D >= 3: full edit verification needed after hamming pre-filter.
+    min_hamming_eff = max(eff_hamming, eff_edit)
+    need_full_edit = min_edit_distance is not None and eff_edit >= 3
+
+    accepted = np.empty((num_barcodes, length), dtype=np.uint8)
+    accepted_set: set[bytes] = set()
+    n_accepted = 0
+
+    batch_size = max(num_barcodes * 4, 50_000)
+    total_attempts = 0
+
+    while n_accepted < num_barcodes and total_attempts < max_attempts:
+        current_batch = min(batch_size, max_attempts - total_attempts)
+        candidates = _generate_candidate_batch(
+            rng, current_batch, length, gc_range, max_homopolymer
+        )
+        total_attempts += current_batch
+
+        for i in range(len(candidates)):
+            if n_accepted >= num_barcodes:
+                break
+
+            cand = candidates[i]
+            key = cand.tobytes()
+
+            if key in accepted_set:
+                continue
+
+            # Vectorized hamming distance against all accepted barcodes
+            if n_accepted > 0 and min_hamming_eff > 1:
+                hamming_dists = (accepted[:n_accepted] != cand).sum(axis=1)
+                if hamming_dists.min() < min_hamming_eff:
+                    continue
+
+                if need_full_edit:
+                    cand_str = "".join(_INT_TO_BASE[cand])
+                    fail = False
+                    for j in range(n_accepted):
+                        if _edit_distance(cand_str, "".join(_INT_TO_BASE[accepted[j]])) < eff_edit:
+                            fail = True
+                            break
+                    if fail:
+                        continue
+
+            if avoid_sequences and avoid_min_distance is not None:
+                cand_str = "".join(_INT_TO_BASE[cand])
+                if any(
+                    _edit_distance(cand_str, av) < avoid_min_distance
+                    for av in avoid_sequences
+                ):
+                    continue
+
+            accepted_set.add(key)
+            accepted[n_accepted] = cand
+            n_accepted += 1
+
+    if n_accepted < num_barcodes:
+        _raise_insufficient(n_accepted, max_attempts, num_barcodes)
+
+    chars = _INT_TO_BASE[accepted[:num_barcodes]]
+    return ["".join(row) for row in chars]
+
+
+def _generate_variable_length(
+    num_barcodes: int,
+    lengths: list[int],
+    length_proportions: Optional[list[float]],
+    min_edit_distance: Optional[int],
+    min_hamming_distance: Optional[int],
+    max_homopolymer: Optional[int],
+    gc_range: Optional[tuple[float, float]],
+    avoid_sequences: list[str],
+    avoid_min_distance: Optional[int],
+    seed: Optional[int],
+    max_attempts: int,
+) -> list[str]:
+    """Generation for variable-length barcodes with batch candidate pools."""
+    rng = np.random.default_rng(seed)
+
+    if length_proportions is not None:
+        length_quotas: dict[int, int] = {}
         remaining = num_barcodes
         for i, L in enumerate(lengths[:-1]):
             quota = round(length_proportions[i] * num_barcodes)
             length_quotas[L] = quota
             remaining -= quota
         length_quotas[lengths[-1]] = remaining
-    elif len(lengths) > 1:
+    else:
         base_quota = num_barcodes // len(lengths)
         remainder = num_barcodes % len(lengths)
         length_quotas = {}
         for i, L in enumerate(lengths):
             length_quotas[L] = base_quota + (1 if i < remainder else 0)
-    else:
-        length_quotas = None
 
-    length_counts = {L: 0 for L in lengths} if length_quotas else None
+    length_counts = {L: 0 for L in lengths}
 
-    attempts = 0
-    while len(accepted) < num_barcodes and attempts < max_attempts:
-        attempts += 1
+    pool_batch = max(num_barcodes * 2, 20_000)
+    candidate_pools: dict[int, np.ndarray] = {}
+    pool_idx: dict[int, int] = {}
+    for L in lengths:
+        candidate_pools[L] = _generate_candidate_batch(
+            rng, pool_batch, L, gc_range, max_homopolymer
+        )
+        pool_idx[L] = 0
 
-        if length_quotas is not None:
-            available = [L for L in lengths if length_counts[L] < length_quotas[L]]
-            if not available:
-                break
-            chosen_length = rng.choice(available)
-        else:
-            chosen_length = lengths[0]
+    accepted: list[str] = []
+    accepted_set: set[str] = set()
+    total_attempts = 0
 
-        candidate = "".join(rng.choice(ALPHABET) for _ in range(chosen_length))
+    while len(accepted) < num_barcodes and total_attempts < max_attempts:
+        available = [L for L in lengths if length_counts[L] < length_quotas[L]]
+        if not available:
+            break
+        chosen_length = available[int(rng.integers(len(available)))]
 
-        if max_homopolymer is not None and not _check_homopolymer(candidate, max_homopolymer):
-            continue
-        if gc_range is not None and not _check_gc_content(candidate, gc_range[0], gc_range[1]):
+        pool = candidate_pools[chosen_length]
+        idx = pool_idx[chosen_length]
+
+        if idx >= len(pool):
+            pool = _generate_candidate_batch(
+                rng, pool_batch, chosen_length, gc_range, max_homopolymer
+            )
+            candidate_pools[chosen_length] = pool
+            pool_idx[chosen_length] = 0
+            idx = 0
+            if len(pool) == 0:
+                total_attempts += pool_batch
+                continue
+
+        cand_arr = pool[idx]
+        pool_idx[chosen_length] = idx + 1
+        total_attempts += 1
+
+        candidate = "".join(_INT_TO_BASE[cand_arr])
+
+        if candidate in accepted_set:
             continue
 
         if avoid_sequences and avoid_min_distance is not None:
-            if any(_edit_distance(candidate, av) < avoid_min_distance for av in avoid_sequences):
+            if any(
+                _edit_distance(candidate, av) < avoid_min_distance
+                for av in avoid_sequences
+            ):
                 continue
 
         valid = True
@@ -135,16 +302,11 @@ def _generate_barcodes(
             continue
 
         accepted.append(candidate)
-        if length_counts is not None:
-            length_counts[chosen_length] += 1
+        accepted_set.add(candidate)
+        length_counts[chosen_length] += 1
 
     if len(accepted) < num_barcodes:
-        raise ValueError(
-            f"Could only generate {len(accepted)} barcodes satisfying constraints "
-            f"within {max_attempts} attempts (requested {num_barcodes}). "
-            "Try relaxing constraints (lower min_edit_distance, wider gc_range, etc.) "
-            "or increasing max_attempts."
-        )
+        _raise_insufficient(len(accepted), max_attempts, num_barcodes)
 
     return accepted
 

@@ -40,10 +40,10 @@ Parameters
      - ``None``
      - Explicit list of window start positions. ``None`` = all valid positions.
    * - ``region``
-     - ``str | None``
+     - ``str | list | None``
      - ``None``
-     - Name of a tagged region to restrict the scan to. Flanks are never
-       modified.
+     - Restrict the scan to a named region or ``[start, stop]`` interval.
+       Flanks are never modified.
    * - ``shuffle_type``
      - ``str``
      - ``"mono"``
@@ -66,7 +66,8 @@ Parameters
    * - ``num_states``
      - ``int | None``
      - ``None``
-     - Fix the total number of output states.
+     - Number of output states. ``None`` auto-computes in sequential mode
+       or defaults to 1 in random mode.
    * - ``style``
      - ``str | None``
      - ``None``
@@ -74,7 +75,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Controls which axis varies fastest when ``shuffles_per_position > 1``.
+     - Iteration priority for downstream multi-pool composition.
 
 .. note::
 

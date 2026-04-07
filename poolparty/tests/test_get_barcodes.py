@@ -5,15 +5,10 @@ import pytest
 import poolparty as pp
 from poolparty.base_ops.get_barcodes import (
     GetBarcodesOp,
-    _check_gc_content,
-    _check_homopolymer,
     _edit_distance,
     _hamming_distance,
     get_barcodes,
 )
-
-
-# --- Helper function tests ---
 
 
 class TestDistanceFunctions:
@@ -44,40 +39,6 @@ class TestDistanceFunctions:
 
     def test_edit_distance_different_lengths(self):
         assert _edit_distance("ACGT", "ACGTTT") == 2
-
-
-class TestHomopolymerCheck:
-    def test_no_homopolymer(self):
-        assert _check_homopolymer("ACGT", 2) is True
-
-    def test_homopolymer_at_limit(self):
-        assert _check_homopolymer("AACGT", 2) is True
-
-    def test_homopolymer_exceeds(self):
-        assert _check_homopolymer("AAACGT", 2) is False
-
-    def test_all_same(self):
-        assert _check_homopolymer("AAAA", 3) is False
-
-    def test_empty(self):
-        assert _check_homopolymer("", 1) is True
-
-
-class TestGCCheck:
-    def test_within_range(self):
-        assert _check_gc_content("ACGT", 0.4, 0.6) is True
-
-    def test_below_range(self):
-        assert _check_gc_content("AATT", 0.4, 0.6) is False
-
-    def test_above_range(self):
-        assert _check_gc_content("CCGG", 0.0, 0.4) is False
-
-    def test_at_boundary(self):
-        assert _check_gc_content("ACGT", 0.5, 0.5) is True
-
-
-# --- GetBarcodesOp tests ---
 
 
 class TestGetBarcodesBasic:
@@ -124,6 +85,14 @@ class TestGetBarcodesConstraints:
                 for j in range(i + 1, len(seqs)):
                     assert _edit_distance(seqs[i], seqs[j]) >= 3
 
+    def test_min_edit_distance_one_unique(self):
+        with pp.Party():
+            pool = pp.get_barcodes(
+                num_barcodes=500, length=8, min_edit_distance=1, seed=42
+            )
+            df = pool.generate_library(num_cycles=1)
+            assert df["seq"].nunique() == 500
+
     def test_min_hamming_distance(self):
         with pp.Party():
             pool = pp.get_barcodes(
@@ -152,7 +121,9 @@ class TestGetBarcodesConstraints:
             )
             df = pool.generate_library(num_cycles=1)
             for seq in df["seq"]:
-                assert _check_homopolymer(seq, 2)
+                assert all(
+                    len(set(seq[k:k+3])) > 1 for k in range(len(seq) - 2)
+                )
 
     def test_avoid_sequences(self):
         avoid = ["ACGTACGT"]
@@ -167,6 +138,20 @@ class TestGetBarcodesConstraints:
             df = pool.generate_library(num_cycles=1)
             for seq in df["seq"]:
                 assert _edit_distance(seq, "ACGTACGT") >= 3
+
+    def test_avoid_sequences_distance_one_exact_match(self):
+        avoid = ["ACGTACGT"]
+        with pp.Party():
+            pool = pp.get_barcodes(
+                num_barcodes=100,
+                length=8,
+                avoid_sequences=avoid,
+                avoid_min_distance=1,
+                min_edit_distance=1,
+                seed=42,
+            )
+            df = pool.generate_library(num_cycles=1)
+            assert "ACGTACGT" not in set(df["seq"])
 
     def test_combined_constraints(self):
         with pp.Party():
@@ -184,7 +169,9 @@ class TestGetBarcodesConstraints:
             for seq in seqs:
                 gc = sum(1 for c in seq if c in "GC") / len(seq)
                 assert 0.3 <= gc <= 0.7
-                assert _check_homopolymer(seq, 3)
+                assert all(
+                    len(set(seq[k:k+4])) > 1 for k in range(len(seq) - 3)
+                )
             for i in range(len(seqs)):
                 for j in range(i + 1, len(seqs)):
                     assert _edit_distance(seqs[i], seqs[j]) >= 3
@@ -354,7 +341,7 @@ class TestReplaceRegionSync:
                 mode="sequential",
             )
             content = pp.from_seqs(["XX", "YY", "ZZ"], mode="sequential")
-            result = bg.replace_region(content, "bc", sync=True)
+            result = bg.replace_region(content, "bc", sync=True, keep_tags=False)
             df = result.generate_library(num_cycles=1)
 
         assert len(df) == 3
@@ -371,7 +358,7 @@ class TestReplaceRegionSync:
                 mode="sequential",
             )
             content = pp.from_seqs(["XX", "YY"], mode="sequential")
-            result = bg.replace_region(content, "bc")
+            result = bg.replace_region(content, "bc", sync=False, keep_tags=False)
 
         assert result.num_states == 4
 
@@ -385,7 +372,7 @@ class TestReplaceRegionSync:
             barcodes = pp.get_barcodes(
                 num_barcodes=3, length=4, min_edit_distance=2, seed=42
             )
-            result = bg.replace_region(barcodes, "bc", sync=True)
+            result = bg.replace_region(barcodes, "bc", sync=True, keep_tags=False)
             df = result.generate_library(num_cycles=1)
 
         assert len(df) == 3
@@ -446,7 +433,7 @@ class TestReplaceRegionKeepTags:
         with pp.Party():
             bg = pp.from_seq("AAA<bc/>TTT")
             content = pp.from_seq("XXXX")
-            result = bg.replace_region(content, "bc")
+            result = bg.replace_region(content, "bc", keep_tags=False)
             assert not result.has_region("bc")
 
 

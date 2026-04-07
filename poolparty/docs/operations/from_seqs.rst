@@ -28,14 +28,16 @@ Parameters
      - *(required)*
      - List of DNA strings. Must not be empty.
    * - ``pool``
-     - ``Pool | None``
+     - ``Pool | str | None``
      - ``None``
-     - Background pool. When provided with ``region``, each sequence
-       replaces the content of that region. Requires ``region``.
+     - Background pool or sequence string. When provided with ``region``,
+       each sequence replaces the content of that region. Requires
+       ``region``.
    * - ``region``
-     - ``str | None``
+     - ``str | list | None``
      - ``None``
-     - Region to replace in ``pool``. Required when ``pool`` is provided.
+     - Region to replace in ``pool``: a marker name or ``[start, stop]``
+       interval. Required when ``pool`` is provided.
    * - ``seq_names``
      - ``list[str] | None``
      - ``None``
@@ -56,8 +58,9 @@ Parameters
    * - ``num_states``
      - ``int | None``
      - ``None``
-     - Number of states to generate. In ``'sequential'`` mode, cycles if
-       greater than ``len(seqs)`` or clips if less.
+     - Number of output states. ``None`` uses ``len(seqs)`` in sequential
+       mode or defaults to 1 in random mode. Cycles if greater than
+       ``len(seqs)``.
    * - ``iter_order``
      - ``int | None``
      - ``None``

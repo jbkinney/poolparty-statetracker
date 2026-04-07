@@ -41,7 +41,8 @@ Parameters
    * - ``region``
      - ``str | None``
      - ``None``
-     - Name of a tagged region to restrict mutations to. Flanks are unchanged.
+     - Region to restrict mutations to: a tag name (``str``), an explicit
+       ``[start, stop]`` interval, or ``None`` for the full sequence.
    * - ``allowed_chars``
      - ``str | None``
      - ``None``
@@ -59,12 +60,13 @@ Parameters
    * - ``mode``
      - ``str``
      - ``'random'``
-     - ``'sequential'`` enumerates all single-substitution variants in order;
-       ``'random'`` samples each draw independently.
+     - ``'sequential'`` enumerates mutation variants in order (requires
+       ``num_mutations``); ``'random'`` samples each draw independently.
    * - ``num_states``
      - ``int | None``
      - ``None``
-     - Fix the total number of output states.
+     - Number of output states. ``None`` auto-computes in sequential mode
+       or defaults to 1 in random mode.
    * - ``iter_order``
      - ``int | None``
      - ``None``

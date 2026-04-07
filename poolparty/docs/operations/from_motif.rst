@@ -31,14 +31,15 @@ Parameters
        row per sequence position. Missing columns are treated as
        probability 0. Each row is normalised to sum to 1.
    * - ``pool``
-     - ``Pool | None``
+     - ``Pool | str | None``
      - ``None``
-     - Background pool. When provided with ``region``, the sampled
-       sequence replaces the content of that region.
+     - Background pool or sequence string. When provided with ``region``,
+       the sampled sequence replaces the content of that region.
    * - ``region``
-     - ``str | None``
+     - ``str | list | None``
      - ``None``
-     - Region to replace in ``pool``. Required when ``pool`` is provided.
+     - Region to replace in ``pool``: a marker name or ``[start, stop]``
+       interval. Required when ``pool`` is provided.
    * - ``prefix``
      - ``str | None``
      - ``None``

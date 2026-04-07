@@ -75,8 +75,8 @@ the tagged region. Flanking sequences are left unchanged:
     </div>
 
 Only the 8 bases inside ``<cre>`` are mutated; the flanking ``AAAA`` and
-``TTTT`` remain intact. See :doc:`operations/region_operations` for the full
-list of region-aware operations.
+``TTTT`` remain intact. See :doc:`operations/region_operations` for operations
+that create and manage region tags.
 
 ----
 

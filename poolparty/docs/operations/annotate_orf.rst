@@ -37,26 +37,30 @@ Parameters
      - ``tuple[int, int] | None``
      - ``None``
      - ``(start, stop)`` half-open interval defining the region boundaries.
-       If ``None``, the region must already exist as a tagged region in the
-       sequence.
+       If ``None`` and the region doesn't exist, the entire sequence is used.
+       Must be ``None`` if the region already exists.
    * - ``frame``
      - ``int``
      - ``1``
-     - Reading frame (1, 2, or 3). Determines which codon grid is used by
-       downstream ORF operations.
+     - Reading frame (+1..+3 or -1..-3). Positive = 5'->3', negative =
+       3'->5'. Determines which codon grid is used by downstream ORF
+       operations.
    * - ``style``
      - ``str | None``
      - ``None``
-     - A single display style applied uniformly to the ORF region.
+     - A single display style applied uniformly to the ORF region. Mutually
+       exclusive with ``style_codons`` and ``style_frames``.
    * - ``style_codons``
      - ``list[str] | None``
      - ``None``
      - List of style names cycled across whole codons within the ORF.
+       Mutually exclusive with ``style`` and ``style_frames``.
    * - ``style_frames``
      - ``list[str] | None``
      - ``None``
      - List of style names (length a multiple of 3) applied per base
-       position within each codon.
+       position within each codon. Mutually exclusive with ``style`` and
+       ``style_codons``.
    * - ``iter_order``
      - ``float | None``
      - ``None``

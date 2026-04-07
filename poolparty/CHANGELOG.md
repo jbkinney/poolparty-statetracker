@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING:** `replace_region` now defaults to `sync=True` and
+  `keep_tags=True` (previously both `False`). Code relying on the old
+  Cartesian-product or tag-stripping behavior must pass `sync=False`
+  and/or `keep_tags=False` explicitly.
+- Vectorized `get_barcodes` internals with NumPy for significantly
+  faster barcode generation at scale.
+
+### Added
+- DMS (protein GB1) and MPRA (regulatory grammar) tutorial pages.
+
+### Removed
+- Stale scalar helpers `_check_gc_content` and `_check_homopolymer`
+  from `get_barcodes` (replaced by vectorized batch equivalents).
+
+## [0.1.1] - 2026-04-06
+
+### Fixed
+- Added `typing_extensions` to dependencies.
+- Bumped statetracker dependency to v0.1.1.
+
 ## [0.1.0] - 2026-04-03
 
 Initial release. See [Liu, Cordero, and Kinney (2026)](https://doi.org/XXXX) for a full description.

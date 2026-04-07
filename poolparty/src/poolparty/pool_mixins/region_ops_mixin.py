@@ -210,8 +210,8 @@ class RegionOpsMixin:
         content_pool: Union[Pool_type, str],
         region_name: str,
         rc: bool = False,
-        sync: bool = False,
-        keep_tags: bool = False,
+        sync: bool = True,
+        keep_tags: bool = True,
         iter_order: Optional[Real] = None,
         prefix: Optional[str] = None,
     ) -> Self:
@@ -225,10 +225,10 @@ class RegionOpsMixin:
             Name of the region to replace.
         rc : bool, default=False
             If True, reverse-complement the content before insertion.
-        sync : bool, default=False
+        sync : bool, default=True
             If True, synchronize self and content_pool so they iterate
             in lock-step (1:1 pairing) instead of a Cartesian product.
-        keep_tags : bool, default=False
+        keep_tags : bool, default=True
             If True, preserve the region's XML tags around the new content.
         iter_order : Optional[Real], default=None
             Iteration order priority for the Operation.

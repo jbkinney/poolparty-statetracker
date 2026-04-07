@@ -48,10 +48,6 @@ Properties
    * - ``seq_length``
      - ``int | None``
      - Fixed sequence length, or ``None`` for variable-length pools.
-   * - ``iter_order``
-     - ``float``
-     - Iteration priority. Controls which pool's sequences change most
-       rapidly when generating combinations in a joined or stacked pool.
    * - ``regions``
      - ``set[Region]``
      - Set of :class:`~poolparty.Region` objects present in this pool's sequences.
@@ -478,15 +474,15 @@ Print an ASCII tree of the computation graph rooted at this pool. Returns
 
 .. code-block:: python
 
-    wt     = pp.from_seq("ACG")
-    mut    = wt.mutagenize(num_mutations=1, mode="sequential")
-    scored = mut.score(pp.calc_gc, card_key="gc", cards={"gc": "gc"})
-    scored.print_dag()
+    wt       = pp.from_seq("ACG")
+    mut      = wt.mutagenize(num_mutations=1, mode="sequential")
+    repeated = mut * 2
+    repeated.print_dag()
 
 .. code-block:: text
 
-    pool[2] (pool, n=9)
-    └── op[2]:score [mode=fixed, n=1]
+    pool[2] (pool, n=18)
+    └── op[2]:repeat [mode=sequential, n=2]
         └── pool[1] (pool, n=9)
             └── op[1]:mutagenize [mode=sequential, n=9]
                 └── pool[0] (pool, n=1)

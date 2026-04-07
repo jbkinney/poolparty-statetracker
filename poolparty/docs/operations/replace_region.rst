@@ -2,9 +2,10 @@ replace_region
 ==============
 
 Replace the entire content of a named region with sequences drawn from a
-content pool. Every combination of background sequence and content sequence
-is produced (Cartesian product). The region tags are removed in the output;
-only the new content occupies that position.
+content pool. By default, background and content states are paired 1:1
+(``sync=True``) and region tags are preserved (``keep_tags=True``).
+Set ``sync=False`` for a Cartesian product and ``keep_tags=False`` to
+strip the region tags.
 
 .. code-block:: python
 
@@ -27,7 +28,8 @@ Parameters
    * - ``pool``
      - ``Pool | str``
      - *(required)*
-     - The background Pool whose named region will be replaced.
+     - The background Pool or sequence string whose named region will be
+       replaced.
    * - ``content_pool``
      - ``Pool``
      - *(required)*
@@ -43,12 +45,12 @@ Parameters
        inserting it.
    * - ``sync``
      - ``bool``
-     - ``False``
+     - ``True``
      - When ``True``, pair background and content states 1:1 (lockstep
        iteration) instead of taking the Cartesian product.
    * - ``keep_tags``
      - ``bool``
-     - ``False``
+     - ``True``
      - When ``True``, preserve the region tags around the replaced content
        so the region can still be referenced by downstream operations.
    * - ``iter_order``
@@ -71,38 +73,41 @@ Parameters
 Examples
 --------
 
-Replace a region with all 4-mers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Pair each background with its own insert
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Enumerate all 256 4-mers inside the ``cre`` region using
-:func:`~poolparty.from_iupac`.
+When both pools have the same number of states, the default ``sync=True``
+pairs them 1:1. Tags are preserved (``keep_tags=True``) so the region can
+be referenced by later operations.
 
 .. code-block:: python
 
     import poolparty as pp
     pp.init()
 
-    wt      = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
-    inserts = pp.from_iupac("NNNN", mode="sequential")
-    library = pp.replace_region(wt, inserts, region_name="cre")
+    backgrounds = pp.from_seqs(
+        ["AAAA<bc/>TTTT", "CCCC<bc/>GGGG", "GGGG<bc/>CCCC"],
+        mode="sequential",
+    )
+    inserts = pp.from_seqs(["XX", "YY", "ZZ"], mode="sequential")
+    library = pp.replace_region(backgrounds, inserts, region_name="bc")
     library.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">library: seq_length=12, num_states=256</em>
-    AAAAAAAATTTT<br>
-    AAAAAAACTTTT<br>
-    AAAAAAAGTTTT<br>
-    AAAAAAATTTTT<br>
-    AAAAAACATTTT<br>
-    <span class="pp-ellipsis">... (256 total)</span>
+    <em class="pp-header">library: seq_length=None, num_states=3</em>
+    AAAA<span class="pp-xtag-cre">&lt;bc&gt;</span>XX<span class="pp-xtag-cre">&lt;/bc&gt;</span>TTTT<br>
+    CCCC<span class="pp-xtag-cre">&lt;bc&gt;</span>YY<span class="pp-xtag-cre">&lt;/bc&gt;</span>GGGG<br>
+    GGGG<span class="pp-xtag-cre">&lt;bc&gt;</span>ZZ<span class="pp-xtag-cre">&lt;/bc&gt;</span>CCCC
     </div>
 
-Replace with a small explicit set
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Replace a region with multiple variants
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Supply :func:`~poolparty.from_seqs` to substitute only specific sequences.
+A single background with multiple inserts requires ``sync=False`` (different
+state counts cannot be synced). Here the 4-base ``cre`` region is replaced
+with three shorter variants.
 
 .. code-block:: python
 
@@ -111,20 +116,20 @@ Supply :func:`~poolparty.from_seqs` to substitute only specific sequences.
 
     wt      = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
     inserts = pp.from_seqs(["AAA", "TTT", "CCC"], mode="sequential")
-    library = pp.replace_region(wt, inserts, region_name="cre")
+    library = pp.replace_region(wt, inserts, region_name="cre", sync=False, keep_tags=False)
     library.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
     <em class="pp-header">library: seq_length=11, num_states=3</em>
-    AAAAAAAATTTT<br>
+    AAAAAAATTTT<br>
     AAAATTTTTTT<br>
     AAAACCCTTTT
     </div>
 
 Replace a zero-length point tag (pure insertion)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When the region is a zero-length point tag, ``replace_region`` inserts
 without deleting any bases.
@@ -136,7 +141,7 @@ without deleting any bases.
 
     wt      = pp.from_seq("AAAA<ins/>TTTT")
     inserts = pp.from_seqs(["GC", "AT"], mode="sequential")
-    library = pp.replace_region(wt, inserts, region_name="ins")
+    library = pp.replace_region(wt, inserts, region_name="ins", sync=False, keep_tags=False)
     library.print_library()
 
 .. raw:: html
@@ -147,27 +152,39 @@ without deleting any bases.
     AAAAATTTTT
     </div>
 
-Insert reverse-complemented content (rc=True)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Cartesian product with sync=False
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``rc=True`` reverse-complements each content sequence before insertion.
+Setting ``sync=False`` takes the Cartesian product of background and content
+states. Compare with the first example — same inputs, but 9 states instead
+of 3.
 
 .. code-block:: python
 
     import poolparty as pp
     pp.init()
 
-    wt      = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
-    inserts = pp.from_seqs(["GCGC", "ATAT"], mode="sequential")
-    library = pp.replace_region(wt, inserts, region_name="cre", rc=True)
+    backgrounds = pp.from_seqs(
+        ["AAAA<bc/>TTTT", "CCCC<bc/>GGGG", "GGGG<bc/>CCCC"],
+        mode="sequential",
+    )
+    inserts = pp.from_seqs(["XX", "YY", "ZZ"], mode="sequential")
+    library = pp.replace_region(backgrounds, inserts, region_name="bc", sync=False, keep_tags=False)
     library.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">library: seq_length=12, num_states=2</em>
-    AAAAGCGCTTTT<br>
-    AAAAATATTTTT
+    <em class="pp-header">library: seq_length=None, num_states=9</em>
+    AAAAXXTTTT<br>
+    AAAAYYTTTT<br>
+    AAAAZZTTTT<br>
+    CCCCXXGGGG<br>
+    CCCCYYGGGG<br>
+    CCCCZZGGGG<br>
+    GGGGXXCCCC<br>
+    GGGGYYCCCC<br>
+    GGGGZZCCCC
     </div>
 
 See :func:`~poolparty.replace_region`.

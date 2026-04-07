@@ -202,7 +202,7 @@ def test_replace_region_contract_tracing_c1_c2_and_i8() -> None:
     with pp.Party():
         bg = pp.stack([pp.from_seq("AA<ins/>TT"), pp.from_seq("GG<ins/>CC")])
         content = pp.from_seqs(["X", "Y", "Z"], mode="sequential")
-        replaced = pp.replace_region(bg, content, "ins")
+        replaced = pp.replace_region(bg, content, "ins", sync=False, keep_tags=False)
         df = replaced.generate_library(num_cycles=1)
 
     assert replaced.seq_length == 5
@@ -235,7 +235,7 @@ def test_replace_region_adversarial_sync_keep_tags_and_xml() -> None:
 
 def test_replace_region_adversarial_rc() -> None:
     with pp.Party():
-        replaced = pp.replace_region("A<r/>T", "AG", "r", rc=True)
+        replaced = pp.replace_region("A<r/>T", "AG", "r", rc=True, sync=False, keep_tags=False)
         df = replaced.generate_library(num_cycles=1)
 
     assert df["seq"].iloc[0] == "ACTT"
@@ -360,8 +360,8 @@ def test_replace_region_mixin_should_forward_rc() -> None:
     with pp.Party():
         pool = pp.from_seq("AA<r/>TT")
         content = pp.from_seq("AG")
-        via_mixin = pool.replace_region(content, "r", rc=True)
-        via_factory = pp.replace_region(pool, content, "r", rc=True)
+        via_mixin = pool.replace_region(content, "r", rc=True, sync=False, keep_tags=False)
+        via_factory = pp.replace_region(pool, content, "r", rc=True, sync=False, keep_tags=False)
         assert via_mixin.generate_library(num_cycles=1)["seq"].tolist() == via_factory.generate_library(
             num_cycles=1
         )["seq"].tolist()

@@ -29,7 +29,7 @@ Parameters
    * - ``pool``
      - ``Pool | str``
      - *(required)*
-     - Parent pool or sequence to transform.
+     - Parent pool or sequence string to transform.
    * - ``region``
      - ``str | list | None``
      - ``None``

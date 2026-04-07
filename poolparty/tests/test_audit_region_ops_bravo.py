@@ -135,7 +135,7 @@ class TestRegionOpsBaseline:
         with pp.Party():
             bg = pp.from_seq("AAAA<ins>CC</ins>GGGG")
             content = pp.from_seq("XXXX")
-            result = pp.replace_region(bg, content, "ins")
+            result = pp.replace_region(bg, content, "ins", sync=False, keep_tags=False)
             expected = bg.seq_length - 2 + 4  # 10 - 2 + 4 = 12
             assert result.seq_length == expected
             df = result.generate_library()
@@ -411,7 +411,7 @@ class TestGroupD_ContentReplacers:
         with pp.Party():
             bg = pp.from_seq("AAAA<ins>CC</ins>GGGG")
             content = pp.from_seq("XXXX")
-            result = pp.replace_region(bg, content, "ins")
+            result = pp.replace_region(bg, content, "ins", sync=False, keep_tags=False)
             expected = bg.seq_length - 2 + 4
             assert result.seq_length == expected
             df = result.generate_library()
@@ -434,7 +434,7 @@ class TestGroupD_ContentReplacers:
         with pp.Party():
             bg = pp.from_seq("ACGT<ins>AA</ins>TTTT")
             content = pp.from_seqs(["XX", "YY"], mode="sequential")
-            result = pp.replace_region(bg, content, "ins")
+            result = pp.replace_region(bg, content, "ins", sync=False, keep_tags=False)
             expected_states = bg.num_states * content.num_states
             assert result.num_states == expected_states
             assert result.seq_length is not None
@@ -449,7 +449,7 @@ class TestGroupD_ContentReplacers:
                 ["ACGT<bc/>TTTT", "CCCC<bc/>GGGG"], mode="sequential"
             )
             content = pp.from_seqs(["AA", "GG"], mode="sequential")
-            result = pp.replace_region(bg, content, "bc", sync=True)
+            result = pp.replace_region(bg, content, "bc", sync=True, keep_tags=False)
             df = result.generate_library()
             assert len(df) == 2  # 1:1 pairing, not Cartesian
 
@@ -457,7 +457,7 @@ class TestGroupD_ContentReplacers:
         with pp.Party():
             bg = pp.from_seq("AAAA<ins>CC</ins>GGGG")
             content = pp.from_seq("AT")
-            result = pp.replace_region(bg, content, "ins", rc=True)
+            result = pp.replace_region(bg, content, "ins", rc=True, sync=False, keep_tags=False)
             df = result.generate_library()
             seq = strip_all_tags(df["seq"].iloc[0])
             assert seq == "AAAAAT" + "GGGG" or "AT" in seq
@@ -466,7 +466,7 @@ class TestGroupD_ContentReplacers:
         with pp.Party():
             bg = pp.from_seq("AAAA<ins>CC</ins>GGGG")
             content = pp.from_seq("XXXX")
-            result = pp.replace_region(bg, content, "ins")
+            result = pp.replace_region(bg, content, "ins", sync=False, keep_tags=False)
             assert not result.has_region("ins")  # tags removed
             result_kt = pp.replace_region(bg, content, "ins", keep_tags=True)
             assert result_kt.has_region("ins")  # tags kept
@@ -721,8 +721,8 @@ class TestMixinForwarding:
         with pp.Party():
             bg = pp.from_seq("AAAA<ins>CC</ins>GGGG")
             content = pp.from_seq("AT")
-            via_mixin = bg.replace_region(content, "ins", rc=True)
-            via_factory = pp.replace_region(bg, content, "ins", rc=True)
+            via_mixin = bg.replace_region(content, "ins", rc=True, sync=False, keep_tags=False)
+            via_factory = pp.replace_region(bg, content, "ins", rc=True, sync=False, keep_tags=False)
             assert via_mixin.generate_library(num_cycles=1)["seq"].tolist() == via_factory.generate_library(
                 num_cycles=1
             )["seq"].tolist()
@@ -790,7 +790,7 @@ class TestMixinForwarding:
         with pp.Party():
             bg = pp.from_seq("AAAA<ins>CC</ins>GGGG")
             content = pp.from_seq("XXXX")
-            result = bg.replace_region(content, "ins")
+            result = bg.replace_region(content, "ins", sync=False, keep_tags=False)
             df = result.generate_library()
             assert "XXXX" in strip_all_tags(df["seq"].iloc[0])
 
@@ -826,7 +826,7 @@ class TestAnnotateRegionVariableLength:
         with pp.Party():
             variable = pp.from_seqs(["AAAA", "AAAAAA"], mode="sequential")
             annotated = pp.annotate_region(variable, "r")
-            replaced = pp.replace_region(annotated, "TT", "r")
+            replaced = pp.replace_region(annotated, "TT", "r", sync=False, keep_tags=False)
             seqs = replaced.generate_library()["seq"].tolist()
             assert seqs == ["TT", "TT"]
 

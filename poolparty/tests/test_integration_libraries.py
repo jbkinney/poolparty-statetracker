@@ -726,7 +726,7 @@ class TestLibrary12:
             # annotate → replace (10nt region with 10nt IUPAC variants)
             bg_r = bg.annotate_region("var", extent=(15, 25)).named("bg_annotated")
             var_content = pp.from_iupac("RYSWRYSWKM", mode="random", num_states=6)
-            bg_filled = bg_r.replace_region(var_content, "var").named("var_filled")
+            bg_filled = bg_r.replace_region(var_content, "var", sync=False, keep_tags=False).named("var_filled")
 
             assert bg_filled.seq_length == 40  # replace_region now propagates seq_length
 
@@ -899,7 +899,7 @@ class TestLibrary15:
             bg_r2 = bg_rc_head.annotate_region("mid", extent=(9, 18))
             iupac_mid = pp.from_iupac("RNACCATGG", mode="sequential")
             # R(2) × N(4) × fixed(7) = 8 states
-            bg_replaced = bg_r2.replace_region(iupac_mid, "mid").named("region_replaced")
+            bg_replaced = bg_r2.replace_region(iupac_mid, "mid", sync=False, keep_tags=False).named("region_replaced")
 
             barcodes = pp.from_seqs(barcode_list_10, mode="sequential").named("barcodes")
             library = pp.join([combo, bg_replaced, barcodes])

@@ -266,7 +266,7 @@ class TestReplaceMarkerContent:
         with pp.Party():
             bg = pp.from_seq("ACGT<insert/>TTTT")
             inserts = pp.from_seqs(["AAA", "GGG"], mode="sequential")
-            result = pp.replace_region(bg, inserts, "insert")
+            result = pp.replace_region(bg, inserts, "insert", sync=False, keep_tags=False)
         df = result.generate_library(num_cycles=1)
         seqs = set(df["seq"])
         assert "ACGTAAATTTT" in seqs
@@ -277,7 +277,7 @@ class TestReplaceMarkerContent:
         with pp.Party():
             bg = pp.from_seq("PREFIX<var>OLDCONTENT</var>SUFFIX")
             variants = pp.from_seqs(["NEW1", "NEW2"], mode="sequential")
-            result = pp.replace_region(bg, variants, "var")
+            result = pp.replace_region(bg, variants, "var", sync=False, keep_tags=False)
         df = result.generate_library(num_cycles=1)
         seqs = set(df["seq"])
         assert "PREFIXNEW1SUFFIX" in seqs
@@ -288,7 +288,7 @@ class TestReplaceMarkerContent:
         with pp.Party():
             bg = pp.from_seq("ACGT<region>XX</region>TTTT")
             content = pp.from_seq("AAA")
-            result = pp.replace_region(bg, content, "region", rc=True)
+            result = pp.replace_region(bg, content, "region", rc=True, sync=False, keep_tags=False)
         df = result.generate_library(num_seqs=1)
         # AAA reverse complement = TTT
         assert df["seq"].iloc[0] == "ACGTTTTTTTT"
@@ -616,7 +616,7 @@ class TestMarkerClass:
             assert bg.has_region("target")
 
             content = pp.from_seq("GGGG")
-            result = pp.replace_region(bg, content, "target")
+            result = pp.replace_region(bg, content, "target", sync=False, keep_tags=False)
 
             # Marker should be removed from result
             assert not result.has_region("target")
@@ -662,7 +662,7 @@ class TestIntegration:
             marked = pp.region_scan("ACGTACGT", tag_name="ins", positions=[2, 6], mode="sequential")
             # Replace with insertions
             inserts = pp.from_seq("NNN")
-            result = pp.replace_region(marked, inserts, "ins")
+            result = pp.replace_region(marked, inserts, "ins", sync=False, keep_tags=False)
 
         df = result.generate_library(num_cycles=1)
         for seq in df["seq"]:

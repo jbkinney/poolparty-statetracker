@@ -151,7 +151,7 @@ another pool — every insert appears in both orientations together.
 
     inserts = pp.from_seqs(["ACGT", "GGCC"], mode="sequential", iter_order=2)
     wt      = pp.from_seq("AAAA<ins/>TTTT")
-    both    = wt.replace_region(inserts, "ins").flip(iter_order=1, style="red")
+    both    = wt.replace_region(inserts, "ins", sync=False, keep_tags=False).flip(iter_order=1, style="red")
     both.print_library()
 
 .. raw:: html

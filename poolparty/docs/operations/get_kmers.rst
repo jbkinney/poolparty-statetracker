@@ -28,14 +28,15 @@ Parameters
      - *(required)*
      - k-mer length. Total possible k-mers = 4\ :sup:`length`.
    * - ``pool``
-     - ``Pool | None``
+     - ``Pool | str | None``
      - ``None``
-     - Background pool. When provided with ``region``, each k-mer replaces
-       the content of that region.
+     - Background pool or sequence string. When provided with ``region``,
+       each k-mer replaces the content of that region.
    * - ``region``
-     - ``str | None``
+     - ``str | list | None``
      - ``None``
-     - Region to replace in ``pool``. Required when ``pool`` is provided.
+     - Region to replace in ``pool``: a marker name or ``[start, stop]``
+       interval. Required when ``pool`` is provided.
    * - ``style``
      - ``str | None``
      - ``None``
@@ -56,7 +57,8 @@ Parameters
    * - ``num_states``
      - ``int | None``
      - ``None``
-     - Cap on total states. With ``mode='sequential'`` takes the first N.
+     - Number of output states. ``None`` enumerates all k-mers in
+       sequential mode or defaults to 1 in random mode.
    * - ``iter_order``
      - ``int | None``
      - ``None``

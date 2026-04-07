@@ -32,20 +32,20 @@ Parameters
      - *(required)*
      - The background Pool to scan. Can also be a plain sequence string.
    * - ``insertion_pool``
-     - ``Pool``
+     - ``Pool | str``
      - *(required)*
-     - Pool whose sequences are inserted at each scanned position. An
-       *L*-mer has *L* + 1 valid insertion sites (before each base and
-       after the last).
+     - Pool or sequence string whose content is inserted at each scanned
+       position. An *L*-mer has *L* + 1 valid insertion sites (before
+       each base and after the last).
    * - ``positions``
      - ``list[int] | None``
      - ``None``
      - Explicit list of insertion positions. ``None`` = all valid positions.
    * - ``region``
-     - ``str | None``
+     - ``str | list | None``
      - ``None``
-     - Name of a tagged region to restrict insertions to. Flanking sequences
-       are never modified.
+     - Restrict insertions to a named region or ``[start, stop]`` interval.
+       Flanking sequences are never modified.
    * - ``replace``
      - ``bool``
      - ``False``
@@ -69,7 +69,8 @@ Parameters
    * - ``num_states``
      - ``int | None``
      - ``None``
-     - Fix the total number of output states.
+     - Number of output states. ``None`` auto-computes in sequential mode
+       or defaults to 1 in random mode.
    * - ``iter_order``
      - ``int | None``
      - ``None``

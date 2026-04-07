@@ -38,14 +38,15 @@ Parameters
        ``'+'`` or ``'-'``; ``'-'`` triggers automatic reverse
        complementation.
    * - ``pool``
-     - ``Pool | None``
+     - ``Pool | str | None``
      - ``None``
-     - Background pool. When provided with ``region``, the extracted
-       sequence replaces the content of that region.
+     - Background pool or sequence string. When provided with ``region``,
+       the extracted sequence replaces the content of that region.
    * - ``region``
-     - ``str | None``
+     - ``str | list | None``
      - ``None``
-     - Region to replace in ``pool``. Required when ``pool`` is provided.
+     - Region to replace in ``pool``: a marker name or ``[start, stop]``
+       interval. Required when ``pool`` is provided.
    * - ``remove_tags``
      - ``bool | None``
      - ``None``

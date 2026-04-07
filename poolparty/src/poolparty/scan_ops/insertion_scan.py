@@ -124,6 +124,8 @@ def insertion_scan(
         marked,
         insertion_pool,
         marker_name,
+        sync=False,
+        keep_tags=False,
         iter_order=iter_order,
         _factory_name=f"{_factory_name}(replace_region)",
         _style=style,

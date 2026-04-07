@@ -28,10 +28,10 @@ Parameters
      - *(required)*
      - The Pool to shuffle. Can also be a plain sequence string.
    * - ``region``
-     - ``str | None``
+     - ``str | list | None``
      - ``None``
-     - Name of a tagged region to restrict the shuffle to. Flanking sequences
-       are returned unchanged.
+     - Restrict the shuffle to a named region or ``[start, stop]`` interval.
+       Flanking sequences are returned unchanged.
    * - ``shuffle_type``
      - ``str``
      - ``"mono"``
@@ -50,8 +50,7 @@ Parameters
    * - ``num_states``
      - ``int | None``
      - ``None``
-     - Fix how many shuffled variants are drawn per :func:`~poolparty.generate_library`
-       call.
+     - Number of shuffled variants to draw. ``None`` defaults to 1.
    * - ``iter_order``
      - ``int | None``
      - ``None``

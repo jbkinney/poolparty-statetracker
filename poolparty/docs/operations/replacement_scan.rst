@@ -54,7 +54,8 @@ Parameters
    * - ``num_states``
      - ``int | None``
      - ``None``
-     - Fix the total number of output states.
+     - Number of output states. ``None`` auto-computes in sequential mode
+       or defaults to 1 in random mode.
    * - ``prefix``
      - ``str | None``
      - ``None``

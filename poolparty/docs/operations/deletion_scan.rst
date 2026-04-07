@@ -40,10 +40,10 @@ Parameters
      - Character used to fill deleted positions. Pass ``None`` to remove
        deleted bases entirely (output sequences are shorter than the input).
    * - ``region``
-     - ``str | None``
+     - ``str | list | None``
      - ``None``
-     - Name of a tagged region to restrict the scan to. Flanking sequences
-       are never modified.
+     - Restrict the scan to a named region or ``[start, stop]`` interval.
+       Flanking sequences are never modified.
    * - ``positions``
      - ``list[int] | None``
      - ``None``
@@ -55,7 +55,8 @@ Parameters
    * - ``num_states``
      - ``int | None``
      - ``None``
-     - Fix the total number of output states.
+     - Number of output states. ``None`` auto-computes in sequential mode
+       or defaults to 1 in random mode.
    * - ``style``
      - ``str | None``
      - ``None``

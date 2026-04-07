@@ -89,6 +89,8 @@ def apply_at_region(
             transformed_pool,
             region_name,
             rc=rc,
+            sync=False,
+            keep_tags=False,
             iter_order=iter_order,
             prefix=prefix,
         )

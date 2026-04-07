@@ -49,19 +49,21 @@ Parameters
      - ``None``
      - Explicit list of window start positions. ``None`` = all valid positions.
    * - ``region``
-     - ``str | None``
+     - ``str | list | None``
      - ``None``
-     - Name of a tagged region to restrict the scan to. Flanks are never
-       modified.
+     - Restrict the scan to a named region or ``[start, stop]`` interval.
+       Flanks are never modified.
    * - ``style``
      - ``str | None``
      - ``None``
      - Named display style applied to mutated bases (e.g., ``'red'``,
        ``'blue bold'``).
    * - ``prefix``
-     - ``str | None``
+     - ``str | tuple[str, str] | None``
      - ``None``
-     - Prefix for auto-generated sequence names.
+     - Prefix for auto-generated sequence names. If a 2-tuple, the first
+       element is used for scanning positions and the second for
+       mutagenization.
    * - ``mode``
      - ``str | tuple``
      - ``'random'``
@@ -73,11 +75,14 @@ Parameters
      - ``None``
      - Number of output states. A scalar is broadcast to both
        sub-operations. A 2-tuple ``(scan_states, mut_states)`` sets
-       each independently; total states = product of the two.
+       each independently; total states = product of the two. ``None``
+       auto-computes in sequential mode or defaults to 1 in random mode.
    * - ``iter_order``
-     - ``int | None``
+     - ``int | tuple[int, int] | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Priority for downstream multi-pool iteration. If a 2-tuple, the
+       first element is for scanning positions and the second for
+       mutagenization.
 
 ----
 

@@ -28,7 +28,7 @@ Parameters
    * - ``pool``
      - ``Pool | str``
      - *(required)*
-     - The Pool to style.
+     - The Pool or sequence string to style.
    * - ``region``
      - ``str | list | None``
      - ``None``
@@ -38,19 +38,19 @@ Parameters
    * - ``style_codons``
      - ``list[str] | None``
      - ``None``
-     - List of style names cycled across whole codons. At least one of
-       ``style_codons`` or ``style_frames`` must be provided.
+     - List of style names cycled across whole codons. Mutually exclusive
+       with ``style_frames``.
    * - ``style_frames``
      - ``list[str] | None``
      - ``None``
      - List of style names (length a multiple of 3) applied per base
-       position within each codon. At least one of ``style_codons`` or
-       ``style_frames`` must be provided.
+       position within each codon. Mutually exclusive with
+       ``style_codons``.
    * - ``frame``
      - ``int | None``
      - ``None``
-     - Reading frame (1, 2, or 3). Auto-detected from an ``OrfRegion``
-       if ``region`` is set; must be specified otherwise.
+     - Reading frame (+1..+3 or -1..-3). Auto-detected from an
+       ``OrfRegion`` if ``region`` is set; must be specified otherwise.
    * - ``prefix``
      - ``str | None``
      - ``None``
