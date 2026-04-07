@@ -4,7 +4,13 @@
 [![Documentation Status](https://readthedocs.org/projects/poolparty/badge/?version=latest)](https://poolparty.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**PoolParty** is a Python package for designing complex oligonucleotide sequence libraries. It provides a declarative, composable interface for generating DNA libraries used in MPRA (massively parallel reporter assays), deep mutational scanning, in silico analysis of genomic DNNs, and other high-throughput experiments.
+**PoolParty** is a Python package that streamlines the design of complex
+DNA sequence libraries. Each library is specified as a computational graph
+in a few lines of code, with sequences generated on demand. Over 50
+built-in operations cover nucleotide- and codon-level mutagenesis,
+scanning, barcode generation, and more. Applications include massively
+parallel reporter assays, deep mutational scanning, and in silico analysis
+of genomic AI models.
 
 <p align="center">
   <img src="images/poolparty_schematic.png" alt="PoolParty overview: Pools represent sequence collections; Operations transform them into a DAG that generates libraries on demand" width="700">
@@ -12,13 +18,18 @@
 
 ## Why PoolParty?
 
-Designing DNA libraries often involves combining multiple types of sequence modifications — mutations, insertions, deletions, shuffles — across multiple regions with mixed coverage requirements. PoolParty lets you:
+Designing DNA libraries often involves combining multiple types of
+sequence modifications (mutations, insertions, deletions, replacements)
+across multiple regions. PoolParty lets you:
 
-- **Compose operations**: Chain operations like `.mutagenize()`, `.deletion_scan()`, and `.insertion_scan()` to build complex libraries
-- **Tag regions**: Use XML-like syntax to mark and manipulate specific regions of sequences
-- **Use lazy evaluation**: Sequences are generated on-demand, enabling libraries with billions of potential variants
-- **Track provenance**: Each sequence comes with a structured record of how it was built — ready for filtering, grouping, and modeling
-- **Style output**: Visual annotations highlight sequence modifications and regions for quick auditing
+- **Chain operations**: Build pipelines from operations like `mutagenize`,
+  `deletion_scan`, and `insertion_scan` to produce complex variant libraries
+- **Tag regions**: Mark segments of a sequence with XML-style tags so
+  operations can target them by name
+- **Track construction history**: Each sequence carries a design card
+  recording how it was built, ready for filtering and analysis
+- **Style output**: Visual annotations highlight mutations, deletions,
+  and regions for quick auditing
 
 ## Installation
 
@@ -26,135 +37,80 @@ Designing DNA libraries often involves combining multiple types of sequence modi
 pip install poolparty
 ```
 
-For development:
-```bash
-git clone https://github.com/jbkinney/poolparty-statetracker.git
-cd poolparty-statetracker/poolparty
-pip install -e ".[dev]"
-```
+Requires Python >= 3.10.
 
-## Quick Start
+## Quick example
+
+Create a template with a tagged region, branch into mutagenesis and
+deletion scanning, and stack them into a single library:
 
 ```python
 import poolparty as pp
-
-# Initialize poolparty
 pp.init()
 
-# Create a template sequence with tagged regions
-template = pp.from_seq("ACGT<cre>GGAAAGCGGGCAGTGAGC</cre>TTTT<bc/>GGGG")
+template = pp.from_seq("TCCGACT<tag>GCA</tag>ATTCGGA")
 
-# Generate single-nucleotide mutations in the CRE region
-mutant_library = template.mutagenize(
-    region="cre",
-    num_mutations=1,
-    mode="sequential"  # Generate all possible single mutants
+mut_pool = template.mutagenize(
+    num_mutations=1, region="tag", prefix="mut", mode="sequential",
+    cards={"positions": "mut_pos", "wt_chars": "wt", "mut_chars": "mut"},
 )
 
-# Generate the library as a DataFrame
-df = mutant_library.generate_library()
-print(df)
+del_pool = template.deletion_scan(
+    deletion_length=1, region="tag", prefix="del", mode="sequential"
+).repeat(times=2, prefix="rep")
+
+library = pp.stack([mut_pool, del_pool]).named("library")
+library.print_library(show_name=True)
 ```
 
-## Key Features
-
-### Region Tagging
-
-Mark regions of interest with XML-like tags:
-
-```python
-# Self-closing tag for insertion points
-seq = pp.from_seq("ACGT<barcode/>TTTT")
-
-# Paired tags for regions
-seq = pp.from_seq("ACGT<promoter>GGAAAGCGGG</promoter>TTTT")
+```
+library: seq_length=17, num_states=15
+name         seq
+mut_0        TCCGACT<tag>ACA</tag>ATTCGGA
+mut_1        TCCGACT<tag>CCA</tag>ATTCGGA
+mut_2        TCCGACT<tag>TCA</tag>ATTCGGA
+mut_3        TCCGACT<tag>GAA</tag>ATTCGGA
+mut_4        TCCGACT<tag>GGA</tag>ATTCGGA
+mut_5        TCCGACT<tag>GTA</tag>ATTCGGA
+mut_6        TCCGACT<tag>GCC</tag>ATTCGGA
+mut_7        TCCGACT<tag>GCG</tag>ATTCGGA
+mut_8        TCCGACT<tag>GCT</tag>ATTCGGA
+del_0.rep_0  TCCGACT<tag>-CA</tag>ATTCGGA
+del_0.rep_1  TCCGACT<tag>-CA</tag>ATTCGGA
+del_1.rep_0  TCCGACT<tag>G-A</tag>ATTCGGA
+del_1.rep_1  TCCGACT<tag>G-A</tag>ATTCGGA
+del_2.rep_0  TCCGACT<tag>GC-</tag>ATTCGGA
+del_2.rep_1  TCCGACT<tag>GC-</tag>ATTCGGA
 ```
 
-### Scanning Operations
+`mutagenize` in sequential mode generates all 9 single-nucleotide
+substitutions within the 3 bp `<tag>` region. `deletion_scan` produces
+3 single-base deletions, and `repeat` duplicates each for replication.
+`stack` merges the two branches into a 15-variant library. The `prefix`
+parameter on each operation labels variants so they can be traced back
+to their source.
 
-Apply systematic mutations across a region:
+The `cards` parameter records design choices as DataFrame columns,
+so each sequence carries a structured record of how it was built:
 
 ```python
-# Tiled deletions
-deletions = template.deletion_scan(
-    region="cre",
-    deletion_length=5,
-    positions=slice(None, None, 3)  # Every 3rd position
-)
-
-# Tiled insertions
-inserts = pp.from_seqs(["AAAAAA", "TTTTTT"])
-insertions = template.insertion_scan(
-    region="cre",
-    ins_pool=inserts,
-    positions=slice(0, 10, 2)
-)
-
-# Replacement scanning
-replacements = template.replacement_scan(
-    region="cre",
-    ins_pool=pp.get_kmers(length=5),
-)
+df = library.generate_library()
+print(df[["name", "mut_pos", "wt", "mut"]].head(5))
 ```
 
-### Combining Libraries
-
-Stack different variant types into a single library:
-
-```python
-# Create different variant pools
-mutations = template.mutagenize(region="cre", num_mutations=1)
-deletions = template.deletion_scan(region="cre", deletion_length=5)
-
-# Combine into one library
-combined = pp.stack([mutations, deletions])
-
-# Add barcodes to all variants
-barcoded = combined.insert_kmers(region="bc", length=10)
-
-# Generate final library
-df = barcoded.generate_library()
 ```
-
-### Random vs Sequential Mode
-
-Control how variants are generated:
-
-```python
-# Sequential: enumerate all possible variants
-all_mutants = template.mutagenize(
-    num_mutations=1,
-    mode="sequential"
-)
-
-# Random: sample from variant space
-random_mutants = template.mutagenize(
-    num_mutations=2,
-    mode="random",
-    num_states=100  # Generate 100 random double mutants
-)
-```
-
-### Codon-Aware Mutagenesis
-
-Preserve reading frames during mutagenesis:
-
-```python
-# Define a template with a coding region
-orf_template = pp.from_seq("ACGT<gfp>ATGGTGAGCAAGGGCGAG</gfp>TTTT")
-
-# Synonymous mutations preserve the amino acid sequence
-orf_mutants = orf_template.mutagenize_orf(
-    region="gfp",
-    num_mutations=1,
-    mutation_type="synonymous"  # or "missense", "nonsense"
-)
+   name mut_pos   wt  mut
+  mut_0    (0,) (G,) (A,)
+  mut_1    (0,) (G,) (C,)
+  mut_2    (0,) (G,) (T,)
+  mut_3    (1,) (C,) (A,)
+  mut_4    (1,) (C,) (G,)
 ```
 
 ## Operations
 
-PoolParty provides 50+ composable operations for DNA library design.
-See the [full API reference](https://poolparty.readthedocs.io) for details.
+PoolParty provides over 50 composable operations for DNA library design.
+See the [full documentation](https://poolparty.readthedocs.io) for details.
 
 | Goal | Key operations |
 |------|----------------|
@@ -162,17 +118,39 @@ See the [full API reference](https://poolparty.readthedocs.io) for details.
 | Mutate | `mutagenize`, `mutagenize_orf`, `shuffle_seq`, `recombine`, `flip` |
 | Scan across positions | `deletion_scan`, `insertion_scan`, `replacement_scan`, `mutagenize_scan`, `subseq_scan` |
 | Work with regions | `annotate_region`, `extract_region`, `replace_region`, `insert_tags` |
-| Combine & control | `stack`, `sample`, `repeat`, `sync`, `filter`, `score` |
+| Combine and control | `stack`, `join`, `sample`, `repeat`, `sync`, `filter`, `score` |
 | Export | `generate_library`, `to_df`, `to_file` |
 
 ## Documentation
 
-Full documentation is available at [poolparty.readthedocs.io](https://poolparty.readthedocs.io).
+Full documentation is available at
+[poolparty.readthedocs.io](https://poolparty.readthedocs.io), including a
+[quickstart guide](https://poolparty.readthedocs.io/en/latest/quickstart.html)
+and tutorials for
+[deep mutational scanning](https://poolparty.readthedocs.io/en/latest/tutorials/dms_gb1.html)
+and
+[MPRA library design](https://poolparty.readthedocs.io/en/latest/tutorials/mpra_regulatory_grammar.html).
+
+## Development
+
+```bash
+git clone https://github.com/jbkinney/poolparty-statetracker.git
+cd poolparty-statetracker
+pip install -e ./statetracker[dev]
+pip install -e ./poolparty[dev]
+pytest poolparty/
+```
+
+## Citation
+
+If you use PoolParty, please cite it using the metadata in
+[CITATION.cff](https://github.com/jbkinney/poolparty-statetracker/blob/main/CITATION.cff).
 
 ## See Also
 
-PoolParty is built on [StateTracker](https://github.com/jbkinney/poolparty-statetracker/tree/main/statetracker), a library for composable state management that enables efficient random access to combinatorial spaces.
+[StateTracker](https://statetracker.readthedocs.io): Composable states
+for combinatorial enumeration (used internally by PoolParty).
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.

@@ -1,15 +1,22 @@
 PoolParty Documentation
 =======================
 
-**PoolParty** is a Python package for designing complex DNA sequence
-libraries. You specify mutations, insertions, deletions, and region
-constraints; PoolParty assembles the full combinatorial library.
-Applications include massively parallel reporter assays, deep
-mutational scanning, and in silico analysis of genomic models.
+**PoolParty** is a Python package that streamlines the design of complex
+DNA sequence libraries. Each library is specified as a computational graph
+in a few lines of code, with sequences generated on demand. Over 50
+built-in operations cover nucleotide- and codon-level mutagenesis,
+scanning, barcode generation, and more. Applications include massively
+parallel reporter assays, deep mutational scanning, and in silico
+analysis of genomic models.
 
 .. image:: /_static/images/figure1a.drawio.svg
-   :width: 100%
+   :width: 90%
+   :align: center
    :alt: PoolParty overview: Pools represent sequence collections, Operations transform them, and together they form a directed acyclic graph (DAG) specifying the library design.
+
+.. raw:: html
+
+   <div style="margin-bottom: 1.5em;"></div>
 
 Why PoolParty?
 --------------

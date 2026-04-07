@@ -78,9 +78,12 @@ orange.
 
 .. code-block:: python
 
-    hnf4a = pp.from_seq("GGGGCAAAGGTCA", style="blue").flip(mode="sequential")
-    ppara = pp.from_seq("CCGGGTCATTGGGGTCAGG", style="purple").flip(mode="sequential")
-    xbp1  = pp.from_seq("GTGATGACGTGTCCCAT", style="orange").flip(mode="sequential")
+    hnf4a = pp.from_seq("GGGGCAAAGGTCA", style="blue").flip(
+        mode="sequential", cards={"flip": "hnf4a_strand"})
+    ppara = pp.from_seq("CCGGGTCATTGGGGTCAGG", style="purple").flip(
+        mode="sequential", cards={"flip": "ppara_strand"})
+    xbp1  = pp.from_seq("GTGATGACGTGTCCCAT", style="orange").flip(
+        mode="sequential", cards={"flip": "xbp1_strand"})
 
 Each TFBS pool now contains two states (forward and reverse complement).
 
@@ -105,15 +108,19 @@ adjacent to each other.
         num_insertions=3,
         mode="random",
         num_states=1000,
+        names=["hnf4a", "ppara", "xbp1"],
+        cards={"starts": "positions", "names": "tfbs"},
     ).repeat(times=3)
 
 The ``num_states=1000`` parameter draws 1,000 random position
-configurations. Because each of the three TFBSs can appear in forward
-or reverse-complement orientation, each configuration expands into
-2\ :sup:`3` = 8 orientation combinations, giving 8,000 unique CRE
-variants. :doc:`repeat </operations/repeat>` then replicates each
-variant three times, yielding 24,000 CRE variants ready for barcode
-assignment.
+configurations. Because ``flip`` uses
+:doc:`sequential mode </operations/modes>`, it exhaustively enumerates
+both orientations for each TFBS rather than sampling. With three TFBSs,
+this gives 2\ :sup:`3` = 8 orientation combinations per position
+configuration, yielding 8,000 unique CRE variants.
+:doc:`repeat </operations/repeat>` then creates three copies of each
+variant (24,000 total), so that each unique CRE arrangement will
+receive three distinct barcodes for technical replication.
 
 Generate and attach barcodes
 ----------------------------
@@ -180,6 +187,39 @@ operations can continue to reference those regions. Notice that the
 first three sequences share the same TFBS positions and orientations but
 carry different barcodes, reflecting the three technical replicates
 produced by ``repeat(times=3)``.
+
+Design cards
+~~~~~~~~~~~~
+
+The ``cards`` parameters on ``flip`` and ``insertion_multiscan`` record
+each variant's TFBS positions, spatial ordering, and strand orientations
+as :doc:`design card </metadata/design_cards>` columns:
+
+.. code-block:: python
+
+    df = mpra_pool.sample(num_seqs=6, seed=42).generate_library()
+    df[["positions", "tfbs", "hnf4a_strand", "ppara_strand", "xbp1_strand"]]
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">df — 6 rows × 7 columns (card columns shown)</em>
+    <table class="pp-df">
+    <tr><th>positions</th><th>tfbs</th><th>hnf4a_strand</th><th>ppara_strand</th><th>xbp1_strand</th></tr>
+    <tr><td>[5, 37, 87]</td><td>[xbp1, ppara, hnf4a]</td><td>rc</td><td>forward</td><td>rc</td></tr>
+    <tr><td>[7, 43, 65]</td><td>[xbp1, ppara, hnf4a]</td><td>forward</td><td>forward</td><td>forward</td></tr>
+    <tr><td>[7, 43, 65]</td><td>[xbp1, ppara, hnf4a]</td><td>forward</td><td>rc</td><td>forward</td></tr>
+    <tr><td>[18, 47, 80]</td><td>[ppara, hnf4a, xbp1]</td><td>forward</td><td>forward</td><td>rc</td></tr>
+    <tr><td>[9, 37, 59]</td><td>[ppara, xbp1, hnf4a]</td><td>rc</td><td>forward</td><td>rc</td></tr>
+    <tr><td>[10, 31, 71]</td><td>[xbp1, ppara, hnf4a]</td><td>rc</td><td>forward</td><td>rc</td></tr>
+    </table>
+    </div>
+
+The ``positions`` column records the start position of each TFBS within
+the CRE, ``tfbs`` records their spatial order (left to right along the
+sequence), and the strand columns record each site's orientation. Notice
+that position configurations, orderings, and strand combinations all
+vary independently across the library.
 
 See :doc:`insertion_multiscan </operations/insertion_multiscan>`,
 :doc:`flip </operations/flip>`,

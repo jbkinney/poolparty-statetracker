@@ -68,6 +68,7 @@ highlights mutated codons in the output (see :doc:`/metadata/styling`).
         prefix="single",
         style="red",
         mode="sequential",
+        cards={"codon_positions": "position", "wt_aas": "wt_aa", "mut_aas": "mut_aa"},
     ).named("single_pool")
 
     single_pool.print_library(num_seqs=5, show_name=True)
@@ -221,6 +222,36 @@ corresponding amino acid.
     </table>
     <span class="pp-ellipsis">... (547,230 total)</span>
     </div>
+
+Design cards
+~~~~~~~~~~~~
+
+The ``cards`` parameter on ``mutagenize_orf`` records each mutation as
+structured :doc:`design card </metadata/design_cards>` columns, so every
+variant carries a record of what was changed:
+
+.. code-block:: python
+
+    df = single_pool.generate_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">df — 1,045 rows × 5 columns</em>
+    <table class="pp-df">
+    <tr><th>name</th><th>seq</th><th>position</th><th>wt_aa</th><th>mut_aa</th></tr>
+    <tr><td>single_0000</td><td>ATG<span class="pp-mut">TTC</span>TAC...GAA</td><td>(1,)</td><td>(Q,)</td><td>(F,)</td></tr>
+    <tr><td>single_0001</td><td>ATG<span class="pp-mut">CTG</span>TAC...GAA</td><td>(1,)</td><td>(Q,)</td><td>(L,)</td></tr>
+    <tr><td>single_0002</td><td>ATG<span class="pp-mut">ATC</span>TAC...GAA</td><td>(1,)</td><td>(Q,)</td><td>(I,)</td></tr>
+    <tr><td>single_0003</td><td>ATG<span class="pp-mut">ATG</span>TAC...GAA</td><td>(1,)</td><td>(Q,)</td><td>(M,)</td></tr>
+    <tr><td>single_0004</td><td>ATG<span class="pp-mut">GTG</span>TAC...GAA</td><td>(1,)</td><td>(Q,)</td><td>(V,)</td></tr>
+    <tr><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td></tr>
+    </table>
+    </div>
+
+Each row records the codon position, wild-type amino acid, and
+substituted amino acid. These columns are ready for downstream filtering
+and analysis without parsing the sequences themselves.
 
 Library composition
 -------------------
