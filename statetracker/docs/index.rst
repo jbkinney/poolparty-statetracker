@@ -5,18 +5,18 @@ StateTracker Documentation
 unidirectional value propagation. It provides a powerful way to enumerate
 combinatorial spaces through state algebra operations.
 
-Why StateTracker?
+What is StateTracker?
 -----------------
 
 StateTracker was developed to support the design of complex DNA sequence
 libraries (see `PoolParty <https://github.com/jbkinney/poolparty-statetracker/tree/main/poolparty>`_), but it
 solves a general problem: **random access to combinatorial spaces**.
 
-If you've ever written nested loops to enumerate a Cartesian product and then
-wished you could shuffle the order, sample a subset, or split into train/test
-sets—all while tracking which component indices correspond to each item—
-StateTracker is for you. Build your combinatorial structure once using state
-algebra, and StateTracker handles the index math automatically.
+Statetracker enables you to build flexible combinatorial structures without having to keep track
+of the index math yourself. By automatically managing :ref:`States <concepts.ipynb#States-and-States>` and their relationships,
+StateTracker facilitates processes like shuffling, sampling, and splitting samples in a
+combinatorial space.
+
 
 See the :doc:`motivation` page for a detailed explanation of the problem
 StateTracker solves.
