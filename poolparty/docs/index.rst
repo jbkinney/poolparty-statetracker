@@ -95,7 +95,7 @@ Contents
 --------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: User Guide
 
    quickstart
@@ -106,7 +106,7 @@ Contents
    operations/index
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Reference
 
    api
