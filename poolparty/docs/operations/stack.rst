@@ -34,7 +34,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``cards``
      - ``dict | list | None``
      - ``None``
@@ -128,27 +128,32 @@ covering both targets.
     <span class="pp-ellipsis">... (14 total)</span>
     </div>
 
-Stack combined state space
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Track which input pool each sequence came from
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After stacking, the combined pool enumerates every state from the first
-input, then every state from the second, and so on.
+The ``active_parent`` card records the index of the input pool that
+produced each sequence. This is useful when stacking mutants with
+controls and you need to distinguish them in the output DataFrame.
 
 .. code-block:: python
 
-    pool_a = pp.from_seqs(["AAAA", "CCCC"], mode="sequential")
-    pool_b = pp.from_seqs(["GGGG", "TTTT"], mode="sequential")
-    combined = pp.stack([pool_a, pool_b])
-    combined.print_library()
+    muts = pp.from_seqs(["CTCG", "GTCG", "TTCG"], mode="sequential")
+    ctrl = pp.from_seqs(["AAAA", "TTTT"], mode="sequential")
+    lib  = pp.stack([muts, ctrl], cards={"active_parent": "source"})
+    df   = lib.generate_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">combined: seq_length=4, num_states=4</em>
-    AAAA<br>
-    CCCC<br>
-    GGGG<br>
-    TTTT
+    <em class="pp-header">df — 5 rows × 3 columns</em>
+    <table class="pp-df">
+    <tr><th>name</th><th>seq</th><th>source</th></tr>
+    <tr><td>None</td><td>CTCG</td><td>0</td></tr>
+    <tr><td>None</td><td>GTCG</td><td>0</td></tr>
+    <tr><td>None</td><td>TTCG</td><td>0</td></tr>
+    <tr><td>None</td><td>AAAA</td><td>1</td></tr>
+    <tr><td>None</td><td>TTTT</td><td>1</td></tr>
+    </table>
     </div>
 
 Operator shorthand (``+``)

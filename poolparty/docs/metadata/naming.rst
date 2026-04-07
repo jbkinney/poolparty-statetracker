@@ -1,7 +1,7 @@
 Sequence Names
 ==============
 
-Every sequence produced by ``generate_library()`` has a **name** — a
+Every sequence produced by ``generate_library()`` has a **name**: a
 dot-separated string built from segments contributed by each operation.
 Names let you trace exactly how a sequence was constructed.
 
@@ -34,10 +34,10 @@ The ``prefix`` parameter
 ------------------------
 
 Most operations accept a ``prefix`` parameter. How the prefix is formatted
-depends on the operation's mode:
+depends on the operation's :doc:`mode </operations/modes>`:
 
-**Fixed mode** (single deterministic output):
-    Contributes the prefix string as-is.
+**Fixed mode** (one output):
+    The name is the prefix string itself, with no index.
 
     .. code-block:: python
 
@@ -54,9 +54,12 @@ depends on the operation's mode:
         </table>
         </div>
 
-**Sequential mode** (one state per variant):
-    Appends a zero-padded state index. The width adjusts to the number of
-    states so names sort correctly.
+**Sequential mode** (one output per variant):
+    Appends an underscore and a numeric index to the prefix
+    (``var_0``, ``var_1``, ...). Each index corresponds to a specific
+    variant, so ``var_3`` always identifies the same sequence. Indexes
+    are zero-padded when there are many variants so that names sort
+    correctly.
 
     .. code-block:: python
 
@@ -83,16 +86,30 @@ depends on the operation's mode:
         df   = pool.generate_library()
         # names: "seq_000", "seq_001", ..., "seq_255"
 
-**Random mode** (random draws):
-    Appends a zero-padded global draw index, based on how many sequences
-    were requested.
+**Random mode** (sampled outputs):
+    Appends an underscore and a running counter
+    (``mut_0``, ``mut_1``, ...). The counter reflects the draw order,
+    not a specific variant. With a fixed seed, the same counter always
+    produces the same sequence, but the mapping depends on the seed.
 
     .. code-block:: python
 
         wt   = pp.from_seq("ATCGATCG")
         pool = wt.mutagenize(num_mutations=1, prefix="mut")
-        df   = pool.generate_library(num_seqs=50)
-        # names: "mut_00", "mut_01", ..., "mut_49"
+        df   = pool.generate_library(num_seqs=4)
+
+    .. raw:: html
+
+        <div class="pp-pool">
+        <em class="pp-header">df — 4 rows × 2 columns</em>
+        <table class="pp-df">
+        <tr><th>name</th><th>seq</th></tr>
+        <tr><td>mut_0</td><td>ATCGGTCG</td></tr>
+        <tr><td>mut_1</td><td>ATCGAACG</td></tr>
+        <tr><td>mut_2</td><td>ATCGCTCG</td></tr>
+        <tr><td>mut_3</td><td>GTCGATCG</td></tr>
+        </table>
+        </div>
 
 ----
 
@@ -194,7 +211,7 @@ additional prefix parameters:
 
 These are different things:
 
-- ``pool.named("my_pool")`` sets the **pool's metadata name** — used for
+- ``pool.named("my_pool")`` sets the **pool's metadata name**, used for
   display, DAG visualization, and internal tracking. It does **not**
   affect the ``name`` column in the output.
 

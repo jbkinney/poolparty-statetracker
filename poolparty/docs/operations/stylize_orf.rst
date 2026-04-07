@@ -58,7 +58,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
 
 ----
 
@@ -127,7 +127,7 @@ Use ``annotate_orf`` to register the reading frame, then ``stylize_orf`` with
 
     <div class="pp-pool">
     <em class="pp-header">styled: seq_length=23, num_states=1</em>
-    AAAA<span class="pp-xtag-cre">&lt;cds&gt;</span><span class="pp-codon-a">ATG</span><span class="pp-codon-b">AAA</span><span class="pp-codon-a">TTT</span><span class="pp-codon-b">GGG</span><span class="pp-codon-a">CCC</span><span class="pp-xtag-cre">&lt;/cds&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cds&gt;</span><span class="pp-codon-a">ATG</span><span class="pp-codon-b">AAA</span><span class="pp-codon-a">TTT</span><span class="pp-codon-b">GGG</span><span class="pp-codon-a">CCC</span><span class="pp-xtag-light">&lt;/cds&gt;</span>TTTT
     </div>
 
 See :func:`~poolparty.stylize_orf`.

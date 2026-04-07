@@ -57,7 +57,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``cards``
      - ``dict | list | None``
      - ``None``
@@ -83,8 +83,6 @@ A window of length 4 over an 8-base sequence yields 5 subsequences.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     pool    = pp.from_seq("ACGTACGT")
     submers = pool.subseq_scan(subseq_length=4, mode="sequential")
     submers.print_library()
@@ -107,8 +105,6 @@ Supply ``positions`` to extract from chosen sites only.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     pool    = pp.from_seq("ACGTACGT")
     submers = pool.subseq_scan(subseq_length=3, positions=[0, 3, 5],
                                mode="sequential")
@@ -131,8 +127,6 @@ considered.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     pool    = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     submers = pool.subseq_scan(subseq_length=4, region="cre",
                                mode="sequential")
@@ -157,8 +151,6 @@ to control how many subsequences are sampled.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     pool    = pp.from_seq("ACGTACGTACGT")
     submers = pool.subseq_scan(subseq_length=4, mode="random", num_states=5)
     submers.print_library()

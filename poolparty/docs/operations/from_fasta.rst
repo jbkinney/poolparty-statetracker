@@ -64,7 +64,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``cards``
      - ``dict | list | None``
      - ``None``
@@ -176,8 +176,8 @@ flanking context — useful for tiling genomic sequences into a library vector.
 
     <div class="pp-pool">
     <em class="pp-header">pool: seq_length=22, num_states=2</em>
-    GCGCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>ATCGATCGAT<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGCGC<br>
-    GCGCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>TTGGAACCTA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGCGC
+    GCGCGC<span class="pp-xtag-light">&lt;insert&gt;</span>ATCGATCGAT<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGCGC<br>
+    GCGCGC<span class="pp-xtag-light">&lt;insert&gt;</span>TTGGAACCTA<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGCGC
     </div>
 
 See :func:`~poolparty.from_fasta`.

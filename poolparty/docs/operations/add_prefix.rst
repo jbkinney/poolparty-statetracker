@@ -34,7 +34,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
 
 ----
 
@@ -47,21 +47,33 @@ Parameters
 Examples
 --------
 
-Label sequences from different branches
+Label sequences from a pipeline branch
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Operations like ``mutagenize`` can assign a ``prefix`` to each sequence
+name. ``add_prefix`` appends an additional label, letting you distinguish
+sequences that came from different branches of a design.
 
 .. code-block:: python
 
-    wt     = pp.from_seq("ACGTACGT")
-    branch = pp.mutagenize(wt, num_mutations=1, prefix="mut", mode="random")
-    tagged = pp.add_prefix(branch, "experiment1")
-    tagged.print_library()
+    wt     = pp.from_seq("ATCG")
+    muts   = pp.mutagenize(wt, num_mutations=1, mode="sequential",
+                           prefix="mut")
+    tagged = pp.add_prefix(muts, "batch1")
+    df     = tagged.generate_library(num_seqs=5)
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">tagged: seq_length=8, num_states=1</em>
-    ACGTGCGT
+    <em class="pp-header">df — 5 rows × 2 columns</em>
+    <table class="pp-df">
+    <tr><th>name</th><th>seq</th></tr>
+    <tr><td>mut_00.batch1</td><td>CTCG</td></tr>
+    <tr><td>mut_01.batch1</td><td>GTCG</td></tr>
+    <tr><td>mut_02.batch1</td><td>TTCG</td></tr>
+    <tr><td>mut_03.batch1</td><td>AACG</td></tr>
+    <tr><td>mut_04.batch1</td><td>ACCG</td></tr>
+    </table>
     </div>
 
 See :func:`~poolparty.add_prefix`.

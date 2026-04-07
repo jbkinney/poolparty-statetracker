@@ -83,6 +83,7 @@ table.docutils td, table.docutils th {
 .pp-style-purple { color: #800080; }
 .pp-style-orange { color: #ff8c00; }
 .pp-style-bold   { font-weight: bold; }
+.pp-style-green  { color: #22c55e; font-weight: bold; }
 /* Truncation indicator */
 .pp-ellipsis { color: #9ca3af; font-style: italic; }
 

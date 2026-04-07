@@ -80,7 +80,7 @@ Parameters
    * - ``iter_order``
      - ``int | tuple[int, int] | None``
      - ``None``
-     - Priority for downstream multi-pool iteration. If a 2-tuple, the
+     - Enumeration order when combined with other pools. If a 2-tuple, the
        first element is for scanning positions and the second for
        mutagenization.
 
@@ -289,11 +289,11 @@ within the region and draws 3 random mutations at each.
 
     <div class="pp-pool">
     <em class="pp-header">scan: seq_length=20, num_states=27</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATC<span class="pp-mut">C</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATC<span class="pp-mut">T</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">C</span>TCGATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-mut">G</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-mut">T</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATC<span class="pp-mut">C</span>ATCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATC<span class="pp-mut">T</span>ATCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span><span class="pp-mut">C</span>TCGATCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCG<span class="pp-mut">G</span>TCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCG<span class="pp-mut">T</span>TCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     <span class="pp-ellipsis">... (27 total)</span>
     </div>
 

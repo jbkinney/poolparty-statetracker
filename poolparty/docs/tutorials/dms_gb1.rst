@@ -11,7 +11,11 @@ by considering:
 - 10,000 random higher-order mutants
 - 100 wild-type replicates
 
-This design is adapted from the first application in Liu et al. (2025).
+
+.. image:: /_static/images/figure2a.drawio.svg
+   :width: 80%
+   :align: center
+   :alt: DMS library design DAG showing the pipeline from wild-type ORF through single, pairwise, and higher-order mutagenesis to the final stacked library.
 
 .. code-block:: python
 

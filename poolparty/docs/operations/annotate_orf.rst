@@ -64,7 +64,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -98,7 +98,7 @@ frame) without changing the sequence.
 
     <div class="pp-pool">
     <em class="pp-header">orf: seq_length=15, num_states=1</em>
-    <span class="pp-xtag-cre">&lt;gene&gt;</span>ATGAAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>
+    <span class="pp-xtag-light">&lt;gene&gt;</span>ATGAAATTTGGGCCC<span class="pp-xtag-light">&lt;/gene&gt;</span>
     </div>
 
 Define region boundaries with extent
@@ -117,7 +117,7 @@ ORF, without needing XML tags in the original sequence.
 
     <div class="pp-pool">
     <em class="pp-header">orf: seq_length=22, num_states=1</em>
-    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span>ATGAAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span>ATGAAATTTGGGCCC<span class="pp-xtag-light">&lt;/gene&gt;</span>TAA
     </div>
 
 Style the ORF with codon colouring (style_codons)
@@ -137,7 +137,7 @@ making the reading frame immediately visible.
 
     <div class="pp-pool">
     <em class="pp-header">styled: seq_length=22, num_states=1</em>
-    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-codon-a">ATG</span><span class="pp-codon-b">AAA</span><span class="pp-codon-a">TTT</span><span class="pp-codon-b">GGG</span><span class="pp-codon-a">CCC</span><span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span><span class="pp-codon-a">ATG</span><span class="pp-codon-b">AAA</span><span class="pp-codon-a">TTT</span><span class="pp-codon-b">GGG</span><span class="pp-codon-a">CCC</span><span class="pp-xtag-light">&lt;/gene&gt;</span>TAA
     </div>
 
 Chain with mutagenize_orf
@@ -159,11 +159,11 @@ the mutated codon highlighted in red.
 
     <div class="pp-pool">
     <em class="pp-header">muts: seq_length=22, num_states=95</em>
-    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-mut">TTC</span>AAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA<br>
-    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-mut">CTG</span>AAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA<br>
-    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-mut">ATC</span>AAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA<br>
-    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-mut">GTG</span>AAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA<br>
-    TATA<span class="pp-xtag-cre">&lt;gene&gt;</span><span class="pp-mut">AGC</span>AAATTTGGGCCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>TAA
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span><span class="pp-mut">TTC</span>AAATTTGGGCCC<span class="pp-xtag-light">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span><span class="pp-mut">CTG</span>AAATTTGGGCCC<span class="pp-xtag-light">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span><span class="pp-mut">ATC</span>AAATTTGGGCCC<span class="pp-xtag-light">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span><span class="pp-mut">GTG</span>AAATTTGGGCCC<span class="pp-xtag-light">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span><span class="pp-mut">AGC</span>AAATTTGGGCCC<span class="pp-xtag-light">&lt;/gene&gt;</span>TAA
     <span class="pp-ellipsis">... (95 total)</span>
     </div>
 

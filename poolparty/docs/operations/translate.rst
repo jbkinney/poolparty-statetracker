@@ -54,7 +54,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -79,9 +79,6 @@ peptide M-K-F-G-P.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     cds     = pp.from_seq("ATGAAATTTGGGCCC")
     protein = pp.translate(cds)
     protein.print_library()
@@ -96,17 +93,14 @@ peptide M-K-F-G-P.
 Translate a mutagenized CDS pool
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Chain ``mutagenize_orf`` with ``translate``. With ``mode="random"``, each
-draw applies one random codon mutation; the protein pool is the translation
-of that sampled CDS.
+Chain ``mutagenize_orf`` with ``translate``. When ``mutagenize_orf`` applies
+``style="red"``, ``translate`` preserves that style on the resulting amino
+acid (controlled by ``preserve_codon_styles``, default ``True``).
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     cds     = pp.from_seq("ATGAAATTTGGGCCC")
-    mutants = pp.mutagenize_orf(cds, num_mutations=1, mode="random")
+    mutants = pp.mutagenize_orf(cds, num_mutations=1, mode="random", style="red")
     protein = pp.translate(mutants)
     protein.print_library()
 
@@ -114,7 +108,11 @@ of that sampled CDS.
 
     <div class="pp-pool">
     <em class="pp-header">protein: seq_length=5, num_states=1</em>
-    MKWGP
+    MK<span class="pp-mut">W</span>GP<br>
+    M<span class="pp-mut">T</span>FGP<br>
+    MKFG<span class="pp-mut">R</span><br>
+    <span class="pp-mut">L</span>KFGP
+    <span class="pp-ellipsis">... (stochastic; mutated residue highlighted)</span>
     </div>
 
 Translate only the ORF region within a longer sequence
@@ -125,9 +123,6 @@ When the CDS is embedded in flanking UTR context, tag it with
 annotated ORF is translated.
 
 .. code-block:: python
-
-    import poolparty as pp
-    pp.init()
 
     seq  = pp.from_seq("TATAATGAAATTTGGGCCCTAA")
     seq  = pp.annotate_orf(seq, "gene", extent=(4, 19))

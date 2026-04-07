@@ -6,11 +6,6 @@ ordered, without directly modifying sequence content. They include methods
 to replicate, sample, slice, reorder, synchronize, filter, score, and
 eagerly evaluate Pool contents.
 
-.. code-block:: python
-
-    import poolparty as pp
-    pp.init()
-
 .. list-table::
    :widths: 25 75
    :header-rows: 0

@@ -54,7 +54,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``style``
      - ``str | None``
      - ``None``
@@ -90,9 +90,6 @@ enumerate several shuffles in one call (see below).
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     wt       = pp.from_seq("ATCGATCG")
     shuffled = pp.shuffle_seq(wt, mode="random")
     shuffled.print_library()
@@ -112,9 +109,6 @@ Only bases inside the tagged region are permuted; flanks are unchanged.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     wt       = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     shuffled = pp.shuffle_seq(wt, region="cre", mode="random")
     shuffled.print_library()
@@ -123,7 +117,7 @@ Only bases inside the tagged region are permuted; flanks are unchanged.
 
     <div class="pp-pool">
     <em class="pp-header">shuffled: seq_length=16, num_states=1</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>TGGCAACT<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>TGGCAACT<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     <span class="pp-ellipsis">... (stochastic; flanks fixed)</span>
     </div>
 
@@ -139,9 +133,6 @@ only one valid Euler path and will always return the same result.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     wt       = pp.from_seq("AACGAACGTTGC")
     shuffled = pp.shuffle_seq(wt, shuffle_type="dinuc", num_states=3, mode="random")
     shuffled.print_library()
@@ -150,9 +141,9 @@ only one valid Euler path and will always return the same result.
 
     <div class="pp-pool">
     <em class="pp-header">shuffled: seq_length=12, num_states=3</em>
-    ACGCGTTGAAAC<br>
-    AAACGTTGCGAC<br>
-    AACGCGTTGAAC
+    AACGTTGAACGC<br>
+    AACGAACGTTGC<br>
+    AAACGTTGACGC
     </div>
 
 Fixing the number of variants with ``num_states``
@@ -162,9 +153,6 @@ Fixing the number of variants with ``num_states``
 one library generation call.
 
 .. code-block:: python
-
-    import poolparty as pp
-    pp.init()
 
     wt       = pp.from_seq("ATCGATCG")
     shuffled = pp.shuffle_seq(wt, num_states=5, mode="random")

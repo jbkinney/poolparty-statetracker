@@ -56,7 +56,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -81,9 +81,6 @@ pairs them 1:1. Tags are preserved (``keep_tags=True``) so the region can
 be referenced by later operations.
 
 .. code-block:: python
-
-    import poolparty as pp
-    pp.init()
 
     backgrounds = pp.from_seqs(
         ["AAAA<bc/>TTTT", "CCCC<bc/>GGGG", "GGGG<bc/>CCCC"],
@@ -111,9 +108,6 @@ with three shorter variants.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     wt      = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
     inserts = pp.from_seqs(["AAA", "TTT", "CCC"], mode="sequential")
     library = pp.replace_region(wt, inserts, region_name="cre", sync=False, keep_tags=False)
@@ -136,9 +130,6 @@ without deleting any bases.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     wt      = pp.from_seq("AAAA<ins/>TTTT")
     inserts = pp.from_seqs(["GC", "AT"], mode="sequential")
     library = pp.replace_region(wt, inserts, region_name="ins", sync=False, keep_tags=False)
@@ -160,9 +151,6 @@ states. Compare with the first example — same inputs, but 9 states instead
 of 3.
 
 .. code-block:: python
-
-    import poolparty as pp
-    pp.init()
 
     backgrounds = pp.from_seqs(
         ["AAAA<bc/>TTTT", "CCCC<bc/>GGGG", "GGGG<bc/>CCCC"],

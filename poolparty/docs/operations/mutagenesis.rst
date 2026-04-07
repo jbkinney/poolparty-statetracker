@@ -7,11 +7,6 @@ These operations are stochastic by default and produce a different draw
 each time, though most support ``mode='sequential'`` for exhaustive
 enumeration of all possible variants.
 
-.. code-block:: python
-
-    import poolparty as pp
-    pp.init()
-
 .. list-table::
    :widths: 25 75
    :header-rows: 0

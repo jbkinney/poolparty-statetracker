@@ -5,11 +5,6 @@ Region operations tag, replace, and transform specific parts of sequences
 identified by XML-style region markers. For an introduction to regions and
 tag syntax, see :doc:`/regions`.
 
-.. code-block:: python
-
-    import poolparty as pp
-    pp.init()
-
 .. list-table::
    :widths: 25 75
    :header-rows: 0

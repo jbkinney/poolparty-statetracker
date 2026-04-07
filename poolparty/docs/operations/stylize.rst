@@ -51,7 +51,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration order priority for the operation.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -84,7 +84,7 @@ displayed.
 
     <div class="pp-pool">
     <em class="pp-header">styled: seq_length=12, num_states=1</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><strong class="pp-mut">ATCG</strong><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span><strong class="pp-mut">ATCG</strong><span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     </div>
 
 Stylize a different region with a different style
@@ -103,7 +103,7 @@ leaving the rest of the sequence unstyled.
 
     <div class="pp-pool">
     <em class="pp-header">styled: seq_length=21, num_states=1</em>
-    GCGCGC<span class="pp-xtag-cre">&lt;promoter&gt;</span><strong class="pp-codon-a">TATAAT</strong><span class="pp-xtag-cre">&lt;/promoter&gt;</span>ATGAAATTT
+    GCGCGC<span class="pp-xtag-light">&lt;promoter&gt;</span><strong class="pp-codon-a">TATAAT</strong><span class="pp-xtag-light">&lt;/promoter&gt;</span>ATGAAATTT
     </div>
 
 Stylize the full sequence

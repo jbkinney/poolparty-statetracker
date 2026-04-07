@@ -40,7 +40,7 @@ Parameters
    * - ``iter_order``
      - ``int | float | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -68,9 +68,6 @@ Take the reverse complement of the 4-mer ``ATCG``; the result is ``CGAT``.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     wt = pp.from_seq("ATCG")
     r  = pp.rc(wt)
     r.print_library()
@@ -89,9 +86,6 @@ Reverse-complement the full sequence ``AAAA<cre>ATCGATCG</cre>TTTT``
 (tags are stripped before the operation and not carried into the output).
 
 .. code-block:: python
-
-    import poolparty as pp
-    pp.init()
 
     wt = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     r  = pp.rc(wt)
@@ -112,9 +106,6 @@ segment; flanking sequences are returned unchanged.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     wt = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     r  = pp.rc(wt, region="cre")
     r.print_library()
@@ -123,7 +114,7 @@ segment; flanking sequences are returned unchanged.
 
     <div class="pp-pool">
     <em class="pp-header">r: seq_length=8, num_states=1</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>CGATCGAT<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>CGATCGAT<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     </div>
 
 See :func:`~poolparty.rc`.

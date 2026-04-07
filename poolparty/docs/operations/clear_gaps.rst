@@ -41,7 +41,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``

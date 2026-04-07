@@ -6,11 +6,6 @@ sequences. Each input sequence produces exactly one output sequence with
 no internal state. These operations cover reverse complementation, case
 conversion, display styling, cleanup, slicing, and name prefixing.
 
-.. code-block:: python
-
-    import poolparty as pp
-    pp.init()
-
 .. list-table::
    :widths: 25 75
    :header-rows: 0

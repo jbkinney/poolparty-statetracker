@@ -15,6 +15,11 @@ Georgakopoulos-Soares et al. (*Nature Communications*, 2023), and the
 oligo construct layout follows Melnikov et al. (*Nature Biotechnology*,
 2012).
 
+.. image:: /_static/images/figure3a.drawio.svg
+   :width: 80%
+   :align: center
+   :alt: MPRA library design schematic showing the pipeline from template construct through TFBS insertion, shuffling, and barcode attachment.
+
 .. code-block:: python
 
     import poolparty as pp

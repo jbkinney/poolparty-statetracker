@@ -86,7 +86,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``cards``
      - ``dict | list | None``
      - ``None``
@@ -168,7 +168,7 @@ are never modified.
 
     <div class="pp-pool">
     <em class="pp-header">scan: seq_length=18, num_states=1</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-mut">G</span>ATCG<span class="pp-mut">T</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCG<span class="pp-mut">G</span>ATCG<span class="pp-mut">T</span><span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     </div>
 
 Spacing constraints (min_spacing, max_spacing)

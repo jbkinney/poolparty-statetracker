@@ -50,7 +50,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -125,8 +125,6 @@ Provide ``pool`` and ``region`` to substitute the content of a tagged region.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt     = pp.from_seq("AAAA<cre>ATCG</cre>TTTT")
     mutant = pp.from_seq("GGGG", pool=wt, region="cre")
     wt.print_library()
@@ -136,11 +134,11 @@ Provide ``pool`` and ``region`` to substitute the content of a tagged region.
 
     <div class="pp-pool">
     <em class="pp-header">wt: seq_length=12, num_states=1</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     </div>
     <div class="pp-pool">
     <em class="pp-header">mutant: seq_length=4, num_states=1</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>GGGG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>GGGG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     </div>
 
 See :func:`~poolparty.from_seq`.

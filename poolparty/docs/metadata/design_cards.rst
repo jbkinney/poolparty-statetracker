@@ -2,7 +2,7 @@ Design Cards
 ============
 
 PoolParty can automatically pair each generated sequence with a **design
-card** — a DataFrame row that records how the sequence was constructed.
+card**, a DataFrame row that records how the sequence was constructed.
 Columns report the changes applied by each operation: mutation positions,
 substituted characters, scores, orientations, and more. Downstream
 analysis can filter, group, and model sequences using these columns
@@ -27,10 +27,10 @@ Design cards are especially useful when the parameters that vary across a
 library are themselves the object of study. For example:
 
 - In a **deep mutational scanning** library, cards can record which amino
-  acid was substituted at which position — enabling direct analysis of
+  acid was substituted at which position, enabling direct analysis of
   mutation effects without re-parsing codon sequences.
 - In an **MPRA** library, cards can record which binding sites were inserted
-  and in what order — supporting grouping and statistical testing by
+  and in what order, supporting grouping and statistical testing by
   design factor.
 - In **surrogate modeling** of genomic AI predictions, cards can serve
   directly as covariates in regression models, linking sequence design
@@ -47,8 +47,10 @@ The ``cards`` parameter accepts three forms:
     No card columns in the output.
 
 ``list[str]``
-    Request card keys by name. Column names are **prefixed** with the
-    operation id (e.g. ``op[1]:mutagenize.positions``).
+    Request card keys by name. Column names are automatically prefixed
+    with the operation's index in the pipeline and its name
+    (e.g., ``op[1]:mutagenize.positions``, where ``op[1]`` is the
+    second operation).
 
 ``dict[str, str]``
     Map card keys to **custom column names**. No prefix is added.
@@ -97,10 +99,10 @@ Every operation supports two universal keys, regardless of type:
     <div class="pp-pool">
     <em class="pp-header">df — 5 rows × 4 columns</em>
     <table class="pp-df">
-    <tr><th>name</th><th>seq</th><th>mut_state</th><th>mut_seq</th></tr>
-    <tr><td>None</td><td>CTCGATCG</td><td>0</td><td>CTCGATCG</td></tr>
-    <tr><td>None</td><td>GTCGATCG</td><td>1</td><td>GTCGATCG</td></tr>
-    <tr><td>None</td><td>TTCGATCG</td><td>2</td><td>TTCGATCG</td></tr>
+    <tr><th>name</th><th>seq</th><th>mut_seq</th><th>mut_state</th></tr>
+    <tr><td>None</td><td>CTCGATCG</td><td>CTCGATCG</td><td>0</td></tr>
+    <tr><td>None</td><td>GTCGATCG</td><td>GTCGATCG</td><td>1</td></tr>
+    <tr><td>None</td><td>TTCGATCG</td><td>TTCGATCG</td><td>2</td></tr>
     <tr><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td></tr>
     </table>
     </div>
@@ -233,8 +235,8 @@ Each operation in the pipeline can export its own cards independently.
     <em class="pp-header">df — 10 rows × 4 columns</em>
     <table class="pp-df">
     <tr><th>name</th><th>seq</th><th>gc</th><th>complexity</th></tr>
-    <tr><td>None</td><td>AAAAAAAA</td><td>0.00</td><td>0.25</td></tr>
-    <tr><td>None</td><td>AAAAAAAC</td><td>0.125</td><td>0.34</td></tr>
+    <tr><td>None</td><td>AAAAAAAA</td><td>0.00</td><td>0.19</td></tr>
+    <tr><td>None</td><td>AAAAAAAC</td><td>0.12</td><td>0.37</td></tr>
     <tr><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td></tr>
     </table>
     </div>
@@ -265,7 +267,7 @@ Each operation in the pipeline can export its own cards independently.
 .. rubric:: DMS library with codon-level cards
 
 In a deep mutational scanning library, ``mutagenize_orf`` cards record the
-amino-acid-level changes for each variant — no sequence parsing needed.
+amino-acid-level changes for each variant, so no sequence parsing is needed.
 
 .. code-block:: python
 
@@ -282,12 +284,12 @@ amino-acid-level changes for each variant — no sequence parsing needed.
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">df — each row records the amino acid change and position</em>
+    <em class="pp-header">df — 114 rows × 5 columns</em>
     <table class="pp-df">
     <tr><th>name</th><th>seq</th><th>position</th><th>wt_aa</th><th>mut_aa</th></tr>
-    <tr><td>None</td><td>ATGCAATTTGGGCCCTAA</td><td>(1,)</td><td>('K',)</td><td>('Q',)</td></tr>
-    <tr><td>None</td><td>ATGGAATTTGGGCCCTAA</td><td>(1,)</td><td>('K',)</td><td>('E',)</td></tr>
-    <tr><td>None</td><td>ATGAAAGTTGGGCCCTAA</td><td>(2,)</td><td>('F',)</td><td>('V',)</td></tr>
+    <tr><td>None</td><td><span class="pp-xtag-light">&lt;gene&gt;</span>TTCAAATTTGGGCCCTAA<span class="pp-xtag-light">&lt;/gene&gt;</span></td><td>(0,)</td><td>(M,)</td><td>(F,)</td></tr>
+    <tr><td>None</td><td><span class="pp-xtag-light">&lt;gene&gt;</span>CTGAAATTTGGGCCCTAA<span class="pp-xtag-light">&lt;/gene&gt;</span></td><td>(0,)</td><td>(M,)</td><td>(L,)</td></tr>
+    <tr><td>None</td><td><span class="pp-xtag-light">&lt;gene&gt;</span>ATCAAATTTGGGCCCTAA<span class="pp-xtag-light">&lt;/gene&gt;</span></td><td>(0,)</td><td>(M,)</td><td>(I,)</td></tr>
     <tr><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td><td><span class="pp-ellipsis">...</span></td></tr>
     </table>
     </div>

@@ -37,8 +37,9 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering: the pool with the *smallest* value varies
-       fastest (inner loop). Can be set on each individual pool instead.
+     - Controls which pool varies fastest when enumerating combinations.
+       The pool with the smallest value is the inner loop. Can also be set
+       on each individual pool.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -67,8 +68,6 @@ from each input.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     left  = pp.from_seqs(["AA", "CC"], mode="sequential")
     right = pp.from_seqs(["GG", "TT"], mode="sequential")
     pool  = pp.join([left, right])
@@ -88,8 +87,6 @@ Join with a fixed spacer
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     left  = pp.from_seq("ACGT")
     right = pp.from_seqs(["AAAA", "CCCC", "GGGG"], mode="sequential")
     pool  = pp.join([left, right], spacer_str="TTT")
@@ -110,8 +107,6 @@ Here ``b`` is the inner loop and ``a`` is the outer loop.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     a    = pp.from_seqs(["A", "C"], mode='sequential', iter_order=2)   # outer (slower)
     b    = pp.from_seqs(["G", "T"], mode='sequential', iter_order=1)   # inner (faster)
     pool = pp.join([a, b])
@@ -132,8 +127,6 @@ eliminating the need to call :func:`~poolparty.from_seq` for constant flanks.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     promoter = pp.from_seqs(["AAAA", "CCCC"], mode="sequential")
     insert   = pp.from_seqs(["GCGC", "TATA"], mode="sequential")
     pool     = pp.join([promoter, "NNNNN", insert])

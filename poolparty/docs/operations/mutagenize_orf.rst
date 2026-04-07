@@ -84,7 +84,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``cards``
      - ``list[str] | dict | None``
      - ``None``
@@ -134,17 +134,17 @@ distinct codon positions.
 .. code-block:: python
 
     cds     = pp.from_seq("ATGAAATTTGGGCCC")
-    mutants = pp.mutagenize_orf(cds, num_mutations=2, mode="random")
+    mutants = pp.mutagenize_orf(cds, num_mutations=2, mode="random", style="red")
     mutants.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
     <em class="pp-header">mutants: seq_length=15, num_states=1</em>
-    ATGAAAAGCTGGCCC<br>
-    CAGAAAAACGGGCCC<br>
-    ATGAAAGAGTTCCCC<br>
-    ATGAAAAACGGGGGC
+    ATGAAA<span class="pp-mut">AGC</span><span class="pp-mut">TGG</span>CCC<br>
+    <span class="pp-mut">CAG</span>AAA<span class="pp-mut">AAC</span>GGGCCC<br>
+    ATGAAA<span class="pp-mut">GAG</span><span class="pp-mut">TTC</span>CCC<br>
+    ATGAAA<span class="pp-mut">AAC</span>GGG<span class="pp-mut">GGC</span>
     <span class="pp-ellipsis">... (stochastic; two codons mutated per draw)</span>
     </div>
 
@@ -158,7 +158,8 @@ Here only codon positions 1 and 3 (AAA and GGG) can be mutated.
 
     cds     = pp.from_seq("ATGAAATTTGGGCCC")
     mutants = pp.mutagenize_orf(
-        cds, num_mutations=1, codon_positions=[1, 3], mode="random"
+        cds, num_mutations=1, codon_positions=[1, 3], mode="random",
+        style="red",
     )
     mutants.print_library()
 
@@ -166,10 +167,10 @@ Here only codon positions 1 and 3 (AAA and GGG) can be mutated.
 
     <div class="pp-pool">
     <em class="pp-header">mutants: seq_length=15, num_states=1</em>
-    ATGAAATTTGAGCCC<br>
-    ATGCAGTTTGGGCCC<br>
-    ATGAAATTTTACCCC<br>
-    ATGAGATTTGGGCCC
+    ATGAAATTT<span class="pp-mut">GAG</span>CCC<br>
+    ATG<span class="pp-mut">CAG</span>TTTGGGCCC<br>
+    ATGAAATTT<span class="pp-mut">TAC</span>CCC<br>
+    ATG<span class="pp-mut">AGA</span>TTTGGGCCC
     <span class="pp-ellipsis">... (stochastic; only codons 1 or 3 change)</span>
     </div>
 
@@ -181,23 +182,20 @@ Tag the ORF with ``annotate_orf``, then mutate only within that region; the
 
 .. code-block:: python
 
-    import poolparty as pp
-
-    pp.init()
     seq  = pp.from_seq("TATAATGAAATTTGGGCCCTAA")
-    seq  = pp.annotate_orf(seq, "gene", extent=(3, 18))
-    muts = pp.mutagenize_orf(seq, region="gene", num_mutations=1, mode="random")
+    seq  = pp.annotate_orf(seq, "gene", extent=(4, 19))
+    muts = pp.mutagenize_orf(seq, region="gene", num_mutations=1, mode="random", style="red")
     muts.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
     <em class="pp-header">muts: seq_length=22, num_states=1</em>
-    TAT<span class="pp-xtag-cre">&lt;gene&gt;</span>AATAGCATTTGGGCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>CTAA<br>
-    TAT<span class="pp-xtag-cre">&lt;gene&gt;</span>TACGAAATTTGGGCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>CTAA<br>
-    TAT<span class="pp-xtag-cre">&lt;gene&gt;</span>AATACCATTTGGGCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>CTAA<br>
-    TAT<span class="pp-xtag-cre">&lt;gene&gt;</span>AATTTCATTTGGGCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>CTAA<br>
-    TAT<span class="pp-xtag-cre">&lt;gene&gt;</span>CCCGAAATTTGGGCC<span class="pp-xtag-cre">&lt;/gene&gt;</span>CTAA
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span>ATGAAATTTGGG<span class="pp-mut">CTG</span><span class="pp-xtag-light">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span>ATGAAATTTGGG<span class="pp-mut">CAC</span><span class="pp-xtag-light">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span><span class="pp-mut">TTC</span>AAATTTGGGCCC<span class="pp-xtag-light">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span>ATG<span class="pp-mut">CAC</span>TTTGGGCCC<span class="pp-xtag-light">&lt;/gene&gt;</span>TAA<br>
+    TATA<span class="pp-xtag-light">&lt;gene&gt;</span>ATGAAA<span class="pp-mut">GAG</span>GGGCCC<span class="pp-xtag-light">&lt;/gene&gt;</span>TAA
     <span class="pp-ellipsis">... (stochastic; one codon within the ORF per draw)</span>
     </div>
 

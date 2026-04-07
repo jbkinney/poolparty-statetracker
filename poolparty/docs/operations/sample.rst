@@ -52,7 +52,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
 
 ----
 
@@ -73,9 +73,6 @@ representative sample. Without a seed, which sequences appear changes on each
 evaluation.
 
 .. code-block:: python
-
-    import poolparty as pp
-    pp.init()
 
     kmers  = pp.get_kmers(length=4, mode="sequential")
     subset = pp.sample(kmers, num_seqs=5)
@@ -100,9 +97,6 @@ pipeline is evaluated.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     kmers  = pp.get_kmers(length=4, mode="sequential")
     subset = pp.sample(kmers, num_seqs=5, seed=42)
     subset.print_library()
@@ -126,9 +120,6 @@ When ``num_seqs`` exceeds the pool's state count and ``with_replacement=True``
 always honoured.
 
 .. code-block:: python
-
-    import poolparty as pp
-    pp.init()
 
     small  = pp.from_seqs(["AAAA", "CCCC", "GGGG"], mode="sequential")
     large  = pp.sample(small, num_seqs=9, seed=0)
@@ -159,9 +150,6 @@ stochastic pool is seeded.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     wt      = pp.from_seq("ATCGATCG")
     mutants = wt.mutagenize(num_mutations=1)
     sampled = pp.sample(mutants, num_seqs=4, seed=7)
@@ -171,9 +159,9 @@ stochastic pool is seeded.
 
     <div class="pp-pool">
     <em class="pp-header">sampled: seq_length=8, num_states=4</em>
-    ATCGACCG<br>
-    ATCGTTCG<br>
-    ATGGATCG<br>
+    ATCGGTCG<br>
+    ATCGAACG<br>
+    ATCGCTCG<br>
     GTCGATCG
     </div>
 

@@ -3,7 +3,7 @@ materialize
 
 Eagerly generate sequences from a pool and cache them in a new, standalone
 pool whose state space is exactly the set of stored sequences. The resulting
-pool has no parent references (severed DAG), so it can be used as a cheap
+pool is independent of its parent pools, so it can be used as a cheap
 starting point for any number of independent downstream pipelines.
 
 .. code-block:: python
@@ -142,37 +142,30 @@ materialized pool every time.
     ACCGATCG
     </div>
 
-Materialize then apply a deletion scan
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Materialize after filtering
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Because ``materialize`` returns a standalone pool with no upstream parents,
-chaining a deletion scan is just as efficient as starting from a plain
-``from_seqs`` pool.
+Combine ``filter`` with ``materialize`` to lock in the accepted sequences.
+The materialized pool contains only the sequences that passed the predicate,
+with ``NullSeq`` entries already discarded.
 
 .. code-block:: python
 
     wt      = pp.from_seq("ATCGATCG")
-    mutants = pp.mutagenize(wt, num_mutations=1)
-
-    # Snapshot 8 mutants once; subsequent operations cost nothing extra
-    cached  = pp.materialize(mutants, num_seqs=8, seed=1)
-
-    # Systematically delete 2-base windows across every cached sequence
-    scan    = pp.deletion_scan(cached, deletion_length=2)
-    df      = pp.generate_library(scan, num_seqs=8)
-
+    mutants = pp.mutagenize(wt, num_mutations=1, mode="random", num_states=20)
+    passed  = pp.filter(mutants, lambda s: s.count("G") + s.count("C") >= 4)
+    cached  = pp.materialize(passed, num_seqs=5, seed=0, discard_null_seqs=True)
     cached.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">cached: seq_length=8, num_states=8</em>
+    <em class="pp-header">cached: seq_length=8, num_states=5</em>
     ATCGGTCG<br>
-    ATGGATCG<br>
-    ATCGATCA<br>
-    ATCGATCT<br>
-    ATCGATCC<br>
-    <span class="pp-ellipsis">... (8 total)</span>
+    ATCGAACG<br>
+    ATCGCTCG<br>
+    GTCGATCG<br>
+    ACCGATCG
     </div>
 
 See :func:`~poolparty.materialize` or :meth:`~poolparty.Pool.materialize`.

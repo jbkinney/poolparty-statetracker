@@ -62,7 +62,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``cards``
      - ``dict | list | None``
      - ``None``
@@ -165,11 +165,11 @@ creating a combinatorial library in one step.
 
     <div class="pp-pool">
     <em class="pp-header">pool: seq_length=10, num_states=16</em>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AG<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AT<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>CA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AA<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AC<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AG<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AT<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>CA<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC
     <span class="pp-ellipsis">... (16 total)</span>
     </div>
 
@@ -191,11 +191,11 @@ background pool.
 
     <div class="pp-pool">
     <em class="pp-header">pool: seq_length=10, num_states=16</em>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AG<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AT<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>CA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AA<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AC<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AG<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AT<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>CA<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC
     <span class="pp-ellipsis">... (16 total)</span>
     </div>
 

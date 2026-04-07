@@ -39,10 +39,10 @@ combined freely (e.g. ``"blue bold"``).
      - ``bold``, ``underline``, ``blink`` (or ``blinking``),
        ``invert`` (or ``reverse``)
 
-**CSS named colours** — all 140+ standard names are supported:
+**CSS named colours**: all 140+ standard names are supported.
 ``coral``, ``salmon``, ``dodgerblue``, ``rebeccapurple``, etc.
 
-**Hex codes** — ``#RRGGBB`` format (e.g. ``"#ff7f50"``).
+**Hex codes**: ``#RRGGBB`` format (e.g. ``"#ff7f50"``).
 
 **Combined examples:**
 
@@ -67,8 +67,8 @@ Applying styles
 
 .. rubric:: The ``stylize`` operation
 
-Apply a style to an entire sequence, a named region, or characters
-matching a pattern.
+Apply a style to an entire sequence, a named
+:doc:`region </regions>`, or characters matching a pattern.
 
 .. code-block:: python
 
@@ -114,8 +114,8 @@ The ``which`` parameter selects which characters are styled:
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">styled: seq_length=14, num_states=1</em>
-    GCGC<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-region">TATAAT</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>ATGAAATTT
+    <em class="pp-header">styled: seq_length=19, num_states=1</em>
+    GCGC<span class="pp-xtag-light">&lt;cre&gt;</span><span class="pp-region">TATAAT</span><span class="pp-xtag-light">&lt;/cre&gt;</span>ATGAAATTT
     </div>
 
 .. code-block:: python
@@ -141,11 +141,11 @@ the modified positions:
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">muts: seq_length=14, num_states=1</em>
+    <em class="pp-header">muts: seq_length=19, num_states=1</em>
     <span class="pp-ellipsis"># mutated positions shown in red</span><br>
-    <span class="pp-mut">A</span>CGC<span class="pp-xtag-cre">&lt;cre&gt;</span>TATAAT<span class="pp-xtag-cre">&lt;/cre&gt;</span>ATGAAATTT<br>
-    G<span class="pp-mut">A</span>GC<span class="pp-xtag-cre">&lt;cre&gt;</span>TATAAT<span class="pp-xtag-cre">&lt;/cre&gt;</span>ATGAAATTT<br>
-    GC<span class="pp-mut">A</span>C<span class="pp-xtag-cre">&lt;cre&gt;</span>TATAAT<span class="pp-xtag-cre">&lt;/cre&gt;</span>ATGAAATTT<br>
+    <span class="pp-mut">A</span>CGC<span class="pp-xtag-light">&lt;cre&gt;</span>TATAAT<span class="pp-xtag-light">&lt;/cre&gt;</span>ATGAAATTT<br>
+    G<span class="pp-mut">A</span>GC<span class="pp-xtag-light">&lt;cre&gt;</span>TATAAT<span class="pp-xtag-light">&lt;/cre&gt;</span>ATGAAATTT<br>
+    GC<span class="pp-mut">A</span>C<span class="pp-xtag-light">&lt;cre&gt;</span>TATAAT<span class="pp-xtag-light">&lt;/cre&gt;</span>ATGAAATTT<br>
     <span class="pp-ellipsis">...</span>
     </div>
 
@@ -163,6 +163,10 @@ The ``style`` parameter on ``pp.from_seq`` colours the entire sequence:
 .. code-block:: python
 
     pool = pp.from_seq("ACGTACGT", style="blue bold")
+
+For codon-aware styling that highlights reading frames, see
+:doc:`/operations/stylize_orf` and the ``style_codons`` parameter on
+:doc:`/operations/annotate_orf`.
 
 ----
 

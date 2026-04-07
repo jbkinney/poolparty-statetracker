@@ -2,10 +2,7 @@ filter
 ======
 
 Retain only the sequences for which a predicate function returns ``True``; all
-other sequences are replaced with a ``NullSeq`` sentinel.  Upstream pools are
-often built with ``mode="sequential"`` (deterministic enumeration) or
-``mode="random"`` (stochastic draws), depending on whether you need a fixed
-walk through states or sampled variants.
+other sequences are replaced with a ``NullSeq`` sentinel.
 
 .. code-block:: python
 
@@ -69,28 +66,32 @@ Parameters
 Examples
 --------
 
-Filter 6-mers by GC content
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Filter by GC content
+~~~~~~~~~~~~~~~~~~~~~
 
-Keep only 6-mers whose GC count is at least 3 (GC content &ge; 50 %).
+Keep only sequences whose GC count is at least 3 (GC content &ge; 50 %).
+Sequences that fail the predicate become ``None`` (a ``NullSeq`` sentinel);
+pass ``discard_null_seqs=True`` to ``generate_library`` to exclude them from
+the final DataFrame.
 
 .. code-block:: python
 
-    pool    = pp.get_kmers(6, mode="sequential")
-    high_gc = pp.filter(pool, lambda s: s.count("G") + s.count("C") >= 3)
+    seqs    = pp.from_seqs(
+        ["AAAAAA", "GCGCGC", "AAACCC", "TTTTTT", "GGCCAA"],
+        mode="sequential",
+    )
+    high_gc = pp.filter(seqs, lambda s: s.count("G") + s.count("C") >= 3)
     high_gc.print_library()
-    df      = pp.generate_library(high_gc, num_seqs=6, discard_null_seqs=True)
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">high_gc: seq_length=6, num_states=4096</em>
+    <em class="pp-header">high_gc: seq_length=6, num_states=5</em>
     None<br>
+    GCGCGC<br>
+    AAACCC<br>
     None<br>
-    None<br>
-    None<br>
-    None
-    <span class="pp-ellipsis">... (4096 total)</span>
+    GGCCAA
     </div>
 
 Filter by sequence length
@@ -138,36 +139,40 @@ for sequential enumeration under the default state limit.)
 
     <div class="pp-pool">
     <em class="pp-header">no_ecori: seq_length=8, num_states=65536</em>
+    AAAAAAAA<br>
     AAAAAAAC<br>
     AAAAAAAG<br>
     AAAAAAAT<br>
-    AAAAAACA<br>
-    AAAAAACC
+    AAAAAACA
     <span class="pp-ellipsis">... (65536 total)</span>
     </div>
 
-Chain: mutagenize then filter for single-mutant sequences
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Chain: mutagenize then filter by GC content
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Build single-point mutants of a wild-type sequence, then keep only those that
-differ from the wild type at exactly one position.
+Generate all single-nucleotide mutants, then keep only those whose GC
+content is at least 5 out of 8 bases.
 
 .. code-block:: python
 
-    wt       = pp.from_seq("ATCGATCG")
-    mutants  = pp.mutagenize(wt, num_mutations=1, mode="random")
-    singles  = pp.filter(
-        mutants,
-        lambda s: sum(a != b for a, b in zip(s, "ATCGATCG")) == 1,
-    )
-    singles.print_library()
-    df       = pp.generate_library(singles, num_seqs=5, discard_null_seqs=True)
+    wt      = pp.from_seq("ATCGATCG")
+    mutants = pp.mutagenize(wt, num_mutations=1, mode="sequential")
+    high_gc = pp.filter(mutants, lambda s: s.count("G") + s.count("C") >= 5)
+    high_gc.print_library(num_seqs=8)
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">singles: seq_length=8, num_states=1</em>
-    ATCGGTCG
+    <em class="pp-header">high_gc: seq_length=8, num_states=24</em>
+    CTCGATCG<br>
+    GTCGATCG<br>
+    None<br>
+    None<br>
+    ACCGATCG<br>
+    AGCGATCG<br>
+    None<br>
+    None
+    <span class="pp-ellipsis">... (24 total)</span>
     </div>
 
 See :func:`~poolparty.filter`.

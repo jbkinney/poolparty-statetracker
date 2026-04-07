@@ -37,7 +37,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -101,7 +101,7 @@ extracted independently.
 
     bg      = pp.from_seq("AAAA<ins>NNNN</ins>TTTT")
     filled  = pp.replace_region(bg, pp.from_iupac("NNNN", mode="sequential"),
-                                region_name="ins", keep_tags=True)
+                                region_name="ins", sync=False, keep_tags=True)
     content = pp.extract_region(filled, "ins")
     content.print_library()
 

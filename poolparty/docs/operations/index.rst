@@ -1,14 +1,9 @@
 Operations
 ==========
 
-PoolParty provides composable operations for designing DNA sequence libraries.
-Each operation returns a new :class:`~poolparty.Pool`, so calls can be chained
-into a declarative pipeline. All examples assume:
-
-.. code-block:: python
-
-    import poolparty as pp
-    pp.init()
+PoolParty provides over 50 built-in operations for designing DNA sequence
+libraries. Each operation takes one or more Pools as input and returns a new
+:class:`~poolparty.Pool`, so calls can be chained into a pipeline.
 
 .. toctree::
    :hidden:
@@ -30,12 +25,13 @@ into a declarative pipeline. All examples assume:
 
 Most operations accept a **mode** parameter that controls whether outputs are
 enumerated exhaustively (``sequential``), sampled randomly (``random``), or
-uniquely determined by the input (``fixed``). Each operation has **internal
-states** determined by its mode and parameters — see :doc:`modes` for details.
+uniquely determined by the input (``fixed``). Each operation's mode and
+parameters determine how many output sequences it produces — see :doc:`modes`
+for details.
 
-When operations are combined, their internal states compose to determine the
-output pool's ``num_states`` — through multiplication, addition, or other rules
-depending on the operation. See :doc:`library_size` for details and a worked
+When operations are combined, the output pool's ``num_states`` follows from
+the combination rule — multiplication, addition, or other patterns depending
+on the operation type. See :doc:`library_size` for details and a worked
 example.
 
 Every operation that accepts a ``pool`` argument is also available as a method

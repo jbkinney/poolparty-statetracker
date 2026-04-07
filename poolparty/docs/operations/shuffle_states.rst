@@ -44,7 +44,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
 
 ----
 
@@ -65,8 +65,6 @@ permutation is deterministic and reproducible.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     kmers    = pp.get_kmers(length=2, mode="sequential")
     shuffled = pp.state_shuffle(kmers, seed=0)
     shuffled.print_library()
@@ -91,8 +89,6 @@ subset without replacement — equivalent to a seeded random sample.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     kmers   = pp.get_kmers(length=2, mode="sequential")
     shuffled = pp.state_shuffle(kmers, seed=0)
     subset  = pp.state_slice(shuffled, slice(0, 6))
@@ -118,8 +114,6 @@ output order is fully determined by the seed value.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     kmers      = pp.get_kmers(length=2, mode="sequential")
     shuffled_0 = pp.state_shuffle(kmers, seed=0)
     shuffled_0.print_library()

@@ -14,11 +14,6 @@ All scans share a common interface:
 - **region** — restrict the scan to a tagged region
 - **mode** — ``'sequential'`` (left-to-right) or ``'random'`` (shuffled)
 
-.. code-block:: python
-
-    import poolparty as pp
-    pp.init()
-
 .. toctree::
    :hidden:
 

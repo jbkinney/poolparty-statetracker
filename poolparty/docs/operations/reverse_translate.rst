@@ -53,7 +53,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -83,9 +83,6 @@ each amino acid, producing a single fixed DNA sequence.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
-
     dna = pp.reverse_translate("MKTL")
     dna.print_library()
 
@@ -103,9 +100,6 @@ Stochastic back-translation
 may produce a different DNA sequence encoding the same protein.
 
 .. code-block:: python
-
-    import poolparty as pp
-    pp.init()
 
     dna = pp.reverse_translate("MKTL", codon_selection="random", num_states=4)
     dna.print_library()
@@ -127,9 +121,6 @@ Round-trip a DNA sequence through protein and back — the resulting DNA may
 differ due to codon degeneracy, but the encoded protein is identical.
 
 .. code-block:: python
-
-    import poolparty as pp
-    pp.init()
 
     dna     = pp.from_seq("ATGAAACCCGGG")
     protein = pp.translate(dna)

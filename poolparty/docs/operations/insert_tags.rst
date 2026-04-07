@@ -44,7 +44,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -68,8 +68,6 @@ Mark positions 4–12 of a 16-mer as the ``cre`` region.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt     = pp.from_seq("AAAAATCGATCGTTTT")
     tagged = pp.insert_tags(wt, "cre", start=4, stop=12)
     tagged.print_library()
@@ -89,8 +87,6 @@ any bases — useful as a landmark for :func:`~poolparty.replace_region`.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt    = pp.from_seq("AAAAATCGATCGTTTT")
     point = pp.insert_tags(wt, "ins", start=4)
     point.print_library()
@@ -109,8 +105,6 @@ Apply ``insert_tags`` twice to define ``left`` and ``right`` regions.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt    = pp.from_seq("AAAAATCGGGGGCCCTTTT")
     step1 = pp.insert_tags(wt,    "left",  start=4,  stop=8)
     step2 = pp.insert_tags(step1, "right", start=13, stop=17)
@@ -131,8 +125,6 @@ Use ``mode="sequential"`` for deterministic ordering of single mutants.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt      = pp.from_seq("AAAAATCGATCGTTTT")
     tagged  = pp.insert_tags(wt, "cre", start=4, stop=12)
     mutants = pp.mutagenize(tagged, num_mutations=1, region="cre", mode="sequential")

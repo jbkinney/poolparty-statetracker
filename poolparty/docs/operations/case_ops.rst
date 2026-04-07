@@ -50,7 +50,7 @@ bases remain unchanged.
 
     <div class="pp-pool">
     <em class="pp-header">up: seq_length=8, num_states=1</em>
-    aaaa<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>tttt
+    aaaa<span class="pp-xtag-light">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>tttt
     </div>
 
 lower: lowercase a full sequence
@@ -87,7 +87,7 @@ are returned unchanged.
 
     <div class="pp-pool">
     <em class="pp-header">lo: seq_length=8, num_states=1</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>atcgatcg<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>atcgatcg<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     </div>
 
 swapcase: swap a mixed-case sequence
@@ -125,7 +125,8 @@ Apply ``lower`` to the full sequence, then ``swapcase`` restricted to the
 
     <div class="pp-pool">
     <em class="pp-header">hi: seq_length=8, num_states=1</em>
-    aaaa<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>tttt
+    aaaa<span class="pp-xtag-light">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>tttt
     </div>
 
-See :func:`~poolparty.swapcase`.
+See :func:`~poolparty.upper`, :func:`~poolparty.lower`, and
+:func:`~poolparty.swapcase`.

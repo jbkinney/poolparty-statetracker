@@ -7,11 +7,6 @@ represent user-specified sequences, DNA sequences generated using IUPAC
 ambiguity codes or position weight matrices, random k-mers, constrained
 barcodes, and more.
 
-.. code-block:: python
-
-    import poolparty as pp
-    pp.init()
-
 .. list-table::
    :widths: 25 75
    :header-rows: 0

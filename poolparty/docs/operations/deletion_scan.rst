@@ -65,7 +65,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -174,13 +174,13 @@ are always returned unchanged.
 
     <div class="pp-pool">
     <em class="pp-header">dels: seq_length=16, num_states=7</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-del">--</span>CGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>A<span class="pp-del">--</span>GATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AT<span class="pp-del">--</span>ATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATC<span class="pp-del">--</span>TCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-del">--</span>CG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGA<span class="pp-del">--</span>G<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGAT<span class="pp-del">--</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span><span class="pp-del">--</span>CGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>A<span class="pp-del">--</span>GATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>AT<span class="pp-del">--</span>ATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATC<span class="pp-del">--</span>TCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCG<span class="pp-del">--</span>CG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCGA<span class="pp-del">--</span>G<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCGAT<span class="pp-del">--</span><span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     </div>
 
 Scan only specific positions

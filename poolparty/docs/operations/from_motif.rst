@@ -56,7 +56,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``style``
      - ``str | None``
      - ``None``
@@ -172,10 +172,10 @@ Provide ``pool`` and ``region`` to draw motif sequences into a fixed context.
 
     <div class="pp-pool">
     <em class="pp-header">pool: seq_length=10, num_states=4</em>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>CA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AC<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AC<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>CA<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AC<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC
     </div>
 
 Pool method shorthand
@@ -202,10 +202,10 @@ background pool.
 
     <div class="pp-pool">
     <em class="pp-header">pool: seq_length=10, num_states=4</em>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>CA<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC<br>
-    GCGC<span class="pp-xtag-cre">&lt;insert&gt;</span>AC<span class="pp-xtag-cre">&lt;/insert&gt;</span>GCGC
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AC<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AC<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>CA<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC<br>
+    GCGC<span class="pp-xtag-light">&lt;insert&gt;</span>AC<span class="pp-xtag-light">&lt;/insert&gt;</span>GCGC
     </div>
 
 See :func:`~poolparty.from_motif` and :meth:`~poolparty.DnaPool.insert_from_motif`.

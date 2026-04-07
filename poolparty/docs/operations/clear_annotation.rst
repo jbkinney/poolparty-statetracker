@@ -43,7 +43,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration order priority for the operation.
+     - Enumeration order when combined with other pools.
    * - ``prefix``
      - ``str | None``
      - ``None``
@@ -100,7 +100,7 @@ counting or export.
     <div class="pp-pool">
     <em class="pp-header">bare: seq_length=None, num_states=16</em>
     AAAAATCGTTTT<br>
-    AAAAACGTTTT<br>
+    AAAAAACGTTTT<br>
     AAAAATAGTTTT<br>
     AAAAATCATTTT<br>
     AAAACTCGTTTT<br>

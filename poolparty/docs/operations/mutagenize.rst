@@ -70,7 +70,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
 
 ----
 
@@ -118,11 +118,11 @@ one ``generate_library`` call.
 
     <div class="pp-pool">
     <em class="pp-header">mutants: seq_length=8, num_states=5</em>
-    ATCG<span class="pp-mut">T</span>TCG<br>
-    ATCGATC<span class="pp-mut">T</span><br>
-    ATCG<span class="pp-mut">C</span>TCG<br>
+    ATCG<span class="pp-mut">G</span>TCG<br>
     ATCGA<span class="pp-mut">A</span>CG<br>
-    ATCGAT<span class="pp-mut">G</span>G
+    ATCG<span class="pp-mut">C</span>TCG<br>
+    <span class="pp-mut">G</span>TCGATCG<br>
+    A<span class="pp-mut">C</span>CGATCG
     </div>
 
 Per-base mutation rate (mutation_rate=0.1)
@@ -141,7 +141,7 @@ of substitutions per draw follows a Binomial distribution and may be zero.
 
     <div class="pp-pool">
     <em class="pp-header">mutants: seq_length=8, num_states=1</em>
-    A<span class="pp-mut">C</span>CGATCG
+    ATCG<span class="pp-mut">T</span>T<span class="pp-mut">A</span>G
     </div>
 
 Mutate only within a named region
@@ -162,11 +162,11 @@ region is enumerated.
 
     <div class="pp-pool">
     <em class="pp-header">mutants: seq_length=16, num_states=24</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">C</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">G</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">T</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>A<span class="pp-mut">A</span>CGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>A<span class="pp-mut">C</span>CGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span><span class="pp-mut">C</span>TCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span><span class="pp-mut">G</span>TCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span><span class="pp-mut">T</span>TCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>A<span class="pp-mut">A</span>CGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>A<span class="pp-mut">C</span>CGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     <span class="pp-ellipsis">... (24 total)</span>
     </div>
 

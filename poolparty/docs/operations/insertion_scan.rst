@@ -74,7 +74,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
 
 ----
 
@@ -95,8 +95,6 @@ length 9.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt    = pp.from_seq("ACGTACGT")
     bases = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
     scan  = wt.insertion_scan(insertion_pool=bases, mode="sequential", style="red")
@@ -122,8 +120,6 @@ Use ``from_iupac("NN")`` to enumerate all 16 dinucleotide inserts.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     nn   = pp.from_iupac("NN", mode="sequential")
     scan = wt.insertion_scan(insertion_pool=nn, mode="sequential", style="red")
@@ -151,8 +147,6 @@ valid positions; output length stays 8. This is equivalent to calling
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt    = pp.from_seq("ACGTACGT")
     bases = pp.from_seqs(["AA", "CC", "GG", "TT"], mode="sequential")
     scan  = wt.insertion_scan(insertion_pool=bases, replace=True, mode="sequential",
@@ -179,8 +173,6 @@ valid insertion sites; flanks are never altered.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt    = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     bases = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
     scan  = wt.insertion_scan(insertion_pool=bases, region="cre", mode="sequential",
@@ -191,11 +183,11 @@ valid insertion sites; flanks are never altered.
 
     <div class="pp-pool">
     <em class="pp-header">scan: seq_length=17, num_states=36</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">A</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>A<span class="pp-mut">A</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AT<span class="pp-mut">A</span>CGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATC<span class="pp-mut">A</span>GATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-mut">A</span>ATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span><span class="pp-mut">A</span>ATCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>A<span class="pp-mut">A</span>TCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>AT<span class="pp-mut">A</span>CGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATC<span class="pp-mut">A</span>GATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCG<span class="pp-mut">A</span>ATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     <span class="pp-ellipsis">... (36 total)</span>
     </div>
 
@@ -206,8 +198,6 @@ Limit the scan to specific insertion sites.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt    = pp.from_seq("ACGTACGT")
     bases = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
     scan  = wt.insertion_scan(insertion_pool=bases, positions=[0, 4, 8],
@@ -235,8 +225,6 @@ positions along a 12-mer.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt    = pp.from_seq("ACGTACGTACGT")
     motif = pp.from_iupac("RRYYYY")
     scan  = wt.insertion_scan(insertion_pool=motif, mode="random", num_states=5,

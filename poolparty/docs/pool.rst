@@ -1,31 +1,50 @@
 Pools
 =====
 
-Every PoolParty operation returns a **Pool**. A Pool represents a designed
-sequence library: it records which operation was applied and to what inputs,
-forming a directed acyclic graph (DAG) of operations. PoolParty walks this
-graph to generate sequences on demand when you call ``generate_library()``,
-``print_library()``, ``to_df()``, or ``to_file()``.
+A **Pool** represents a designed collection of DNA sequences. A Pool
+can represent the final library you wish to generate, or an intermediate
+set of sequences used to construct it. Pools are *lazy*: they record
+which operations to apply and to what inputs, forming a directed acyclic
+graph (DAG), but no sequences are generated until you explicitly request
+them. This means you can explore and test multiple design options
+without triggering expensive computations.
 
-Every operation returns a **new** Pool — the original is never modified. This
-means you can branch a pipeline at any point and apply different operations to
-each branch without interference.
+Pools are also *immutable*: every operation returns a new Pool, leaving
+the original unchanged. You can branch a pipeline at any point and apply
+different operations to each branch without interference.
 
-Each pool carries a reference to the operation that created it. You can inspect
-it via ``pool.operation`` to check settings like ``operation.mode`` and
-``operation.num_states`` at any point in a pipeline. See :doc:`operations/modes`
-for details.
+The final Pool in a pipeline -- the one from which you generate
+sequences -- is called the *root Pool*. The DAG rooted at this Pool
+describes the high-level logic used to generate your library; PoolParty
+handles the procedural details and bookkeeping internally.
 
-Pools must be created inside an active context. Call ``pp.init()`` once at the
-top of a notebook, or use ``with pp.Party():`` for automatic cleanup when the
-block exits. See :doc:`quickstart` for details.
+----
 
-All examples assume:
+Context management
+------------------
+
+Pools must be created inside an active context. Call ``pp.init()`` before
+each independent library design to initialize a fresh context:
 
 .. code-block:: python
 
     import poolparty as pp
     pp.init()
+
+If you design multiple libraries in one script, call ``pp.init()`` again
+before starting each new design. For scoped contexts (e.g., inside a
+reusable function), use ``with pp.Party():`` instead -- the context is
+automatically cleaned up when the block exits:
+
+.. code-block:: python
+
+    with pp.Party():
+        pool = pp.from_seq("ACGT")
+        # ... build and export library ...
+    # context is released here
+
+All remaining examples on this page assume the ``import`` and
+``pp.init()`` calls above have been run.
 
 ----
 
@@ -44,7 +63,8 @@ Properties
      - Human-readable name for this pool. Settable. Defaults to ``"pool[N]"``.
    * - ``num_states``
      - ``int``
-     - Number of distinct sequences this pool produces.
+     - Number of distinct sequences this pool produces (the total across the
+       entire pipeline).
    * - ``seq_length``
      - ``int | None``
      - Fixed sequence length, or ``None`` for variable-length pools.
@@ -59,6 +79,11 @@ Properties
      - ``Operation``
      - The operation that created this pool. Exposes ``operation.mode``,
        ``operation.num_states``, and ``operation.natural_num_states``.
+
+Internally, each sequence is identified by a *state* -- an integer that,
+together with a random seed, uniquely determines the sequence content.
+``pool.num_states`` is the total number of distinct states (and therefore
+distinct sequences) the pool can produce.
 
 Note that ``pool.num_states`` and ``pool.operation.num_states`` are different
 values. The pool's ``num_states`` is the total across the entire pipeline,
@@ -76,14 +101,14 @@ while the operation's ``num_states`` is just that operation's contribution
 
 ----
 
-Naming and copying
-------------------
+Naming pools
+------------
 
 ``named(name)``
 ~~~~~~~~~~~~~~~
 
 Set the pool's name and return ``self``, allowing in-line renaming without
-breaking a chain.
+breaking a chain:
 
 .. code-block:: python
 
@@ -96,71 +121,14 @@ breaking a chain.
           .named("single_mut")
     )
 
-``copy()`` and ``deepcopy()``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-``copy()`` creates a new pool that shares the same input pools — useful for
-branching a design at a specific point without re-running earlier operations.
-
-``deepcopy()`` creates a fully independent copy of the entire upstream DAG
-— nothing is shared with the original. In most cases ``copy()`` is sufficient.
-Use ``deepcopy()`` when the two branches must be fully independent and share
-no input pools.
-
-.. code-block:: python
-
-    base = pp.from_iupac("NNNN", mode="sequential")
-    branch_a = base.mutagenize(num_mutations=1).named("branch_a")
-    branch_b = base.copy().mutagenize(num_mutations=2).named("branch_b")
-    # branch_a and branch_b share the same "base" input pool
+Pool names appear in ``print_library`` headers and ``print_dag`` output.
+This is distinct from ``prefix``, which labels individual *sequence names*
+in the output DataFrame (see :doc:`metadata/naming`).
 
 ----
 
-Operator shortcuts
-------------------
-
-Pools support three Python operators as shorthand for common operations:
-
-``pool_a + pool_b``
-    Equivalent to ``pp.stack([pool_a, pool_b])``. See :doc:`operations/stack`.
-
-``pool * N``
-    Equivalent to ``pp.repeat(pool, times=N)``. See :doc:`operations/repeat`.
-
-``pool[start:stop]``
-    Equivalent to ``pp.slice_states(pool, start=start, stop=stop)``. See
-    :doc:`operations/slice_states`.
-
-.. code-block:: python
-
-    a = pp.from_seqs(["AAA", "CCC"], mode="sequential")
-    b = pp.from_seqs(["GGG", "TTT"], mode="sequential")
-
-    combined = a + b          # 4 states (2 + 2)
-    repeated = a * 3          # 6 states (2 × 3)
-    sliced   = combined[:3]   # 3 states (first 3 of 4)
-
-----
-
-Generating sequences
---------------------
-
-``generate_library(...)``
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Generate all sequences from this pool and return them as a
-:class:`pandas.DataFrame`. Best for small to medium pools; for libraries above ~10k
-sequences, use ``to_df`` which streams in chunks. See
-:doc:`operations/generate_library` for full documentation.
-
-.. code-block:: python
-
-    pool = pp.from_iupac("NNNN", mode="sequential")
-    df   = pool.generate_library()
-    # df has columns: name, seq  (plus any design card columns)
-
-``print_library(...)``
-~~~~~~~~~~~~~~~~~~~~~~
+Previewing sequences — ``print_library(...)``
+----------------------------------------------
 
 Print a formatted preview of the pool's sequences to stdout. Returns ``self``
 so it can be used mid-pipeline.
@@ -177,12 +145,6 @@ so it can be used mid-pipeline.
      - ``int | None``
      - ``None``
      - Number of sequences to show.
-   * - ``num_cycles``
-     - ``int | None``
-     - ``1``
-     - Number of complete passes through the pool's ``num_states`` sequences
-       (used when ``num_seqs`` is not given). One cycle produces
-       ``num_states`` sequences.
    * - ``show_header``
      - ``bool``
      - ``True``
@@ -191,26 +153,14 @@ so it can be used mid-pipeline.
      - ``bool``
      - ``True``
      - Include the sequence name column.
-   * - ``show_seq``
-     - ``bool``
-     - ``True``
-     - Include the sequence column.
    * - ``show_state``
      - ``bool``
      - ``False``
      - Include the state index column.
-   * - ``pad_names``
-     - ``bool``
-     - ``True``
-     - Align sequences by padding names to the same width.
    * - ``seed``
      - ``int | None``
      - ``None``
      - Random seed for reproducible previews.
-   * - ``discard_null_seqs``
-     - ``bool``
-     - ``False``
-     - Skip sequences removed by a ``filter`` operation (``NullSeq``).
 
 See :class:`~poolparty.Pool` in the :doc:`api` for the full parameter list.
 
@@ -229,6 +179,23 @@ See :class:`~poolparty.Pool` in the :doc:`api` for the full parameter list.
     pool[0].4  AAACA<br>
     pool[0].5  AAACC<br>
     </div>
+
+----
+
+Generating libraries — ``generate_library(...)``
+-------------------------------------------------
+
+Generate all sequences from this pool and return them as a
+:class:`pandas.DataFrame`. Best for small to medium pools; for libraries above ~10k
+sequences, use ``to_df`` which streams in chunks.
+
+.. code-block:: python
+
+    pool = pp.from_iupac("NNNN", mode="sequential")
+    df   = pool.generate_library()
+    # df has columns: name, seq  (plus any design card columns)
+
+See :doc:`operations/generate_library` for full documentation.
 
 ----
 
@@ -487,3 +454,50 @@ Print an ASCII tree of the computation graph rooted at this pool. Returns
             └── op[1]:mutagenize [mode=sequential, n=9]
                 └── pool[0] (pool, n=1)
                     └── op[0]:from_seq [mode=fixed, n=1]
+
+----
+
+Advanced
+--------
+
+Operator shortcuts
+~~~~~~~~~~~~~~~~~~
+
+Pools support three Python operators as shorthand for common operations:
+
+``pool_a + pool_b``
+    Equivalent to ``pp.stack([pool_a, pool_b])``. See :doc:`operations/stack`.
+
+``pool * N``
+    Equivalent to ``pp.repeat(pool, times=N)``. See :doc:`operations/repeat`.
+
+``pool[start:stop]``
+    Equivalent to ``pp.slice_states(pool, start=start, stop=stop)``. See
+    :doc:`operations/slice_states`.
+
+.. code-block:: python
+
+    a = pp.from_seqs(["AAA", "CCC"], mode="sequential")
+    b = pp.from_seqs(["GGG", "TTT"], mode="sequential")
+
+    combined = a + b          # 4 states (2 + 2)
+    repeated = a * 3          # 6 states (2 × 3)
+    sliced   = combined[:3]   # 3 states (first 3 of 4)
+
+``copy()`` and ``deepcopy()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``copy()`` creates a new pool that shares the same input pools -- useful for
+branching a design at a specific point without re-running earlier operations.
+
+``deepcopy()`` creates a fully independent copy of the entire upstream DAG
+-- nothing is shared with the original. In most cases ``copy()`` is sufficient.
+Use ``deepcopy()`` when the two branches must be fully independent and share
+no input pools.
+
+.. code-block:: python
+
+    base = pp.from_iupac("NNNN", mode="sequential")
+    branch_a = base.mutagenize(num_mutations=1).named("branch_a")
+    branch_b = base.copy().mutagenize(num_mutations=2).named("branch_b")
+    # branch_a and branch_b share the same "base" input pool

@@ -75,7 +75,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Iteration priority for downstream multi-pool composition.
+     - Enumeration order when combined with other pools.
 
 .. note::
 
@@ -104,8 +104,6 @@ generation seeding).
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     scan = wt.shuffle_scan(shuffle_length=3, mode="random", style="red")
     scan.print_library()
@@ -125,8 +123,6 @@ window; the preview lists each of the three pool states.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     scan = wt.shuffle_scan(shuffle_length=3, shuffles_per_position=3, mode="random",
                            style="red")
@@ -150,8 +146,6 @@ is drawn per state (here the preview is a single row).
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     scan = wt.shuffle_scan(shuffle_length=2, positions=[0, 3, 6], mode="random",
                            style="red")
@@ -173,8 +167,6 @@ for HTML.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt   = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     scan = wt.shuffle_scan(shuffle_length=3, region="cre", mode="random",
                            style="red")
@@ -184,7 +176,7 @@ for HTML.
 
     <div class="pp-pool">
     <em class="pp-header">scan: seq_length=16, num_states=1</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATC<span class="pp-mut">TAG</span>CG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATC<span class="pp-mut">TAG</span>CG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     </div>
 
 Sequential mode — all window positions
@@ -196,8 +188,6 @@ there are 6 positions.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     scan = wt.shuffle_scan(shuffle_length=3, mode="sequential", style="red")
     scan.print_library()

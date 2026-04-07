@@ -81,7 +81,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``cards``
      - ``dict | list | None``
      - ``None``
@@ -168,11 +168,11 @@ never touched.
 
     <div class="pp-pool">
     <em class="pp-header">scan: seq_length=20, num_states=16</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGAT<span class="pp-mut">A</span>GAT<span class="pp-mut">A</span>G<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">A</span>TCGATCGATC<span class="pp-mut">C</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGAT<span class="pp-mut">A</span>GATC<span class="pp-mut">G</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">A</span>TCGATCG<span class="pp-mut">T</span>TCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGA<span class="pp-mut">C</span>CGA<span class="pp-mut">A</span>CG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCGAT<span class="pp-mut">A</span>GAT<span class="pp-mut">A</span>G<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span><span class="pp-mut">A</span>TCGATCGATC<span class="pp-mut">C</span><span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCGAT<span class="pp-mut">A</span>GATC<span class="pp-mut">G</span><span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span><span class="pp-mut">A</span>TCGATCG<span class="pp-mut">T</span>TCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCGA<span class="pp-mut">C</span>CGA<span class="pp-mut">A</span>CG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     <span class="pp-ellipsis">... (16 total)</span>
     </div>
 

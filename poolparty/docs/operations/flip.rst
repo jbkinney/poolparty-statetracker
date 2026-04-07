@@ -57,7 +57,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``style``
      - ``str | None``
      - ``None``
@@ -137,31 +137,32 @@ returned unchanged.
 
     <div class="pp-pool">
     <em class="pp-header">flipped: seq_length=16, num_states=2</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">CGATCGAT</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span><span class="pp-mut">CGATCGAT</span><span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     </div>
 
-Use with iter_order in a join
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Flip a multi-state pool
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-Set ``iter_order`` so that ``flip`` is the inner loop when joined with
-another pool — every insert appears in both orientations together.
+Flipping a pool with multiple states doubles the library: each variant
+appears once in the forward orientation and once reverse-complemented.
 
 .. code-block:: python
 
-    inserts = pp.from_seqs(["ACGT", "GGCC"], mode="sequential", iter_order=2)
-    wt      = pp.from_seq("AAAA<ins/>TTTT")
-    both    = wt.replace_region(inserts, "ins", sync=False, keep_tags=False).flip(iter_order=1, style="red")
+    variants = pp.from_seqs(["AACG", "TTAG", "GCCA"], mode="sequential")
+    both     = variants.flip(style="red")
     both.print_library()
 
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">both: seq_length=12, num_states=4</em>
-    AAAAACGTTTTT<br>
-    AAAAGGCCTTTT<br>
-    <span class="pp-mut">AAAAACGTTTTT</span><br>
-    <span class="pp-mut">AAAAGGCCTTTT</span>
+    <em class="pp-header">both: seq_length=4, num_states=6</em>
+    AACG<br>
+    <span class="pp-mut">CGTT</span><br>
+    TTAG<br>
+    <span class="pp-mut">CTAA</span><br>
+    GCCA<br>
+    <span class="pp-mut">TGGC</span>
     </div>
 
 See :func:`~poolparty.flip`.

@@ -64,7 +64,7 @@ Parameters
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``style``
      - ``str | None``
      - ``None``
@@ -199,9 +199,9 @@ Provide ``pool`` and ``region`` to insert each sequence into a fixed context.
 
     <div class="pp-pool">
     <em class="pp-header">pool: seq_length=4, num_states=3</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ACGT<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>TGCA<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>GGCC<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ACGT<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>TGCA<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>GGCC<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     </div>
 
 See :func:`~poolparty.from_seqs`.

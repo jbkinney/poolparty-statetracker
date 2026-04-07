@@ -3,7 +3,11 @@ Operation Modes
 
 Each operation has a **mode** that controls how it produces its output
 sequences — whether they are enumerated exhaustively, sampled randomly, or
-uniquely determined by the input.
+uniquely determined by the input. Library designs range from exhaustive
+catalogs of every possible variant to sparse random samples; modes let
+you choose where on that spectrum each operation sits. Most operations
+default to ``random``; some (like ``rc``) are always ``fixed``. Each
+operation's page lists its default.
 
 .. code-block:: python
 
@@ -36,9 +40,11 @@ Internal state
 
 The **internal state** is an index into those possibilities. It tells the
 operation which one to use. Each operation exposes
-``operation.num_states``, the count of internal states it has. The resulting
-``pool.num_states`` is ``operation.num_states`` multiplied by the input
-pool's ``num_states`` (see :doc:`library_size` for composition rules).
+``operation.num_states``, the count of internal states it has. For most
+operations, the resulting ``pool.num_states`` is ``operation.num_states``
+multiplied by the input pool's ``num_states``. Other composition patterns
+(stacking, synchronisation) follow different rules — see
+:doc:`library_size` for the full picture.
 
 Each mode sets ``operation.num_states`` differently, and the ``num_states``
 parameter can override the default. The following sections cover each mode
@@ -62,7 +68,7 @@ order. The same input always produces the same library.
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">mutants: seq_length=3, num_states=9</em>
+    <em class="pp-header">pool[1]: seq_length=3, num_states=9</em>
     CCG<br>
     GCG<br>
     TCG<br>
@@ -95,7 +101,7 @@ unchanged.
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">mutants: seq_length=3, num_states=1</em>
+    <em class="pp-header">pool[1]: seq_length=3, num_states=1</em>
     ATG
     </div>
 
@@ -120,7 +126,7 @@ resulting ``pool.num_states`` is unchanged.
 .. raw:: html
 
     <div class="pp-pool">
-    <em class="pp-header">r: seq_length=4, num_states=1</em>
+    <em class="pp-header">pool[1]: seq_length=4, num_states=1</em>
     CGAT
     </div>
 
@@ -159,7 +165,7 @@ operation uses, overriding the default.
     .. raw:: html
 
         <div class="pp-pool">
-        <em class="pp-header">mutants: seq_length=3, num_states=3</em>
+        <em class="pp-header">pool[1]: seq_length=3, num_states=3</em>
         CCG<br>
         GCG<br>
         TCG
@@ -181,7 +187,7 @@ operation uses, overriding the default.
     .. raw:: html
 
         <div class="pp-pool">
-        <em class="pp-header">mutants: seq_length=3, num_states=12</em>
+        <em class="pp-header">pool[1]: seq_length=3, num_states=12</em>
         <span class="pp-ellipsis"># cycle 1</span><br>
         CCG<br>
         GCG<br>
@@ -216,7 +222,7 @@ operation uses, overriding the default.
     .. raw:: html
 
         <div class="pp-pool">
-        <em class="pp-header">mutants: seq_length=3, num_states=5</em>
+        <em class="pp-header">pool[1]: seq_length=3, num_states=5</em>
         ATG<br>
         GCG<br>
         ACT<br>
@@ -261,8 +267,10 @@ Quick reference
 
 ----
 
-Inspecting pool and operation attributes
------------------------------------------
+Inspecting mode-related attributes
+-----------------------------------
+
+Each pool exposes three operation-level attributes relevant to modes:
 
 .. list-table::
    :header-rows: 1
@@ -270,16 +278,15 @@ Inspecting pool and operation attributes
 
    * - Attribute
      - Description
-   * - ``pool.num_states``
-     - Total number of sequences the pool produces
-   * - ``pool.seq_length``
-     - Fixed sequence length (or ``None``)
    * - ``pool.operation.mode``
      - The mode of the operation that created this pool
    * - ``pool.operation.num_states``
      - The operation's internal state count
    * - ``pool.operation.natural_num_states``
      - The number of possibilities before any ``num_states`` override
+
+For pool-level properties (``num_states``, ``seq_length``, ``regions``,
+etc.), see :doc:`/pool`.
 
 Use ``print_dag()`` to inspect the full operation tree, which shows each
 node's mode and internal state count:
@@ -297,12 +304,3 @@ node's mode and internal state count:
 
 See :doc:`library_size` for how internal states compose when operations are
 chained.
-
-----
-
-Default modes
--------------
-
-Each operation has its own default mode. Most operations default to
-``random``; operations like ``rc`` are always ``fixed``. Check each
-operation's parameter table for its default.

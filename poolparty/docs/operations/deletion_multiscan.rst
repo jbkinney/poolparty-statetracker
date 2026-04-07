@@ -82,7 +82,7 @@ Parameters
    * - ``iter_order``
      - ``float | None``
      - ``None``
-     - Iteration priority for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
    * - ``cards``
      - ``dict | list | None``
      - ``None``
@@ -155,7 +155,7 @@ keeping the flanking sequence intact.
 
     <div class="pp-pool">
     <em class="pp-header">scan: seq_length=16, num_states=1</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-del">-</span>TC<span class="pp-del">-</span><span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCG<span class="pp-del">-</span>TC<span class="pp-del">-</span><span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     </div>
 
 Spacing constraints (min_spacing, max_spacing)

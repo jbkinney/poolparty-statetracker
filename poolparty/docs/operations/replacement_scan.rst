@@ -63,15 +63,15 @@ Parameters
    * - ``prefix_position``
      - ``str | None``
      - ``None``
-     - Prefix for position index (e.g., 'pos_' produces 'pos_0', 'pos_1', ...).
+     - Prefix for position index (e.g., ``'pos_'`` produces ``'pos_0'``, ``'pos_1'``, ...).
    * - ``prefix_insert``
      - ``str | None``
      - ``None``
-     - Prefix for insert index (e.g., 'ins_' produces 'ins_0', 'ins_1', ...).
+     - Prefix for insert index (e.g., ``'ins_'`` produces ``'ins_0'``, ``'ins_1'``, ...).
    * - ``iter_order``
      - ``int | None``
      - ``None``
-     - Dimension-name ordering for downstream multi-pool iteration.
+     - Enumeration order when combined with other pools.
 
 
 ----
@@ -93,8 +93,6 @@ substitutions = 32 sequences.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     alt  = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
     scan = wt.replacement_scan(replacement_pool=alt, mode="sequential", style="red")
@@ -120,8 +118,6 @@ pool scans 6 positions across an 8-mer.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     tri  = pp.from_seqs(["AAA", "CCC", "GGG", "TTT"], mode="sequential")
     scan = wt.replacement_scan(replacement_pool=tri, mode="sequential", style="red")
@@ -147,8 +143,6 @@ substitutions = 112 sequences.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt   = pp.from_seq("ACGTACGT")
     nn   = pp.from_iupac("NN", mode="sequential")
     scan = wt.replacement_scan(replacement_pool=nn, mode="sequential", style="red")
@@ -174,8 +168,6 @@ are never modified.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt   = pp.from_seq("AAAA<cre>ATCGATCG</cre>TTTT")
     alt  = pp.from_seqs(["A", "C", "G", "T"], mode="sequential")
     scan = wt.replacement_scan(replacement_pool=alt, region="cre", mode="sequential",
@@ -186,11 +178,11 @@ are never modified.
 
     <div class="pp-pool">
     <em class="pp-header">scan: seq_length=16, num_states=32</em>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span><span class="pp-mut">A</span>TCGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>A<span class="pp-mut">A</span>CGATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>AT<span class="pp-mut">A</span>GATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATC<span class="pp-mut">A</span>ATCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT<br>
-    AAAA<span class="pp-xtag-cre">&lt;cre&gt;</span>ATCG<span class="pp-mut">A</span>TCG<span class="pp-xtag-cre">&lt;/cre&gt;</span>TTTT
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span><span class="pp-mut">A</span>TCGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>A<span class="pp-mut">A</span>CGATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>AT<span class="pp-mut">A</span>GATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATC<span class="pp-mut">A</span>ATCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT<br>
+    AAAA<span class="pp-xtag-light">&lt;cre&gt;</span>ATCG<span class="pp-mut">A</span>TCG<span class="pp-xtag-light">&lt;/cre&gt;</span>TTTT
     <span class="pp-ellipsis">... (32 total)</span>
     </div>
 
@@ -203,8 +195,6 @@ across a 16-mer, with 5 random draws.
 
 .. code-block:: python
 
-    import poolparty as pp
-    pp.init()
     wt    = pp.from_seq("ACGTACGTACGTACGT")
     motif = pp.from_iupac("RRYYYY")
     scan  = wt.replacement_scan(replacement_pool=motif, mode="random",
