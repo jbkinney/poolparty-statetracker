@@ -23,7 +23,7 @@ def _open_file(path: Path, mode: str):
     """Open file, with gzip support based on extension."""
     if path.suffix == ".gz":
         return gzip.open(path, mode + "t", encoding="utf-8")
-    return open(path, mode, encoding="utf-8")
+    return open(path, mode, encoding="utf-8", newline="")
 
 
 def _make_progress_bar(total, desc="Generating"):
