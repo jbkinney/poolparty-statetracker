@@ -157,7 +157,7 @@ Inspect the library
 
 .. code-block:: python
 
-    mpra_pool.print_library(num_seqs=15, seed=42)
+    mpra_pool.print_library(num_seqs=12, seed=42)
 
 .. raw:: html
 
@@ -175,9 +175,6 @@ Inspect the library
     ACTGGCCGCTTCACTG<span class="pp-xtag-light">&lt;cre&gt;</span>GCAA<span class="pp-style-blue">GGGGCAAAGGTCA</span>TTCAGAAGGGCCAGAAATGCCAAGGACT<span class="pp-style-purple">CCGGGTCATTGGGGTCAGG</span><span class="pp-style-orange">GTGATGACGTGTCCCAT</span>GAGTGTTGTTTGACTTTGT<span class="pp-xtag-light">&lt;/cre&gt;</span>GGTACCTCTAGA<span class="pp-xtag-light">&lt;bc&gt;</span><span class="pp-style-bold">GAGGAACT</span><span class="pp-xtag-light">&lt;/bc&gt;</span>AGATCGGAAGAGCGTCG<br>
     ACTGGCCGCTTCACTG<span class="pp-xtag-light">&lt;cre&gt;</span>GCAA<span class="pp-style-blue">GGGGCAAAGGTCA</span>TTCAGAAGGGCCAGAAATGCCAAGGACT<span class="pp-style-purple">CCGGGTCATTGGGGTCAGG</span><span class="pp-style-orange">GTGATGACGTGTCCCAT</span>GAGTGTTGTTTGACTTTGT<span class="pp-xtag-light">&lt;/cre&gt;</span>GGTACCTCTAGA<span class="pp-xtag-light">&lt;bc&gt;</span><span class="pp-style-bold">ATACAACC</span><span class="pp-xtag-light">&lt;/bc&gt;</span>AGATCGGAAGAGCGTCG<br>
     ACTGGCCGCTTCACTG<span class="pp-xtag-light">&lt;cre&gt;</span>GCAA<span class="pp-style-blue">GGGGCAAAGGTCA</span>TTCAGAAGGGCCAGAAATGCCAAGGACT<span class="pp-style-purple">CCGGGTCATTGGGGTCAGG</span><span class="pp-style-orange">GTGATGACGTGTCCCAT</span>GAGTGTTGTTTGACTTTGT<span class="pp-xtag-light">&lt;/cre&gt;</span>GGTACCTCTAGA<span class="pp-xtag-light">&lt;bc&gt;</span><span class="pp-style-bold">ACCCAGAA</span><span class="pp-xtag-light">&lt;/bc&gt;</span>AGATCGGAAGAGCGTCG<br>
-    ACTGGCCGCTTCACTG<span class="pp-xtag-light">&lt;cre&gt;</span>GCAAGTCTGCCATCGTGTTCAGAA<span class="pp-style-blue">GGGGCAAAGGTCA</span>CAAG<span class="pp-style-orange">GTGATGACGTGTCCCAT</span>TTAAGTCAGAGAGTTT<span class="pp-style-purple">CCGGGTCATTGGGGTCAGG</span>ACTTTGT<span class="pp-xtag-light">&lt;/cre&gt;</span>GGTACCTCTAGA<span class="pp-xtag-light">&lt;bc&gt;</span><span class="pp-style-bold">GTTGAGCA</span><span class="pp-xtag-light">&lt;/bc&gt;</span>AGATCGGAAGAGCGTCG<br>
-    ACTGGCCGCTTCACTG<span class="pp-xtag-light">&lt;cre&gt;</span>GCAAGTCTGCCATCGTGTTCAGAA<span class="pp-style-blue">GGGGCAAAGGTCA</span>CAAG<span class="pp-style-orange">GTGATGACGTGTCCCAT</span>TTAAGTCAGAGAGTTT<span class="pp-style-purple">CCGGGTCATTGGGGTCAGG</span>ACTTTGT<span class="pp-xtag-light">&lt;/cre&gt;</span>GGTACCTCTAGA<span class="pp-xtag-light">&lt;bc&gt;</span><span class="pp-style-bold">ATCGTCTG</span><span class="pp-xtag-light">&lt;/bc&gt;</span>AGATCGGAAGAGCGTCG<br>
-    ACTGGCCGCTTCACTG<span class="pp-xtag-light">&lt;cre&gt;</span>GCAAGTCTGCCATCGTGTTCAGAA<span class="pp-style-blue">GGGGCAAAGGTCA</span>CAAG<span class="pp-style-orange">GTGATGACGTGTCCCAT</span>TTAAGTCAGAGAGTTT<span class="pp-style-purple">CCGGGTCATTGGGGTCAGG</span>ACTTTGT<span class="pp-xtag-light">&lt;/cre&gt;</span>GGTACCTCTAGA<span class="pp-xtag-light">&lt;bc&gt;</span><span class="pp-style-bold">TTATGGGG</span><span class="pp-xtag-light">&lt;/bc&gt;</span>AGATCGGAAGAGCGTCG
     </div>
 
 Each sequence shows the positions and orientations of the three TFBSs
