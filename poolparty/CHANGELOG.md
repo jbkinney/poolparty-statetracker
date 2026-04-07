@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - DMS (protein GB1) and MPRA (regulatory grammar) tutorial pages.
 
+### Fixed
+- Fixed CSV/TSV export writing `\r\n` line endings on Windows.
+
 ### Removed
 - Stale scalar helpers `_check_gc_content` and `_check_homopolymer`
   from `get_barcodes` (replaced by vectorized batch equivalents).
