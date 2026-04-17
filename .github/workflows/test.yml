@@ -73,7 +73,7 @@ jobs:
           pytest tests/ --cov=poolparty --cov-report=xml --cov-report=term-missing
 
       - name: Upload StateTracker coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ./statetracker/coverage.xml
           flags: statetracker
@@ -83,7 +83,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload PoolParty coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ./poolparty/coverage.xml
           flags: poolparty
