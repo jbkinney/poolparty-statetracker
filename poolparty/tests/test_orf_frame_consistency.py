@@ -56,23 +56,6 @@ EXPECTED_FIRST_RESIDUE = {
 
 ALL_FRAMES = [1, 2, 3, -1, -2, -3]
 
-XFAIL_REASON = "Known ORF frame convention mismatch; fixed later in this branch"
-
-
-def _xfail_off_frame(frames=ALL_FRAMES):
-    """Mark |frame| != 1 as strict-xfail; the conventions already agree at +/-1.
-
-    Marking all six would XPASS at +/-1 and, under strict=True, fail. Keeping
-    +/-1 unmarked also documents that those frames were never affected.
-    """
-    return [
-        pytest.param(f, marks=pytest.mark.xfail(strict=True, reason=XFAIL_REASON))
-        if abs(f) != 1
-        else pytest.param(f)
-        for f in frames
-    ]
-
-
 def _annotated(frame):
     """Build the annotated pool. Caller must already be inside a Party."""
     return pp.annotate_orf(pp.from_seq(FULL), "orf", extent=EXTENT, frame=frame)
@@ -148,7 +131,7 @@ def test_mutagenize_orf_anchor(frame):
     assert indices == EXPECTED_CODON0_INDICES[frame]
 
 
-@pytest.mark.parametrize("frame", _xfail_off_frame())
+@pytest.mark.parametrize("frame", ALL_FRAMES)
 def test_stylize_orf_anchor(frame):
     """stylize_orf gives style_codons[0] to codon 0, and to nothing else."""
     assert _stylize_codon0_indices(frame) == EXPECTED_CODON0_INDICES[frame]
@@ -174,7 +157,7 @@ def test_translate_and_mutagenize_agree(frame):
     assert _translate_first_residue(frame) == EXPECTED_FIRST_RESIDUE[frame]
 
 
-@pytest.mark.parametrize("frame", _xfail_off_frame())
+@pytest.mark.parametrize("frame", ALL_FRAMES)
 def test_all_three_operations_agree(frame):
     """All three ORF operations place codon 0 on the same nucleotides."""
     _, mut_indices = _mutagenize_codon0(frame)

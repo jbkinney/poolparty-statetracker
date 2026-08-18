@@ -34,9 +34,9 @@ class TestStylizeOrfBasic:
         # Codon 0 (ACG, positions 0-2) should be red
         # Codon 1 (TAC, positions 3-5) should be blue
         # Codon 2 (GTA, positions 6-8) should be red
-        # Codon 3 (C, position 9) should be blue (partial codon)
+        # Position 9 is an orphan base (no complete codon) and is left unstyled
         assert {0, 1, 2, 6, 7, 8} == red_positions
-        assert {3, 4, 5, 9} == blue_positions
+        assert {3, 4, 5} == blue_positions
 
     def test_style_frames_basic(self):
         """style_frames applies styles based on frame position."""
@@ -181,7 +181,7 @@ class TestStylizeOrfFrame:
         assert style_positions["red"] == {0, 3}
 
     def test_frame_2(self):
-        """frame=2 shifts frame assignment (equivalent to old region_frame=1)."""
+        """frame=2: the first complete codon begins at the region's 2nd base."""
         with pp.Party():
             pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=2).named(
                 "test"
@@ -197,19 +197,14 @@ class TestStylizeOrfFrame:
             if spec in style_positions:
                 style_positions[spec].update(positions)
 
-        # With frame=2 (internal region_frame=1):
-        # Position 0 -> frame (0 + 1) % 3 = 1 -> green
-        # Position 1 -> frame (1 + 1) % 3 = 2 -> blue
-        # Position 2 -> frame (2 + 1) % 3 = 0 -> red
-        # Position 3 -> frame (3 + 1) % 3 = 1 -> green
-        # Position 4 -> frame (4 + 1) % 3 = 2 -> blue
-        # Position 5 -> frame (5 + 1) % 3 = 0 -> red
-        assert style_positions["red"] == {2, 5}
-        assert style_positions["green"] == {0, 3}
-        assert style_positions["blue"] == {1, 4}
+        # frame=2 skips 1 base: the only complete codon is positions 1,2,3.
+        # Position 0 (frame offset) and 4,5 (trailing remainder) are orphans.
+        assert style_positions["red"] == {1}
+        assert style_positions["green"] == {2}
+        assert style_positions["blue"] == {3}
 
     def test_frame_3(self):
-        """frame=3 shifts frame assignment (equivalent to old region_frame=2)."""
+        """frame=3: the first complete codon begins at the region's 3rd base."""
         with pp.Party():
             pool = stylize_orf("ACGTAC", style_frames=["red", "green", "blue"], frame=3).named(
                 "test"
@@ -225,20 +220,16 @@ class TestStylizeOrfFrame:
             if spec in style_positions:
                 style_positions[spec].update(positions)
 
-        # With frame=3 (internal region_frame=2):
-        # Position 0 -> frame (0 + 2) % 3 = 2 -> blue
-        # Position 1 -> frame (1 + 2) % 3 = 0 -> red
-        # Position 2 -> frame (2 + 2) % 3 = 1 -> green
-        assert style_positions["red"] == {1, 4}
-        assert style_positions["green"] == {2, 5}
-        assert style_positions["blue"] == {0, 3}
+        # frame=3 skips 2 bases: the only complete codon is positions 2,3,4.
+        # Positions 0,1 (frame offset) and 5 (trailing remainder) are orphans.
+        assert style_positions["red"] == {2}
+        assert style_positions["green"] == {3}
+        assert style_positions["blue"] == {4}
 
     def test_frame_affects_style_codons(self):
         """frame parameter affects codon boundaries for style_codons."""
-        # With 9 nucleotides and frame=1 (default):
-        # Codons: [0,1,2], [3,4,5], [6,7,8] -> codon indices 0, 1, 2
-        # With frame=2 (internal region_frame=1):
-        # Adjusted: [0,1] in codon 0, [2,3,4] in codon 1, [5,6,7] in codon 2, [8] in codon 3
+        # 9 nucleotides. frame=1: codons [0,1,2], [3,4,5], [6,7,8].
+        # frame=2: skip base 0, codons [1,2,3], [4,5,6]; 0, 7, 8 are orphans.
         with pp.Party():
             pool_f1 = stylize_orf("ACGTACGTA", style_codons=["red", "blue"], frame=1).named("f1")
             pool_f2 = stylize_orf("ACGTACGTA", style_codons=["red", "blue"], frame=2).named("f2")
@@ -270,18 +261,10 @@ class TestStylizeOrfFrame:
         assert f1_red == {0, 1, 2, 6, 7, 8}
         assert f1_blue == {3, 4, 5}
 
-        # frame=2: adjusted_idx = idx + 1
-        # idx 0 -> (0+1)//3=0 -> codon 0 -> red
-        # idx 1 -> (1+1)//3=0 -> codon 0 -> red
-        # idx 2 -> (2+1)//3=1 -> codon 1 -> blue
-        # idx 3 -> (3+1)//3=1 -> codon 1 -> blue
-        # idx 4 -> (4+1)//3=1 -> codon 1 -> blue
-        # idx 5 -> (5+1)//3=2 -> codon 2 -> red
-        # idx 6 -> (6+1)//3=2 -> codon 2 -> red
-        # idx 7 -> (7+1)//3=2 -> codon 2 -> red
-        # idx 8 -> (8+1)//3=3 -> codon 3 -> blue
-        assert f2_red == {0, 1, 5, 6, 7}
-        assert f2_blue == {2, 3, 4, 8}
+        # frame=2 skips base 0; complete codons are 1,2,3 and 4,5,6.
+        # Positions 0, 7 and 8 are orphans and stay unstyled.
+        assert f2_red == {1, 2, 3}
+        assert f2_blue == {4, 5, 6}
 
 
 class TestStylizeOrfNegativeFrame:

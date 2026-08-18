@@ -47,7 +47,11 @@ def stylize_orf(
         Reading frame and orientation. Valid values: +1, +2, +3, -1, -2, -3.
         Positive values indicate left-to-right orientation (5'->3'),
         negative values indicate right-to-left orientation (3'->5').
-        The absolute value indicates the frame of the boundary base (1-indexed).
+        For positive frames, the first complete codon begins at base |frame|
+        counting from the region's 5' end. For negative frames, it begins at
+        base |frame| counting from the region's 3' end and is read in the
+        reverse-complement direction. Orphan bases outside complete codons
+        are left unstyled.
         If None and region is a named OrfRegion, uses the OrfRegion's frame.
     iter_order : Optional[Real], default=None
         Iteration order priority for the Operation.
@@ -100,10 +104,6 @@ class StylizeOrfOp(Operation):
         prefix: Optional[str] = None,
     ) -> None:
         """Initialize StylizeOrfOp."""
-        from ..party import get_active_party
-
-        get_active_party()  # Ensure we're in a Party context
-
         # Validate frame
         if frame not in VALID_FRAMES:
             raise ValueError(f"frame must be one of {sorted(VALID_FRAMES)}, got {frame}")
@@ -131,7 +131,6 @@ class StylizeOrfOp(Operation):
         self.style_frames = style_frames
         self.frame = frame
         self.reverse = frame < 0  # Derive reverse from frame sign
-        self.region_frame = abs(frame) - 1  # Convert to 0-indexed internally
 
         # Store region locally - we handle it ourselves, not via base class
         self._style_region = region
@@ -199,6 +198,17 @@ class StylizeOrfOp(Operation):
 
         return np.array(positions, dtype=np.int64)
 
+    def _get_complete_codon_positions(self, molecular_positions: np.ndarray) -> np.ndarray:
+        """Positions belonging to complete codons, in reading order.
+
+        Orphan bases are dropped: the frame offset at the start of the reading
+        direction, and any trailing remainder shorter than a full codon. Both
+        styling modes use this so their geometry cannot drift apart.
+        """
+        positions = molecular_positions[::-1] if self.reverse else molecular_positions
+        positions = positions[frame_offset(self.frame) :]
+        return positions[: (len(positions) // 3) * 3]
+
     def _compute_codon_styles(
         self, molecular_positions: np.ndarray
     ) -> list[tuple[str, np.ndarray]]:
@@ -206,24 +216,14 @@ class StylizeOrfOp(Operation):
         if len(molecular_positions) == 0:
             return []
 
+        positions = self._get_complete_codon_positions(molecular_positions)
         num_styles = len(self.style_codons)
         style_positions: dict[str, list[int]] = {s: [] for s in self.style_codons}
 
-        if self.reverse:
-            # Process from end to start
-            positions = molecular_positions[::-1]
-        else:
-            positions = molecular_positions
-
-        # Group positions into codons and assign styles
-        # Apply region_frame offset to determine codon boundaries
         for idx, pos in enumerate(positions):
-            adjusted_idx = idx + self.region_frame
-            codon_index = adjusted_idx // 3
-            style = self.style_codons[codon_index % num_styles]
-            style_positions[style].append(pos)
+            codon_index = idx // 3
+            style_positions[self.style_codons[codon_index % num_styles]].append(pos)
 
-        # Build result list
         result = []
         for style in self.style_codons:
             if style_positions[style]:
@@ -245,21 +245,16 @@ class StylizeOrfOp(Operation):
             return []
 
         num_style_groups = len(self.style_frames) // 3
-        # Use set to track unique styles, dict to collect positions
         style_positions: dict[str, list[int]] = {}
 
-        if self.reverse:
-            # Process from end to start - frame is relative to reverse direction
-            positions = molecular_positions[::-1]
-        else:
-            positions = molecular_positions
+        positions = self._get_complete_codon_positions(molecular_positions)
 
         for idx, pos in enumerate(positions):
+            # Both derived from the same index, so a codon cannot straddle groups.
             codon_index = idx // 3
-            frame = (idx + self.region_frame) % 3
-            # Select which group of 3 styles to use, cycling through groups
+            position_in_codon = idx % 3
             style_group = codon_index % num_style_groups
-            style = self.style_frames[style_group * 3 + frame]
+            style = self.style_frames[style_group * 3 + position_in_codon]
 
             if style not in style_positions:
                 style_positions[style] = []
