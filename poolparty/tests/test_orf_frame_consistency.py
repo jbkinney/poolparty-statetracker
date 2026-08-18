@@ -165,3 +165,99 @@ def test_all_three_operations_agree(frame):
     assert mut_indices == sty_indices
     assert mut_indices == EXPECTED_CODON0_INDICES[frame]
     assert _translate_first_residue(frame) == EXPECTED_FIRST_RESIDUE[frame]
+
+
+# --------------------------------------------------------------------------
+# Orphan bases: styled by nothing, mutated by nothing, translated into nothing
+# --------------------------------------------------------------------------
+
+
+def _expected_complete_codon_indices(frame):
+    """Region-relative plus-strand indices belonging to a complete codon."""
+    n = len(REGION)
+    offset = abs(frame) - 1
+    if frame > 0:
+        first, last = offset, offset + ((n - offset) // 3) * 3
+    else:
+        last, first = n - offset, n - offset - ((n - offset) // 3) * 3
+    return set(range(first, last))
+
+
+def _styled_indices(frame, **style_kwargs):
+    """Region-relative indices carrying any codon-aware style."""
+    with pp.Party():
+        styled = pp.stylize_orf(_annotated(frame), region="orf", **style_kwargs)
+        df = pp.generate_library(styled, num_cycles=1, _include_inline_styles=True)
+        seq = df["seq"][0]
+        offset = seq.index("<orf>") + len("<orf>")
+        out = set()
+        for _name, positions in df["_inline_styles"][0].style_list:
+            out |= {int(p) - offset for p in positions}
+    return {i for i in out if 0 <= i < len(REGION)}
+
+
+@pytest.mark.parametrize("frame", ALL_FRAMES)
+def test_style_codons_leaves_orphans_unstyled(frame):
+    """style_codons paints complete codons only, never orphan bases."""
+    styled = _styled_indices(frame, style_codons=["red", "blue", "green"])
+    assert styled == _expected_complete_codon_indices(frame)
+
+
+@pytest.mark.parametrize("frame", ALL_FRAMES)
+def test_style_frames_leaves_orphans_unstyled(frame):
+    """style_frames paints complete codons only, never orphan bases."""
+    styled = _styled_indices(frame, style_frames=["red", "blue", "green"])
+    assert styled == _expected_complete_codon_indices(frame)
+
+
+def test_frame_one_trailing_orphan_is_unstyled():
+    """A trailing partial codon is unstyled even at frame=+1.
+
+    The 19 nt region holds 6 complete codons at frame +1, leaving base 18 over.
+    Before the frame fix that base was absorbed into a codon group and styled.
+    """
+    styled = _styled_indices(1, style_codons=["red", "blue", "green"])
+    assert 18 not in styled
+    assert styled == set(range(18))
+
+
+def test_frame_two_leading_orphan_is_unstyled():
+    """The frame-offset base at the 5' end is unstyled at frame=+2."""
+    styled = _styled_indices(2, style_codons=["red", "blue", "green"])
+    assert 0 not in styled
+    assert styled == set(range(1, 19))
+
+
+# --------------------------------------------------------------------------
+# End-to-end: nonsense mutagenesis must produce a stop in translate's frame
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("frame", ALL_FRAMES)
+def test_nonsense_introduces_stop_in_translated_product(frame):
+    """mutagenize_orf(nonsense) puts a stop where translate reads one.
+
+    Restricted to codon_positions=[0], whose wild-type codon is non-stop in all
+    six frames (AAT/ATG/TGC/GGG/GGT/GTT). Enumerating every codon would include
+    positions whose wild type is already TAA, which cannot gain a new stop and
+    would make the assertion ambiguous.
+
+    This is the end-to-end form of the defect: before the fix, every variant at
+    |frame| != 1 translated to a missense change rather than a stop.
+    """
+    with pp.Party():
+        wt_protein = pp.generate_library(
+            pp.translate(_annotated(frame), region="orf"), num_cycles=1
+        )["seq"][0]
+    assert wt_protein[0] != "*", "codon 0 must be non-stop for this test to mean anything"
+
+    with pp.Party():
+        mut = pp.mutagenize_orf(
+            _annotated(frame), region="orf", codon_positions=[0],
+            num_mutations=1, mutation_type="nonsense", mode="sequential",
+        )
+        proteins = list(pp.generate_library(pp.translate(mut, region="orf"), num_cycles=1)["seq"])
+
+    assert len(proteins) == 3, "three stop codons should give three variants"
+    for protein in proteins:
+        assert protein[0] == "*", f"frame={frame}: expected a stop at residue 0, got {protein!r}"
