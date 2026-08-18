@@ -41,30 +41,65 @@ EXPECTED_CODON0_INDICES = {
 # direction. They differ for negative frames: mutagenize_orf design cards carry
 # the reverse-complemented coding codon, not the plus-strand triplet.
 EXPECTED_PLUS_STRAND_TRIPLET = {
-    1: "AAT", 2: "ATG", 3: "TGC",
-    -1: "CCC", -2: "ACC", -3: "AAC",
+    1: "AAT",
+    2: "ATG",
+    3: "TGC",
+    -1: "CCC",
+    -2: "ACC",
+    -3: "AAC",
 }
 EXPECTED_ORIENTED_CODON = {
-    1: "AAT", 2: "ATG", 3: "TGC",
-    -1: "GGG", -2: "GGT", -3: "GTT",
+    1: "AAT",
+    2: "ATG",
+    3: "TGC",
+    -1: "GGG",
+    -2: "GGT",
+    -3: "GTT",
 }
-# First residue of the translated product, from the oriented codon above.
-EXPECTED_FIRST_RESIDUE = {
-    1: "N", 2: "M", 3: "C",
-    -1: "G", -2: "G", -3: "V",
+# The complete translated product per frame, derived by hand from the codons the
+# convention implies. All six are distinct, so asserting the whole product tells
+# every frame apart. Asserting only the first residue would not: -1 and -2 both
+# begin with G, letting a wrong offset pass at -2.
+#   +1 skip 0: AAT GCC CGG GTT TAA ACC
+#   +2 skip 1: ATG CCC GGG TTT AAA CCC
+#   +3 skip 2: TGC CCG GGT TTA AAC
+#   revcomp(REGION) = GGGTTTAAACCCGGGCATT
+#   -1 skip 0: GGG TTT AAA CCC GGG CAT
+#   -2 skip 1: GGT TTA AAC CCG GGC ATT
+#   -3 skip 2: GTT TAA ACC CGG GCA
+EXPECTED_PROTEIN = {
+    1: "NARV*T",
+    2: "MPGFKP",
+    3: "CPGLN",
+    -1: "GFKPGH",
+    -2: "GLNPGI",
+    -3: "V*TRA",
+}
+
+# Region-relative plus-strand indices belonging to a complete codon, hand-derived
+# for the 19 nt region rather than recomputed from the offset formula.
+EXPECTED_COMPLETE_CODON_INDICES = {
+    1: set(range(0, 18)),
+    2: set(range(1, 19)),
+    3: set(range(2, 17)),
+    -1: set(range(1, 19)),
+    -2: set(range(0, 18)),
+    -3: set(range(2, 17)),
 }
 
 ALL_FRAMES = [1, 2, 3, -1, -2, -3]
+
 
 def _annotated(frame):
     """Build the annotated pool. Caller must already be inside a Party."""
     return pp.annotate_orf(pp.from_seq(FULL), "orf", extent=EXTENT, frame=frame)
 
 
-def _translate_first_residue(frame):
+def _translate_product(frame):
+    """The complete translated product for the annotated ORF at this frame."""
     with pp.Party():
         prot = pp.translate(_annotated(frame), region="orf")
-        return pp.generate_library(prot, num_cycles=1)["seq"][0][0]
+        return pp.generate_library(prot, num_cycles=1)["seq"][0]
 
 
 def _mutagenize_codon0(frame):
@@ -72,8 +107,12 @@ def _mutagenize_codon0(frame):
     with pp.Party():
         pool = _annotated(frame)
         mut = pp.mutagenize_orf(
-            pool, region="orf", codon_positions=[0], num_mutations=1,
-            mutation_type="any_codon", mode="sequential",
+            pool,
+            region="orf",
+            codon_positions=[0],
+            num_mutations=1,
+            mutation_type="any_codon",
+            mode="sequential",
             cards=["wt_codons", "codon_positions"],
         )
         df = mut.to_df(num_cycles=1)
@@ -86,11 +125,7 @@ def _mutagenize_codon0(frame):
         wt_seq = pool.to_df(num_cycles=1)["seq"][0]
         changed = set()
         for variant in df["seq"]:
-            changed |= {
-                i - FLANK
-                for i, (a, b) in enumerate(zip(wt_seq, variant))
-                if a != b
-            }
+            changed |= {i - FLANK for i, (a, b) in enumerate(zip(wt_seq, variant)) if a != b}
     return wt, tuple(sorted(changed))
 
 
@@ -98,7 +133,8 @@ def _stylize_codon0_indices(frame):
     """Region-relative plus-strand indices carrying style_codons[0]."""
     with pp.Party():
         styled = pp.stylize_orf(
-            _annotated(frame), region="orf",
+            _annotated(frame),
+            region="orf",
             style_codons=["red", "blue", "green", "yellow", "magenta", "cyan", "white"],
         )
         df = pp.generate_library(styled, num_cycles=1, _include_inline_styles=True)
@@ -119,8 +155,12 @@ def _stylize_codon0_indices(frame):
 
 @pytest.mark.parametrize("frame", ALL_FRAMES)
 def test_translate_anchor(frame):
-    """translate reads codon 0 at the hand-derived position."""
-    assert _translate_first_residue(frame) == EXPECTED_FIRST_RESIDUE[frame]
+    """translate produces the hand-derived product for this frame.
+
+    The whole product is asserted, not just the first residue: the six expected
+    products are pairwise distinct, so this separates all six frames.
+    """
+    assert _translate_product(frame) == EXPECTED_PROTEIN[frame]
 
 
 @pytest.mark.parametrize("frame", ALL_FRAMES)
@@ -143,18 +183,30 @@ def test_stylize_orf_anchor(frame):
 
 
 @pytest.mark.parametrize("frame", ALL_FRAMES)
-def test_translate_matches_expected_triplet(frame):
-    """Plus-strand text and oriented codon are distinct for negative frames."""
+def test_translate_codon0_matches_oriented_codon(frame):
+    """The first residue is what translate makes of codon 0 read in isolation.
+
+    Ties the EXPECTED_* tables to product behaviour rather than to each other:
+    the plus-strand triplet at the hand-derived indices is translated on its own,
+    in the same orientation, and must give the first residue of the full product.
+    For negative frames this also pins that the oriented codon is the reverse
+    complement of the plus-strand text, not the text itself.
+    """
     plus = "".join(REGION[i] for i in EXPECTED_CODON0_INDICES[frame])
-    assert plus == EXPECTED_PLUS_STRAND_TRIPLET[frame]
+    assert plus == EXPECTED_PLUS_STRAND_TRIPLET[frame], "table self-consistency"
 
+    with pp.Party():
+        # frame=+1/-1 -> offset 0, so this translates exactly the triplet given.
+        isolated = pp.translate(pp.from_seq(plus), frame=1 if frame > 0 else -1)
+        residue = pp.generate_library(isolated, num_cycles=1)["seq"][0]
 
-@pytest.mark.parametrize("frame", ALL_FRAMES)
-def test_translate_and_mutagenize_agree(frame):
-    """translate and mutagenize_orf place codon 0 on the same nucleotides."""
-    _, mut_indices = _mutagenize_codon0(frame)
-    assert mut_indices == EXPECTED_CODON0_INDICES[frame]
-    assert _translate_first_residue(frame) == EXPECTED_FIRST_RESIDUE[frame]
+    assert residue == EXPECTED_PROTEIN[frame][0]
+
+    # Close on the whole product, not just the first residue: -1 and -2 share a
+    # first residue (G), so a first-residue-only assertion cannot separate them.
+    product = _translate_product(frame)
+    assert product[0] == residue
+    assert product == EXPECTED_PROTEIN[frame]
 
 
 @pytest.mark.parametrize("frame", ALL_FRAMES)
@@ -164,23 +216,12 @@ def test_all_three_operations_agree(frame):
     sty_indices = _stylize_codon0_indices(frame)
     assert mut_indices == sty_indices
     assert mut_indices == EXPECTED_CODON0_INDICES[frame]
-    assert _translate_first_residue(frame) == EXPECTED_FIRST_RESIDUE[frame]
+    assert _translate_product(frame) == EXPECTED_PROTEIN[frame]
 
 
 # --------------------------------------------------------------------------
 # Orphan bases: styled by nothing, mutated by nothing, translated into nothing
 # --------------------------------------------------------------------------
-
-
-def _expected_complete_codon_indices(frame):
-    """Region-relative plus-strand indices belonging to a complete codon."""
-    n = len(REGION)
-    offset = abs(frame) - 1
-    if frame > 0:
-        first, last = offset, offset + ((n - offset) // 3) * 3
-    else:
-        last, first = n - offset, n - offset - ((n - offset) // 3) * 3
-    return set(range(first, last))
 
 
 def _styled_indices(frame, **style_kwargs):
@@ -200,14 +241,14 @@ def _styled_indices(frame, **style_kwargs):
 def test_style_codons_leaves_orphans_unstyled(frame):
     """style_codons paints complete codons only, never orphan bases."""
     styled = _styled_indices(frame, style_codons=["red", "blue", "green"])
-    assert styled == _expected_complete_codon_indices(frame)
+    assert styled == EXPECTED_COMPLETE_CODON_INDICES[frame]
 
 
 @pytest.mark.parametrize("frame", ALL_FRAMES)
 def test_style_frames_leaves_orphans_unstyled(frame):
     """style_frames paints complete codons only, never orphan bases."""
     styled = _styled_indices(frame, style_frames=["red", "blue", "green"])
-    assert styled == _expected_complete_codon_indices(frame)
+    assert styled == EXPECTED_COMPLETE_CODON_INDICES[frame]
 
 
 def test_frame_one_trailing_orphan_is_unstyled():
@@ -234,16 +275,22 @@ def test_frame_two_leading_orphan_is_unstyled():
 
 
 @pytest.mark.parametrize("frame", ALL_FRAMES)
-def test_nonsense_introduces_stop_in_translated_product(frame):
+def test_nonsense_agrees_between_mutagenize_and_translate(frame):
     """mutagenize_orf(nonsense) puts a stop where translate reads one.
+
+    This is an AGREEMENT test, not a convention anchor. It asserts only that the
+    two operations use the same codon grid; if both shared the same *wrong*
+    offset it would still pass, because the stop would still land where translate
+    reads. The convention itself is pinned by the *_anchor tests above.
+
+    It is nonetheless the user-visible form of the original defect: before the
+    fix the two disagreed, so every variant at |frame| != 1 translated to a
+    missense change rather than a stop.
 
     Restricted to codon_positions=[0], whose wild-type codon is non-stop in all
     six frames (AAT/ATG/TGC/GGG/GGT/GTT). Enumerating every codon would include
     positions whose wild type is already TAA, which cannot gain a new stop and
     would make the assertion ambiguous.
-
-    This is the end-to-end form of the defect: before the fix, every variant at
-    |frame| != 1 translated to a missense change rather than a stop.
     """
     with pp.Party():
         wt_protein = pp.generate_library(
@@ -253,8 +300,12 @@ def test_nonsense_introduces_stop_in_translated_product(frame):
 
     with pp.Party():
         mut = pp.mutagenize_orf(
-            _annotated(frame), region="orf", codon_positions=[0],
-            num_mutations=1, mutation_type="nonsense", mode="sequential",
+            _annotated(frame),
+            region="orf",
+            codon_positions=[0],
+            num_mutations=1,
+            mutation_type="nonsense",
+            mode="sequential",
         )
         proteins = list(pp.generate_library(pp.translate(mut, region="orf"), num_cycles=1)["seq"])
 

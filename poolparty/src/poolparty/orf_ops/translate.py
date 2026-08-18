@@ -4,7 +4,6 @@ import numpy as np
 
 from ..codon_table import CodonTable
 from ..operation import Operation
-from ..party import get_active_party
 from ..pool import Pool
 from ..types import NullSeq, Optional, Real, RegionType, Seq, Union, beartype, is_null_seq
 from ..utils.dna_utils import reverse_complement

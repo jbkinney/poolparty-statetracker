@@ -1,9 +1,13 @@
 """Shared reading-frame helpers for ORF operations.
 
 All ORF-aware operations must derive codon geometry from :func:`frame_offset`
-so that a single ``OrfRegion.frame`` identifies the same codons for every
-operation. Historically each operation carried its own copy of this logic and
-they disagreed for ``|frame| != 1``; see ``resolve_frame`` callers.
+so that one ``OrfRegion.frame`` implies one codon grid.
+
+Historically the offset arithmetic was never shared: ``translate`` skipped
+``|frame| - 1`` bases while ``mutagenize_orf`` and ``stylize_orf`` effectively
+skipped ``(4 - |frame|) % 3``, so frames 2 and 3 were swapped between them.
+(The per-module ``_resolve_frame`` copies, by contrast, agreed with each other;
+they are consolidated here as :func:`resolve_frame` for the same reason.)
 """
 
 from ..party import get_active_party

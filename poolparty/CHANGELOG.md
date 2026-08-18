@@ -8,12 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- **BREAKING:** ORF reading-frame semantics are now consistent across all
-  ORF-aware operations. `mutagenize_orf` and `stylize_orf` previously placed
+- **BREAKING:** ORF operations now share one documented frame-offset
+  convention. `mutagenize_orf` and `stylize_orf` previously placed
   the first complete codon `(4 - |frame|) % 3` bases into the region, while
   `translate` used `|frame| - 1`. The two agree only at `|frame| == 1`; for
   `|frame|` of 2 or 3 they were exactly swapped, so one `OrfRegion.frame`
   selected different codons depending on which operation read it.
+
+  The unification covers the frame offset for unambiguous sequences and
+  consistently resolved named regions. Two pre-existing sources of divergence
+  are **not** addressed here and remain: `stylize_orf` excludes IUPAC ambiguity
+  codes from its molecular positions where `translate` and `mutagenize_orf`
+  include them, and the three operations interpret an interval `region=[a, b]`
+  in different coordinate systems (molecular, nontag and literal respectively),
+  which differ once a sequence contains gaps.
 
   All operations now follow `translate`'s convention, which matches the
   `OrfRegion` docstring and standard six-frame usage: **the first complete
@@ -31,10 +39,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     positions, and `num_states`, this may change the enumerated state count or
     variant count. For other lengths the count may be unchanged even though
     different nucleotides are mutated.
-  - Most visibly, `mutagenize_orf(mutation_type="nonsense")` previously
-    introduced **no stop codon at all** into the protein produced by
-    `translate()` at `|frame|` of 2 or 3, because the stop was written one
-    nucleotide away from where `translate` reads.
+  - Most visibly, `mutagenize_orf(mutation_type="nonsense")` previously failed
+    to introduce a premature stop into the protein produced by `translate()` at
+    `|frame|` of 2 or 3, because the stop was written one nucleotide away from
+    where `translate` reads. On the sequences tested this was every variant; an
+    off-grid substitution could in principle create an in-frame stop by
+    coincidence.
 
   Libraries designed at `frame=±1` are unaffected.
 
@@ -54,8 +64,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `orf_ops/_frame.py`, holding the single `frame_offset()` and `resolve_frame()`
-  used by every ORF operation. `resolve_frame` was previously defined three
-  times, once per operation module.
+  used by the three frame-aware operations (`translate`, `mutagenize_orf`,
+  `stylize_orf`). `resolve_frame` was previously defined once per operation
+  module; `annotate_orf` and `reverse_translate` use neither helper.
 - `tests/test_orf_frame_consistency.py`: hand-derived codon anchors and
   cross-operation agreement tests over all six frames, plus orphan-base and
   end-to-end nonsense tests.
@@ -69,6 +80,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed CSV/TSV export writing `\r\n` line endings on Windows.
 
 ### Removed
+- `StylizeOrfOp.region_frame`. The attribute held an internal grid shift that no
+  longer exists; codon geometry now comes from `frame_offset()`. `StylizeOrfOp`
+  is exported at package level, so this is a public attribute removal.
 - Stale scalar helpers `_check_gc_content` and `_check_homopolymer`
   from `get_barcodes` (replaced by vectorized batch equivalents).
 
