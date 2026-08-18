@@ -180,6 +180,17 @@ class TestMutagenizeOrfParameterValidation:
             pool3 = mutagenize_orf("ATGAA", num_mutations=1, frame=3)
             assert pool3.operation.num_codons == 1
 
+            # The counts above coincide for all three frames on a 5 bp input, so
+            # they cannot detect a wrong offset. 7 bp (7 % 3 == 1) separates them:
+            # frame=1 -> ATG|AAC, frame=2 -> TGA|ACC, frame=3 -> GAA.
+            assert mutagenize_orf("ATGAACC", num_mutations=1).operation.num_codons == 2
+            assert (
+                mutagenize_orf("ATGAACC", num_mutations=1, frame=2).operation.num_codons == 2
+            )
+            assert (
+                mutagenize_orf("ATGAACC", num_mutations=1, frame=3).operation.num_codons == 1
+            )
+
     def test_num_mutations_exceeds_eligible(self):
         """Error when num_mutations > number of eligible positions."""
         with pp.Party() as party:

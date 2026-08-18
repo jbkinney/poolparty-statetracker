@@ -48,6 +48,11 @@ def translate(
         If None, translates the entire sequence.
     frame : Optional[int], default=None
         Reading frame: +1, +2, +3, -1, -2, -3.
+        For positive frames, the first complete codon begins at base |frame|
+        counting from the region's 5' end. For negative frames, it begins at
+        base |frame| counting from the region's 3' end and is read in the
+        reverse-complement direction.
+        Orphan bases outside complete codons are not translated.
         If None and region is an OrfRegion, uses its frame; otherwise +1.
     include_stop : bool, default=True
         Whether to include stop codon (*) in output.

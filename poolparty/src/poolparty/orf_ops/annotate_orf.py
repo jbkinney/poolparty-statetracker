@@ -43,6 +43,10 @@ def annotate_orf(
         Must be None if region already exists.
     frame : int
         Reading frame (+1, +2, +3, -1, -2, -3). Default +1.
+        For positive frames, the first complete codon begins at base |frame|
+        counting from the region's 5' end. For negative frames, it begins at
+        base |frame| counting from the region's 3' end and is read in the
+        reverse-complement direction.
     style : Optional[str]
         Flat style to apply to the region (e.g., 'red'). Applied via stylize().
         Mutually exclusive with style_codons and style_frames.

@@ -61,6 +61,9 @@ Parameters
      - Reading frame (e.g. ``1``..``3`` or ``-1``..``-3``). If ``None`` and
        ``region`` names an :class:`~poolparty.OrfRegion`, the frame is taken
        from that region.
+       The first complete codon begins at base ``|frame|`` of the region,
+       counted from the 5' end for positive frames and from the 3' end for
+       negative frames. Bases outside a complete codon are ignored.
    * - ``style``
      - ``str | None``
      - ``None``

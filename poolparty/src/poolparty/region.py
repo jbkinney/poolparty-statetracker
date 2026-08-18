@@ -81,7 +81,11 @@ class OrfRegion(Region):
         Reading frame and orientation. Valid values: +1, +2, +3, -1, -2, -3.
         Positive values indicate forward orientation (5'->3'),
         negative values indicate reverse orientation (3'->5').
-        The absolute value indicates the frame offset (1-indexed).
+        The absolute value indicates where the first complete codon begins:
+        frame=1 at the region's first base, frame=2 at its second, frame=3 at
+        its third. For negative frames the same offset is counted from the
+        region's 3' end. All ORF-aware operations must agree on this; see
+        orf_ops/_frame.py.
     """
 
     frame: int = 1

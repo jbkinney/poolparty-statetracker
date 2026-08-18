@@ -38,6 +38,9 @@ Parameters
      - Reading frame (``+1`` … ``+3``, ``-1`` … ``-3``). For a named
        :class:`~poolparty.OrfRegion`, defaults to the region's frame;
        otherwise ``+1``.
+       The first complete codon begins at base ``|frame|`` of the region,
+       counted from the 5' end for positive frames and from the 3' end for
+       negative frames. Bases outside a complete codon are ignored.
    * - ``include_stop``
      - ``bool``
      - ``True``

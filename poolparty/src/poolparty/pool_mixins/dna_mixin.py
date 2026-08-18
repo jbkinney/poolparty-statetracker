@@ -316,6 +316,10 @@ class DnaMixin:
             Must be None if region already exists.
         frame : int, default=1
             Reading frame (+1, +2, +3, -1, -2, -3).
+            For positive frames, the first complete codon begins at base |frame|
+            counting from the region's 5' end. For negative frames, it begins at
+            base |frame| counting from the region's 3' end and is read in the
+            reverse-complement direction.
         style : Optional[str], default=None
             Style to apply to the region (e.g., 'red', 'bold blue').
             Mutually exclusive with style_codons and style_frames.
@@ -375,6 +379,10 @@ class DnaMixin:
             groups. Mutually exclusive with style_codons.
         frame : Optional[int], default=None
             Reading frame: +1, +2, +3, -1, -2, -3.
+            For positive frames, the first complete codon begins at base |frame|
+            counting from the region's 5' end. For negative frames, it begins at
+            base |frame| counting from the region's 3' end and is read in the
+            reverse-complement direction.
             If None and region is a named OrfRegion, uses the OrfRegion's frame.
         iter_order : Optional[Real], default=None
             Iteration order priority for the Operation.
@@ -434,6 +442,10 @@ class DnaMixin:
             Style to apply to mutated codon positions (e.g., 'red', 'bold').
         frame : Optional[int], default=None
             Reading frame and orientation (+1/+2/+3/-1/-2/-3).
+            For positive frames, the first complete codon begins at base |frame|
+            counting from the region's 5' end. For negative frames, it begins at
+            base |frame| counting from the region's 3' end and is read in the
+            reverse-complement direction.
             If None and region is a named OrfRegion, uses the OrfRegion's frame.
         prefix : Optional[str], default=None
             Prefix for sequence names in the resulting Pool.
@@ -493,6 +505,10 @@ class DnaMixin:
             If None, translates the entire sequence.
         frame : Optional[int], default=None
             Reading frame: +1, +2, +3, -1, -2, -3.
+            For positive frames, the first complete codon begins at base |frame|
+            counting from the region's 5' end. For negative frames, it begins at
+            base |frame| counting from the region's 3' end and is read in the
+            reverse-complement direction.
             If None and region is an OrfRegion, uses its frame; otherwise +1.
         include_stop : bool, default=True
             Whether to include stop codon (*) in output.
