@@ -61,7 +61,10 @@ def mutagenize_orf(
         Reading frame and orientation. Valid values: +1, +2, +3, -1, -2, -3.
         Positive values indicate left-to-right orientation (5'->3'),
         negative values indicate right-to-left orientation (3'->5').
-        The absolute value indicates the frame of the boundary base (1-indexed).
+        For positive frames, the first complete codon begins at base |frame|
+        counting from the region's 5' end. For negative frames, it begins at
+        base |frame| counting from the region's 3' end and is read in the
+        reverse-complement direction.
         If None and region is a named OrfRegion, uses the OrfRegion's frame.
     prefix : Optional[str], default=None
         Prefix for sequence names in the resulting Pool.
@@ -179,11 +182,8 @@ class MutagenizeOrfOp(Operation):
         self.style = style
         self.frame = frame
         self.reverse = frame < 0  # Derive reverse from frame sign
-        # Calculate bases to skip to reach the first complete codon
-        # frame=1: first base is position 1 in codon → skip 0 bases
-        # frame=2: first base is position 2 in codon → skip 2 bases (partial has 2 bases)
-        # frame=3: first base is position 3 in codon → skip 1 base (partial has 1 base)
-        self.frame_offset = (4 - abs(frame)) % 3
+        # Bases skipped before the first complete codon; see orf_ops/_frame.py.
+        self.frame_offset = frame_offset(frame)
 
         # Use effective seq_length (excluding tags)
         parent_seq_length = parent_pool.seq_length

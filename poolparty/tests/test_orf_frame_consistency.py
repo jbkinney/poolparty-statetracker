@@ -140,7 +140,7 @@ def test_translate_anchor(frame):
     assert _translate_first_residue(frame) == EXPECTED_FIRST_RESIDUE[frame]
 
 
-@pytest.mark.parametrize("frame", _xfail_off_frame())
+@pytest.mark.parametrize("frame", ALL_FRAMES)
 def test_mutagenize_orf_anchor(frame):
     """mutagenize_orf mutates codon 0 at the hand-derived position."""
     wt, indices = _mutagenize_codon0(frame)
@@ -166,7 +166,7 @@ def test_translate_matches_expected_triplet(frame):
     assert plus == EXPECTED_PLUS_STRAND_TRIPLET[frame]
 
 
-@pytest.mark.parametrize("frame", _xfail_off_frame())
+@pytest.mark.parametrize("frame", ALL_FRAMES)
 def test_translate_and_mutagenize_agree(frame):
     """translate and mutagenize_orf place codon 0 on the same nucleotides."""
     _, mut_indices = _mutagenize_codon0(frame)
