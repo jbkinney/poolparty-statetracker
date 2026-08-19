@@ -1258,23 +1258,25 @@ class TestFindings:
         assert hasattr(pp.annotate_orf, "__wrapped__")
 
     def test_f8_resolve_frame_consistent_semantics(self):
-        """All _resolve_frame implementations raise ValueError for plain Region."""
-        from poolparty.orf_ops.translate import _resolve_frame as translate_rf
-        from poolparty.orf_ops.mutagenize_orf import _resolve_frame as mutagenize_rf
-        from poolparty.orf_ops.stylize_orf import _resolve_frame as stylize_rf
+        """All ORF ops share one resolve_frame, which rejects a plain Region."""
+        from importlib import import_module
+
+        from poolparty.orf_ops._frame import resolve_frame
+
+        # The three ORF operations must resolve frames through the same object,
+        # not through per-module copies that can drift apart.
+        # NB: import_module, not "import x as y" -- poolparty.orf_ops re-exports
+        # each operation function under its own module name.
+        for mod_name in ("translate", "mutagenize_orf", "stylize_orf"):
+            mod = import_module(f"poolparty.orf_ops.{mod_name}")
+            assert mod.resolve_frame is resolve_frame, mod_name
 
         with pp.Party():
             pool = pp.from_seq("ATGGCTTAA")
             pp.annotate_region(pool, "plain_region", extent=(0, 9))
 
             with pytest.raises(ValueError, match="plain Region, not an OrfRegion"):
-                translate_rf("plain_region", None)
-
-            with pytest.raises(ValueError, match="plain Region, not an OrfRegion"):
-                mutagenize_rf("plain_region", None)
-
-            with pytest.raises(ValueError, match="plain Region, not an OrfRegion"):
-                stylize_rf("plain_region", None)
+                resolve_frame("plain_region", None)
 
     def test_f9_stylize_orf_hardcodes_dnapool(self):
         """stylize_orf hardcodes DnaPool return instead of type(pool)."""

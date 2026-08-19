@@ -49,8 +49,14 @@ Parameters
    * - ``frame``
      - ``int | None``
      - ``None``
-     - Reading frame (+1..+3 or -1..-3). Auto-detected from an
-       ``OrfRegion`` if ``region`` is set; must be specified otherwise.
+     - Reading frame (+1..+3 or -1..-3). Taken from the region when
+       ``region`` names an ``OrfRegion``; defaults to ``+1`` when ``region``
+       is ``None`` or an interval; must be given explicitly when ``region``
+       names a plain (non-ORF) region.
+       The first complete codon begins at base ``|frame|`` of the region,
+       counted from the 5' end for positive frames and from the 3' end for
+       negative frames. Bases outside a complete codon are ignored.
+       Orphan bases are left unstyled.
    * - ``prefix``
      - ``str | None``
      - ``None``

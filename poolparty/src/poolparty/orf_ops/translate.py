@@ -4,48 +4,12 @@ import numpy as np
 
 from ..codon_table import CodonTable
 from ..operation import Operation
-from ..party import get_active_party
 from ..pool import Pool
-from ..region import VALID_FRAMES, OrfRegion
 from ..types import NullSeq, Optional, Real, RegionType, Seq, Union, beartype, is_null_seq
 from ..utils.dna_utils import reverse_complement
 from ..utils.protein_seq import ProteinSeq
 from ..utils.style_utils import SeqStyle
-
-
-def _resolve_frame(region: RegionType, frame: Optional[int]) -> int:
-    """Resolve the frame value, looking up from OrfRegion if needed.
-
-    Backward compatibility: defaults to frame=1 when region is None or an interval.
-    When region is a named OrfRegion, uses the stored frame.
-    When region is a named plain Region, raises an error (must specify frame).
-    """
-    if frame is not None:
-        if frame not in VALID_FRAMES:
-            raise ValueError(f"frame must be one of {sorted(VALID_FRAMES)}, got {frame}")
-        return frame
-
-    # frame is None - try to get from OrfRegion or use default
-    if region is None or not isinstance(region, str):
-        return 1
-
-    # region is a string (region name) - look it up
-    party = get_active_party()
-    if party is None:
-        raise RuntimeError("No active Party context.")
-
-    if not party.has_region(region):
-        return 1
-
-    registered_region = party.get_region(region)
-    if isinstance(registered_region, OrfRegion):
-        return registered_region.frame
-    else:
-        raise ValueError(
-            f"Region '{region}' is a plain Region, not an OrfRegion. "
-            f"frame must be specified explicitly, or use annotate_orf() to "
-            f"upgrade the region to an OrfRegion with a frame."
-        )
+from ._frame import frame_offset, resolve_frame
 
 
 def _get_shared_styles(seq_style: SeqStyle, positions: list[int]) -> list[str]:
@@ -83,6 +47,11 @@ def translate(
         If None, translates the entire sequence.
     frame : Optional[int], default=None
         Reading frame: +1, +2, +3, -1, -2, -3.
+        For positive frames, the first complete codon begins at base |frame|
+        counting from the region's 5' end. For negative frames, it begins at
+        base |frame| counting from the region's 3' end and is read in the
+        reverse-complement direction.
+        Orphan bases outside complete codons are not translated.
         If None and region is an OrfRegion, uses its frame; otherwise +1.
     include_stop : bool, default=True
         Whether to include stop codon (*) in output.
@@ -113,7 +82,7 @@ def translate(
     pool = from_seq(pool) if isinstance(pool, str) else pool
 
     # Resolve frame
-    resolved_frame = _resolve_frame(region, frame)
+    resolved_frame = resolve_frame(region, frame)
 
     op = TranslateOp(
         parent_pool=pool,
@@ -158,8 +127,8 @@ class TranslateOp(Operation):
         # Calculate output sequence length if possible
         parent_seq_length = parent_pool.seq_length
         if parent_seq_length is not None and region is None and include_stop:
-            frame_offset = abs(frame) - 1
-            num_codons = (parent_seq_length - frame_offset) // 3
+            codon_start_offset = frame_offset(frame)
+            num_codons = (parent_seq_length - codon_start_offset) // 3
             out_length = num_codons
         else:
             out_length = None
@@ -210,7 +179,7 @@ class TranslateOp(Operation):
         is_reverse = frame < 0
 
         # Calculate frame offset (frame +1 = skip 0, frame +2 = skip 1, frame +3 = skip 2)
-        frame_offset = abs(frame) - 1
+        codon_start_offset = frame_offset(frame)
 
         # Validate no IUPAC ambiguity codes in region (codon table requires ACGT only)
         # Strip tags to get actual sequence content
@@ -226,11 +195,11 @@ class TranslateOp(Operation):
             )
 
         # Check if we have enough bases for at least one codon
-        if mol_length < frame_offset + 3:
+        if mol_length < codon_start_offset + 3:
             return ProteinSeq.empty(), {}
 
         # Number of complete codons
-        num_codons = (mol_length - frame_offset) // 3
+        num_codons = (mol_length - codon_start_offset) // 3
 
         aa_chars = []
         aa_styles: list[tuple[str, int]] = []  # (style_spec, aa_position)
@@ -239,9 +208,9 @@ class TranslateOp(Operation):
             # Get molecular positions for this codon
             if is_reverse:
                 # For reverse frames, read from end
-                mol_start = mol_length - frame_offset - (codon_idx + 1) * 3
+                mol_start = mol_length - codon_start_offset - (codon_idx + 1) * 3
             else:
-                mol_start = frame_offset + codon_idx * 3
+                mol_start = codon_start_offset + codon_idx * 3
 
             mol_positions = [mol_start, mol_start + 1, mol_start + 2]
 
