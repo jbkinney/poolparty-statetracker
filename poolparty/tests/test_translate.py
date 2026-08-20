@@ -148,6 +148,14 @@ class TestTranslateBasic:
             # Empty sequence may return None or "" depending on implementation
             assert df["seq"].iloc[0] in ("", None)
 
+    @pytest.mark.parametrize("frame", [3, -3])
+    def test_tiny_off_frame_sequence_has_zero_length(self, frame):
+        """A span shorter than its frame offset has zero complete codons."""
+        with pp.Party():
+            pool = pp.from_seq("A").translate(frame=frame)
+            assert pool.seq_length == 0
+            assert pool.generate_library()["seq"].iloc[0] == ""
+
 
 class TestTranslateFrame:
     """Test frame handling in translate."""

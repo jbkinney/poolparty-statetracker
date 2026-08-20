@@ -197,6 +197,13 @@ class TestMutagenizeOrfParameterValidation:
                 mutagenize_orf("ATGAACC", num_mutations=1, frame=3).operation.num_codons == 1
             )
 
+    @pytest.mark.parametrize("frame", [3, -3])
+    def test_region_shorter_than_frame_offset_reports_zero_codons(self, frame):
+        """Tiny off-frame regions never report a negative codon count."""
+        with pp.Party():
+            with pytest.raises(ValueError, match=r"yielding 0 complete codon\(s\)"):
+                mutagenize_orf("A", num_mutations=1, frame=frame)
+
     def test_num_mutations_exceeds_eligible(self):
         """Error when num_mutations > number of eligible positions."""
         with pp.Party() as party:

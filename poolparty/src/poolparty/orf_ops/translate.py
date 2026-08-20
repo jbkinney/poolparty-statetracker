@@ -9,7 +9,7 @@ from ..types import NullSeq, Optional, Real, RegionType, Seq, Union, beartype, i
 from ..utils.dna_utils import reverse_complement
 from ..utils.protein_seq import ProteinSeq
 from ..utils.style_utils import SeqStyle
-from ._frame import frame_offset, resolve_frame
+from ._frame import complete_codon_count, frame_offset, resolve_frame
 
 
 def _get_shared_styles(seq_style: SeqStyle, positions: list[int]) -> list[str]:
@@ -127,9 +127,7 @@ class TranslateOp(Operation):
         # Calculate output sequence length if possible
         parent_seq_length = parent_pool.seq_length
         if parent_seq_length is not None and region is None and include_stop:
-            codon_start_offset = frame_offset(frame)
-            num_codons = (parent_seq_length - codon_start_offset) // 3
-            out_length = num_codons
+            out_length = complete_codon_count(parent_seq_length, frame)
         else:
             out_length = None
 
@@ -199,7 +197,7 @@ class TranslateOp(Operation):
             return ProteinSeq.empty(), {}
 
         # Number of complete codons
-        num_codons = (mol_length - codon_start_offset) // 3
+        num_codons = complete_codon_count(mol_length, frame)
 
         aa_chars = []
         aa_styles: list[tuple[str, int]] = []  # (style_spec, aa_position)

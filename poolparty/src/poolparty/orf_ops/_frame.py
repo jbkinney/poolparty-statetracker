@@ -35,6 +35,11 @@ def frame_offset(frame: int) -> int:
     return abs(frame) - 1
 
 
+def complete_codon_count(molecular_length: int, frame: int) -> int:
+    """Return the number of complete codons in a molecular span."""
+    return max(0, molecular_length - frame_offset(frame)) // 3
+
+
 def resolve_frame(region: RegionType, frame: Optional[int]) -> int:
     """Resolve the frame value, looking up from OrfRegion if needed.
 

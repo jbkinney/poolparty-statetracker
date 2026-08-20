@@ -16,7 +16,7 @@ from ..types import CardsType, ModeType, Optional, RegionType, Seq, Sequence, Un
 from ..utils.dna_seq import DnaSeq
 from ..utils.dna_utils import reverse_complement
 from ..utils.parsing_utils import find_all_regions
-from ._frame import frame_offset, resolve_frame
+from ._frame import complete_codon_count, frame_offset, resolve_frame
 
 
 @beartype
@@ -225,8 +225,7 @@ class MutagenizeOrfOp(Operation):
         # For positive frames: skip frame_offset bases at the start
         # For negative frames: skip frame_offset bases at the end
         orf_length = self.orf_end - self.orf_start
-        effective_length = orf_length - self.frame_offset
-        self.num_codons = effective_length // 3
+        self.num_codons = complete_codon_count(orf_length, self.frame)
 
         # Preserve the user's specification so named regions can resolve it
         # against their actual molecular codon count at generation time.
@@ -346,8 +345,7 @@ class MutagenizeOrfOp(Operation):
         """
         codons = []
         orf_length = mol_end - mol_start
-        effective_length = orf_length - frame_offset
-        num_complete_codons = effective_length // 3
+        num_complete_codons = complete_codon_count(orf_length, self.frame)
 
         if self.reverse:
             # For negative frames: skip frame_offset bases at the END
