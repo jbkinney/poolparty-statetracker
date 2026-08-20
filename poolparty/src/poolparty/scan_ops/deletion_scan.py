@@ -78,7 +78,7 @@ def deletion_scan(
         raise ValueError(f"del_length ({deletion_length}) must be < pool.seq_length ({bg_length})")
 
     # Use composition pattern: region_scan + replace_region
-    marker_name = "_del"
+    marker_name = f"_del_len{int(deletion_length)}"
 
     # 1. Mark the regions to delete with tags
     marked = region_scan(

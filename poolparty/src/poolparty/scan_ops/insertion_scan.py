@@ -97,7 +97,7 @@ def insertion_scan(
     # replace=False: marker_length=0 (insert without removing background)
     # replace=True: marker_length=ins_length (replace background content)
     # Use different marker names to avoid conflicts when both are used in same Party
-    marker_name = "_rep" if replace else "_ins"
+    marker_name = f"_rep_len{ins_length}" if replace else "_ins"
     marker_length = ins_length if replace else 0
 
     # 1. Insert tags at scanning positions

@@ -95,6 +95,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complete-codon counts are clamped at zero when a region is shorter than its
   frame offset, so ORF operations no longer report negative sequence lengths
   or codon counts.
+- Multiple deletion and replacement scans with different edit lengths can now
+  coexist in one Party without colliding on internal region names.
 - `mutagenize_orf` now honors `codon_positions` for named regions in
   random mode. Previously, explicit lists and slices were silently replaced
   with all available codons. Restrictions are now resolved against runtime

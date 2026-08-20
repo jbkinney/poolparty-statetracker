@@ -306,3 +306,60 @@ class TestReplacementScanEdgeCases:
         assert len(df) == 1
         # Only position 0, so insert replaces everything
         assert df["seq"].iloc[0] == "TTTTTTTTTT"
+
+    def test_chain_different_replacement_lengths(self):
+        """Replacement scans of different lengths can coexist in one Party."""
+        with pp.Party() as party:
+            result = (
+                pp.from_seq("AAAAAA")
+                .replacement_scan(
+                    "T",
+                    positions=[0],
+                    mode="sequential",
+                )
+                .replacement_scan(
+                    "GG",
+                    positions=[1],
+                    mode="sequential",
+                )
+            )
+
+            assert party.get_region_by_name("_rep_len1").seq_length == 1
+            assert party.get_region_by_name("_rep_len2").seq_length == 2
+
+        df = result.generate_library(num_cycles=1)
+        assert df["seq"].tolist() == ["TGGAAA"]
+
+    def test_branch_different_replacement_lengths_with_cards(self):
+        """Length-qualified markers work for functional branches and cards."""
+        with pp.Party():
+            bg = pp.from_seq("AAAAAA")
+            short = replacement_scan(
+                bg,
+                "T",
+                positions=[0],
+                mode="sequential",
+                cards=["name", "region_seq"],
+            )
+            long = replacement_scan(
+                bg,
+                "GG",
+                positions=[1],
+                mode="sequential",
+                cards=["name", "region_seq"],
+            )
+
+        short_df = short.generate_library(num_cycles=1)
+        long_df = long.generate_library(num_cycles=1)
+
+        short_name = next(column for column in short_df if column.endswith(".name"))
+        short_region_seq = next(column for column in short_df if column.endswith(".region_seq"))
+        long_name = next(column for column in long_df if column.endswith(".name"))
+        long_region_seq = next(column for column in long_df if column.endswith(".region_seq"))
+
+        assert short_df["seq"].tolist() == ["TAAAAA"]
+        assert short_df[short_name].tolist() == ["_rep_len1"]
+        assert short_df[short_region_seq].tolist() == ["<_rep_len1>A</_rep_len1>"]
+        assert long_df["seq"].tolist() == ["AGGAAA"]
+        assert long_df[long_name].tolist() == ["_rep_len2"]
+        assert long_df[long_region_seq].tolist() == ["<_rep_len2>AA</_rep_len2>"]
