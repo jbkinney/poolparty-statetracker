@@ -7,6 +7,12 @@ from poolparty.codon_table import CodonTable
 from poolparty.orf_ops.mutagenize_orf import MutagenizeOrfOp, mutagenize_orf
 
 
+def _codon_position_cards(df):
+    """Return codon-position card values without depending on the operation prefix."""
+    column = next(c for c in df.columns if "codon_positions" in c)
+    return list(df[column])
+
+
 class TestCodonTable:
     """Test CodonTable class."""
 
@@ -296,6 +302,145 @@ class TestMutagenizeOrfCodonPositions:
             # Duplicate positions
             with pytest.raises(ValueError, match="must not contain duplicates"):
                 mutagenize_orf("ATGAAATTT", num_mutations=1, codon_positions=[0, 0, 1])
+
+    @pytest.mark.parametrize("frame", [1, -1])
+    def test_named_region_random_honors_explicit_positions(self, frame):
+        """A named region must not broaden an explicit random-mode restriction."""
+        with pp.Party():
+            dna = pp.annotate_orf(
+                pp.from_seq("ATGAAACCCGGGTTTAAA"),
+                "orf",
+                extent=(0, 18),
+                frame=frame,
+            )
+            mutants = mutagenize_orf(
+                dna,
+                region="orf",
+                codon_positions=[1, 4],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="random",
+                num_states=100,
+                cards=["codon_positions"],
+            )
+            df = pp.generate_library(mutants, num_cycles=1, seed=1)
+
+        observed = {position for card in _codon_position_cards(df) for position in card}
+        assert observed == {1, 4}
+
+    def test_named_region_random_honors_slice_with_mutation_rate(self):
+        """Slices are re-applied instead of being replaced by every codon."""
+        with pp.Party():
+            dna = pp.annotate_orf(
+                pp.from_seq("ATGAAACCCGGGTTTAAA"), "orf", extent=(0, 18), frame=1
+            )
+            mutants = mutagenize_orf(
+                dna,
+                region="orf",
+                codon_positions=slice(1, 5, 3),
+                mutation_rate=1.0,
+                mode="random",
+                cards=["codon_positions"],
+            )
+            df = pp.generate_library(mutants, num_cycles=1, seed=1)
+
+        assert _codon_position_cards(df) == [(1, 4)]
+
+    def test_named_gapped_region_resolves_slice_against_actual_codons(self):
+        """A relative slice uses molecular, not initialization-time, codon count."""
+        seq = "ATG-CCC-GGGTTTAAA-CCC"  # 21 nontag chars, 18 molecular bases
+        with pp.Party():
+            dna = pp.annotate_orf(pp.from_seq(seq), "orf", extent=(0, 21), frame=1)
+            mutants = mutagenize_orf(
+                dna,
+                region="orf",
+                codon_positions=slice(-2, None),
+                mutation_rate=1.0,
+                mode="random",
+                cards=["codon_positions"],
+            )
+            df = pp.generate_library(mutants, num_cycles=1, seed=1)
+
+        assert _codon_position_cards(df) == [(4, 5)]
+
+    def test_named_gapped_region_none_still_means_all_actual_codons(self):
+        """The D3 fix must not reuse a gap-inflated initialization-time range."""
+        seq = "ATG-CCC-GGGTTTAAA-CCC"  # 21 nontag chars, 18 molecular bases
+        with pp.Party():
+            dna = pp.annotate_orf(pp.from_seq(seq), "orf", extent=(0, 21), frame=1)
+            mutants = mutagenize_orf(
+                dna,
+                region="orf",
+                mutation_rate=1.0,
+                mode="random",
+                cards=["codon_positions"],
+            )
+            df = pp.generate_library(mutants, num_cycles=1, seed=1)
+
+        assert _codon_position_cards(df) == [tuple(range(6))]
+
+    def test_named_region_rejects_runtime_out_of_range_position(self):
+        """A position accepted by gap-inflated metadata must fail on actual geometry."""
+        seq = "ATG-CCC-GGGTTTAAA-CCC"  # init sees 7 codons; runtime sees 6
+        with pp.Party():
+            dna = pp.annotate_orf(pp.from_seq(seq), "orf", extent=(0, 21), frame=1)
+            mutants = mutagenize_orf(
+                dna,
+                region="orf",
+                codon_positions=[6],
+                num_mutations=1,
+                mode="random",
+            )
+            with pytest.raises(ValueError, match=r"out of range \[0, 6\)"):
+                pp.generate_library(mutants, num_cycles=1, seed=1)
+
+    def test_named_region_rejects_runtime_mutation_count_overflow(self):
+        """Fixed mutation counts must not be silently clamped after re-resolution."""
+        seq = "ATG-CCC-GGGTTTAAA-CCC"  # init slice=[5, 6]; runtime slice=[5]
+        with pp.Party():
+            dna = pp.annotate_orf(pp.from_seq(seq), "orf", extent=(0, 21), frame=1)
+            mutants = mutagenize_orf(
+                dna,
+                region="orf",
+                codon_positions=slice(5, 7),
+                num_mutations=2,
+                mode="random",
+            )
+            with pytest.raises(ValueError, match="exceeds the number of.*runtime"):
+                pp.generate_library(mutants, num_cycles=1, seed=1)
+
+    @pytest.mark.parametrize(
+        ("named_region", "codon_positions", "expected"),
+        [
+            (False, [1, 4], (1, 4)),
+            (True, slice(1, 4), (1, 2, 3)),
+        ],
+    )
+    def test_copy_and_deepcopy_preserve_codon_positions(
+        self, named_region, codon_positions, expected
+    ):
+        """Copied pools observably retain list and slice restrictions."""
+        with pp.Party():
+            dna = pp.from_seq("ATGAAACCCGGGTTTAAA")
+            region = None
+            if named_region:
+                dna = pp.annotate_orf(dna, "orf", extent=(0, 18), frame=1)
+                region = "orf"
+
+            mutants = mutagenize_orf(
+                dna,
+                region=region,
+                codon_positions=codon_positions,
+                mutation_rate=1.0,
+                mode="random",
+                cards=["codon_positions"],
+            )
+            copied = mutants.copy()
+            deepcopied = mutants.deepcopy()
+
+            for pool in (mutants, copied, deepcopied):
+                df = pp.generate_library(pool, num_cycles=1, seed=1)
+                assert _codon_position_cards(df) == [expected]
 
 
 class TestMutagenizeOrfMutationTypes:
