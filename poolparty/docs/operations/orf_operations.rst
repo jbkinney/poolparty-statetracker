@@ -3,9 +3,9 @@ ORF Operations
 
 ORF operations target open reading frames within sequences, enabling
 codon-level manipulations and translations while respecting reading frame
-boundaries. These operations require that the target region be annotated
-with :doc:`annotate_orf` or :doc:`insert_tags` so that the reading frame
-is known.
+boundaries. A named region annotated with :doc:`annotate_orf` carries its
+frame automatically. You can also target the whole sequence or an interval
+and pass ``frame=`` explicitly.
 
 .. list-table::
    :widths: 25 75
@@ -13,6 +13,8 @@ is known.
 
    * - :doc:`mutagenize_orf`
      - Introduce codon-level missense mutations within a coding sequence.
+   * - :doc:`deletion_scan_orf`
+     - Scan whole-codon deletions in coding order across any of six frames.
    * - :doc:`translate`
      - Translate a DNA pool to a protein pool.
    * - :doc:`annotate_orf`
@@ -67,6 +69,7 @@ host-optimized codon table), pass a dict in the same format:
    :hidden:
 
    mutagenize_orf
+   deletion_scan_orf
    translate
    annotate_orf
    stylize_orf

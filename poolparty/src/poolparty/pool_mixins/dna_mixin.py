@@ -16,6 +16,7 @@ from ..types import (
     ModeType,
     Optional,
     Pool_type,
+    PositionsType,
     Real,
     RegionType,
     Sequence,
@@ -351,6 +352,73 @@ class DnaMixin:
             style_frames=style_frames,
             iter_order=iter_order,
             prefix=prefix,
+        )
+
+    def deletion_scan_orf(
+        self,
+        deletion_codons: Integral,
+        deletion_marker: Optional[str] = "-",
+        codon_positions: PositionsType = None,
+        region: RegionType = None,
+        frame: Optional[int] = None,
+        prefix: Optional[str] = None,
+        mode: ModeType = "random",
+        num_states: Optional[Integral] = None,
+        style: Optional[str] = None,
+        iter_order: Optional[Real] = None,
+        cards: CardsType = None,
+    ) -> Self:
+        """Delete whole-codon windows from an ORF in coding order.
+
+        Parameters
+        ----------
+        deletion_codons : Integral
+            Number of consecutive codons to delete in each state.
+        deletion_marker : Optional[str], default='-'
+            One-character marker used to replace every deleted nucleotide.
+            Pass ``None`` to excise the selected codons instead.
+        codon_positions : PositionsType, default=None
+            Eligible deletion-window starts in coding-order codon units.
+        region : RegionType, default=None
+            ORF region to scan: a name, ``[start, stop]`` interval, or the
+            entire sequence when ``None``.
+        frame : Optional[int], default=None
+            Reading frame (+1/+2/+3/-1/-2/-3). A named OrfRegion supplies its
+            frame when omitted; other inputs default to +1.
+        prefix : Optional[str], default=None
+            Prefix for generated sequence names.
+        mode : ModeType, default='random'
+            Position-selection mode: ``'random'`` or ``'sequential'``.
+        num_states : Optional[Integral], default=None
+            Number of generated scan states.
+        style : Optional[str], default=None
+            Style applied to deletion markers. Ignored for true deletions.
+        iter_order : Optional[Real], default=None
+            Enumeration priority when combined with other operations.
+        cards : CardsType, default=None
+            ORF card keys: ``'codon_positions'``, ``'wt_codons'``, ``'start'``,
+            and ``'end'``.
+
+        Returns
+        -------
+        Pool
+            A Pool containing one whole-codon deletion per scan state.
+        """
+        from ..orf_ops.deletion_scan_orf import deletion_scan_orf
+
+        return deletion_scan_orf(
+            pool=self,
+            deletion_codons=deletion_codons,
+            deletion_marker=deletion_marker,
+            codon_positions=codon_positions,
+            region=region,
+            frame=frame,
+            prefix=prefix,
+            mode=mode,
+            num_states=num_states,
+            style=style,
+            iter_order=iter_order,
+            cards=cards,
         )
 
     def stylize_orf(

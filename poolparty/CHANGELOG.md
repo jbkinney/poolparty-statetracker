@@ -59,6 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   faster barcode generation at scale.
 
 ### Added
+- `deletion_scan_orf`, a whole-codon deletion scan that supports all six
+  reading frames, preserves orphan bases, and reports coding-aware design cards.
 - `orf_ops/_frame.py`, holding the single `frame_offset()` and `resolve_frame()`
   used by the three frame-aware operations (`translate`, `mutagenize_orf`,
   `stylize_orf`). `resolve_frame` was previously defined once per operation

@@ -76,7 +76,14 @@ from .multiscan_ops import (
 from .operation import Operation
 
 # Import ORF operations from orf_ops module
-from .orf_ops import MutagenizeOrfOp, StylizeOrfOp, annotate_orf, mutagenize_orf, stylize_orf
+from .orf_ops import (
+    MutagenizeOrfOp,
+    StylizeOrfOp,
+    annotate_orf,
+    deletion_scan_orf,
+    mutagenize_orf,
+    stylize_orf,
+)
 from .orf_ops.reverse_translate import ReverseTranslateOp, reverse_translate
 from .orf_ops.translate import TranslateOp, translate
 from .party import (
@@ -193,6 +200,7 @@ __all__ = [
     "flip",
     "FlipOp",
     "annotate_orf",
+    "deletion_scan_orf",
     "mutagenize_orf",
     "MutagenizeOrfOp",
     "stylize_orf",
@@ -381,6 +389,7 @@ _DNAPOOL_FACTORY_MAP = {
     "rc": rc,
     # ORF ops (DNA-specific)
     "annotate_orf": annotate_orf,
+    "deletion_scan_orf": deletion_scan_orf,
     "mutagenize_orf": mutagenize_orf,
     "stylize_orf": stylize_orf,
     "translate": translate,
