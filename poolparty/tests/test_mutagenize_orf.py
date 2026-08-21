@@ -353,6 +353,52 @@ class TestMutagenizeOrfCodonPositions:
 
         assert _codon_position_cards(df) == [(1, 4)]
 
+    @pytest.mark.parametrize("mode", ["random", "sequential"])
+    def test_selected_ambiguous_codon_raises_clear_error(self, mode):
+        """A selected codon must have an exact wild-type identity."""
+        with pp.Party():
+            mutants = mutagenize_orf(
+                "ATGNNNAAA",
+                codon_positions=[1],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode=mode,
+            )
+            with pytest.raises(ValueError, match=r"codon 1.*NNN"):
+                pp.generate_library(mutants, num_cycles=1, seed=1)
+
+    @pytest.mark.parametrize("mode", ["random", "sequential"])
+    def test_unselected_eligible_ambiguous_codon_is_preserved(self, mode):
+        """A mutation may select an exact codon and preserve eligible ambiguity."""
+        with pp.Party():
+            mutants = mutagenize_orf(
+                "ATGNNNAAA",
+                codon_positions=[0, 1],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode=mode,
+                num_states=1,
+                cards=["codon_positions"],
+            )
+            df = pp.generate_library(mutants, num_cycles=1, seed=2)
+
+        assert _codon_position_cards(df) == [(0,)]
+        assert df["seq"].iloc[0][3:6] == "NNN"
+
+    def test_noneligible_ambiguous_codon_is_preserved(self):
+        """Ambiguity outside the eligible set does not prevent mutation."""
+        with pp.Party():
+            mutants = mutagenize_orf(
+                "ATGNNNAAA",
+                codon_positions=[2],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="random",
+            )
+            df = pp.generate_library(mutants, num_cycles=1, seed=1)
+
+        assert df["seq"].iloc[0][3:6] == "NNN"
+
     def test_named_gapped_region_resolves_slice_against_actual_codons(self):
         """A relative slice uses molecular, not initialization-time, codon count."""
         seq = "ATG-CCC-GGGTTTAAA-CCC"  # 21 nontag chars, 18 molecular bases

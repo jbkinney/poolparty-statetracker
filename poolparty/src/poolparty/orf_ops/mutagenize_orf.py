@@ -14,7 +14,7 @@ from ..pool import Pool
 from ..region import VALID_FRAMES
 from ..types import CardsType, ModeType, Optional, RegionType, Seq, Sequence, Union, beartype
 from ..utils.dna_seq import DnaSeq
-from ..utils.dna_utils import reverse_complement
+from ..utils.dna_utils import VALID_CHARS, reverse_complement
 from ..utils.parsing_utils import find_all_regions
 from ._frame import complete_codon_count, frame_offset, resolve_frame
 
@@ -93,7 +93,8 @@ def mutagenize_orf(
         If frame is None and region is a named plain Region (not OrfRegion),
         if mutation_rate is used with sequential mode, if mutation_type is
         non-uniform with sequential mode, or if num_mutations exceeds
-        eligible codons.
+        eligible codons. Codons selected for mutation must contain only A, C,
+        G, or T; unselected IUPAC ambiguity codes are preserved.
     """
     from ..fixed_ops.from_seq import from_seq
 
@@ -415,6 +416,18 @@ class MutagenizeOrfOp(Operation):
             raise ValueError("codon_positions must not contain duplicates")
         return positions
 
+    @staticmethod
+    def _require_exact_codon(codon: str, position: int) -> str:
+        """Return an uppercase codon, rejecting non-ACGT selected codons."""
+        exact_codon = codon.upper()
+        if any(base not in VALID_CHARS for base in exact_codon):
+            raise ValueError(
+                f"mutagenize_orf() cannot mutate non-ACGT codon {position} "
+                f"('{exact_codon}'); selected codons must contain only "
+                "A, C, G, or T."
+            )
+        return exact_codon
+
     def _random_mutation(
         self,
         codons: list[str],
@@ -438,7 +451,7 @@ class MutagenizeOrfOp(Operation):
 
         wt_codons, mut_codons, wt_aas, mut_aas = [], [], [], []
         for pos in positions:
-            wt = codons[pos].upper()
+            wt = self._require_exact_codon(codons[pos], pos)
             wt_codons.append(wt)
             wt_aas.append(self.codon_table.codon_to_aa.get(wt, "?"))
             alternatives = self.codon_table.get_mutations(wt, self.mutation_type)
@@ -512,7 +525,7 @@ class MutagenizeOrfOp(Operation):
 
             wt_codons, mut_codons, wt_aas, mut_aas = [], [], [], []
             for pos, mut_idx in zip(positions, mut_indices):
-                wt = codons[pos].upper()
+                wt = self._require_exact_codon(codons[pos], pos)
                 wt_codons.append(wt)
                 wt_aas.append(self.codon_table.codon_to_aa.get(wt, "?"))
                 alternatives = self.codon_table.get_mutations(wt, self.mutation_type)

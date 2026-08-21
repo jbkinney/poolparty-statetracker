@@ -73,6 +73,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DMS (protein GB1) and MPRA (regulatory grammar) tutorial pages.
 
 ### Fixed
+- ORF styling now counts IUPAC ambiguity codes as molecular bases while still
+  excluding gaps. Translation rejects ambiguity only in complete translated
+  codons, and codon mutagenesis rejects it only when selecting a codon to
+  mutate.
 - Complete-codon counts are clamped at zero when a region is shorter than its
   frame offset, so ORF operations no longer report negative sequence lengths
   or codon counts.

@@ -41,6 +41,8 @@ Parameters
        The first complete codon begins at base ``|frame|`` of the region,
        counted from the 5' end for positive frames and from the 3' end for
        negative frames. Bases outside a complete codon are ignored.
+       Complete codons must contain only A, C, G, or T. IUPAC ambiguity
+       codes are permitted in ignored orphan bases.
    * - ``include_stop``
      - ``bool``
      - ``True``

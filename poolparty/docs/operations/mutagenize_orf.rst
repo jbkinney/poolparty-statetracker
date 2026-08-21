@@ -54,7 +54,8 @@ Parameters
      - ``list[int] | slice | None``
      - ``None``
      - Eligible codon indices (0-based); ``None`` means every codon in the
-       mutated span may change.
+       mutated span may change. A codon selected for mutation must contain
+       only A, C, G, or T; unselected IUPAC ambiguity codes are preserved.
    * - ``frame``
      - ``int | None``
      - ``None``

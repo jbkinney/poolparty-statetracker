@@ -140,6 +140,23 @@ class TestTranslateBasic:
             df = protein_pool.generate_library()
             assert df["seq"].iloc[0] == "MA*"
 
+    def test_ambiguous_complete_codon_raises_clear_error(self):
+        """Translation requires exact bases in every complete codon."""
+        with pp.Party():
+            pool = pp.from_seq("ATGNNNAAA").translate()
+            with pytest.raises(ValueError, match=r"codon 1.*NNN"):
+                pool.generate_library()
+
+    @pytest.mark.parametrize(
+        ("sequence", "frame"),
+        [("NATGAAA", 2), ("TTTCATN", -2)],
+    )
+    def test_ambiguous_orphan_is_not_translated(self, sequence, frame):
+        """An ambiguous frame-offset base does not invalidate complete codons."""
+        with pp.Party():
+            pool = pp.from_seq(sequence).translate(frame=frame)
+            assert pool.generate_library()["seq"].iloc[0] == "MK"
+
     def test_translate_empty_sequence(self):
         """Test translating empty/too-short sequence."""
         with pp.Party():

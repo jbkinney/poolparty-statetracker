@@ -57,6 +57,7 @@ Parameters
        counted from the 5' end for positive frames and from the 3' end for
        negative frames. Bases outside a complete codon are ignored.
        Orphan bases are left unstyled.
+       IUPAC ambiguity codes occupy molecular positions; gaps do not.
    * - ``prefix``
      - ``str | None``
      - ``None``

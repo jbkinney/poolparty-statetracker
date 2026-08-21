@@ -6,7 +6,7 @@ from ..codon_table import CodonTable
 from ..operation import Operation
 from ..pool import Pool
 from ..types import NullSeq, Optional, Real, RegionType, Seq, Union, beartype, is_null_seq
-from ..utils.dna_utils import reverse_complement
+from ..utils.dna_utils import VALID_CHARS, reverse_complement
 from ..utils.protein_seq import ProteinSeq
 from ..utils.style_utils import SeqStyle
 from ._frame import complete_codon_count, frame_offset, resolve_frame
@@ -74,7 +74,8 @@ def translate(
     ------
     ValueError
         If frame is invalid, or if region is a named plain Region
-        without an explicit frame.
+        without an explicit frame, or if a complete translated codon
+        contains a character other than A, C, G, or T.
     """
     from ..fixed_ops.from_seq import from_seq
     from ..protein_pool import ProteinPool
@@ -179,19 +180,6 @@ class TranslateOp(Operation):
         # Calculate frame offset (frame +1 = skip 0, frame +2 = skip 1, frame +3 = skip 2)
         codon_start_offset = frame_offset(frame)
 
-        # Validate no IUPAC ambiguity codes in region (codon table requires ACGT only)
-        # Strip tags to get actual sequence content
-        from ..utils.parsing_utils import strip_all_tags
-
-        clean_content = strip_all_tags(parent_seq.string)
-        iupac_ambiguity = set("RYSWKMBDHVNryswkmbdhvn")
-        invalid_chars = set(clean_content) & iupac_ambiguity
-        if invalid_chars:
-            raise ValueError(
-                f"translate() cannot handle IUPAC ambiguity codes: {sorted(invalid_chars)}. "
-                "Region must contain only A, C, G, T."
-            )
-
         # Check if we have enough bases for at least one codon
         if mol_length < codon_start_offset + 3:
             return ProteinSeq.empty(), {}
@@ -221,6 +209,13 @@ class TranslateOp(Operation):
             # Handle reverse frame: reverse-complement the codon
             if is_reverse:
                 codon = reverse_complement(codon)
+
+            if any(base not in VALID_CHARS for base in codon):
+                raise ValueError(
+                    "translate() cannot handle IUPAC ambiguity codes or other "
+                    f"non-ACGT bases in complete codon {codon_idx} ('{codon}'); "
+                    "complete codons must contain only A, C, G, or T."
+                )
 
             # Translate codon
             aa = self.codon_table.codon_to_aa.get(codon, "?")
