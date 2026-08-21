@@ -1,10 +1,10 @@
 """DnaPool class for DNA sequence pools."""
 
 from .pool import Pool
-from .pool_mixins import DnaMixin, ExportMixin, FilterMixin
+from .pool_mixins import DnaMixin, ExportMixin, FilterMixin, StatsMixin
 
 
-class DnaPool(Pool, DnaMixin, FilterMixin, ExportMixin):
+class DnaPool(Pool, DnaMixin, FilterMixin, ExportMixin, StatsMixin):
     """Pool specialized for DNA sequences.
 
     Inherits all generic operations from Pool and adds DNA-specific
@@ -27,6 +27,9 @@ class DnaPool(Pool, DnaMixin, FilterMixin, ExportMixin):
 
     And export operations via ExportMixin:
     - to_file() - export to CSV, TSV, FASTA, or JSONL
+
+    And the library readout via StatsMixin:
+    - stats() - summarise the library this pool produces
     """
 
     def __repr__(self) -> str:

@@ -98,6 +98,7 @@ from .party import (
 )
 from .pool import Pool
 from .protein_pool import ProteinPool
+from .stats import stats
 from .region import OrfRegion, Region
 
 # Import from region_ops module
@@ -171,6 +172,7 @@ __all__ = [
     "State",
     "StateManager",
     "generate_library",
+    "stats",
     "BASES",
     "COMPLEMENT",
     "IUPAC_TO_DNA",

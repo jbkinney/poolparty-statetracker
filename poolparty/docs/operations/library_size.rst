@@ -1,8 +1,10 @@
 Library Size
 ============
 
-Every pool has a ``num_states`` property — the number of distinct sequences it
-can produce. Each operation has an **internal state** (see :doc:`modes`) whose
+Every pool has a ``num_states`` property — the number of states it has, which
+is an upper bound on the number of distinct sequences it can produce rather
+than the number itself (see :ref:`Distinct states are not distinct sequences
+<states-vs-sequences>` below). Each operation has an **internal state** (see :doc:`modes`) whose
 count is determined by its mode and parameters. How ``num_states`` composes
 when operations are combined depends on the operation type. Three rules cover
 all cases: multiplication, addition, and no change. These are described below.
@@ -170,13 +172,48 @@ Per-category behaviour
      - ``repeat``
    * - State
      - reduces
-     - ``sample``, ``filter``, ``slice_states``
+     - ``sample``, ``slice_states``
+   * - State
+     - unchanged (rejected sequences become ``NullSeq``)
+     - ``filter``
    * - State
      - unchanged
      - ``shuffle_states``, ``sync``, ``score``, ``materialize``
    * - Utilities
      - unchanged
      - ``rc``, ``upper``, ``lower``, ``swapcase``, ``stylize``, ``clear_gaps``, ``clear_annotation``, ``slice_seq``, ``add_prefix``
+
+----
+
+.. _states-vs-sequences:
+
+Distinct states are not distinct sequences
+------------------------------------------
+
+``num_states`` counts states, and several ordinary designs give a state count
+that differs from the number of distinct sequences produced:
+
+- ``repeat`` asks for copies, so its extra states are duplicates by design.
+- ``filter`` replaces a rejected sequence with a ``NullSeq`` rather than
+  removing its state, so ``num_states`` is unchanged and some states yield no
+  sequence at all.
+- ``sample`` draws with replacement by default, so it can select one state
+  more than once.
+- Two different states can happen to produce the same sequence.
+- A random operation built **without** ``num_states`` draws afresh for every
+  sequence. It contributes one state, so ``num_states`` becomes a floor rather
+  than a total, and the design has no fixed size at all.
+
+.. code-block:: python
+
+    # The same design, written two ways.
+    pp.from_seq("ACGTACGTAC").mutagenize(num_mutations=2, mode="sequential")
+    # num_states: 405 -- every two-base mutant, each exactly once
+
+    pp.from_seq("ACGTACGTAC").mutagenize(num_mutations=2, mode="random")
+    # num_states: 1 -- a fresh draw per sequence, so there is no total
+
+Use :ref:`pool.stats() <pool-stats>` to count what a design actually produces.
 
 ----
 

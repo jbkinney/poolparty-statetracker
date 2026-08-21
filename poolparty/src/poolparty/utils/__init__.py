@@ -27,6 +27,15 @@ from .orf_utils import validate_orf_extent
 from .protein_seq import ProteinSeq
 from .scan_utils import build_scan_cache
 from .seq import Seq
+from .seq_properties import (
+    calc_complexity,
+    calc_dust,
+    calc_gc,
+    get_sites_for_enzymes,
+    has_homopolymer,
+    has_restriction_site,
+    longest_homopolymer,
+)
 from .seq_utils import validate_positions
 from .style_utils import (
     ANSI_ESCAPE_PATTERN,
@@ -76,6 +85,14 @@ __all__ = [
     "get_pools_reverse_topo",
     "organize_columns",
     "finalize_generate_df",
+    # seq_properties
+    "calc_gc",
+    "calc_complexity",
+    "calc_dust",
+    "has_homopolymer",
+    "longest_homopolymer",
+    "has_restriction_site",
+    "get_sites_for_enzymes",
     # seq_utils
     "validate_positions",
     # scan_utils

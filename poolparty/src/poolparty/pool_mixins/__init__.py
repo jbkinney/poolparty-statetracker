@@ -12,6 +12,7 @@ from .dna_mixin import DnaMixin
 from .export_mixin import ExportMixin
 from .filter_mixin import FilterMixin
 from .protein_mixin import ProteinMixin
+from .stats_mixin import StatsMixin
 
 __all__ = [
     # Generic mixins
@@ -25,4 +26,5 @@ __all__ = [
     "ExportMixin",
     "FilterMixin",
     "ProteinMixin",
+    "StatsMixin",
 ]

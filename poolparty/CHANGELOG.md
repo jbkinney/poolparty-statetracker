@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `pp.stats(pool)` and `pool.stats()` summarise the library a pool produces:
+  how many sequences are unique and how many are duplicates, the minimum, mean
+  and maximum pairwise Hamming distance, and how often sequences carry long
+  homopolymer runs, extreme GC content, repetitive sequence or restriction
+  sites. Report only -- nothing about the pool or its library changes. The
+  result is a `dict` that prints as a formatted report.
+- `longest_homopolymer` in `poolparty.utils.seq_properties`, alongside the
+  existing thresholded `has_homopolymer`.
+
 ### Fixed
 - `to_df` and `to_file` no longer re-emit sequences when `num_cycles` is used on
   a pool containing a filter. A filter replaces rejected sequences with
@@ -15,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   states again, silently returning duplicates. `num_cycles` now counts states
   traversed, so a cycle returns exactly the sequences that survive it.
   `num_seqs` is unaffected and still samples until the requested count is met.
+- `calc_dust` now cites Morgulis et al. (2006), which describes the DUST score
+  it computes, rather than the SIMPLE algorithm of Hancock and Armstrong (1994).
 
 ### Changed
 - **BREAKING:** ORF operations now share one documented frame-offset

@@ -126,9 +126,9 @@ def calc_dust(seq: str) -> float:
 
     References
     ----------
-    Hancock, J.M. and Armstrong, J.S. (1994). SIMPLE34: an improved and enhanced
-    implementation for VAX and Sun computers of the SIMPLE algorithm for
-    analysis of clustered repetitive motifs in nucleotide sequences.
+    Morgulis, A., Gertz, E.M., Schaffer, A.A. and Agarwala, R. (2006). A fast and
+    symmetric DUST implementation to mask low-complexity DNA sequences.
+    Journal of Computational Biology 13(5), 1028-1040.
     """
     seq_upper = seq.upper()
     if len(seq_upper) < 3:
@@ -181,6 +181,34 @@ def has_homopolymer(seq: str, max_length: int) -> bool:
     # Pattern matches any character repeated more than max_length times
     pattern = r"(.)\1{" + str(max_length) + r",}"
     return bool(re.search(pattern, seq, re.IGNORECASE))
+
+
+def longest_homopolymer(seq: str) -> int:
+    """Length of the longest single-base run in a sequence.
+
+    Parameters
+    ----------
+    seq : str
+        DNA sequence (case-insensitive).
+
+    Returns
+    -------
+    int
+        Length of the longest run of one repeated character. Returns 0 for an
+        empty sequence.
+
+    Examples
+    --------
+    >>> longest_homopolymer("ACGTAAAACGT")
+    4
+    >>> longest_homopolymer("ACGTACGT")
+    1
+    >>> longest_homopolymer("")
+    0
+    """
+    if not seq:
+        return 0
+    return max(len(match.group(0)) for match in re.finditer(r"(.)\1*", seq, re.IGNORECASE))
 
 
 def _expand_iupac(site: str) -> list[str]:
