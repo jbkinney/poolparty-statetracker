@@ -15,13 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `|frame|` of 2 or 3 they were exactly swapped, so one `OrfRegion.frame`
   selected different codons depending on which operation read it.
 
-  The unification covers the frame offset for unambiguous sequences and
-  consistently resolved named regions. Two pre-existing sources of divergence
-  are **not** addressed here and remain: `stylize_orf` excludes IUPAC ambiguity
-  codes from its molecular positions where `translate` and `mutagenize_orf`
-  include them, and the three operations interpret an interval `region=[a, b]`
-  in different coordinate systems (molecular, nontag and literal respectively),
-  which differ once a sequence contains gaps.
+  The frame-offset change itself covers unambiguous sequences and consistently
+  resolved named regions. IUPAC handling and interval-coordinate consistency
+  are separate concerns addressed below.
 
   All operations now follow `translate`'s convention, which matches the
   `OrfRegion` docstring and standard six-frame usage: **the first complete
@@ -73,6 +69,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DMS (protein GB1) and MPRA (regulatory grammar) tutorial pages.
 
 ### Fixed
+- `mutagenize_orf(region=[start, stop])` now uses the package-wide half-open
+  nontag coordinate convention. Annotation tags do not count toward interval
+  positions, while gaps do count when selecting the span and are excluded only
+  afterward when forming codons. Previously the interval numbers were treated
+  as molecular coordinates, so gaps could cause bases after `stop` to be
+  mutated.
 - ORF styling now counts IUPAC ambiguity codes as molecular bases while still
   excluding gaps. Translation rejects ambiguity only in complete translated
   codons, and codon mutagenesis rejects it only when selecting a codon to

@@ -45,7 +45,9 @@ def mutagenize_orf(
         Parent pool or sequence string to mutate.
     region : RegionType, default=None
         Region to mutate. Can be marker name (e.g., "orf") or [start, stop].
-        If None, mutates the entire sequence.
+        If None, mutates the entire sequence. Intervals use half-open nontag
+        coordinates: tags do not count, while gaps count when selecting the
+        span and are excluded afterward when forming codons.
     num_mutations : Optional[Integral], default=None
         Fixed number of codon mutations (mutually exclusive with mutation_rate).
     mutation_rate : Optional[Real], default=None
@@ -302,9 +304,20 @@ class MutagenizeOrfOp(Operation):
         if self._orf_region is None:
             return (0, mol_length)
 
-        # Handle [start, stop] interval - these are molecular coordinates
+        # Handle [start, stop] interval in nontag coordinates. Convert the
+        # selected span to molecular bounds only after applying its boundaries,
+        # so gaps inside or before the interval cannot move those boundaries.
         if not isinstance(self._orf_region, str):
-            return (int(self._orf_region[0]), int(self._orf_region[1]))
+            start, stop = int(self._orf_region[0]), int(self._orf_region[1])
+            mol_start = sum(
+                seq_obj.string[seq_obj.nontag_to_literal(pos)] in DnaSeq.VALID_CHARS
+                for pos in range(start)
+            )
+            region_mol_length = sum(
+                seq_obj.string[seq_obj.nontag_to_literal(pos)] in DnaSeq.VALID_CHARS
+                for pos in range(start, stop)
+            )
+            return (mol_start, mol_start + region_mol_length)
 
         # Handle region name - find the region and convert to molecular coordinates
         try:
@@ -492,6 +505,33 @@ class MutagenizeOrfOp(Operation):
                         f"the runtime region geometry ({num_codons} complete codons)."
                     )
             else:
+                eligible_positions = self.eligible_positions
+        elif self._orf_region is not None:
+            # Interval regions use nontag coordinates, so gaps can make their
+            # runtime molecular codon count smaller than stop - start.
+            num_codons = complete_codon_count(orf_length, self.frame)
+            runtime_eligible_positions = self._resolve_codon_positions(
+                self._codon_positions, num_codons
+            )
+
+            if self.mode == "random":
+                eligible_positions = runtime_eligible_positions
+                if self.num_mutations is not None and self.num_mutations > len(eligible_positions):
+                    raise ValueError(
+                        f"num_mutations ({self.num_mutations}) exceeds the number of "
+                        f"eligible codon positions ({len(eligible_positions)}) for "
+                        f"the runtime region geometry ({num_codons} complete codons)."
+                    )
+            else:
+                if runtime_eligible_positions != self.eligible_positions:
+                    raise ValueError(
+                        "Sequential enumeration cannot resolve one fixed state space "
+                        "for this interval: its runtime eligible codon positions "
+                        f"are {runtime_eligible_positions}, but initialization resolved "
+                        f"{self.eligible_positions}. Use mode='random' or provide an "
+                        "explicit codon_positions list that is valid for the realized "
+                        "interval."
+                    )
                 eligible_positions = self.eligible_positions
         else:
             num_codons = self.num_codons

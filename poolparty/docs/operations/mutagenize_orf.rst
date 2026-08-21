@@ -49,7 +49,10 @@ Parameters
      - ``str | list[int] | None``
      - ``None``
      - Region to mutate: a tagged ORF name, a ``[start, stop]`` interval, or
-       ``None`` to mutate the full sequence.
+       ``None`` to mutate the full sequence. Intervals use half-open nontag
+       coordinates: annotation tags do not count, while gaps do count when
+       selecting the span. Gaps are then excluded when forming codons inside
+       that span.
    * - ``codon_positions``
      - ``list[int] | slice | None``
      - ``None``
@@ -102,6 +105,14 @@ Parameters
    Only the most commonly used parameters are shown above. For the full
    parameter list, see :func:`~poolparty.mutagenize_orf` in the
    :doc:`API Reference </api>`.
+
+.. note::
+
+   In sequential mode, if gaps change the eligible positions inferred at
+   initialization, provide an explicit ``codon_positions`` list that is valid
+   for the realized interval; otherwise ``mutagenize_orf`` raises instead of
+   enumerating an incorrect state space. Random mode resolves eligible
+   positions independently for each realized sequence.
 
 Examples
 --------

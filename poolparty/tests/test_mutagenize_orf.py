@@ -399,6 +399,121 @@ class TestMutagenizeOrfCodonPositions:
 
         assert df["seq"].iloc[0][3:6] == "NNN"
 
+    @pytest.mark.parametrize("frame", [1, -1])
+    def test_gapped_interval_rejects_codon_past_nontag_stop(self, frame):
+        """An interval must not reach later bases by skipping its gaps."""
+        with pp.Party():
+            mutants = mutagenize_orf(
+                "ATG---AAA",
+                region=[0, 6],
+                frame=frame,
+                codon_positions=[1],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="random",
+            )
+            with pytest.raises(ValueError, match=r"out of range \[0, 1\)"):
+                pp.generate_library(mutants, num_cycles=1, seed=1)
+
+    def test_gapped_interval_mutates_codon_inside_full_nontag_span(self):
+        """Extending the interval across the gaps makes the later codon eligible."""
+        with pp.Party():
+            mutants = mutagenize_orf(
+                "ATG---AAA",
+                region=[0, 9],
+                codon_positions=[1],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="sequential",
+                num_states=1,
+                cards=["codon_positions"],
+            )
+            df = pp.generate_library(mutants, num_cycles=1)
+
+        assert _codon_position_cards(df) == [(1,)]
+        assert df["seq"].iloc[0][:6] == "ATG---"
+        assert df["seq"].iloc[0][6:] != "AAA"
+
+    def test_tagged_gapped_interval_uses_nontag_coordinates(self):
+        """Annotation markup must not count, while gaps inside the interval do."""
+        with pp.Party():
+            mutants = mutagenize_orf(
+                "<orf>ATG---</orf>AAA",
+                region=[0, 6],
+                frame=1,
+                codon_positions=[1],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="random",
+            )
+            with pytest.raises(ValueError, match=r"out of range \[0, 1\)"):
+                pp.generate_library(mutants, num_cycles=1, seed=1)
+
+    def test_gaps_before_negative_frame_interval_do_not_shift_mutation(self):
+        """A nonzero nontag start maps to the correct global molecular bound."""
+        seq = "GGG---ATGAAA---CCC"
+        with pp.Party():
+            mutants = mutagenize_orf(
+                seq,
+                region=[6, 12],
+                frame=-2,
+                codon_positions=[0],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="sequential",
+                num_states=1,
+                style="red",
+                cards=["codon_positions", "wt_codons"],
+            )
+            df = pp.generate_library(
+                mutants, num_cycles=1, _include_inline_styles=True
+            )
+
+        output = df["seq"].iloc[0]
+        changed = {i for i, (before, after) in enumerate(zip(seq, output)) if before != after}
+        wt_codons_column = next(c for c in df.columns if "wt_codons" in c)
+        styled = {
+            int(pos)
+            for _, positions in df["_inline_styles"].iloc[0].style_list
+            for pos in positions
+        }
+
+        assert _codon_position_cards(df) == [(0,)]
+        assert df[wt_codons_column].iloc[0] == ("TTC",)
+        assert changed and changed <= {8, 9, 10}
+        assert styled == {8, 9, 10}
+
+    def test_random_interval_resolves_each_parent_gap_layout(self):
+        """Random eligibility follows each realized sequence's molecular span."""
+        with pp.Party():
+            parents = pp.from_seqs(
+                ["ATG---AAA", "ATG------"], mode="sequential"
+            )
+            mutants = mutagenize_orf(
+                parents,
+                region=[0, 9],
+                mutation_rate=1.0,
+                mutation_type="any_codon",
+                mode="random",
+                cards=["codon_positions"],
+            )
+            df = pp.generate_library(mutants, num_cycles=1, seed=1)
+
+        assert _codon_position_cards(df) == [(0, 1), (0,)]
+
+    def test_gapped_interval_sequential_rejects_changed_implicit_geometry(self):
+        """Sequential enumeration must not use a gap-inflated eligible range."""
+        with pp.Party():
+            mutants = mutagenize_orf(
+                "ATG---AAA",
+                region=[0, 6],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="sequential",
+            )
+            with pytest.raises(ValueError, match="cannot resolve one fixed state space"):
+                pp.generate_library(mutants, num_cycles=1)
+
     def test_named_gapped_region_resolves_slice_against_actual_codons(self):
         """A relative slice uses molecular, not initialization-time, codon count."""
         seq = "ATG-CCC-GGGTTTAAA-CCC"  # 21 nontag chars, 18 molecular bases
