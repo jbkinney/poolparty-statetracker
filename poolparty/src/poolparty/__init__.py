@@ -81,6 +81,7 @@ from .orf_ops import (
     StylizeOrfOp,
     annotate_orf,
     deletion_scan_orf,
+    insertion_scan_orf,
     mutagenize_orf,
     stylize_orf,
 )
@@ -201,6 +202,7 @@ __all__ = [
     "FlipOp",
     "annotate_orf",
     "deletion_scan_orf",
+    "insertion_scan_orf",
     "mutagenize_orf",
     "MutagenizeOrfOp",
     "stylize_orf",
@@ -390,6 +392,7 @@ _DNAPOOL_FACTORY_MAP = {
     # ORF ops (DNA-specific)
     "annotate_orf": annotate_orf,
     "deletion_scan_orf": deletion_scan_orf,
+    "insertion_scan_orf": insertion_scan_orf,
     "mutagenize_orf": mutagenize_orf,
     "stylize_orf": stylize_orf,
     "translate": translate,

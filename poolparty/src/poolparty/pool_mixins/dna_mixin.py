@@ -421,6 +421,82 @@ class DnaMixin:
             cards=cards,
         )
 
+    def insertion_scan_orf(
+        self,
+        insertion_pool: Union[Pool_type, str],
+        codon_positions: PositionsType = None,
+        region: RegionType = None,
+        frame: Optional[int] = None,
+        replace: bool = False,
+        style: Optional[str] = None,
+        prefix: Optional[str] = None,
+        prefix_position: Optional[str] = None,
+        prefix_insert: Optional[str] = None,
+        mode: ModeType = "random",
+        num_states: Optional[Integral] = None,
+        iter_order: Optional[Real] = None,
+        cards: CardsType = None,
+    ) -> Self:
+        """Insert coding-oriented whole codons at ORF positions.
+
+        Parameters
+        ----------
+        insertion_pool : Union[Pool_type, str]
+            Fixed-length coding-oriented DNA pool whose length is divisible by
+            three.
+        codon_positions : PositionsType, default=None
+            Eligible coding-order splice slots or overwrite-window starts.
+        region : RegionType, default=None
+            ORF region to scan: a name, ``[start, stop]`` interval, or the
+            entire sequence.
+        frame : Optional[int], default=None
+            Reading frame (+1/+2/+3/-1/-2/-3). A named OrfRegion supplies its
+            frame when omitted; other inputs default to +1.
+        replace : bool, default=False
+            Splice at codon boundaries when ``False``; overwrite whole codons
+            when ``True``.
+        style : Optional[str], default=None
+            Style applied to inserted content.
+        prefix : Optional[str], default=None
+            Prefix for the combined position-by-insert state index.
+        prefix_position : Optional[str], default=None
+            Prefix for the selected position-state index.
+        prefix_insert : Optional[str], default=None
+            Prefix for the insertion-pool state index.
+        mode : ModeType, default='random'
+            Position-selection mode: ``'random'`` or ``'sequential'``.
+        num_states : Optional[Integral], default=None
+            Number of position states.
+        iter_order : Optional[Real], default=None
+            Enumeration priority when combined with other operations.
+        cards : CardsType, default=None
+            Splice keys: ``'codon_slot'``, ``'start'``, ``'end'``. Overwrite
+            keys: ``'codon_positions'``, ``'wt_codons'``, ``'start'``, ``'end'``.
+
+        Returns
+        -------
+        Pool
+            A Pool containing coding-aware insertions or overwrites.
+        """
+        from ..orf_ops.insertion_scan_orf import insertion_scan_orf
+
+        return insertion_scan_orf(
+            pool=self,
+            insertion_pool=insertion_pool,
+            codon_positions=codon_positions,
+            region=region,
+            frame=frame,
+            replace=replace,
+            style=style,
+            prefix=prefix,
+            prefix_position=prefix_position,
+            prefix_insert=prefix_insert,
+            mode=mode,
+            num_states=num_states,
+            iter_order=iter_order,
+            cards=cards,
+        )
+
     def stylize_orf(
         self,
         region: RegionType = None,
