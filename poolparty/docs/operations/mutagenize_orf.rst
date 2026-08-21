@@ -52,7 +52,8 @@ Parameters
        ``None`` to mutate the full sequence. Intervals use half-open nontag
        coordinates: annotation tags do not count, while gaps do count when
        selecting the span. Gaps are then excluded when forming codons inside
-       that span.
+       that span. A named region uses its exact tagged content; boundary gaps
+       are ignored when forming codons without broadening the region.
    * - ``codon_positions``
      - ``list[int] | slice | None``
      - ``None``
@@ -113,6 +114,12 @@ Parameters
    for the realized interval; otherwise ``mutagenize_orf`` raises instead of
    enumerating an incorrect state space. Random mode resolves eligible
    positions independently for each realized sequence.
+
+.. note::
+
+   A named region must occur exactly once in every realized sequence.
+   ``mutagenize_orf`` raises if it is missing, duplicated, or malformed rather
+   than silently mutating the full sequence.
 
 Examples
 --------

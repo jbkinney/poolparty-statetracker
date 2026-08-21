@@ -69,6 +69,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DMS (protein GB1) and MPRA (regulatory grammar) tutorial pages.
 
 ### Fixed
+- Named regions passed to `mutagenize_orf` now retain their exact boundaries
+  when their content starts or ends with gaps. Missing, duplicate, or malformed
+  runtime regions now raise instead of silently broadening mutation to the
+  entire sequence.
 - `mutagenize_orf(region=[start, stop])` now uses the package-wide half-open
   nontag coordinate convention. Annotation tags do not count toward interval
   positions, while gaps do count when selecting the span and are excluded only

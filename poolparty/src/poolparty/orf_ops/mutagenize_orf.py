@@ -15,7 +15,7 @@ from ..region import VALID_FRAMES
 from ..types import CardsType, ModeType, Optional, RegionType, Seq, Sequence, Union, beartype
 from ..utils.dna_seq import DnaSeq
 from ..utils.dna_utils import VALID_CHARS, reverse_complement
-from ..utils.parsing_utils import find_all_regions
+from ..utils.parsing_utils import validate_single_region
 from ._frame import complete_codon_count, frame_offset, resolve_frame
 
 
@@ -319,28 +319,33 @@ class MutagenizeOrfOp(Operation):
             )
             return (mol_start, mol_start + region_mol_length)
 
-        # Handle region name - find the region and convert to molecular coordinates
-        try:
-            found_regions = find_all_regions(seq_obj.string)
-        except ValueError:
-            return (0, mol_length)
+        # A named region must resolve exactly; never broaden a missing,
+        # duplicate, malformed, or gap-bounded region to the whole sequence.
+        region = validate_single_region(seq_obj.string, self._orf_region)
 
-        for r in found_regions:
-            if r.name == self._orf_region:
-                # Convert content positions to molecular coordinates
-                # content_start and content_end are literal positions
-                mol_start = seq_obj.literal_to_molecular(r.content_start)
-                mol_end_lit = r.content_end - 1  # Last char of content
-                mol_end = seq_obj.literal_to_molecular(mol_end_lit)
+        for literal_pos in range(region.content_start, region.content_end):
+            mol_start = seq_obj.literal_to_molecular(literal_pos)
+            if mol_start is not None:
+                break
+        else:
+            # The region has no molecular bases. Locate its empty molecular
+            # boundary from the nearest preceding molecular base.
+            empty_bound = 0
+            for literal_pos in range(region.content_start - 1, -1, -1):
+                previous = seq_obj.literal_to_molecular(literal_pos)
+                if previous is not None:
+                    empty_bound = previous + 1
+                    break
+            return (empty_bound, empty_bound)
 
-                if mol_start is None or mol_end is None:
-                    # Region contains non-molecular characters at boundaries
-                    return (0, mol_length)
+        mol_end = mol_start
+        for literal_pos in range(region.content_end - 1, region.content_start - 1, -1):
+            candidate = seq_obj.literal_to_molecular(literal_pos)
+            if candidate is not None:
+                mol_end = candidate
+                break
 
-                return (mol_start, mol_end + 1)  # +1 to make it exclusive end
-
-        # Region not found - use entire sequence
-        return (0, mol_length)
+        return (mol_start, mol_end + 1)
 
     def _extract_codons_molecular(
         self, seq_obj: Seq, mol_start: int, mol_end: int, frame_offset: int
@@ -492,8 +497,7 @@ class MutagenizeOrfOp(Operation):
         # actual molecular bounds at compute time. Random mode must then
         # re-apply the user's codon_positions specification to that count.
         if isinstance(self._orf_region, str):
-            effective_length = orf_length - self.frame_offset
-            num_codons = effective_length // 3
+            num_codons = complete_codon_count(orf_length, self.frame)
             if self.mode == "random":
                 eligible_positions = self._resolve_codon_positions(
                     self._codon_positions, num_codons

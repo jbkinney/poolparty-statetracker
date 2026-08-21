@@ -547,6 +547,75 @@ class TestMutagenizeOrfCodonPositions:
 
         assert _codon_position_cards(df) == [tuple(range(6))]
 
+    def test_named_region_boundary_gaps_do_not_broaden_mutation(self):
+        """Boundary gaps are skipped inside the exact named region only."""
+        source = "AAA---ATGAAA---CCC"
+        with pp.Party():
+            dna = pp.annotate_orf(pp.from_seq(source), "orf", extent=(3, 15), frame=1)
+            mutants = mutagenize_orf(
+                dna,
+                region="orf",
+                codon_positions=[0],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="sequential",
+                num_states=1,
+                style="red",
+                cards=["codon_positions", "wt_codons"],
+            )
+            df = pp.generate_library(mutants, num_cycles=1, _include_inline_styles=True)
+
+        output = df["seq"].iloc[0]
+        plain_output = output.replace("<orf>", "").replace("</orf>", "")
+        changed = {
+            i for i, (before, after) in enumerate(zip(source, plain_output)) if before != after
+        }
+        wt_codons_column = next(c for c in df.columns if "wt_codons" in c)
+        styled = {
+            int(pos)
+            for _, positions in df["_inline_styles"].iloc[0].style_list
+            for pos in positions
+        }
+
+        assert output.startswith("AAA<orf>---")
+        assert output.endswith("---</orf>CCC")
+        assert changed and changed <= {6, 7, 8}
+        assert df[wt_codons_column].iloc[0] == ("ATG",)
+        assert _codon_position_cards(df) == [(0,)]
+        assert styled == {11, 12, 13}
+
+    @pytest.mark.parametrize("frame", [1, 3, -3])
+    def test_all_gap_named_region_does_not_mutate_flanking_codons(self, frame):
+        """A named region with no molecular bases is an empty ORF span."""
+        with pp.Party():
+            dna = pp.annotate_orf(pp.from_seq("AAA------CCC"), "orf", extent=(3, 9), frame=frame)
+            mutants = mutagenize_orf(
+                dna,
+                region="orf",
+                codon_positions=[0],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="random",
+            )
+            with pytest.raises(ValueError, match=r"out of range \[0, 0\)"):
+                pp.generate_library(mutants, num_cycles=1, seed=1)
+
+    def test_missing_named_region_at_runtime_raises(self):
+        """A missing runtime tag must not silently select the whole sequence."""
+        with pp.Party():
+            parents = pp.from_seqs(["<orf>ATG</orf>", "ATG"], mode="sequential")
+            mutants = mutagenize_orf(
+                parents,
+                region="orf",
+                frame=1,
+                codon_positions=[0],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="random",
+            )
+            with pytest.raises(ValueError, match="Region 'orf' not found"):
+                pp.generate_library(mutants, num_cycles=1, seed=1)
+
     def test_named_region_rejects_runtime_out_of_range_position(self):
         """A position accepted by gap-inflated metadata must fail on actual geometry."""
         seq = "ATG-CCC-GGGTTTAAA-CCC"  # init sees 7 codons; runtime sees 6
