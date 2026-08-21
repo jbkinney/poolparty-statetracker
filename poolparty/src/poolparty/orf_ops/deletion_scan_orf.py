@@ -16,10 +16,17 @@ from ..types import (
     Union,
     beartype,
 )
-from ..utils import reverse_complement, validate_positions
-from ..utils.dna_seq import DnaSeq
+from ..utils import reverse_complement
 from ..utils.parsing_utils import strip_all_tags, validate_single_region
-from ._frame import frame_offset, resolve_frame
+from ._frame import resolve_frame
+from ._scan import (
+    codon_starts_to_nt,
+    get_target_start_and_seq,
+    num_complete_codons,
+    resolve_codon_starts,
+    resolve_region_span,
+    validate_orf_scan_input,
+)
 
 
 def _split_cards(cards: CardsType) -> tuple[CardsType, CardsType]:
@@ -45,34 +52,6 @@ def _split_cards(cards: CardsType) -> tuple[CardsType, CardsType]:
     )
 
 
-def _resolve_region_span(pool: Pool, region: RegionType) -> int:
-    """Return the fixed nucleotide span targeted by an ORF operation."""
-    if region is None:
-        span = pool.seq_length
-    elif isinstance(region, str):
-        region_obj = next((item for item in pool.regions if item.name == region), None)
-        if region_obj is None:
-            raise ValueError(f"Region '{region}' is not present in the input pool")
-        span = region_obj.seq_length
-    else:
-        if len(region) != 2:
-            raise ValueError(f"region must have exactly 2 elements, got {len(region)}")
-        start, end = int(region[0]), int(region[1])
-        if start < 0:
-            raise ValueError(f"region start must be >= 0, got {start}")
-        if end <= start:
-            raise ValueError(f"region end ({end}) must be greater than start ({start})")
-        if pool.seq_length is not None and end > pool.seq_length:
-            raise ValueError(
-                f"region end ({end}) cannot exceed pool.seq_length ({pool.seq_length})"
-            )
-        span = end - start
-
-    if span is None:
-        raise ValueError("deletion_scan_orf requires a fixed-length input region")
-    return int(span)
-
-
 def _codon_windows_to_nt(
     codon_positions: PositionsType,
     *,
@@ -81,8 +60,7 @@ def _codon_windows_to_nt(
     deletion_codons: int,
 ) -> tuple[list[int], dict[int, int]]:
     """Map coding-order deletion windows to physical nucleotide starts."""
-    offset = frame_offset(frame)
-    num_codons = max(0, (span - offset) // 3)
+    num_codons = num_complete_codons(span, frame)
     num_windows = num_codons - deletion_codons + 1
     if num_windows <= 0:
         raise ValueError(
@@ -90,18 +68,18 @@ def _codon_windows_to_nt(
             f"codons ({num_codons}) in the selected frame"
         )
 
-    coding_starts = validate_positions(
+    coding_starts = resolve_codon_starts(
         codon_positions,
-        min_position=0,
-        max_position=num_windows - 1,
+        num_slots=num_windows,
+        error_context="ORF deletion",
     )
-    if frame > 0:
-        physical_starts = [offset + 3 * pos for pos in coding_starts]
-    else:
-        coding_end = span - offset
-        physical_starts = [
-            coding_end - 3 * (pos + deletion_codons) for pos in coding_starts
-        ]
+    physical_starts = codon_starts_to_nt(
+        coding_starts,
+        span=span,
+        frame=frame,
+        item_codons=deletion_codons,
+        splice=False,
+    )
 
     return physical_starts, dict(zip(physical_starts, coding_starts))
 
@@ -178,7 +156,7 @@ def deletion_scan_orf(
         raise ValueError("deletion_marker must be None or exactly one character")
 
     resolved_frame = resolve_frame(region, frame)
-    span = _resolve_region_span(pool, region)
+    span = resolve_region_span(pool, region, "deletion_scan_orf")
     deletion_nt = deletion_codons * 3
     physical_positions, coding_position_by_nt = _codon_windows_to_nt(
         codon_positions,
@@ -188,13 +166,13 @@ def deletion_scan_orf(
     )
     scan_cards, orf_cards = _split_cards(cards)
 
-    validation_op = _DeletionScanOrfValidateOp(
+    validated = validate_orf_scan_input(
         pool,
         target_region=region,
         target_span=span,
+        operation_name="deletion_scan_orf",
         iter_order=iter_order,
     )
-    validated = type(pool)(operation=validation_op)
 
     marker_name = f"_del_len{deletion_nt}"
     marked = region_scan(
@@ -242,71 +220,6 @@ def deletion_scan_orf(
     )
 
 
-class _DeletionScanOrfValidateOp(Operation):
-    """Reject unsupported target content before temporary tags are inserted."""
-
-    factory_name = "deletion_scan_orf(validate)"
-    design_card_keys = []
-
-    def __init__(
-        self,
-        parent_pool: Pool,
-        *,
-        target_region: RegionType,
-        target_span: int,
-        iter_order: Optional[Real],
-        name: Optional[str] = None,
-    ) -> None:
-        self.target_region = target_region
-        self.target_span = target_span
-        super().__init__(
-            parent_pools=[parent_pool],
-            num_states=1,
-            mode="fixed",
-            seq_length=parent_pool.seq_length,
-            name=name,
-            iter_order=iter_order,
-        )
-
-    def _compute_core(
-        self,
-        parents: list[Seq],
-        rng: Optional[np.random.Generator] = None,
-    ) -> tuple[Seq, dict]:
-        parent = parents[0]
-        parsed_parent = DnaSeq.from_string(parent.string, parent.style)
-
-        if isinstance(self.target_region, str):
-            target_literal = validate_single_region(
-                parsed_parent.string, self.target_region
-            ).content
-        elif self.target_region is None:
-            target_literal = parent.string
-        else:
-            start = int(self.target_region[0])
-            literal_start = parsed_parent.nontag_to_literal(start)
-            literal_end = parsed_parent.nontag_to_literal(
-                start + self.target_span - 1
-            ) + 1
-            target_literal = parent.string[literal_start:literal_end]
-
-        if "<" in target_literal or ">" in target_literal:
-            raise ValueError(
-                "deletion_scan_orf does not yet support nested region tags "
-                "inside the target ORF"
-            )
-
-        target_seq = strip_all_tags(target_literal)
-        if len(target_seq) != self.target_span or any(
-            char not in "ACGTacgt" for char in target_seq
-        ):
-            raise ValueError(
-                "deletion_scan_orf currently requires a fixed-length, ungapped ACGT region"
-            )
-
-        return parent, {}
-
-
 class _DeletionScanOrfCardOp(Operation):
     """Pass through a marked ORF and report coding-aware deletion cards."""
 
@@ -352,19 +265,11 @@ class _DeletionScanOrfCardOp(Operation):
         rng: Optional[np.random.Generator] = None,
     ) -> tuple[Seq, dict]:
         parent = parents[0]
-        parsed_parent = DnaSeq.from_string(parent.string, parent.style)
-        clean_parent = strip_all_tags(parent.string)
-
-        if isinstance(self.target_region, str):
-            target = validate_single_region(parsed_parent.string, self.target_region)
-            target_start = len(strip_all_tags(parent.string[: target.content_start]))
-            target_seq = strip_all_tags(target.content)
-        elif self.target_region is None:
-            target_start = 0
-            target_seq = clean_parent
-        else:
-            target_start = int(self.target_region[0])
-            target_seq = clean_parent[target_start : target_start + self.target_span]
+        target_start, target_seq = get_target_start_and_seq(
+            parent,
+            target_region=self.target_region,
+            target_span=self.target_span,
+        )
 
         if len(target_seq) != self.target_span or any(
             char not in "ACGTacgt" for char in target_seq
@@ -373,7 +278,7 @@ class _DeletionScanOrfCardOp(Operation):
                 "deletion_scan_orf currently requires a fixed-length, ungapped ACGT region"
             )
 
-        marked_region = validate_single_region(parsed_parent.string, self.marker_name)
+        marked_region = validate_single_region(parent.string, self.marker_name)
         physical_seq = strip_all_tags(marked_region.content).upper()
         marker_start = len(strip_all_tags(parent.string[: marked_region.content_start]))
         start = marker_start - target_start
