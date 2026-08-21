@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from ..generate_library import _draws_fresh_sequences
 from ..types import Callable, Integral, Literal, Optional, Union
 
 # Regex to strip region tags from sequences
@@ -173,15 +174,17 @@ class ExportMixin:
         chunks = []
         generated = 0
 
-        # num_cycles asks for complete passes through the state space, so
-        # target_count counts states traversed; num_seqs asks for a number of
-        # rows, which a randomly-sampling pool can always keep supplying. With
-        # num_cycles the null rows are dropped here rather than by
+        # With num_cycles, target_count counts states traversed rather than rows
+        # collected, and the null rows are dropped here rather than by
         # generate_library, so that every chunk consumes exactly the states it
-        # asked for. Letting generate_library stop short instead would leave the
-        # loop topping up, restarting the traversal and re-emitting sequences
-        # that were already returned.
-        target_is_states = num_seqs is None
+        # asked for. Without that, a filtered pool leaves the loop topping up,
+        # restarting the traversal and re-emitting sequences already returned.
+        #
+        # This only applies when the states determine the sequences. A pool
+        # containing a random operation without num_states draws afresh for
+        # every row, so topping up yields new sequences rather than repeats and
+        # must be left alone; num_seqs likewise asks for rows, not states.
+        target_is_states = num_seqs is None and not _draws_fresh_sequences(self)
 
         # Print export message
         if show_progress:
@@ -384,8 +387,9 @@ class ExportMixin:
         else:
             target_count = int(num_cycles) * self.state.num_values
 
-        # See the note in to_df: with num_cycles the target counts states.
-        target_is_states = num_seqs is None
+        # See the note in to_df: with num_cycles the target counts states, but
+        # only for a pool whose states determine its sequences.
+        target_is_states = num_seqs is None and not _draws_fresh_sequences(self)
 
         # Print export message
         if show_progress:

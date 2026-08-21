@@ -561,6 +561,44 @@ class TestFilteredPoolCycles:
 
             assert len(df) == 200
 
+    def test_num_seqs_tops_up_past_a_filter(self):
+        """num_seqs counts rows, so it keeps going until it has that many.
+
+        The pool must be filtered for this to discriminate: without nulls the
+        state budget and the row budget agree, and either would pass.
+        """
+        with pp.Party():
+            df = self._filtered().to_df(num_seqs=8, show_progress=False)
+
+            assert len(df) == 8
+            assert list(df["seq"]) == self.SURVIVORS + self.SURVIVORS + self.SURVIVORS[:2]
+
+    def test_a_sampling_pool_is_not_cut_short(self):
+        """A pool that draws afresh per row has no states to exhaust.
+
+        Its states do not determine its sequences, so topping up yields new
+        sequences rather than repeats and must be left alone.
+        """
+        with pp.Party():
+            # from_seqs defaults to mode="random", so this pool has one state
+            # but can produce sequences indefinitely.
+            pool = pp.from_seqs(self.SEQS).filter_gc(max_gc=0.5)
+            assert pool.num_states == 1
+
+            df = pool.to_df(num_cycles=10, show_progress=False)
+
+            assert len(df) == 10
+
+    @pytest.mark.parametrize("chunk_size", [1, 2, 3, 5, 1000])
+    def test_a_seeded_sampling_pool_ignores_chunk_size(self, chunk_size):
+        """Chunking must not change how many rows a seeded export returns."""
+        with pp.Party():
+            pool = pp.from_seqs(self.SEQS).filter_gc(max_gc=0.5)
+
+            df = pool.to_df(num_cycles=4, chunk_size=chunk_size, seed=7, show_progress=False)
+
+            assert len(df) == 4
+
     def test_keeping_nulls_reports_every_state(self):
         """discard_null_seqs=False still returns one row per state, nulls included."""
         with pp.Party():

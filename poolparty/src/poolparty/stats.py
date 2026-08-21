@@ -292,16 +292,12 @@ def _generate_rows(pool, num_seqs, num_cycles, seed, show_progress):
     pool's ``num_states`` or ``None`` when that does not describe the design,
     and whether the design samples randomly without a fixed size.
     """
-    # A random operation built without num_states draws afresh for every row, so
-    # the states it contributes are 1 and pool.num_states is a floor rather than
-    # a total: there is no "all of it" to measure.
-    from .generate_library import _topo_sort_operations
+    # A pool that draws afresh for every row has no total number of sequences:
+    # pool.num_states is a floor, so there is no "all of it" to measure.
+    from .generate_library import _draws_fresh_sequences
     from .pool_mixins.export_mixin import _make_progress_bar
 
-    open_ended = any(
-        op.mode == "random" and not op.action_uniquely_determined_by_state
-        for op in _topo_sort_operations(pool)
-    )
+    open_ended = _draws_fresh_sequences(pool)
     num_states = None if open_ended else pool.num_states
 
     if num_seqs is None and num_cycles is None:
