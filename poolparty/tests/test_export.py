@@ -503,3 +503,93 @@ class TestProgressBar:
                 assert count == 2
             finally:
                 path.unlink()
+
+
+class TestFilteredPoolCycles:
+    """Tests that num_cycles counts states, not rows, on a filtered pool.
+
+    A filter replaces rejected sequences with NullSeq rather than removing
+    them, so one cycle through a filtered pool yields fewer rows than
+    ``num_states``. The export path must report those rows and stop, not top
+    the count up by traversing the states again and re-emitting survivors.
+    """
+
+    # Three of these five pass a GC <= 0.5 filter.
+    SEQS = ["AAAATTTT", "GGGGCCCC", "AATTAATT", "GGCCGGCC", "ACGTACGT"]
+    SURVIVORS = ["AAAATTTT", "AATTAATT", "ACGTACGT"]
+
+    def _filtered(self):
+        return pp.from_seqs(self.SEQS, mode="sequential").filter_gc(max_gc=0.5)
+
+    def test_one_cycle_returns_survivors_without_repeats(self):
+        """One cycle through a filtered pool yields each survivor exactly once."""
+        with pp.Party():
+            df = self._filtered().to_df(num_cycles=1, show_progress=False)
+
+            assert list(df["seq"]) == self.SURVIVORS
+
+    @pytest.mark.parametrize("chunk_size", [1, 2, 3, 4, 5, 7])
+    def test_no_repeats_at_any_chunk_size(self, chunk_size):
+        """Chunk boundaries must not cause the traversal to restart."""
+        with pp.Party():
+            df = self._filtered().to_df(num_cycles=1, chunk_size=chunk_size, show_progress=False)
+
+            assert list(df["seq"]) == self.SURVIVORS
+
+    def test_multiple_cycles_repeat_the_survivors(self):
+        """Cycling is still cycling: three cycles give each survivor three times."""
+        with pp.Party():
+            df = self._filtered().to_df(num_cycles=3, chunk_size=2, show_progress=False)
+
+            assert list(df["seq"]) == self.SURVIVORS * 3
+
+    def test_unfiltered_pool_still_returns_the_full_count(self):
+        """Without a filter, num_cycles * num_states rows are still produced."""
+        with pp.Party():
+            pool = pp.from_seqs(self.SEQS, mode="sequential")
+
+            df = pool.to_df(num_cycles=2, chunk_size=2, show_progress=False)
+
+            assert list(df["seq"]) == self.SEQS * 2
+
+    def test_num_seqs_still_samples_until_the_count_is_met(self):
+        """num_seqs asks for rows, so a sampling pool keeps drawing to reach it."""
+        with pp.Party():
+            pool = pp.from_seq("ACGTACGTAC").mutagenize(num_mutations=2, mode="random")
+
+            df = pool.to_df(num_seqs=200, show_progress=False)
+
+            assert len(df) == 200
+
+    def test_keeping_nulls_reports_every_state(self):
+        """discard_null_seqs=False still returns one row per state, nulls included."""
+        with pp.Party():
+            df = self._filtered().to_df(num_cycles=1, discard_null_seqs=False, show_progress=False)
+
+            assert len(df) == 5
+            assert df["seq"].isna().sum() == 2
+
+    @pytest.mark.parametrize(
+        "suffix,count_records",
+        [
+            (".csv", lambda text: len(text.strip().split("\n")) - 1),
+            (".tsv", lambda text: len(text.strip().split("\n")) - 1),
+            (".fasta", lambda text: text.count(">")),
+            (".jsonl", lambda text: len(text.strip().split("\n"))),
+        ],
+    )
+    def test_to_file_writes_only_the_survivors(self, suffix, count_records):
+        """Every writer reports and writes the survivors, once per cycle."""
+        with pp.Party():
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                path = Path(f.name)
+
+            try:
+                written = self._filtered().to_file(
+                    path, num_cycles=1, chunk_size=2, show_progress=False
+                )
+
+                assert written == 3
+                assert count_records(path.read_text()) == 3
+            finally:
+                path.unlink(missing_ok=True)

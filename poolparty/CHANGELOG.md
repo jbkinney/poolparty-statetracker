@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `to_df` and `to_file` no longer re-emit sequences when `num_cycles` is used on
+  a pool containing a filter. A filter replaces rejected sequences with
+  `NullSeq` rather than removing them, so one cycle yields fewer rows than
+  `num_states`; the export path used to make up the shortfall by traversing the
+  states again, silently returning duplicates. `num_cycles` now counts states
+  traversed, so a cycle returns exactly the sequences that survive it.
+  `num_seqs` is unaffected and still samples until the requested count is met.
+
 ### Changed
 - **BREAKING:** ORF operations now share one documented frame-offset
   convention. `mutagenize_orf` and `stylize_orf` previously placed
