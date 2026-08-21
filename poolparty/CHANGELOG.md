@@ -69,6 +69,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DMS (protein GB1) and MPRA (regulatory grammar) tutorial pages.
 
 ### Fixed
+- Sequential `mutagenize_orf` now rejects full-sequence or named-region runtime
+  geometry when it changes the eligible codon positions inferred at
+  initialization. Previously, clipped enumeration could return an apparently
+  valid prefix from an inconsistent cache before a later state failed.
 - Named regions passed to `mutagenize_orf` now retain their exact boundaries
   when their content starts or ends with gaps. Missing, duplicate, or malformed
   runtime regions now raise instead of silently broadening mutation to the

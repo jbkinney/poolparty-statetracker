@@ -109,11 +109,14 @@ Parameters
 
 .. note::
 
-   In sequential mode, if gaps change the eligible positions inferred at
-   initialization, provide an explicit ``codon_positions`` list that is valid
-   for the realized interval; otherwise ``mutagenize_orf`` raises instead of
-   enumerating an incorrect state space. Random mode resolves eligible
-   positions independently for each realized sequence.
+   Sequential mode requires the eligible codon positions inferred at
+   initialization to remain valid for every realized ORF. If gaps change those
+   positions, provide an explicit ``codon_positions`` list that is valid for
+   every realization; otherwise ``mutagenize_orf`` raises instead of enumerating
+   an inconsistent state space. This applies to the full sequence, named
+   regions, and explicit intervals. For named and interval regions, random mode
+   is another option because it resolves eligible positions independently for
+   each realized sequence.
 
 .. note::
 

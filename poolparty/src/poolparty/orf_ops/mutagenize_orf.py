@@ -551,6 +551,20 @@ class MutagenizeOrfOp(Operation):
                 codons, rng, eligible_positions
             )
         else:
+            if (self._orf_region is None or isinstance(self._orf_region, str)) and len(
+                codons
+            ) != self.num_codons:
+                runtime_eligible_positions = self._resolve_codon_positions(
+                    self._codon_positions, len(codons)
+                )
+                if runtime_eligible_positions != self.eligible_positions:
+                    raise ValueError(
+                        "Sequential enumeration cannot resolve one fixed state space "
+                        "for this ORF: its runtime eligible codon positions are "
+                        f"{runtime_eligible_positions}, but initialization resolved "
+                        f"{self.eligible_positions}. Provide an explicit "
+                        "codon_positions list valid for the realized ORF."
+                    )
             if self._sequential_cache is None:
                 self._build_caches()
             # Use state 0 when inactive (state is None)

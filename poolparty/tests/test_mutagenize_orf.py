@@ -616,6 +616,73 @@ class TestMutagenizeOrfCodonPositions:
             with pytest.raises(ValueError, match="Region 'orf' not found"):
                 pp.generate_library(mutants, num_cycles=1, seed=1)
 
+    @pytest.mark.parametrize("named", [False, True])
+    def test_gapped_sequential_implicit_geometry_raises_before_clipped_prefix(self, named):
+        """A clipped prefix must not hide an inconsistent sequential state space."""
+        with pp.Party():
+            parent = pp.from_seq("ATG---AAA")
+            region = None
+            frame = 1
+            if named:
+                parent = pp.annotate_orf(parent, "orf", extent=(0, 9), frame=1)
+                region = "orf"
+                frame = None
+
+            mutants = mutagenize_orf(
+                parent,
+                region=region,
+                frame=frame,
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="sequential",
+                num_states=1,
+            )
+            with pytest.raises(ValueError, match="cannot resolve one fixed state space"):
+                pp.generate_library(mutants, num_cycles=1)
+
+    @pytest.mark.parametrize("named", [False, True])
+    def test_gapped_sequential_allows_stable_explicit_positions(self, named):
+        """Different total geometry is safe when the eligible list is unchanged."""
+        with pp.Party():
+            parent = pp.from_seq("ATG---AAA")
+            region = None
+            frame = 1
+            if named:
+                parent = pp.annotate_orf(parent, "orf", extent=(0, 9), frame=1)
+                region = "orf"
+                frame = None
+
+            mutants = mutagenize_orf(
+                parent,
+                region=region,
+                frame=frame,
+                codon_positions=[0],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="sequential",
+                num_states=1,
+                cards=["codon_positions"],
+            )
+            df = pp.generate_library(mutants, num_cycles=1)
+
+        assert _codon_position_cards(df) == [(0,)]
+
+    def test_gapped_sequential_rejects_runtime_relative_slice_shift(self):
+        """A relative slice must be re-resolved when molecular geometry changes."""
+        with pp.Party():
+            parent = pp.annotate_orf(pp.from_seq("ATG---AAA"), "orf", extent=(0, 9), frame=1)
+            mutants = mutagenize_orf(
+                parent,
+                region="orf",
+                codon_positions=slice(-1, None),
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="sequential",
+                num_states=1,
+            )
+            with pytest.raises(ValueError, match=r"runtime.*\[1\].*initialization.*\[2\]"):
+                pp.generate_library(mutants, num_cycles=1)
+
     def test_named_region_rejects_runtime_out_of_range_position(self):
         """A position accepted by gap-inflated metadata must fail on actual geometry."""
         seq = "ATG-CCC-GGGTTTAAA-CCC"  # init sees 7 codons; runtime sees 6
