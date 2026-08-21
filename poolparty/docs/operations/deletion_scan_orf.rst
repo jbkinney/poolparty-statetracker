@@ -23,6 +23,8 @@ length. Pass ``deletion_marker=None`` for a true deletion.
         mode="sequential",
     )
 
+----
+
 Parameters
 ----------
 
@@ -52,7 +54,7 @@ Parameters
      - ``None``
      - Eligible window starts in 0-based coding-order codon units.
    * - ``region``
-     - ``str | list | None``
+     - ``str | list[int] | None``
      - ``None``
      - Named ORF, ``[start, stop]`` interval, or the whole sequence.
    * - ``frame``
@@ -65,14 +67,38 @@ Parameters
      - ``str``
      - ``'random'``
      - ``'sequential'`` enumerates eligible windows in coding order;
-       ``'random'`` samples them.
+       ``'random'`` samples a window independently for each state.
+   * - ``num_states``
+     - ``int | None``
+     - ``None``
+     - Number of position states. ``None`` uses every eligible window in
+       sequential mode and defaults to one randomized state in random mode.
+   * - ``style``
+     - ``str | None``
+     - ``None``
+     - Named display style applied to deletion markers. Ignored when
+       ``deletion_marker=None``.
+   * - ``prefix``
+     - ``str | None``
+     - ``None``
+     - Prefix for auto-generated sequence names.
+   * - ``iter_order``
+     - ``float | None``
+     - ``None``
+     - Enumeration order when combined with other stateful operations.
    * - ``cards``
      - ``list[str] | dict[str, str] | None``
      - ``None``
-     - Opt into ``codon_positions``, ``wt_codons``, ``start``, and ``end``.
+     - Design card keys: ``seq``, ``state``, ``codon_positions``,
+       ``wt_codons``, ``start``, and ``end``.
 
-See :func:`~poolparty.deletion_scan_orf` for the remaining shared scan
-controls, including ``num_states``, ``style``, ``prefix``, and ``iter_order``.
+----
+
+.. note::
+
+   Only the most commonly used parameters are shown above. For the full
+   parameter list, see :func:`~poolparty.deletion_scan_orf` in the
+   :doc:`API Reference </api>`.
 
 .. note:: Initial input scope
 
@@ -90,6 +116,61 @@ controls, including ``num_states``, ``style``, ``prefix``, and ``iter_order``.
    named-region metadata. A marked deletion does not stale the registered
    length, but its gapped output remains outside this version's accepted input
    scope and cannot be fed into another ORF deletion scan.
+
+Examples
+--------
+
+Scan one-codon deletions
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Scan each codon in a three-codon CDS. By default, the affected codon is
+replaced with gap markers so every output remains the same length.
+
+.. code-block:: python
+
+    cds = pp.from_seq("ATGAAATTT")
+    deletions = cds.deletion_scan_orf(
+        deletion_codons=1,
+        mode="sequential",
+        style="grey",
+    ).named("deletions")
+    deletions.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">deletions: seq_length=9, num_states=3</em>
+    <span class="pp-del">---</span>AAATTT<br>
+    ATG<span class="pp-del">---</span>TTT<br>
+    ATGAAA<span class="pp-del">---</span>
+    </div>
+
+Make a true deletion inside a named ORF
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pass ``deletion_marker=None`` to excise the selected codon. The surrounding
+sequence and ORF tags are preserved.
+
+.. code-block:: python
+
+    construct = pp.from_seq("GGATGAAATTTCC").annotate_orf(
+        "orf", extent=(2, 11), frame=1
+    )
+    deletion = construct.deletion_scan_orf(
+        deletion_codons=1,
+        deletion_marker=None,
+        codon_positions=[1],
+        region="orf",
+        mode="sequential",
+    ).named("deletion")
+    deletion.print_library()
+
+.. raw:: html
+
+    <div class="pp-pool">
+    <em class="pp-header">deletion: seq_length=10, num_states=1</em>
+    GG<span class="pp-xtag-light">&lt;orf&gt;</span>ATGTTT<span class="pp-xtag-light">&lt;/orf&gt;</span>CC
+    </div>
 
 Frames, orphans, and coordinates
 --------------------------------
@@ -142,3 +223,5 @@ Negative-frame deletion follows this invariant for ``N`` in ``1, 2, 3``:
 The two runs have identical coding cards. Their physical intervals mirror:
 ``[start, end)`` becomes ``[L - end, L - start)`` for input-region length
 ``L``.
+
+See :func:`~poolparty.deletion_scan_orf`.

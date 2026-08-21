@@ -59,6 +59,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   faster barcode generation at scale.
 
 ### Added
+- `insertion_scan_orf`, supporting coding-boundary splices and whole-codon
+  overwrites across all six reading frames, including coding-oriented insert
+  pools and ORF-specific design cards.
 - `deletion_scan_orf`, a whole-codon deletion scan that supports all six
   reading frames, preserves orphan bases, and reports coding-aware design cards.
 - `orf_ops/_frame.py`, holding the single `frame_offset()` and `resolve_frame()`

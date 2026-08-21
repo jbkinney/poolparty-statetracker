@@ -38,9 +38,10 @@ Parameters
        position. An *L*-mer has *L* + 1 valid insertion sites (before
        each base and after the last).
    * - ``positions``
-     - ``list[int] | None``
+     - ``list[int] | slice | None``
      - ``None``
-     - Explicit list of insertion positions. ``None`` = all valid positions.
+     - Insertion positions in nucleotide units. ``None`` selects all valid
+       positions; a ``slice`` selects from that range.
    * - ``region``
      - ``str | list | None``
      - ``None``
@@ -83,6 +84,26 @@ Parameters
    Only the most commonly used parameters are shown above. For the full
    parameter list, see :func:`~poolparty.insertion_scan` in the
    :doc:`API Reference </api>`.
+
+.. warning::
+
+   ``insertion_scan`` uses nucleotide positions and treats inserted content as
+   literal plus-strand DNA. For coding-boundary splices or whole-codon
+   overwrites, use :doc:`insertion_scan_orf`; it understands reading frames,
+   negative-strand coding orientation, and orphan bases.
+
+Insertion-pool cards propagate to the final library. This is the recommended
+way to retain the identity of a multi-state insert:
+
+.. code-block:: python
+
+    inserts = pp.from_seqs(
+        ["AAA", "CCC", "GGG"],
+        mode="sequential",
+        cards={"seq": "insert_seq", "seq_index": "insert_index"},
+    )
+    wt = pp.from_seq("AAACCCGGG")
+    scan = wt.insertion_scan(inserts, mode="sequential")
 
 Examples
 --------

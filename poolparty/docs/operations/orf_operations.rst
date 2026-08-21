@@ -15,6 +15,8 @@ and pass ``frame=`` explicitly.
      - Introduce codon-level missense mutations within a coding sequence.
    * - :doc:`deletion_scan_orf`
      - Scan whole-codon deletions in coding order across any of six frames.
+   * - :doc:`insertion_scan_orf`
+     - Splice or overwrite coding-oriented whole codons across any frame.
    * - :doc:`translate`
      - Translate a DNA pool to a protein pool.
    * - :doc:`annotate_orf`
@@ -70,6 +72,7 @@ host-optimized codon table), pass a dict in the same format:
 
    mutagenize_orf
    deletion_scan_orf
+   insertion_scan_orf
    translate
    annotate_orf
    stylize_orf
