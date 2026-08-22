@@ -32,6 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   states again, silently returning duplicates. `num_cycles` now counts states
   traversed, so a cycle returns exactly the sequences that survive it.
   `num_seqs` is unaffected and still samples until the requested count is met.
+- `to_file` now says when a FASTA export drops filtered-out sequences. FASTA
+  cannot represent a record with no sequence, so those rows were omitted even
+  with `discard_null_seqs=False`, and the returned count silently differed from
+  CSV, TSV and JSONL. One warning per call, naming how many were omitted.
 - `calc_dust` now cites Morgulis et al. (2006), which describes the DUST score
   it computes, rather than the SIMPLE algorithm of Hancock and Armstrong (1994).
 

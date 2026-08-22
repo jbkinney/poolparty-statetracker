@@ -3,6 +3,7 @@
 import gzip
 import json
 import tempfile
+import warnings
 from pathlib import Path
 
 import pytest
@@ -503,6 +504,72 @@ class TestProgressBar:
                 assert count == 2
             finally:
                 path.unlink()
+
+
+class TestFastaOmitsNullSequences:
+    """Tests that FASTA says so when it cannot write a filtered-out sequence.
+
+    A FASTA record needs a sequence, so a rejected one has no representation and
+    is dropped even when the caller asked to keep it. CSV, TSV and JSONL can
+    write a blank, so they keep the row and their counts differ from FASTA's.
+    """
+
+    SEQS = ["AAAATTTT", "GGGGCCCC", "AATTAATT", "GGCCGGCC", "ACGTACGT"]
+
+    def _write(self, suffix, **kwargs):
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+            path = Path(f.name)
+        try:
+            pool = pp.from_seqs(self.SEQS, mode="sequential").filter_gc(max_gc=0.5)
+            return pool.to_file(path, num_cycles=1, show_progress=False, **kwargs)
+        finally:
+            path.unlink(missing_ok=True)
+
+    @pytest.mark.parametrize("chunk_size", [1, 2, 1000])
+    def test_warns_once_with_the_count(self, chunk_size):
+        """One warning per call, not per record or per chunk."""
+        with pp.Party():
+            with pytest.warns(UserWarning, match="Omitted 2 filtered-out sequences"):
+                written = self._write(".fasta", discard_null_seqs=False, chunk_size=chunk_size)
+
+            assert written == 3
+
+    def test_silent_when_the_drop_was_requested(self):
+        """discard_null_seqs=True asks for exactly this, so it is not news."""
+        with pp.Party(), warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+
+            self._write(".fasta", discard_null_seqs=True)
+
+            assert not [w for w in caught if "Omitted" in str(w.message)]
+
+    def test_silent_when_nothing_was_dropped(self):
+        """An unfiltered library loses nothing, so there is nothing to report."""
+        with pp.Party(), warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            with tempfile.NamedTemporaryFile(suffix=".fasta", delete=False) as f:
+                path = Path(f.name)
+            try:
+                pool = pp.from_seqs(self.SEQS, mode="sequential")
+                assert (
+                    pool.to_file(path, num_cycles=1, discard_null_seqs=False, show_progress=False)
+                    == 5
+                )
+            finally:
+                path.unlink(missing_ok=True)
+
+            assert not [w for w in caught if "Omitted" in str(w.message)]
+
+    @pytest.mark.parametrize("suffix", [".csv", ".tsv", ".jsonl"])
+    def test_the_other_formats_keep_the_rows_and_stay_silent(self, suffix):
+        """These can write a blank sequence, so nothing is lost or reported."""
+        with pp.Party(), warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+
+            written = self._write(suffix, discard_null_seqs=False)
+
+            assert written == 5
+            assert not [w for w in caught if "Omitted" in str(w.message)]
 
 
 class TestFilteredPoolCycles:

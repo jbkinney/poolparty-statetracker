@@ -302,7 +302,10 @@ class ExportMixin:
         seed : int, optional
             Random seed for reproducibility.
         discard_null_seqs : bool, default True
-            If True, skip sequences that were filtered out (NullSeq).
+            If True, skip sequences that were filtered out (NullSeq). FASTA has
+            no way to write a record with no sequence, so those records are
+            omitted from a FASTA file even when this is False, and the returned
+            count is lower than for CSV, TSV or JSONL.
         columns : list[str], optional
             For CSV/TSV: columns to include in the output. Default columns are
             ``'name'`` and ``'seq'``; operations with design cards add additional
@@ -558,6 +561,7 @@ class ExportMixin:
 
         written = 0
         processed = 0
+        omitted = 0
         first_chunk = True
 
         pbar = _make_progress_bar(target_count, "Generating sequences") if show_progress else None
@@ -591,6 +595,7 @@ class ExportMixin:
                         seq = row.get("seq", "")
 
                         if seq is None:
+                            omitted += 1
                             continue
 
                         # Strip tags if requested
@@ -628,6 +633,17 @@ class ExportMixin:
         finally:
             if pbar is not None:
                 pbar.close()
+
+        # One warning per call rather than per record, and only when something
+        # was actually lost. Mirrors the write_style warning above: the caller
+        # asked for something this format cannot represent.
+        if omitted:
+            warnings.warn(
+                f"Omitted {omitted:,} filtered-out sequences from the FASTA file: "
+                f"FASTA cannot represent a record with no sequence. Export to CSV, "
+                f"TSV or JSONL to keep them.",
+                stacklevel=3,
+            )
 
         return written
 
