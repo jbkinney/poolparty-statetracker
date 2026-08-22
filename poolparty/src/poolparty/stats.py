@@ -19,6 +19,10 @@ _HAMMING_WARN_ABOVE = 20_000
 # Matches the default chunk size of the export methods.
 _CHUNK_SIZE = 1000
 
+# A pool that has never generated has no cursor at all, which is not the same
+# state as having one set to zero.
+_UNSET = object()
+
 
 def _percent(value: float) -> str:
     """Percentage with enough digits to see a rare feature but no more."""
@@ -337,7 +341,7 @@ def _generate_rows(pool, num_seqs, num_cycles, seed, show_progress):
     # generate_library advances the pool's cursor and remembers the seed, which
     # would make a later call on the same pool return different sequences.
     # A readout must leave no trace, so both are put back afterwards.
-    saved_state = getattr(pool, "_current_state", None)
+    saved_state = pool.__dict__.get("_current_state", _UNSET)
     saved_seed = getattr(pool, "_master_seed", None)
     try:
         while len(rows) < total:
@@ -357,7 +361,9 @@ def _generate_rows(pool, num_seqs, num_cycles, seed, show_progress):
     finally:
         if pbar is not None:
             pbar.close()
-        if saved_state is not None:
+        if saved_state is _UNSET:
+            pool.__dict__.pop("_current_state", None)
+        else:
             pool._current_state = saved_state
         pool._master_seed = saved_seed
     return rows, num_states, open_ended

@@ -760,3 +760,26 @@ class TestNeverMutates:
             pool.stats(num_seqs=3, show_progress=False)
 
             assert (pool._current_state, pool._master_seed) == (cursor, master_seed)
+
+    def test_a_pool_that_has_never_generated_is_left_pristine(self):
+        """Leaving no trace means no cursor at all, not a cursor set to zero.
+
+        A pool acquires the attribute the first time it generates, so restoring
+        it to zero would still change what the pool's first real call returns.
+        """
+        with pp.Party():
+            expected = list(
+                pp.from_seqs(MIXED_GC, mode="sequential")
+                .generate_library(num_seqs=4)["seq"]
+                .astype(object)
+            )
+
+        with pp.Party():
+            pool = pp.from_seqs(MIXED_GC, mode="sequential")
+            assert "_current_state" not in pool.__dict__
+
+            pool.stats(num_seqs=3, show_progress=False)
+
+            assert "_current_state" not in pool.__dict__
+            first_call = list(pool.generate_library(num_seqs=4)["seq"].astype(object))
+            assert first_call == expected

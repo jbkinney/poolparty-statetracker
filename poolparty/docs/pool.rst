@@ -65,8 +65,8 @@ Properties
      - ``int``
      - Number of states this pool has (the total across the entire pipeline).
        This is not the number of *distinct* sequences the pool produces, and is
-       neither an upper nor a lower bound on it -- see the note below. Use
-       :ref:`stats <pool-stats>` to count them.
+       neither an upper nor a lower bound on it -- see
+       :ref:`states-vs-sequences`. Use :ref:`stats <pool-stats>` to count them.
    * - ``seq_length``
      - ``int | None``
      - Fixed sequence length, or ``None`` for variable-length pools.
@@ -86,12 +86,9 @@ Internally, each sequence is identified by a *state* -- an integer that,
 together with a random seed, uniquely determines the sequence content.
 ``pool.num_states`` is the total number of distinct states the pool can produce.
 
-Distinct states do not always mean distinct sequences. Two states can yield the
-same sequence, ``repeat`` asks for copies deliberately, and ``filter`` leaves a
-``NullSeq`` behind rather than removing a state. A random operation built
-*without* ``num_states`` draws afresh for every sequence, so it contributes one
-state and ``pool.num_states`` becomes a floor rather than a total. In every case
-:ref:`stats <pool-stats>` reports what the pool actually produced.
+Distinct states do not always mean distinct sequences; see
+:ref:`states-vs-sequences` for the cases, and :ref:`stats <pool-stats>` for what
+a pool actually produced.
 
 Note that ``pool.num_states`` and ``pool.operation.num_states`` are different
 values. The pool's ``num_states`` is the total across the entire pipeline,
@@ -438,6 +435,9 @@ that complicate synthesis. Nothing about the pool or its library changes.
     pool = pp.from_seqs(seqs, mode="sequential").filter_gc(max_gc=0.5)
     print(pool.stats())
 
+``filter_gc`` is one of the constraint filters on ``DnaPool``; see
+:doc:`operations/filter`.
+
 .. code-block:: text
 
     pool.stats()  -  5 of 5 sequences in the design
@@ -472,8 +472,10 @@ or collected into a table:
 
 .. code-block:: python
 
+    import pandas as pd
+
     pool.stats()["frac_duplicate_seqs"]
-    pd.DataFrame([left.stats(), right.stats()])
+    pd.DataFrame([pool.stats(), other_pool.stats()])
 
 .. list-table::
    :widths: auto
@@ -492,7 +494,8 @@ or collected into a table:
      - ``None``
      - Generate this many complete passes through the state space. For a design
        with a fixed size, ``num_cycles=1`` means the whole design; a design
-       without one has no passes to make, so ``num_cycles`` is refused.
+       without a fixed size has no passes to make, so ``num_cycles`` is
+       refused.
    * - ``seed``
      - ``int | None``
      - ``None``
@@ -515,7 +518,8 @@ or collected into a table:
    * - ``sites``
      - ``list[str] | None``
      - ``None``
-     - Recognition sequences to look for, IUPAC codes allowed.
+     - Recognition sequences to look for, IUPAC codes allowed. Reverse
+       complements are checked as well.
    * - ``show_progress``
      - ``bool``
      - ``True``
@@ -552,7 +556,7 @@ What the report contains
    * - ``max_seq_copies``
      - Most copies any single sequence has.
    * - ``length_min``, ``length_max``
-     - Shortest and longest sequence.
+     - Shortest and longest sequence length.
    * - ``gc_min``, ``gc_mean``, ``gc_max``
      - GC content as a fraction.
    * - ``longest_homopolymer``
@@ -566,11 +570,12 @@ What the report contains
      - Fraction of sequences containing one of the requested sites. Absent
        unless ``enzymes`` or ``sites`` was given.
    * - ``hamming_exact``
-     - Whether every pair was compared, or a subsample.
+     - ``True`` when every pair was compared, ``False`` when a subsample was.
    * - ``hamming_seqs_compared``
      - How many sequences entered the comparison.
    * - ``hamming_min``, ``hamming_mean``, ``hamming_max``
-     - Pairwise Hamming distance. Absent when the sequences differ in length.
+     - Pairwise Hamming distance. Absent unless at least two sequences of
+       equal length survived.
 
 How much of the design is measured
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -611,15 +616,16 @@ Reading the numbers
 Everything except the pairwise distances is exact and linear in the number of
 sequences. Comparing every pair costs time quadratic in the number of
 sequences, so above ``max_hamming_seqs`` a random subsample is compared instead
-and ``hamming_exact`` is ``False``. A subsample estimates the **mean** very
-well, but it sees only a small fraction of the pairs, so the reported
-**minimum is an upper bound** on the true minimum and the maximum a lower
-bound. The exact answer to "are any two sequences identical?" is
-``num_duplicate_seqs``, which is always exact.
+and ``hamming_exact`` is ``False``. A subsample estimates the mean
+well, but it sees only a small fraction of the pairs, so the reported minimum
+is an upper bound on the true minimum and the maximum a lower bound.
+``num_duplicate_seqs`` is always exact, so use it to answer whether any two
+sequences are identical.
 
 Region tags are stripped before measuring, and sequences are compared
 case-insensitively -- a library whose members differ only in case counts as one
-sequence. Gap characters left by a deletion operation count as characters.
+sequence. Gap characters left by a deletion operation count toward length,
+homopolymer runs and DUST, but not toward GC content.
 
 Keys that were not computed are absent from the result: there are no
 restriction-site keys unless ``enzymes`` or ``sites`` was given, and no distance

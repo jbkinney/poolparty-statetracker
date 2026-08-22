@@ -1,14 +1,14 @@
 Library Size
 ============
 
-Every pool has a ``num_states`` property — the number of states it has. That is
-not the same as the number of distinct sequences the pool produces, and is
-neither an upper nor a lower bound on it (see :ref:`Distinct states are not
-distinct sequences <states-vs-sequences>` below). Each operation has an
-**internal state** (see :doc:`modes`) whose count is determined by its mode and
-parameters. How ``num_states`` composes
-when operations are combined depends on the operation type. Three rules cover
-all cases: multiplication, addition, and no change. These are described below.
+Every pool has a ``num_states`` property — the number of internal states in its
+design. That is not the same as the number of distinct sequences the pool
+produces, and is neither an upper nor a lower bound on it (see
+:ref:`states-vs-sequences` below). Each operation has an **internal state**
+(see :doc:`modes`) whose count is determined by its mode and parameters. How
+``num_states`` composes when operations are combined depends on the operation
+type. Three rules cover all cases: multiplication, addition, and no change.
+These are described below.
 
 .. code-block:: python
 
@@ -172,8 +172,11 @@ Per-category behaviour
      - multiplies
      - ``repeat``
    * - State
+     - sets a new size
+     - ``sample``
+   * - State
      - reduces
-     - ``sample``, ``slice_states``
+     - ``slice_states``
    * - State
      - unchanged (rejected sequences become ``NullSeq``)
      - ``filter``
@@ -202,17 +205,19 @@ that differs from the number of distinct sequences produced:
   more than once.
 - Two different states can happen to produce the same sequence.
 - A random operation built **without** ``num_states`` draws afresh for every
-  sequence. It contributes one state, so ``num_states`` becomes a floor rather
-  than a total, and the design has no fixed size at all.
+  sequence. It contributes one state, so ``num_states`` stops counting
+  sequences at all and the design has no fixed size.
 
 .. code-block:: python
 
     # The same design, written two ways.
-    pp.from_seq("ACGTACGTAC").mutagenize(num_mutations=2, mode="sequential")
-    # num_states: 405 -- every two-base mutant, each exactly once
+    seq = "ACGTACGTAC"
 
-    pp.from_seq("ACGTACGTAC").mutagenize(num_mutations=2, mode="random")
-    # num_states: 1 -- a fresh draw per sequence, so there is no total
+    print(pp.from_seq(seq).mutagenize(num_mutations=2, mode="sequential").num_states)
+    # 405  (45 position pairs × 9 base pairs)
+
+    print(pp.from_seq(seq).mutagenize(num_mutations=2, mode="random").num_states)
+    # 1    (a fresh draw per sequence, so there is no total)
 
 Use :ref:`pool.stats() <pool-stats>` to count what a design actually produces.
 
