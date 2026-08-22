@@ -65,14 +65,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   faster barcode generation at scale.
 
 ### Added
-- `from_vcf`: read a VCF and a reference FASTA and get a pool of windows around
-  each variant, one carrying the reference allele and one per alternate. Design
-  cards carry the VCF coordinates, both alleles, `variant_type`, the `ID` and
-  `FILTER` columns, the window bounds, and any requested `INFO` fields.
+- `from_vcf`: read a VCF and a reference FASTA and create reference and alternate
+  windows around variants. By default, it emits one reference window per distinct
+  usable site and one window per usable alternate. Design cards carry the VCF
+  coordinates, both alleles, `variant_type`, the `ID` and `FILTER` columns, the
+  window bounds, and any requested `INFO` fields.
 
-  `REF` is checked against the FASTA case-insensitively; above 20% mismatches the
-  call fails rather than returning a library whose windows may all be displaced.
-  Input that cannot be turned into a window is rejected and counted on
+  `REF` is checked against the FASTA case-insensitively; the call fails when more
+  than 20% of comparable records disagree. Input that cannot be turned into a
+  window is rejected and counted on
   `pool.operation.skipped` -- by record for record-level reasons, by alternate
   allele for ALT-level ones. Reads plain and gzipped VCFs with the standard
   library; BCF and indexed access are not supported.

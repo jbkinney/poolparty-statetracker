@@ -17,10 +17,10 @@ from ..utils.dna_seq import DnaSeq
 # Fields required of every data line: CHROM POS ID REF ALT QUAL FILTER INFO.
 _MIN_FIELDS = 8
 
-# Fraction of compared references above which the two files are taken to be
+# Fraction of compared references above which the two files are treated as
 # incompatible. Below it, records are rejected individually; above it, the whole
-# call fails, because a library built from partly-matching references may have
-# every window displaced. Applied at any file size.
+# call fails to avoid building a library from incompatible inputs. Applied at any
+# file size.
 _MISMATCH_LIMIT = 0.2
 
 _CARD_KEYS = (
@@ -115,11 +115,11 @@ def from_vcf(
     """
     Create a Pool of reference-genome windows around each variant in a VCF file.
 
-    Each variant contributes a window carrying its alternate allele, and each
-    distinct site contributes one window carrying the reference allele. Windows are
-    on the reference plus strand and are uppercased. Sequence length is
-    ``flank_left + len(allele) + flank_right``, so a pool containing indels has no
-    defined ``seq_length``.
+    By default, each usable alternate allele contributes one window, and each
+    distinct site contributes one reference window. Windows are on the reference
+    plus strand and are uppercased. Each output length is
+    ``flank_left + len(allele) + flank_right``. If the emitted windows differ in
+    length, the pool's ``seq_length`` is ``None``.
 
     Parameters
     ----------
@@ -133,11 +133,12 @@ def from_vcf(
     flank_right : int
         Bases of reference sequence after the variant. Must be >= 0.
     alleles : {'ref', 'alt', 'both'}, default='both'
-        Which windows to emit. ``'ref'`` emits one window per distinct site.
+        Which windows to emit. ``'alt'`` emits one window per usable alternate
+        allele, ``'ref'`` emits one per distinct site, and ``'both'`` emits both.
     variant_types : Optional[Sequence[str]], default=None
         Keep only these types: ``'snv'``, ``'substitution'``, ``'insertion'``,
         ``'deletion'``. Records with no surviving allele are dropped entirely.
-        ``['snv']`` gives a pool with a defined ``seq_length``.
+        ``['snv']`` guarantees a pool with a defined ``seq_length``.
     max_allele_length : Optional[int], default=100
         Skip records whose REF or ALT exceeds this many bases. ``None`` disables
         the check.

@@ -1,10 +1,9 @@
 from_vcf
 ========
 
-Create a pool of reference-genome windows around each variant in a VCF file.
-Every variant contributes a window carrying its alternate allele, and every
-distinct site contributes one window carrying the reference allele, so a pool can
-be scored as reference/alternate pairs.
+Create a pool of reference-genome windows around variants in a VCF file. With
+``alleles='both'`` (the default), each usable alternate allele contributes one
+window, and each distinct site contributes one reference window.
 
 .. code-block:: python
 
@@ -16,18 +15,16 @@ be scored as reference/alternate pairs.
    Windows are always on the reference plus strand. Compose
    :func:`~poolparty.rc` for the reverse complement.
 
-   Windows are uppercased, so soft-mask annotation is not preserved. Without
-   this, a reference and its variant would differ in case as well as base at the
-   variant position — an artifact of where each came from, not of the data.
+   Windows are uppercased, so soft-mask annotation is not preserved. Reference
+   and alternate windows therefore differ by base, not by input case.
 
-   Sequence length is ``flank_left + len(allele) + flank_right``, so a pool
-   containing indels holds sequences of differing lengths and its
-   ``seq_length`` is ``None``. Operations that require a defined
+   Each output length is ``flank_left + len(allele) + flank_right``. If the
+   emitted windows differ in length, the pool's ``seq_length`` is ``None``.
+   Operations that require a defined
    ``seq_length`` — among them :func:`~poolparty.recombine`,
    :func:`~poolparty.subseq_scan` and the scan operations — do not accept such a
-   pool. Pass ``variant_types=['snv']`` for a uniform pool — substitutions vary in
-   width, so including them does not give one. For a large file, restrict the
-   VCF upstream (``bcftools view -v snps``).
+   pool. Restricting to ``variant_types=['snv']`` guarantees fixed-width output;
+   other selections may or may not be uniform, depending on the input alleles.
 
 ----
 
@@ -62,21 +59,20 @@ Parameters
    * - ``alleles``
      - ``str``
      - ``'both'``
-     - ``'alt'`` emits one window per variant; ``'ref'`` one per distinct site;
-       ``'both'`` emits both.
+     - ``'alt'`` emits one window per usable alternate allele; ``'ref'`` emits one
+       per distinct site; ``'both'`` emits both.
    * - ``variant_types``
      - ``list[str] | None``
      - ``None``
      - Keep only these types: ``'snv'``, ``'substitution'``, ``'insertion'``,
-       ``'deletion'``. Only ``['snv']`` gives a uniform-length pool; a
-       substitution's width varies with its allele. Excluded records contribute
-       no window at all, not even a reference one.
+       ``'deletion'``. ``['snv']`` guarantees uniform-length output; other
+       selections may also be uniform, depending on the input alleles. Excluded
+       records contribute no window at all, not even a reference one.
    * - ``max_allele_length``
      - ``int | None``
      - ``100``
      - Skip records whose ``REF`` or ``ALT`` exceeds this many bases; ``None``
-       disables the check. A single long deletion otherwise widens its own
-       window by its length — ClinVar's longest ``REF`` is 9,983 bases.
+       disables the check.
    * - ``info_fields``
      - ``list[str] | None``
      - ``None``
@@ -138,9 +134,8 @@ bases longer than the others.
 Variants only, with annotation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``alleles='alt'`` drops the reference windows. ``info_fields`` carries values
-from the VCF ``INFO`` column onto each sequence, which is how population
-frequencies or clinical significance reach the design card.
+``alleles='alt'`` drops the reference windows. Use ``info_fields`` to include
+selected VCF ``INFO`` values in the design card.
 
 .. code-block:: python
 
@@ -165,12 +160,12 @@ frequencies or clinical significance reach the design card.
     </table>
     </div>
 
-Uniform-length windows for model input
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Fixed-length SNV windows
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sequence models generally need a fixed input width, and so do PoolParty's
-length-dependent operations. ``variant_types`` keeps only the classes that
-preserve length, which restores ``seq_length``:
+Some downstream operations require a defined ``seq_length``. Restricting to
+SNVs guarantees that every window has length
+``flank_left + 1 + flank_right``:
 
 .. code-block:: python
 
@@ -188,8 +183,8 @@ snps`` — since windows are then never cut for records you discard.
 Naming
 ------
 
-Sequences are named in GTEx style. A reference window omits the alternate
-allele, because it is shared by every alternate at that site::
+Names encode the VCF chromosome, position and ``REF`` allele. Alternate windows
+also include ``ALT``::
 
     chr1_21_A          the reference at chr1:21
     chr1_21_A_G        the A>G variant
@@ -261,10 +256,8 @@ represented — symbolic, over-long, not ACGT — leaves it in place. The except
 ``variant_types``: once the caller has filtered by type, a site with no surviving
 alternate is one they excluded, and it contributes no window at all.
 
-**Above 20% reference mismatches the call raises** rather than returning a pool, at
-any file size. Partly-matching references would otherwise yield a plausible library
-in which every window is displaced. Check that the VCF and the FASTA use compatible
-reference sequences, assemblies and coordinates.
+**Above 20% reference mismatches the call raises**, at any file size. Check that
+the VCF and FASTA use compatible reference sequences, assemblies and coordinates.
 
 A malformed data line — fewer than eight tab-separated fields, or a ``POS`` that
 is not an integer — raises rather than being skipped, as does a VCF from which no
@@ -272,8 +265,7 @@ record survives. Blank lines are ignored.
 
 .. note::
 
-   The whole VCF is read into memory, and memory scales with the number of
-   records times the window width. Pre-filter large files: an unfiltered
-   ClinVar release at 10 kb windows does not fit in memory.
+   The whole VCF is read into memory, and memory use scales with the number and
+   width of emitted windows. Pre-filter large files when necessary.
 
 See :func:`~poolparty.from_vcf`.
