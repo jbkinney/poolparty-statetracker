@@ -545,6 +545,17 @@ class MutagenizeOrfOp(Operation):
         codons = self._extract_codons_molecular(parent_seq, mol_start, mol_end, self.frame_offset)
 
         if self.mode == "random":
+            if self._orf_region is None and len(codons) != self.num_codons:
+                eligible_positions = self._resolve_codon_positions(
+                    self._codon_positions, len(codons)
+                )
+                if self.num_mutations is not None and self.num_mutations > len(eligible_positions):
+                    raise ValueError(
+                        f"num_mutations ({self.num_mutations}) exceeds the number of "
+                        f"eligible codon positions ({len(eligible_positions)}) for "
+                        "the runtime full-sequence geometry "
+                        f"({len(codons)} complete codons)."
+                    )
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
             positions, wt_codons, mut_codons, wt_aas, mut_aas = self._random_mutation(

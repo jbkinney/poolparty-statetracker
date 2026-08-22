@@ -114,9 +114,8 @@ Parameters
    positions, provide an explicit ``codon_positions`` list that is valid for
    every realization; otherwise ``mutagenize_orf`` raises instead of enumerating
    an inconsistent state space. This applies to the full sequence, named
-   regions, and explicit intervals. For named and interval regions, random mode
-   is another option because it resolves eligible positions independently for
-   each realized sequence.
+   regions, and explicit intervals. Random mode resolves eligible positions
+   independently for every realized full sequence, named region, or interval.
 
 .. note::
 

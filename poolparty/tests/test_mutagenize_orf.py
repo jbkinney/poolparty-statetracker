@@ -683,6 +683,62 @@ class TestMutagenizeOrfCodonPositions:
             with pytest.raises(ValueError, match=r"runtime.*\[1\].*initialization.*\[2\]"):
                 pp.generate_library(mutants, num_cycles=1)
 
+    @pytest.mark.parametrize("frame", [1, -1])
+    def test_gapped_full_random_uses_actual_codons(self, frame):
+        """Full-sequence random eligibility excludes gap-inflated codons."""
+        with pp.Party():
+            mutants = mutagenize_orf(
+                "ATG---AAA",
+                frame=frame,
+                mutation_rate=1.0,
+                mutation_type="any_codon",
+                mode="random",
+                cards=["codon_positions"],
+            )
+            df = pp.generate_library(mutants, num_cycles=1, seed=1)
+
+        assert _codon_position_cards(df) == [(0, 1)]
+
+    def test_gapped_full_random_reapplies_relative_slice(self):
+        """A relative slice is resolved against the actual molecular codons."""
+        with pp.Party():
+            mutants = mutagenize_orf(
+                "ATG---AAA",
+                codon_positions=slice(-1, None),
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="random",
+                cards=["codon_positions"],
+            )
+            df = pp.generate_library(mutants, num_cycles=1, seed=1)
+
+        assert _codon_position_cards(df) == [(1,)]
+
+    def test_gapped_full_random_rejects_runtime_out_of_range_position(self):
+        """An explicit position must fit the actual molecular codon count."""
+        with pp.Party():
+            mutants = mutagenize_orf(
+                "ATG---AAA",
+                codon_positions=[2],
+                num_mutations=1,
+                mutation_type="any_codon",
+                mode="random",
+            )
+            with pytest.raises(ValueError, match=r"out of range \[0, 2\)"):
+                pp.generate_library(mutants, num_cycles=1, seed=1)
+
+    def test_gapped_full_random_rejects_runtime_mutation_count_overflow(self):
+        """A fixed mutation count must fit the actual molecular geometry."""
+        with pp.Party():
+            mutants = mutagenize_orf(
+                "ATG---AAA",
+                num_mutations=3,
+                mutation_type="any_codon",
+                mode="random",
+            )
+            with pytest.raises(ValueError, match="exceeds the number of.*full-sequence"):
+                pp.generate_library(mutants, num_cycles=1, seed=1)
+
     def test_named_region_rejects_runtime_out_of_range_position(self):
         """A position accepted by gap-inflated metadata must fail on actual geometry."""
         seq = "ATG-CCC-GGGTTTAAA-CCC"  # init sees 7 codons; runtime sees 6

@@ -69,6 +69,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DMS (protein GB1) and MPRA (regulatory grammar) tutorial pages.
 
 ### Fixed
+- Random `mutagenize_orf` over a full gapped sequence now resolves eligible
+  positions against its realized molecular codons. Previously, gap-inflated
+  initialization geometry could select a nonexistent codon, producing an
+  `IndexError`. Fixed mutation counts that do not fit the realized geometry now
+  raise a clear `ValueError`.
 - Sequential `mutagenize_orf` now rejects full-sequence or named-region runtime
   geometry when it changes the eligible codon positions inferred at
   initialization. Previously, clipped enumeration could return an apparently
