@@ -244,6 +244,52 @@ class CommonOpsMixin:
 
         return filter(self, predicate=predicate, name=name, prefix=prefix, cards=cards)
 
+    def filter_length(
+        self,
+        min_length: Optional[Integral] = None,
+        max_length: Optional[Integral] = None,
+        name: Optional[str] = None,
+        prefix: Optional[str] = None,
+        cards: CardsType = None,
+    ) -> Self:
+        """Filter sequences by length using inclusive bounds.
+
+        Parameters
+        ----------
+        min_length : Optional[Integral], default=None
+            Minimum allowed sequence length (inclusive).
+        max_length : Optional[Integral], default=None
+            Maximum allowed sequence length (inclusive).
+        name : Optional[str], default=None
+            Optional name for the operation.
+        prefix : Optional[str], default=None
+            Prefix for sequence names in the resulting Pool.
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'passed'``.
+
+        Returns
+        -------
+        Pool
+            New pool where sequences outside the length bounds become NullSeq.
+        """
+        if min_length is None and max_length is None:
+            raise ValueError("At least one of 'min_length' or 'max_length' must be provided")
+        if min_length is not None and min_length < 0:
+            raise ValueError(f"min_length must be non-negative, got {min_length}")
+        if max_length is not None and max_length < 0:
+            raise ValueError(f"max_length must be non-negative, got {max_length}")
+        if min_length is not None and max_length is not None and min_length > max_length:
+            raise ValueError(
+                f"min_length ({min_length}) cannot be greater than max_length ({max_length})"
+            )
+
+        def predicate(seq: str) -> bool:
+            return (min_length is None or len(seq) >= min_length) and (
+                max_length is None or len(seq) <= max_length
+            )
+
+        return self.filter(predicate, name=name, prefix=prefix, cards=cards)
+
     def score(
         self,
         fn: Callable[[str], Any],

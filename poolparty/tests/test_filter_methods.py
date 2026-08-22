@@ -1,8 +1,51 @@
-"""Tests for filter convenience methods on DnaPool."""
+"""Tests for filter convenience methods on Pool classes."""
 
 import pytest
 
 import poolparty as pp
+
+
+class TestFilterLength:
+    """Tests for the sequence-generic filter_length method."""
+
+    @pytest.mark.parametrize(
+        ("kwargs", "expected"),
+        [
+            ({"min_length": 4}, ["AAAA", "AAAAA", "AAAAAA"]),
+            ({"max_length": 4}, ["AAA", "AAAA"]),
+            ({"min_length": 4, "max_length": 5}, ["AAAA", "AAAAA"]),
+            ({"min_length": 4, "max_length": 4}, ["AAAA"]),
+        ],
+    )
+    def test_inclusive_bounds(self, kwargs, expected):
+        with pp.Party():
+            root = pp.from_seqs(["AAA", "AAAA", "AAAAA", "AAAAAA"], mode="sequential")
+            filtered = root.filter_length(**kwargs)
+            df = filtered.generate_library(num_seqs=4, discard_null_seqs=True)
+
+            assert df["seq"].tolist() == expected
+
+    def test_invalid_bounds(self):
+        with pp.Party():
+            root = pp.from_seq("ACGT")
+
+            with pytest.raises(ValueError, match="At least one"):
+                root.filter_length()
+            with pytest.raises(ValueError, match="min_length"):
+                root.filter_length(min_length=-1)
+            with pytest.raises(ValueError, match="max_length"):
+                root.filter_length(max_length=-1)
+            with pytest.raises(ValueError, match="cannot be greater"):
+                root.filter_length(min_length=5, max_length=4)
+
+    def test_available_on_protein_pool(self):
+        with pp.Party():
+            protein = pp.from_seq("ATGGCC").translate()
+            filtered = protein.filter_length(min_length=2, max_length=2)
+            df = filtered.generate_library(num_seqs=1, discard_null_seqs=True)
+
+            assert type(filtered).__name__ == "ProteinPool"
+            assert df["seq"].tolist() == ["MA"]
 
 
 class TestFilterGC:
@@ -338,3 +381,38 @@ class TestFilterChaining:
 
             assert len(df) == 1
             assert df["seq"].iloc[0] == "ACGTMKWSRYACGT"
+
+
+class TestFilterCards:
+    """Tests for design-card passthrough on ready-made filters."""
+
+    @pytest.mark.parametrize(
+        ("method_name", "kwargs"),
+        [
+            ("filter_length", {"min_length": 4}),
+            ("filter_gc", {"min_gc": 0.5}),
+            ("filter_homopolymer", {"max_length": 4}),
+            ("filter_complexity", {"min_complexity": 0.0}),
+            ("filter_dust", {"max_score": 2.0}),
+            ("filter_restriction_sites", {"sites": ["AAAAAA"]}),
+        ],
+    )
+    def test_passed_card_on_each_helper(self, method_name, kwargs):
+        with pp.Party():
+            root = pp.from_seq("ACGT")
+            filtered = getattr(root, method_name)(**kwargs, cards=["passed"])
+            df = filtered.generate_library(num_seqs=1)
+            passed_column = next(column for column in df if column.endswith(".passed"))
+
+            assert df[passed_column].tolist() == [True]
+
+    def test_dict_alias_and_rejected_row(self):
+        with pp.Party():
+            root = pp.from_seqs(["ACGT", "ACGTA"], mode="sequential")
+            filtered = root.filter_length(
+                max_length=4,
+                cards={"passed": "passed_length"},
+            )
+            df = filtered.generate_library(num_seqs=2, discard_null_seqs=False)
+
+            assert df["passed_length"].tolist() == [True, False]

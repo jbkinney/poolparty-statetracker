@@ -6,7 +6,7 @@ various properties like GC content, complexity, and restriction sites.
 
 from typing_extensions import Self
 
-from ..types import Optional, Pool_type, Sequence
+from ..types import CardsType, Optional, Pool_type, Sequence
 
 
 class FilterMixin:
@@ -23,6 +23,7 @@ class FilterMixin:
         max_gc: float = 1.0,
         name: Optional[str] = None,
         prefix: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Self:
         """Filter sequences by GC content.
 
@@ -36,6 +37,8 @@ class FilterMixin:
             Name for the filter operation.
         prefix : str, optional
             Prefix for sequence naming.
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'passed'``.
 
         Returns
         -------
@@ -60,13 +63,14 @@ class FilterMixin:
             gc = calc_gc(seq)
             return min_gc <= gc <= max_gc
 
-        return self.filter(predicate, name=name, prefix=prefix)
+        return self.filter(predicate, name=name, prefix=prefix, cards=cards)
 
     def filter_homopolymer(
         self,
         max_length: int,
         name: Optional[str] = None,
         prefix: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Self:
         """Filter out sequences containing long homopolymer runs.
 
@@ -82,6 +86,8 @@ class FilterMixin:
             Name for the filter operation.
         prefix : str, optional
             Prefix for sequence naming.
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'passed'``.
 
         Returns
         -------
@@ -101,7 +107,7 @@ class FilterMixin:
         def predicate(seq: str) -> bool:
             return not has_homopolymer(seq, max_length)
 
-        return self.filter(predicate, name=name, prefix=prefix)
+        return self.filter(predicate, name=name, prefix=prefix, cards=cards)
 
     def filter_complexity(
         self,
@@ -109,11 +115,12 @@ class FilterMixin:
         k_range: tuple[int, ...] = (1, 2, 3),
         name: Optional[str] = None,
         prefix: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Self:
-        """Filter sequences by linguistic complexity.
+        """Filter sequences by PoolParty's short-k linguistic complexity.
 
-        Linguistic complexity measures the ratio of observed unique k-mers
-        to maximum possible, averaged across k values. Low complexity indicates
+        For each requested k, the score compares the observed and possible
+        short-k vocabularies, then averages those ratios. Low scores indicate
         repetitive sequences.
 
         Parameters
@@ -127,6 +134,8 @@ class FilterMixin:
             Name for the filter operation.
         prefix : str, optional
             Prefix for sequence naming.
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'passed'``.
 
         Returns
         -------
@@ -146,30 +155,32 @@ class FilterMixin:
         def predicate(seq: str) -> bool:
             return calc_complexity(seq, k_range) >= min_complexity
 
-        return self.filter(predicate, name=name, prefix=prefix)
+        return self.filter(predicate, name=name, prefix=prefix, cards=cards)
 
     def filter_dust(
         self,
         max_score: float = 2.0,
         name: Optional[str] = None,
         prefix: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Self:
-        """Filter sequences by DUST complexity score.
+        """Filter sequences by a DUST-style triplet-repetition score.
 
-        The DUST algorithm identifies low-complexity regions based on
-        triplet frequencies. This is the standard algorithm used by
-        NCBI BLAST for sequence masking.
+        PoolParty calculates one score over the whole sequence. It does not
+        perform the windowing, interval selection, or masking used by NCBI
+        DustMasker.
 
         Parameters
         ----------
         max_score : float, default 2.0
-            Maximum DUST score allowed. Sequences with scores above this
+            Maximum score allowed. Sequences with scores above this
             (indicating low complexity) will be filtered out.
-            Typical thresholds: 2.0 (stringent) to 4.0 (permissive).
         name : str, optional
             Name for the filter operation.
         prefix : str, optional
             Prefix for sequence naming.
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'passed'``.
 
         Returns
         -------
@@ -189,7 +200,7 @@ class FilterMixin:
         def predicate(seq: str) -> bool:
             return calc_dust(seq) <= max_score
 
-        return self.filter(predicate, name=name, prefix=prefix)
+        return self.filter(predicate, name=name, prefix=prefix, cards=cards)
 
     def filter_restriction_sites(
         self,
@@ -198,6 +209,7 @@ class FilterMixin:
         check_rc: bool = True,
         name: Optional[str] = None,
         prefix: Optional[str] = None,
+        cards: CardsType = None,
     ) -> Self:
         """Filter out sequences containing restriction enzyme recognition sites.
 
@@ -231,6 +243,8 @@ class FilterMixin:
             Name for the filter operation.
         prefix : str, optional
             Prefix for sequence naming.
+        cards : list[str] or dict, optional
+            Design card keys to include. Available keys: ``'passed'``.
 
         Returns
         -------
@@ -278,4 +292,4 @@ class FilterMixin:
         def predicate(seq: str) -> bool:
             return not has_restriction_site(seq, all_sites, check_rc=check_rc)
 
-        return self.filter(predicate, name=name, prefix=prefix)
+        return self.filter(predicate, name=name, prefix=prefix, cards=cards)

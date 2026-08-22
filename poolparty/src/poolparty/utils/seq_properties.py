@@ -46,65 +46,64 @@ def calc_gc(seq: str) -> float:
 
 
 def calc_complexity(seq: str, k_range: tuple[int, ...] = (1, 2, 3)) -> float:
-    """Calculate linguistic complexity of a sequence.
+    """Calculate PoolParty's short-k linguistic-complexity score.
 
-    Linguistic complexity measures the ratio of observed unique k-mers to the
-    maximum possible unique k-mers, averaged across multiple k values. Low
-    complexity indicates repetitive sequences (e.g., homopolymers, tandem repeats).
+    For each requested k that fits the sequence, this calculates the ratio of
+    observed unique k-mers to the smaller of the number of k-mer positions and
+    the possible k-mer vocabulary, then takes the arithmetic mean of the ratios.
+    Symbols, including IUPAC codes and gaps, are counted literally. The effective
+    alphabet contains at least four symbols, which keeps each ratio between 0 and 1.
 
     Parameters
     ----------
     seq : str
-        Sequence string (case-insensitive for DNA).
+        Sequence string (case-insensitive).
     k_range : tuple[int, ...]
-        Tuple of k values to use for k-mer analysis. Default is (1, 2, 3)
-        which captures homopolymers (k=1), dinucleotide repeats (k=2),
-        and trinucleotide patterns (k=3).
+        Positive k values to use for k-mer analysis. Default is (1, 2, 3).
+        Order and repeated values are preserved, so a repeated k has additional
+        weight in the mean.
 
     Returns
     -------
     float
-        Complexity score between 0.0 (completely repetitive) and 1.0
-        (maximally complex). Returns 1.0 for sequences shorter than
-        the smallest k.
+        Complexity score from 0.0 to 1.0. Higher scores indicate a richer
+        short-k vocabulary. Returns 1.0 if no requested k fits the sequence.
 
     Examples
     --------
-    >>> calc_complexity("AAAAAAAAAA")  # Homopolymer - very low complexity
-    0.1111...
-    >>> calc_complexity("ACGTACGTAC")  # Repetitive pattern
-    0.5...
-    >>> calc_complexity("ACGTMKWSRY")  # More random - higher complexity
-    0.8...
+    >>> round(calc_complexity("AAAAAAAAAA"), 3)  # Homopolymer
+    0.162
+    >>> round(calc_complexity("ACGTACGTAC"), 3)  # Repetitive pattern
+    0.648
+    >>> calc_complexity("ACGTMKWSRY")  # Every short k-mer is distinct
+    1.0
     """
+    if not k_range or any(k <= 0 for k in k_range):
+        raise ValueError("k_range must contain at least one positive integer")
+
     seq_upper = seq.upper()
-    # Only consider valid DNA characters for alphabet size
-    valid_chars = set(c for c in seq_upper if c in "ACGT")
-    alphabet_size = max(len(valid_chars), 4)  # Assume DNA alphabet of 4
+    alphabet_size = max(4, len(set(seq_upper)))
 
     scores = []
     for k in k_range:
         if len(seq_upper) < k:
             continue
-        # Count unique k-mers
         kmers = set(seq_upper[i : i + k] for i in range(len(seq_upper) - k + 1))
         observed = len(kmers)
-        # Maximum possible is min of: number of positions, alphabet^k
         max_possible = min(len(seq_upper) - k + 1, alphabet_size**k)
-        if max_possible > 0:
-            scores.append(observed / max_possible)
+        scores.append(observed / max_possible)
 
     if not scores:
-        return 1.0  # Sequence too short for any k
+        return 1.0
     return sum(scores) / len(scores)
 
 
 def calc_dust(seq: str) -> float:
-    """Calculate DUST score for sequence complexity.
+    """Calculate a DUST-style whole-sequence triplet-repetition score.
 
-    The DUST algorithm identifies low-complexity regions based on triplet
-    frequencies. Lower scores indicate more complex (less repetitive) sequences.
-    This is the standard algorithm used by NCBI BLAST for masking.
+    This score summarizes repeated triplets over the complete sequence. Lower
+    scores indicate less repetition. It does not implement DustMasker's windowing,
+    interval selection, or masking procedure.
 
     Parameters
     ----------
@@ -114,8 +113,8 @@ def calc_dust(seq: str) -> float:
     Returns
     -------
     float
-        DUST score. Lower values indicate higher complexity.
-        Typical thresholds: < 2.0 is complex, > 4.0 is low-complexity.
+        Whole-sequence triplet-repetition score. Lower values indicate less
+        repetition.
         Returns 0.0 for sequences shorter than 3 bases.
 
     Examples
@@ -126,9 +125,9 @@ def calc_dust(seq: str) -> float:
 
     References
     ----------
-    Morgulis, A., Gertz, E.M., Schaffer, A.A. and Agarwala, R. (2006). A fast and
-    symmetric DUST implementation to mask low-complexity DNA sequences.
-    Journal of Computational Biology 13(5), 1028-1040.
+    Morgulis, A., Gertz, E.M., Schaffer, A.A., and Agarwala, R. (2006). A fast
+    and symmetric DUST implementation to mask low-complexity DNA sequences.
+    Journal of Computational Biology, 13(5), 1028-1040.
     """
     seq_upper = seq.upper()
     if len(seq_upper) < 3:
