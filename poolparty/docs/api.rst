@@ -221,6 +221,8 @@ Sequence properties
 
 .. autofunction:: poolparty.calc_gc
 
+.. autofunction:: poolparty.longest_homopolymer
+
 .. autofunction:: poolparty.calc_complexity
 
 .. autofunction:: poolparty.calc_dust

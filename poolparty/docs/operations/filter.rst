@@ -263,6 +263,8 @@ See also
 --------
 
 - :doc:`design cards </metadata/design_cards>` for card naming and provenance.
+- :ref:`Library statistics <pool-stats>` for aggregate DUST-style summaries of
+  a generated library; short-k complexity is not among its reported statistics.
 - :doc:`score` for recording measured sequence properties.
 - :doc:`generate_library` for null-row and iteration controls.
 - :doc:`get_barcodes` for constructing barcode sets under generation-time
