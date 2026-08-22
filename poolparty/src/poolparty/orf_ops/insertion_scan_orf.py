@@ -19,11 +19,10 @@ from ..types import (
 from ..utils.dna_seq import DnaSeq
 from ..utils.dna_utils import reverse_complement
 from ..utils.parsing_utils import strip_all_tags, validate_single_region
-from ._frame import frame_offset, resolve_frame
+from ._frame import complete_codon_count, frame_offset, resolve_frame
 from ._scan import (
     codon_starts_to_nt,
     get_target_start_and_seq,
-    num_complete_codons,
     resolve_codon_starts,
     resolve_region_span,
     validate_orf_scan_input,
@@ -148,7 +147,7 @@ def insertion_scan_orf(
     resolved_frame = resolve_frame(region, frame)
     span = resolve_region_span(pool, region, "insertion_scan_orf")
     item_codons = insertion_length // 3
-    target_codons = num_complete_codons(span, resolved_frame)
+    target_codons = complete_codon_count(span, resolved_frame)
     if replace:
         num_slots = target_codons - item_codons + 1
     else:

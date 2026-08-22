@@ -5,7 +5,6 @@ import pytest
 import poolparty as pp
 from poolparty.utils.dna_utils import reverse_complement
 
-
 CARD_MAP = {
     "codon_positions": "codon_positions",
     "wt_codons": "wt_codons",

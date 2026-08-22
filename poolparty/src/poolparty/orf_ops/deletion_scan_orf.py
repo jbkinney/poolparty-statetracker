@@ -18,11 +18,10 @@ from ..types import (
 )
 from ..utils import reverse_complement
 from ..utils.parsing_utils import strip_all_tags, validate_single_region
-from ._frame import resolve_frame
+from ._frame import complete_codon_count, resolve_frame
 from ._scan import (
     codon_starts_to_nt,
     get_target_start_and_seq,
-    num_complete_codons,
     resolve_codon_starts,
     resolve_region_span,
     validate_orf_scan_input,
@@ -60,7 +59,7 @@ def _codon_windows_to_nt(
     deletion_codons: int,
 ) -> tuple[list[int], dict[int, int]]:
     """Map coding-order deletion windows to physical nucleotide starts."""
-    num_codons = num_complete_codons(span, frame)
+    num_codons = complete_codon_count(span, frame)
     num_windows = num_codons - deletion_codons + 1
     if num_windows <= 0:
         raise ValueError(

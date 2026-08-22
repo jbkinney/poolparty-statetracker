@@ -5,7 +5,6 @@ import pytest
 import poolparty as pp
 from poolparty.utils.dna_utils import reverse_complement
 
-
 SPLICE_CARDS = {
     "codon_slot": "codon_slot",
     "start": "start",

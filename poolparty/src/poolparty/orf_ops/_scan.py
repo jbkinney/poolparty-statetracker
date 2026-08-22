@@ -41,11 +41,6 @@ def resolve_region_span(pool: Pool, region: RegionType, operation_name: str) -> 
     return int(span)
 
 
-def num_complete_codons(span: int, frame: int) -> int:
-    """Return the number of complete codons in a framed nucleotide span."""
-    return max(0, (span - frame_offset(frame)) // 3)
-
-
 def resolve_codon_starts(
     codon_positions: PositionsType,
     *,
