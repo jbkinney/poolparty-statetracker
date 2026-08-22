@@ -13,7 +13,7 @@ from poolparty.utils.seq_properties import (
     has_restriction_site,
     longest_homopolymer,
 )
-from poolparty.utils.stats_utils import stats_from_seqs
+from poolparty.utils.stats_utils import _stats_from_seqs
 
 # pp.stats is the function, so the module it lives in has to be asked for by
 # name, exactly as for poolparty.generate_library.
@@ -33,7 +33,7 @@ class TestStatsFromSeqs:
 
     def test_counts_duplicates(self):
         """A repeated sequence counts once as unique and once as a duplicate."""
-        result = stats_from_seqs(["ACGT", "ACGT", "TGCA"])
+        result = _stats_from_seqs(["ACGT", "ACGT", "TGCA"])
 
         assert result["num_generated_seqs"] == 3
         assert result["num_valid_seqs"] == 3
@@ -44,7 +44,7 @@ class TestStatsFromSeqs:
 
     def test_duplicates_count_excess_copies(self):
         """A sequence appearing three times contributes two duplicates, not three."""
-        result = stats_from_seqs(["ACGT"] * 3)
+        result = _stats_from_seqs(["ACGT"] * 3)
 
         assert result["num_unique_seqs"] == 1
         assert result["num_duplicate_seqs"] == 2
@@ -52,7 +52,7 @@ class TestStatsFromSeqs:
 
     def test_nulls_are_reported_as_filtered_out(self):
         """None marks a sequence a filter rejected, and is not counted as valid."""
-        result = stats_from_seqs(["ACGT", None, "TGCA", None])
+        result = _stats_from_seqs(["ACGT", None, "TGCA", None])
 
         assert result["num_generated_seqs"] == 4
         assert result["num_filtered_out_seqs"] == 2
@@ -60,7 +60,7 @@ class TestStatsFromSeqs:
 
     def test_no_sequences_survive(self):
         """Everything filtered out gives zero counts, not a division by zero."""
-        result = stats_from_seqs([None, None])
+        result = _stats_from_seqs([None, None])
 
         assert result["num_valid_seqs"] == 0
         assert result["frac_duplicate_seqs"] == 0.0
@@ -70,7 +70,7 @@ class TestStatsFromSeqs:
 
     def test_single_sequence_has_no_pairs(self):
         """One sequence has no pair to compare, so the distance keys are absent."""
-        result = stats_from_seqs(["ACGT"])
+        result = _stats_from_seqs(["ACGT"])
 
         assert result["num_valid_seqs"] == 1
         assert result["gc_mean"] == pytest.approx(0.5)
@@ -78,7 +78,7 @@ class TestStatsFromSeqs:
 
     def test_the_funnel_adds_up(self):
         """generated = filtered out + valid, and valid = unique + duplicates."""
-        result = stats_from_seqs(["ACGT", "ACGT", None, "TGCA", None, "GGCC"])
+        result = _stats_from_seqs(["ACGT", "ACGT", None, "TGCA", None, "GGCC"])
 
         assert (
             result["num_generated_seqs"]
@@ -181,6 +181,14 @@ class TestDesignKind:
             assert stats["num_states"] is None
             assert stats["frac_design_covered"] is None
 
+    def test_num_cycles_is_refused_when_there_are_no_passes_to_make(self):
+        """A design with no fixed size has no state space to cycle through."""
+        with pp.Party():
+            pool = pp.from_seq("ACGTACGTAC").mutagenize(num_mutations=2, mode="random")
+
+            with pytest.raises(ValueError, match="num_cycles does not apply"):
+                pool.stats(num_cycles=1, show_progress=False)
+
     def test_open_ended_step_makes_the_whole_design_open_ended(self):
         """One unfixed random step is enough, even behind a sequential source."""
         with pp.Party():
@@ -217,6 +225,18 @@ class TestAutoLimit:
 
             with pytest.raises(ValueError, match="above the .* limit"):
                 pool.stats(show_progress=False)
+
+    def test_num_cycles_generates_that_many_passes(self):
+        """num_cycles is a documented escape hatch, so it must actually work."""
+        with pp.Party():
+            stats = filtered_pool().stats(num_cycles=2, show_progress=False)
+
+            assert stats["num_generated_seqs"] == 10
+            assert stats["num_filtered_out_seqs"] == 4
+            assert stats["num_valid_seqs"] == 6
+            assert stats["num_unique_seqs"] == 3
+            assert stats["num_duplicate_seqs"] == 3
+            assert stats["frac_design_covered"] == pytest.approx(2.0)
 
     def test_an_explicit_count_is_never_capped(self):
         """Naming a count overrides the limit, on either argument."""
@@ -278,6 +298,43 @@ class TestPairwiseHamming:
 
             assert dict(first) == dict(second)
 
+    def test_a_different_seed_gives_a_different_subsample(self):
+        """The seed must actually reach the subsample, not just be accepted."""
+        with pp.Party():
+            pool = pp.from_seq("ACGTACGTACGTACGTACGT").mutagenize(
+                num_mutations=2, mode="sequential"
+            )
+
+            first = pool.stats(max_hamming_seqs=20, seed=1, show_progress=False)
+            second = pool.stats(max_hamming_seqs=20, seed=2, show_progress=False)
+
+            assert first["hamming_mean"] != second["hamming_mean"]
+
+    def test_every_pair_is_compared_across_block_boundaries(self):
+        """The comparison is tiled, and the tiling must not change the answer.
+
+        _HAMMING_BLOCK equals the default max_hamming_seqs, so the off-diagonal
+        tiles are never reached at any default setting. Shrinking the block is
+        the only way to exercise them.
+        """
+        with pp.Party():
+            pool = pp.from_seqs(["AAAA", "AAAC", "ACGT"], mode="sequential")
+
+            unblocked = pool.stats(show_progress=False)
+
+            import poolparty.utils.stats_utils as stats_utils
+
+            original = stats_utils._HAMMING_BLOCK
+            stats_utils._HAMMING_BLOCK = 2
+            try:
+                blocked = pool.stats(show_progress=False)
+            finally:
+                stats_utils._HAMMING_BLOCK = original
+
+            assert dict(blocked) == dict(unblocked)
+            assert blocked["hamming_min"] == 1
+            assert blocked["hamming_max"] == 3
+
     def test_distances_are_skipped_when_asked(self):
         """max_hamming_seqs=None omits the quadratic part entirely."""
         with pp.Party():
@@ -298,6 +355,56 @@ class TestPairwiseHamming:
 
             with pytest.warns(UserWarning, match="pairwise"):
                 pool.stats(show_progress=False)
+
+
+class TestReproducibility:
+    """Tests that a report depends on the design and nothing else."""
+
+    def _sampling_pool(self):
+        return pp.from_seq("ACGTACGTACGTACGTACGT").mutagenize(num_mutations=2, mode="random")
+
+    def test_repeated_calls_agree(self):
+        """Two calls on the same pool must give the same numbers."""
+        with pp.Party():
+            pool = self._sampling_pool()
+
+            first = pool.stats(num_seqs=200, show_progress=False)
+            second = pool.stats(num_seqs=200, show_progress=False)
+
+            assert dict(first) == dict(second)
+
+    def test_the_pools_history_does_not_change_the_report(self):
+        """Generating from a pool beforehand must not move its statistics."""
+        with pp.Party():
+            fresh = self._sampling_pool().stats(num_seqs=200, show_progress=False)
+
+        with pp.Party():
+            pool = self._sampling_pool()
+            pool.generate_library(num_seqs=5, seed=99)
+
+            assert dict(pool.stats(num_seqs=200, show_progress=False)) == dict(fresh)
+
+    def test_a_seed_changes_which_sequences_are_drawn(self):
+        """The seed must reach generation, not only the distance subsample."""
+        with pp.Party():
+            pool = self._sampling_pool()
+
+            first = pool.stats(num_seqs=200, seed=1, show_progress=False)
+            second = pool.stats(num_seqs=200, seed=2, show_progress=False)
+
+            assert first["gc_mean"] != second["gc_mean"]
+
+    def test_chunked_generation_matches_a_single_pass(self):
+        """More sequences than one chunk must not disturb the traversal."""
+        with pp.Party():
+            pool = pp.from_seq("ACGT" * 10).mutagenize(num_mutations=1, mode="sequential")
+            assert pool.num_states == 120
+
+            stats = pool.stats(num_seqs=1500, show_progress=False)
+
+            # 1500 rows over 120 states: every sequence, twelve times, then 60 more.
+            assert stats["num_generated_seqs"] == 1500
+            assert stats["num_unique_seqs"] == 120
 
 
 class TestDnaStats:
@@ -332,6 +439,26 @@ class TestDnaStats:
             assert stats["longest_homopolymer"] == max(longest_homopolymer(seq) for seq in MIXED_GC)
             over = sum(has_homopolymer(seq, 3) for seq in MIXED_GC)
             assert stats["frac_seqs_with_long_homopolymer"] == pytest.approx(over / len(MIXED_GC))
+
+    def test_fractions_are_over_the_surviving_sequences(self):
+        """Every fraction divides by num_valid_seqs, not by the rows generated.
+
+        The pool is chosen so the two denominators differ: four rows, two
+        survivors, one of them a duplicate.
+        """
+        with pp.Party():
+            pool = pp.from_seqs(
+                ["AAAATTTT", "GGGGCCCC", "AAAATTTT", "GGCCGGCC"], mode="sequential"
+            ).filter_gc(max_gc=0.5)
+
+            stats = pool.stats(max_homopolymer_run=3, sites=["AAAA"], show_progress=False)
+
+            assert stats["num_generated_seqs"] == 4
+            assert stats["num_valid_seqs"] == 2
+            assert stats["num_duplicate_seqs"] == 1
+            assert stats["frac_duplicate_seqs"] == pytest.approx(0.5)
+            assert stats["frac_seqs_with_long_homopolymer"] == pytest.approx(1.0)
+            assert stats["frac_seqs_with_restriction_site"] == pytest.approx(1.0)
 
     def test_the_homopolymer_limit_can_be_dropped(self):
         """max_homopolymer_run=None keeps the longest run but drops the fraction."""
@@ -395,7 +522,6 @@ class TestReport:
             stats = filtered_pool().stats(show_progress=False)
 
             assert isinstance(stats, dict)
-            assert dict(stats) == {**stats}
             assert json.loads(json.dumps(stats))["num_unique_seqs"] == 3
 
     def test_prints_the_sections_it_has(self):
@@ -445,6 +571,50 @@ class TestReport:
             )
 
 
+class TestKeys:
+    """Tests for the exact set of keys a report contains."""
+
+    def test_the_key_set_is_stable(self):
+        """A default report has exactly these keys, and none of the cut ones."""
+        with pp.Party():
+            stats = filtered_pool().stats(show_progress=False)
+
+            assert set(stats) == {
+                "num_states",
+                "open_ended",
+                "num_generated_seqs",
+                "frac_design_covered",
+                "num_filtered_out_seqs",
+                "num_valid_seqs",
+                "num_unique_seqs",
+                "num_duplicate_seqs",
+                "frac_duplicate_seqs",
+                "max_seq_copies",
+                "length_min",
+                "length_max",
+                "gc_min",
+                "gc_mean",
+                "gc_max",
+                "longest_homopolymer",
+                "frac_seqs_with_long_homopolymer",
+                "dust_mean",
+                "dust_max",
+                "hamming_exact",
+                "hamming_seqs_compared",
+                "hamming_min",
+                "hamming_mean",
+                "hamming_max",
+            }
+
+    def test_the_deliberately_omitted_keys_stay_omitted(self):
+        """These were dropped as arithmetic derivable from the rest."""
+        with pp.Party():
+            stats = filtered_pool().stats(show_progress=False)
+
+            for key in ("length_variable", "hamming_num_pairs", "hamming_sd", "dust_min"):
+                assert key not in stats
+
+
 class TestSequenceInput:
     """Tests for describing sequences that did not come from a pool."""
 
@@ -456,6 +626,11 @@ class TestSequenceInput:
         assert stats["open_ended"] is False
         assert stats["frac_design_covered"] is None
         assert stats["num_unique_seqs"] == 2
+
+    def test_a_bare_string_is_refused(self):
+        """pp.stats(seq) would otherwise measure one character per sequence."""
+        with pytest.raises(TypeError, match="single string"):
+            pp.stats("ACGTACGT")
 
     def test_a_count_alongside_sequences_is_refused(self):
         """num_seqs has no meaning when the sequences are already in hand."""
@@ -526,6 +701,24 @@ class TestEdgeCases:
             assert stats["num_valid_seqs"] == 0
             assert "gc_mean" not in stats
 
+    def test_case_does_not_make_a_sequence_distinct(self):
+        """Case is presentation in PoolParty, so it does not change the molecule."""
+        with pp.Party():
+            pool = pp.from_seqs(["acgtacgt", "ACGTACGT", "AcGtAcGt"], mode="sequential")
+
+            stats = pool.stats(show_progress=False)
+
+            assert stats["num_valid_seqs"] == 3
+            assert stats["num_unique_seqs"] == 1
+            assert stats["num_duplicate_seqs"] == 2
+
+    def test_a_progress_bar_does_not_break_anything(self):
+        """show_progress defaults to True, so the default path must be exercised."""
+        with pp.Party():
+            stats = pp.from_seqs(MIXED_GC, mode="sequential").stats(show_progress=True)
+
+            assert stats["num_generated_seqs"] == 5
+
     def test_region_tags_are_not_counted(self):
         """Tags describe the design, not the molecule, so they are stripped."""
         with pp.Party():
@@ -544,14 +737,26 @@ class TestNeverMutates:
     """Tests that a readout is only a readout."""
 
     def test_the_pool_is_unchanged(self):
-        """Design size, parents and generated sequences all survive the call."""
+        """Design size and parents survive the call."""
         with pp.Party():
             pool = filtered_pool()
-            before = pool.generate_library(num_cycles=1, init_state=0)
 
             pool.stats(show_progress=False)
 
             assert pool.num_states == 5
             assert len(pool.parents) == 1
-            after = pool.generate_library(num_cycles=1, init_state=0)
-            assert list(after["seq"].astype(object)) == list(before["seq"].astype(object))
+
+    def test_the_generation_cursor_is_put_back(self):
+        """A readout must not change which sequence comes out next.
+
+        Without this, calling stats() mid-pipeline silently shifts every
+        subsequent generate_library on the same pool.
+        """
+        with pp.Party():
+            pool = pp.from_seqs(MIXED_GC, mode="sequential")
+            pool.generate_library(num_seqs=2, seed=99)
+            cursor, master_seed = pool._current_state, pool._master_seed
+
+            pool.stats(num_seqs=3, show_progress=False)
+
+            assert (pool._current_state, pool._master_seed) == (cursor, master_seed)

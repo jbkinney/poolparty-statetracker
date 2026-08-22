@@ -1,10 +1,10 @@
 Library Size
 ============
 
-Every pool has a ``num_states`` property — the number of states it has, which
-is an upper bound on the number of distinct sequences it can produce rather
-than the number itself (see :ref:`Distinct states are not distinct sequences
-<states-vs-sequences>` below). Each operation has an **internal state** (see :doc:`modes`) whose
+Every pool has a ``num_states`` property — the number of states it has. That is
+not the same as the number of distinct sequences the pool produces, and is
+neither an upper nor a lower bound on it (see :ref:`Distinct states are not
+distinct sequences <states-vs-sequences>` below). Each operation has an **internal state** (see :doc:`modes`) whose
 count is determined by its mode and parameters. How ``num_states`` composes
 when operations are combined depends on the operation type. Three rules cover
 all cases: multiplication, addition, and no change. These are described below.

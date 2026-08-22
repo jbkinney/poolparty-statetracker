@@ -584,7 +584,6 @@ class ExportMixin:
                 if target_is_states and discard_null_seqs:
                     df = df[df["seq"].notna()]
 
-                chunk_written = 0
                 # Write FASTA entries
                 with _open_file(path, "w" if first_chunk else "a") as f:
                     for _, row in df.iterrows():
@@ -617,7 +616,6 @@ class ExportMixin:
                             f.write(seq + "\n")
 
                         written += 1
-                        chunk_written += 1
 
                 first_chunk = False
 
@@ -674,7 +672,6 @@ class ExportMixin:
                 if target_is_states and discard_null_seqs:
                     df = df[df["seq"].notna()]
 
-                chunk_written = 0
                 # Write JSONL entries
                 with _open_file(path, "w" if first_chunk else "a") as f:
                     for _, row in df.iterrows():
@@ -695,7 +692,6 @@ class ExportMixin:
 
                         f.write(json.dumps(record) + "\n")
                         written += 1
-                        chunk_written += 1
 
                 first_chunk = False
 

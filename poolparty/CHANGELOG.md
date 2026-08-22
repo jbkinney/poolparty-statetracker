@@ -10,12 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `pp.stats(pool)` and `pool.stats()` summarise the library a pool produces:
   how many sequences are unique and how many are duplicates, the minimum, mean
-  and maximum pairwise Hamming distance, and how often sequences carry long
-  homopolymer runs, extreme GC content, repetitive sequence or restriction
-  sites. Report only -- nothing about the pool or its library changes. The
+  and maximum pairwise Hamming distance, the range of GC content and DUST
+  repetitiveness, and how often sequences carry a long homopolymer run or a
+  restriction site. Report only -- the pool is left exactly as it was, including
+  the cursor that decides which sequence `generate_library` returns next. The
   result is a `dict` that prints as a formatted report.
-- `longest_homopolymer` in `poolparty.utils.seq_properties`, alongside the
-  existing thresholded `has_homopolymer`.
+
+  A pool records how to build a library rather than the library itself, so
+  `stats` has to generate before it can measure. A design with a fixed size is
+  measured in full up to `Operation.max_num_sequential_states`; above that, and
+  for a design containing a random operation without `num_states` (which has no
+  total number of sequences at all), pass `num_seqs=`.
+- `pp.longest_homopolymer`, alongside the existing thresholded
+  `has_homopolymer`.
 
 ### Fixed
 - `to_df` and `to_file` no longer re-emit sequences when `num_cycles` is used on

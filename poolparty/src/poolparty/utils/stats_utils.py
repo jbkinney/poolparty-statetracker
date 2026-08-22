@@ -17,13 +17,13 @@ from .seq_properties import (
     longest_homopolymer,
 )
 
-# Sequences are compared as whole blocks of bytes, so the pairwise distance
-# matrix for one block is (block x block x length) bytes. 2000 keeps that under
-# a few hundred MB for typical library sequences.
+# Sequences are compared as whole blocks of bytes, so one block allocates
+# block * block * length bytes: about 1 GB at this size for a 250 bp library.
+# Raising it trades memory for fewer passes; lowering it does the reverse.
 _HAMMING_BLOCK = 2000
 
 
-def pairwise_hamming(seqs: list[str], max_seqs: int, seed: int) -> dict:
+def _pairwise_hamming(seqs: list[str], max_seqs: int, seed: int) -> dict:
     """Minimum, mean and maximum Hamming distance over pairs of sequences.
 
     All pairs are compared when there are no more than ``max_seqs`` sequences.
@@ -83,7 +83,7 @@ def pairwise_hamming(seqs: list[str], max_seqs: int, seed: int) -> dict:
     }
 
 
-def stats_from_seqs(
+def _stats_from_seqs(
     seqs: list,
     num_states: int | None = None,
     open_ended: bool = False,
@@ -132,6 +132,7 @@ def stats_from_seqs(
         "num_states": num_states,
         "open_ended": open_ended,
         "num_generated_seqs": len(seqs),
+        # Rows per state, so more than one cycle gives a value above 1.
         "frac_design_covered": None if num_states is None else len(seqs) / num_states,
         "num_filtered_out_seqs": len(seqs) - len(valid),
         "num_valid_seqs": len(valid),
@@ -165,5 +166,5 @@ def stats_from_seqs(
 
     # Hamming distance is only defined between sequences of equal length.
     if max_hamming_seqs is not None and len(valid) > 1 and min(lengths) == max(lengths):
-        result.update(pairwise_hamming(valid, max_hamming_seqs, seed))
+        result.update(_pairwise_hamming(valid, max_hamming_seqs, seed))
     return result

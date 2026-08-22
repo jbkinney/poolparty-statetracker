@@ -147,6 +147,7 @@ from .utils.seq_properties import (
     calc_gc,
     has_homopolymer,
     has_restriction_site,
+    longest_homopolymer,
 )
 
 # Import styling utilities
@@ -265,6 +266,7 @@ __all__ = [
     "calc_complexity",
     "calc_dust",
     "has_homopolymer",
+    "longest_homopolymer",
     "has_restriction_site",
     # Restriction enzyme data
     "ENZYME_SITES",
@@ -315,9 +317,7 @@ def set_progress_mode(mode: str = "auto") -> None:
     from .config import VALID_PROGRESS_MODES
 
     if mode not in VALID_PROGRESS_MODES:
-        raise ValueError(
-            f"progress_mode must be one of {VALID_PROGRESS_MODES}, got {mode!r}"
-        )
+        raise ValueError(f"progress_mode must be one of {VALID_PROGRESS_MODES}, got {mode!r}")
     party = get_active_party()
     if party is None:
         raise RuntimeError("No active Party context.")
