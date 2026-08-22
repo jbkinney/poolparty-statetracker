@@ -21,7 +21,8 @@ eagerly evaluate Pool contents.
    * - :doc:`sync`
      - Synchronize multiple pools to iterate in lockstep (in-place).
    * - :doc:`filter`
-     - Retain only sequences satisfying a predicate function.
+     - Retain sequences using a custom predicate or ready-made length and DNA
+       checks.
    * - :doc:`score`
      - Evaluate a function on each sequence and record the result as a design card column.
    * - :doc:`materialize`

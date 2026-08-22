@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- The short-k linguistic-complexity score now remains within its documented
+  0--1 range for IUPAC codes and gaps, validates that `k_range` is nonempty and
+  positive, and documents its exact averaging rule.
+- The existing whole-sequence triplet-repetition calculation is now described
+  as DUST-style rather than as the complete NCBI DustMasker algorithm. Its
+  numeric behavior is unchanged.
 - **BREAKING:** ORF operations now share one documented frame-offset
   convention. `mutagenize_orf` and `stylize_orf` previously placed
   the first complete codon `(4 - |frame|) % 3` bases into the region, while
@@ -78,6 +84,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   total number of sequences at all), pass `num_seqs=`.
 - `pp.longest_homopolymer`, alongside the existing thresholded
   `has_homopolymer`.
+- `Pool.filter_length()` for sequence-generic filtering with inclusive minimum
+  and/or maximum length bounds.
+- Optional `cards=` support on all ready-made filter methods. The existing
+  `passed` card records the Boolean decision; measured properties remain the
+  responsibility of `score()`.
 - `orf_ops/_frame.py`, holding the single `frame_offset()` and `resolve_frame()`
   used by the three frame-aware operations (`translate`, `mutagenize_orf`,
   `stylize_orf`). `resolve_frame` was previously defined once per operation

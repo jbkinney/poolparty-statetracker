@@ -153,7 +153,8 @@ invalid key raises ``ValueError``.
      - Tuple of the permutation applied to molecular positions.
    * - ``filter``
      - ``passed``
-     - ``True`` if the sequence passed the predicate, ``False`` otherwise.
+     - ``True`` if the sequence passed the generic predicate or ready-made
+       filter check, ``False`` otherwise.
    * - ``from_seqs``
      - ``seq_name``, ``seq_index``
      - Name and index of the selected input sequence.

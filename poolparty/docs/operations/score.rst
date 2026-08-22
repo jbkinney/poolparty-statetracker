@@ -111,8 +111,9 @@ PoolParty includes several scoring functions that match the same
 ``(str) -> scalar`` pattern:
 
 - ``pp.calc_gc`` — GC fraction
-- ``pp.calc_complexity`` — linguistic complexity (0–1)
-- ``pp.calc_dust`` — DUST low-complexity score (lower = more complex)
+- ``pp.calc_complexity`` — short-k linguistic complexity (0–1)
+- ``pp.calc_dust`` — DUST-style whole-sequence triplet repetition
+  (lower = less repetitive)
 
 .. code-block:: python
 
