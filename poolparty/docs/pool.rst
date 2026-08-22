@@ -521,8 +521,6 @@ or collected into a table:
      - ``True``
      - Show a progress bar while generating.
 
-----
-
 What the report contains
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -574,8 +572,6 @@ What the report contains
    * - ``hamming_min``, ``hamming_mean``, ``hamming_max``
      - Pairwise Hamming distance. Absent when the sequences differ in length.
 
-----
-
 How much of the design is measured
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -609,8 +605,6 @@ A count given explicitly is always honoured and never capped.
    a count. Either pass ``num_seqs=``, or build the design with
    ``mode='sequential'`` or an explicit ``num_states=`` to give it a size.
 
-----
-
 Reading the numbers
 ~~~~~~~~~~~~~~~~~~~
 
@@ -638,7 +632,7 @@ cursor that decides which sequence ``generate_library`` returns next.
 ``stats`` is available on ``DnaPool``. Several of its statistics are
 DNA-specific, so ``ProteinPool`` is not supported.
 
-.. seealso::
+.. note::
 
    Several of these numbers have a matching operation that acts on them --
    see :doc:`operations/filter` for filtering on GC content, homopolymer runs,
