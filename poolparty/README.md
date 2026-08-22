@@ -95,16 +95,16 @@ so each sequence carries a structured record of how it was built:
 
 ```python
 df = library.generate_library()
-print(df[["name", "mut_pos", "wt", "mut"]].head(5))
+print(df[["name", "mut_pos", "wt", "mut"]].head(5).to_string(index=False))
 ```
 
 ```
-   name mut_pos   wt  mut
-  mut_0    (0,) (G,) (A,)
-  mut_1    (0,) (G,) (C,)
-  mut_2    (0,) (G,) (T,)
-  mut_3    (1,) (C,) (A,)
-  mut_4    (1,) (C,) (G,)
+ name mut_pos   wt  mut
+mut_0    (0,) (G,) (A,)
+mut_1    (0,) (G,) (C,)
+mut_2    (0,) (G,) (T,)
+mut_3    (1,) (C,) (A,)
+mut_4    (1,) (C,) (G,)
 ```
 
 ## Operations
