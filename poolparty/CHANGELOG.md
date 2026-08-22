@@ -73,6 +73,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DMS (protein GB1) and MPRA (regulatory grammar) tutorial pages.
 
 ### Fixed
+- `mutagenize_orf` now honors `codon_positions` for named regions in
+  random mode. Previously, explicit lists and slices were silently replaced
+  with all available codons. Restrictions are now resolved against runtime
+  region geometry.
+- Copying or deep-copying a `mutagenize_orf` pool now preserves its
+  `codon_positions` restriction. Previously, copies reverted to all codons for
+  every region form and mutation mode.
 - `stylize_orf(style_frames=...)` took the style group from an unshifted index
   and the position-within-codon from a shifted one, so at `|frame|` of 2 or 3 a
   single codon could straddle two style groups. Both are now derived from the

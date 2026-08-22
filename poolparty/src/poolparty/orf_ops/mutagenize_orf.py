@@ -228,20 +228,16 @@ class MutagenizeOrfOp(Operation):
         effective_length = orf_length - self.frame_offset
         self.num_codons = effective_length // 3
 
-        if codon_positions is None:
-            self.eligible_positions = list(range(self.num_codons))
-        elif isinstance(codon_positions, slice):
-            start, stop, step = codon_positions.indices(self.num_codons)
-            self.eligible_positions = list(range(start, stop, step))
-        else:
-            self.eligible_positions = list(codon_positions)
-            for pos in self.eligible_positions:
-                if pos < 0 or pos >= self.num_codons:
-                    raise ValueError(
-                        f"codon_positions value {pos} is out of range [0, {self.num_codons})"
-                    )
-            if len(self.eligible_positions) != len(set(self.eligible_positions)):
-                raise ValueError("codon_positions must not contain duplicates")
+        # Preserve the user's specification so named regions can resolve it
+        # against their actual molecular codon count at generation time.
+        self._codon_positions = (
+            codon_positions
+            if codon_positions is None or isinstance(codon_positions, slice)
+            else tuple(codon_positions)
+        )
+        self.eligible_positions = self._resolve_codon_positions(
+            self._codon_positions, self.num_codons
+        )
 
         self.num_eligible = len(self.eligible_positions)
         if num_mutations is not None and num_mutations > self.num_eligible:
@@ -401,6 +397,26 @@ class MutagenizeOrfOp(Operation):
         self._sequential_cache = cache
         return num_combinations * num_mut_patterns
 
+    @staticmethod
+    def _resolve_codon_positions(
+        codon_positions: Union[Sequence[Integral], slice, None], num_codons: int
+    ) -> list[int]:
+        """Resolve a codon-position specification against a concrete codon count."""
+        if codon_positions is None:
+            return list(range(num_codons))
+
+        if isinstance(codon_positions, slice):
+            start, stop, step = codon_positions.indices(num_codons)
+            return list(range(start, stop, step))
+
+        positions = list(codon_positions)
+        for pos in positions:
+            if pos < 0 or pos >= num_codons:
+                raise ValueError(f"codon_positions value {pos} is out of range [0, {num_codons})")
+        if len(positions) != len(set(positions)):
+            raise ValueError("codon_positions must not contain duplicates")
+        return positions
+
     def _random_mutation(
         self,
         codons: list[str],
@@ -448,12 +464,24 @@ class MutagenizeOrfOp(Operation):
         mol_start, mol_end = self._get_molecular_region_bounds(parent_seq)
         orf_length = mol_end - mol_start
 
-        # For marker-based regions, recompute num_codons and eligible_positions
-        # since we only know the actual bounds at compute time
+        # For marker-based regions, recompute num_codons since we only know the
+        # actual molecular bounds at compute time. Random mode must then
+        # re-apply the user's codon_positions specification to that count.
         if isinstance(self._orf_region, str):
             effective_length = orf_length - self.frame_offset
             num_codons = effective_length // 3
-            eligible_positions = list(range(num_codons))
+            if self.mode == "random":
+                eligible_positions = self._resolve_codon_positions(
+                    self._codon_positions, num_codons
+                )
+                if self.num_mutations is not None and self.num_mutations > len(eligible_positions):
+                    raise ValueError(
+                        f"num_mutations ({self.num_mutations}) exceeds the number of "
+                        f"eligible codon positions ({len(eligible_positions)}) for "
+                        f"the runtime region geometry ({num_codons} complete codons)."
+                    )
+            else:
+                eligible_positions = self.eligible_positions
         else:
             num_codons = self.num_codons
             eligible_positions = self.eligible_positions
