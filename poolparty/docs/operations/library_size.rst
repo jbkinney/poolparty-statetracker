@@ -139,7 +139,7 @@ Per-category behaviour
      - Operation(s)
    * - Source
      - sets initial size
-     - ``from_seq``, ``from_seqs``, ``from_fasta``, ``from_iupac``, ``from_motif``, ``get_kmers``, ``get_barcodes``
+     - ``from_seq``, ``from_seqs``, ``from_fasta``, ``from_iupac``, ``from_motif``, ``from_vcf``, ``get_kmers``, ``get_barcodes``
    * - Mutagenesis
      - multiplies
      - ``mutagenize``, ``shuffle_seq``, ``recombine``, ``flip``

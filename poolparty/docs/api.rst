@@ -74,6 +74,8 @@ Sequence Creation
 
 .. autofunction:: poolparty.from_fasta
 
+.. autofunction:: poolparty.from_vcf
+
 .. autofunction:: poolparty.from_iupac
 
 .. autofunction:: poolparty.from_motif

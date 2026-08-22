@@ -114,7 +114,7 @@ See the [full documentation](https://poolparty.readthedocs.io) for details.
 
 | Goal | Key operations |
 |------|----------------|
-| Create pools | `from_seq`, `from_seqs`, `from_fasta`, `from_iupac`, `get_kmers`, `get_barcodes` |
+| Create pools | `from_seq`, `from_seqs`, `from_fasta`, `from_iupac`, `from_vcf`, `get_kmers`, `get_barcodes` |
 | Mutate | `mutagenize`, `mutagenize_orf`, `shuffle_seq`, `recombine`, `flip` |
 | Scan across positions | `deletion_scan`, `insertion_scan`, `replacement_scan`, `mutagenize_scan`, `subseq_scan` |
 | Work with regions | `annotate_region`, `extract_region`, `replace_region`, `insert_tags` |

@@ -4,6 +4,7 @@ from .filter_seq import FilterOp, filter
 from .from_iupac import FromIupacOp, from_iupac
 from .from_motif import FromMotifOp, from_motif
 from .from_seqs import FromSeqsOp, from_seqs
+from .from_vcf import FromVcfOp, from_vcf
 from .get_barcodes import GetBarcodesOp, get_barcodes
 from .get_kmers import GetKmersOp, get_kmers
 from .materialize import MaterializeOp, materialize
@@ -16,6 +17,8 @@ __all__ = [
     "filter",
     "FilterOp",
     "from_seqs",
+    "FromVcfOp",
+    "from_vcf",
     "FromSeqsOp",
     "from_iupac",
     "FromIupacOp",

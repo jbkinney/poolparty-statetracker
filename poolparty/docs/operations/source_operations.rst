@@ -17,6 +17,8 @@ barcodes, and more.
      - Create a pool that draws uniformly from a list of sequences.
    * - :doc:`from_fasta`
      - Load sequences from a FASTA file.
+   * - :doc:`from_vcf`
+     - Create a pool of reference-genome windows around variants in a VCF file.
    * - :doc:`from_iupac`
      - Enumerate all sequences consistent with an IUPAC ambiguity string.
    * - :doc:`from_motif`
@@ -32,6 +34,7 @@ barcodes, and more.
    from_seq
    from_seqs
    from_fasta
+   from_vcf
    from_iupac
    from_motif
    get_kmers
