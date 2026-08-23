@@ -1775,7 +1775,7 @@ class TestInsertionScanAssumptionInversion:
 
     Assumptions from reading the code:
     A1. "Parent sequence has at least region_length nontag characters"
-    A2. "Marker name _ins/_rep is unique in the Party"
+    A2. "Reusing the zero-width _ins marker is safe within one Party"
     A3. "insertion_pool is a simple single-op pool"
     """
 
@@ -1815,9 +1815,9 @@ class TestInsertionScanAssumptionInversion:
     def test_A2_double_insertion_scan_same_party(self):
         """Two insertion_scans in same Party reuse marker name _ins.
 
-        Code uses hardcoded _ins — if both scans are on the same chain,
-        second region_scan may encounter the first's tags.
-        Result: clear ValueError at construction time.
+        Every splice marker has length zero, and each scan consumes its tags
+        before returning, so reuse is safe. Replacement scans instead include
+        their marker length in the internal name.
         """
         with pp.Party():
             bg = pp.from_seq("ACGTACGT")

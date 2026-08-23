@@ -59,6 +59,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   faster barcode generation at scale.
 
 ### Added
+- `insertion_scan_orf`, supporting coding-boundary splices and whole-codon
+  overwrites across all six reading frames, including coding-oriented insert
+  pools and ORF-specific design cards.
+- `deletion_scan_orf`, a whole-codon deletion scan that supports all six
+  reading frames, preserves orphan bases, and reports coding-aware design cards.
 - `orf_ops/_frame.py`, holding the single `frame_offset()` and `resolve_frame()`
   used by the three frame-aware operations (`translate`, `mutagenize_orf`,
   `stylize_orf`). `resolve_frame` was previously defined once per operation
@@ -95,6 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complete-codon counts are clamped at zero when a region is shorter than its
   frame offset, so ORF operations no longer report negative sequence lengths
   or codon counts.
+- Multiple deletion and replacement scans with different edit lengths can now
+  coexist in one Party without colliding on internal region names.
 - `mutagenize_orf` now honors `codon_positions` for named regions in
   random mode. Previously, explicit lists and slices were silently replaced
   with all available codons. Restrictions are now resolved against runtime

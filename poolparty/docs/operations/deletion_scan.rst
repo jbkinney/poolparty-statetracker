@@ -45,9 +45,10 @@ Parameters
      - Restrict the scan to a named region or ``[start, stop]`` interval.
        Flanking sequences are never modified.
    * - ``positions``
-     - ``list[int] | None``
+     - ``list[int] | slice | None``
      - ``None``
-     - Explicit list of window start positions. ``None`` = all valid positions.
+     - Window start positions in nucleotide units. ``None`` selects all valid
+       positions; a ``slice`` selects from that range.
    * - ``mode``
      - ``str``
      - ``'random'``
@@ -78,6 +79,12 @@ Parameters
    Only the most commonly used parameters are shown above. For the full
    parameter list, see :func:`~poolparty.deletion_scan` in the
    :doc:`API Reference </api>`.
+
+.. warning::
+
+   ``deletion_scan`` uses nucleotide positions and can start a deletion inside
+   a codon. For whole-codon edits, use :doc:`deletion_scan_orf`; it understands
+   reading frames, coding orientation, and incomplete orphan bases.
 
 Examples
 --------

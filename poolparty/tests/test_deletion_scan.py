@@ -349,6 +349,65 @@ class TestDeletionScanEdgeCases:
             assert seq.count("-") == 9
             assert seq.count("A") == 1
 
+    def test_chain_different_deletion_lengths(self):
+        """Deletion scans of different lengths can coexist in one Party."""
+        with pp.Party() as party:
+            result = (
+                pp.from_seq("ACGTAC")
+                .deletion_scan(
+                    deletion_length=1,
+                    positions=[0],
+                    mode="sequential",
+                )
+                .deletion_scan(
+                    deletion_length=2,
+                    positions=[1],
+                    mode="sequential",
+                )
+            )
+
+            assert party.get_region_by_name("_del_len1").seq_length == 1
+            assert party.get_region_by_name("_del_len2").seq_length == 2
+
+        df = result.generate_library(num_cycles=1)
+        assert df["seq"].tolist() == ["---TAC"]
+
+    def test_branch_different_true_deletion_lengths_with_cards(self):
+        """Length-qualified markers work for functional branches and cards."""
+        with pp.Party():
+            bg = pp.from_seq("ACGTAC")
+            short = deletion_scan(
+                bg,
+                deletion_length=1,
+                deletion_marker=None,
+                positions=[0],
+                mode="sequential",
+                cards=["name", "region_seq"],
+            )
+            long = deletion_scan(
+                bg,
+                deletion_length=2,
+                deletion_marker=None,
+                positions=[1],
+                mode="sequential",
+                cards=["name", "region_seq"],
+            )
+
+        short_df = short.generate_library(num_cycles=1)
+        long_df = long.generate_library(num_cycles=1)
+
+        short_name = next(column for column in short_df if column.endswith(".name"))
+        short_region_seq = next(column for column in short_df if column.endswith(".region_seq"))
+        long_name = next(column for column in long_df if column.endswith(".name"))
+        long_region_seq = next(column for column in long_df if column.endswith(".region_seq"))
+
+        assert short_df["seq"].tolist() == ["CGTAC"]
+        assert short_df[short_name].tolist() == ["_del_len1"]
+        assert short_df[short_region_seq].tolist() == ["<_del_len1>A</_del_len1>"]
+        assert long_df["seq"].tolist() == ["ATAC"]
+        assert long_df[long_name].tolist() == ["_del_len2"]
+        assert long_df[long_region_seq].tolist() == ["<_del_len2>CG</_del_len2>"]
+
 
 class TestDeletionVsReplacement:
     """Test equivalence between deletion_scan with marker and replacement_scan."""
