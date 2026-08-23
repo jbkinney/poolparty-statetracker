@@ -140,6 +140,23 @@ class TestTranslateBasic:
             df = protein_pool.generate_library()
             assert df["seq"].iloc[0] == "MA*"
 
+    def test_ambiguous_complete_codon_raises_clear_error(self):
+        """Translation requires exact bases in every complete codon."""
+        with pp.Party():
+            pool = pp.from_seq("ATGNNNAAA").translate()
+            with pytest.raises(ValueError, match=r"codon 1.*NNN"):
+                pool.generate_library()
+
+    @pytest.mark.parametrize(
+        ("sequence", "frame"),
+        [("NATGAAA", 2), ("TTTCATN", -2)],
+    )
+    def test_ambiguous_orphan_is_not_translated(self, sequence, frame):
+        """An ambiguous frame-offset base does not invalidate complete codons."""
+        with pp.Party():
+            pool = pp.from_seq(sequence).translate(frame=frame)
+            assert pool.generate_library()["seq"].iloc[0] == "MK"
+
     def test_translate_empty_sequence(self):
         """Test translating empty/too-short sequence."""
         with pp.Party():
@@ -147,6 +164,14 @@ class TestTranslateBasic:
             df = pool.generate_library()
             # Empty sequence may return None or "" depending on implementation
             assert df["seq"].iloc[0] in ("", None)
+
+    @pytest.mark.parametrize("frame", [3, -3])
+    def test_tiny_off_frame_sequence_has_zero_length(self, frame):
+        """A span shorter than its frame offset has zero complete codons."""
+        with pp.Party():
+            pool = pp.from_seq("A").translate(frame=frame)
+            assert pool.seq_length == 0
+            assert pool.generate_library()["seq"].iloc[0] == ""
 
 
 class TestTranslateFrame:

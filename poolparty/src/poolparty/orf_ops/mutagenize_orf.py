@@ -14,9 +14,9 @@ from ..pool import Pool
 from ..region import VALID_FRAMES
 from ..types import CardsType, ModeType, Optional, RegionType, Seq, Sequence, Union, beartype
 from ..utils.dna_seq import DnaSeq
-from ..utils.dna_utils import reverse_complement
-from ..utils.parsing_utils import find_all_regions
-from ._frame import frame_offset, resolve_frame
+from ..utils.dna_utils import VALID_CHARS, reverse_complement
+from ..utils.parsing_utils import validate_single_region
+from ._frame import complete_codon_count, frame_offset, resolve_frame
 
 
 @beartype
@@ -45,7 +45,9 @@ def mutagenize_orf(
         Parent pool or sequence string to mutate.
     region : RegionType, default=None
         Region to mutate. Can be marker name (e.g., "orf") or [start, stop].
-        If None, mutates the entire sequence.
+        If None, mutates the entire sequence. Intervals use half-open nontag
+        coordinates: tags do not count, while gaps count when selecting the
+        span and are excluded afterward when forming codons.
     num_mutations : Optional[Integral], default=None
         Fixed number of codon mutations (mutually exclusive with mutation_rate).
     mutation_rate : Optional[Real], default=None
@@ -93,7 +95,8 @@ def mutagenize_orf(
         If frame is None and region is a named plain Region (not OrfRegion),
         if mutation_rate is used with sequential mode, if mutation_type is
         non-uniform with sequential mode, or if num_mutations exceeds
-        eligible codons.
+        eligible codons. Codons selected for mutation must contain only A, C,
+        G, or T; unselected IUPAC ambiguity codes are preserved.
     """
     from ..fixed_ops.from_seq import from_seq
 
@@ -225,8 +228,7 @@ class MutagenizeOrfOp(Operation):
         # For positive frames: skip frame_offset bases at the start
         # For negative frames: skip frame_offset bases at the end
         orf_length = self.orf_end - self.orf_start
-        effective_length = orf_length - self.frame_offset
-        self.num_codons = effective_length // 3
+        self.num_codons = complete_codon_count(orf_length, self.frame)
 
         # Preserve the user's specification so named regions can resolve it
         # against their actual molecular codon count at generation time.
@@ -302,32 +304,48 @@ class MutagenizeOrfOp(Operation):
         if self._orf_region is None:
             return (0, mol_length)
 
-        # Handle [start, stop] interval - these are molecular coordinates
+        # Handle [start, stop] interval in nontag coordinates. Convert the
+        # selected span to molecular bounds only after applying its boundaries,
+        # so gaps inside or before the interval cannot move those boundaries.
         if not isinstance(self._orf_region, str):
-            return (int(self._orf_region[0]), int(self._orf_region[1]))
+            start, stop = int(self._orf_region[0]), int(self._orf_region[1])
+            mol_start = sum(
+                seq_obj.string[seq_obj.nontag_to_literal(pos)] in DnaSeq.VALID_CHARS
+                for pos in range(start)
+            )
+            region_mol_length = sum(
+                seq_obj.string[seq_obj.nontag_to_literal(pos)] in DnaSeq.VALID_CHARS
+                for pos in range(start, stop)
+            )
+            return (mol_start, mol_start + region_mol_length)
 
-        # Handle region name - find the region and convert to molecular coordinates
-        try:
-            found_regions = find_all_regions(seq_obj.string)
-        except ValueError:
-            return (0, mol_length)
+        # A named region must resolve exactly; never broaden a missing,
+        # duplicate, malformed, or gap-bounded region to the whole sequence.
+        region = validate_single_region(seq_obj.string, self._orf_region)
 
-        for r in found_regions:
-            if r.name == self._orf_region:
-                # Convert content positions to molecular coordinates
-                # content_start and content_end are literal positions
-                mol_start = seq_obj.literal_to_molecular(r.content_start)
-                mol_end_lit = r.content_end - 1  # Last char of content
-                mol_end = seq_obj.literal_to_molecular(mol_end_lit)
+        for literal_pos in range(region.content_start, region.content_end):
+            mol_start = seq_obj.literal_to_molecular(literal_pos)
+            if mol_start is not None:
+                break
+        else:
+            # The region has no molecular bases. Locate its empty molecular
+            # boundary from the nearest preceding molecular base.
+            empty_bound = 0
+            for literal_pos in range(region.content_start - 1, -1, -1):
+                previous = seq_obj.literal_to_molecular(literal_pos)
+                if previous is not None:
+                    empty_bound = previous + 1
+                    break
+            return (empty_bound, empty_bound)
 
-                if mol_start is None or mol_end is None:
-                    # Region contains non-molecular characters at boundaries
-                    return (0, mol_length)
+        mol_end = mol_start
+        for literal_pos in range(region.content_end - 1, region.content_start - 1, -1):
+            candidate = seq_obj.literal_to_molecular(literal_pos)
+            if candidate is not None:
+                mol_end = candidate
+                break
 
-                return (mol_start, mol_end + 1)  # +1 to make it exclusive end
-
-        # Region not found - use entire sequence
-        return (0, mol_length)
+        return (mol_start, mol_end + 1)
 
     def _extract_codons_molecular(
         self, seq_obj: Seq, mol_start: int, mol_end: int, frame_offset: int
@@ -346,8 +364,7 @@ class MutagenizeOrfOp(Operation):
         """
         codons = []
         orf_length = mol_end - mol_start
-        effective_length = orf_length - frame_offset
-        num_complete_codons = effective_length // 3
+        num_complete_codons = complete_codon_count(orf_length, self.frame)
 
         if self.reverse:
             # For negative frames: skip frame_offset bases at the END
@@ -417,6 +434,18 @@ class MutagenizeOrfOp(Operation):
             raise ValueError("codon_positions must not contain duplicates")
         return positions
 
+    @staticmethod
+    def _require_exact_codon(codon: str, position: int) -> str:
+        """Return an uppercase codon, rejecting non-ACGT selected codons."""
+        exact_codon = codon.upper()
+        if any(base not in VALID_CHARS for base in exact_codon):
+            raise ValueError(
+                f"mutagenize_orf() cannot mutate non-ACGT codon {position} "
+                f"('{exact_codon}'); selected codons must contain only "
+                "A, C, G, or T."
+            )
+        return exact_codon
+
     def _random_mutation(
         self,
         codons: list[str],
@@ -440,7 +469,7 @@ class MutagenizeOrfOp(Operation):
 
         wt_codons, mut_codons, wt_aas, mut_aas = [], [], [], []
         for pos in positions:
-            wt = codons[pos].upper()
+            wt = self._require_exact_codon(codons[pos], pos)
             wt_codons.append(wt)
             wt_aas.append(self.codon_table.codon_to_aa.get(wt, "?"))
             alternatives = self.codon_table.get_mutations(wt, self.mutation_type)
@@ -468,8 +497,7 @@ class MutagenizeOrfOp(Operation):
         # actual molecular bounds at compute time. Random mode must then
         # re-apply the user's codon_positions specification to that count.
         if isinstance(self._orf_region, str):
-            effective_length = orf_length - self.frame_offset
-            num_codons = effective_length // 3
+            num_codons = complete_codon_count(orf_length, self.frame)
             if self.mode == "random":
                 eligible_positions = self._resolve_codon_positions(
                     self._codon_positions, num_codons
@@ -482,6 +510,33 @@ class MutagenizeOrfOp(Operation):
                     )
             else:
                 eligible_positions = self.eligible_positions
+        elif self._orf_region is not None:
+            # Interval regions use nontag coordinates, so gaps can make their
+            # runtime molecular codon count smaller than stop - start.
+            num_codons = complete_codon_count(orf_length, self.frame)
+            runtime_eligible_positions = self._resolve_codon_positions(
+                self._codon_positions, num_codons
+            )
+
+            if self.mode == "random":
+                eligible_positions = runtime_eligible_positions
+                if self.num_mutations is not None and self.num_mutations > len(eligible_positions):
+                    raise ValueError(
+                        f"num_mutations ({self.num_mutations}) exceeds the number of "
+                        f"eligible codon positions ({len(eligible_positions)}) for "
+                        f"the runtime region geometry ({num_codons} complete codons)."
+                    )
+            else:
+                if runtime_eligible_positions != self.eligible_positions:
+                    raise ValueError(
+                        "Sequential enumeration cannot resolve one fixed state space "
+                        "for this interval: its runtime eligible codon positions "
+                        f"are {runtime_eligible_positions}, but initialization resolved "
+                        f"{self.eligible_positions}. Use mode='random' or provide an "
+                        "explicit codon_positions list that is valid for the realized "
+                        "interval."
+                    )
+                eligible_positions = self.eligible_positions
         else:
             num_codons = self.num_codons
             eligible_positions = self.eligible_positions
@@ -490,12 +545,37 @@ class MutagenizeOrfOp(Operation):
         codons = self._extract_codons_molecular(parent_seq, mol_start, mol_end, self.frame_offset)
 
         if self.mode == "random":
+            if self._orf_region is None and len(codons) != self.num_codons:
+                eligible_positions = self._resolve_codon_positions(
+                    self._codon_positions, len(codons)
+                )
+                if self.num_mutations is not None and self.num_mutations > len(eligible_positions):
+                    raise ValueError(
+                        f"num_mutations ({self.num_mutations}) exceeds the number of "
+                        f"eligible codon positions ({len(eligible_positions)}) for "
+                        "the runtime full-sequence geometry "
+                        f"({len(codons)} complete codons)."
+                    )
             if rng is None:
                 raise RuntimeError(f"{self.mode.capitalize()} mode requires RNG")
             positions, wt_codons, mut_codons, wt_aas, mut_aas = self._random_mutation(
                 codons, rng, eligible_positions
             )
         else:
+            if (self._orf_region is None or isinstance(self._orf_region, str)) and len(
+                codons
+            ) != self.num_codons:
+                runtime_eligible_positions = self._resolve_codon_positions(
+                    self._codon_positions, len(codons)
+                )
+                if runtime_eligible_positions != self.eligible_positions:
+                    raise ValueError(
+                        "Sequential enumeration cannot resolve one fixed state space "
+                        "for this ORF: its runtime eligible codon positions are "
+                        f"{runtime_eligible_positions}, but initialization resolved "
+                        f"{self.eligible_positions}. Provide an explicit "
+                        "codon_positions list valid for the realized ORF."
+                    )
             if self._sequential_cache is None:
                 self._build_caches()
             # Use state 0 when inactive (state is None)
@@ -514,7 +594,7 @@ class MutagenizeOrfOp(Operation):
 
             wt_codons, mut_codons, wt_aas, mut_aas = [], [], [], []
             for pos, mut_idx in zip(positions, mut_indices):
-                wt = codons[pos].upper()
+                wt = self._require_exact_codon(codons[pos], pos)
                 wt_codons.append(wt)
                 wt_aas.append(self.codon_table.codon_to_aa.get(wt, "?"))
                 alternatives = self.codon_table.get_mutations(wt, self.mutation_type)

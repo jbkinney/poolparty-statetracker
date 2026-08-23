@@ -9,7 +9,7 @@ from ..operation import Operation
 from ..pool import Pool
 from ..region import VALID_FRAMES
 from ..types import Optional, Pool_type, RegionType, Seq, Union, beartype
-from ..utils.dna_utils import VALID_CHARS
+from ..utils.dna_seq import DnaSeq
 from ._frame import frame_offset, resolve_frame
 
 
@@ -186,14 +186,14 @@ class StylizeOrfOp(Operation):
     ) -> np.ndarray:
         """Get molecular positions within the region bounds.
 
-        Only includes positions with valid DNA characters (ACGTacgt).
-        Tag characters and non-molecular characters (gaps, etc.) are skipped.
+        Includes canonical and IUPAC DNA bases. Tag characters and
+        non-molecular characters (gaps, etc.) are skipped.
         """
         tag_positions = self._get_tag_positions(seq)
 
         positions = []
         for i in range(region_start, region_end):
-            if i not in tag_positions and seq[i] in VALID_CHARS:
+            if i not in tag_positions and seq[i] in DnaSeq.VALID_CHARS:
                 positions.append(i)
 
         return np.array(positions, dtype=np.int64)

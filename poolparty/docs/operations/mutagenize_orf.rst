@@ -49,12 +49,17 @@ Parameters
      - ``str | list[int] | None``
      - ``None``
      - Region to mutate: a tagged ORF name, a ``[start, stop]`` interval, or
-       ``None`` to mutate the full sequence.
+       ``None`` to mutate the full sequence. Intervals use half-open nontag
+       coordinates: annotation tags do not count, while gaps do count when
+       selecting the span. Gaps are then excluded when forming codons inside
+       that span. A named region uses its exact tagged content; boundary gaps
+       are ignored when forming codons without broadening the region.
    * - ``codon_positions``
      - ``list[int] | slice | None``
      - ``None``
      - Eligible codon indices (0-based); ``None`` means every codon in the
-       mutated span may change.
+       mutated span may change. A codon selected for mutation must contain
+       only A, C, G, or T; unselected IUPAC ambiguity codes are preserved.
    * - ``frame``
      - ``int | None``
      - ``None``
@@ -101,6 +106,22 @@ Parameters
    Only the most commonly used parameters are shown above. For the full
    parameter list, see :func:`~poolparty.mutagenize_orf` in the
    :doc:`API Reference </api>`.
+
+.. note::
+
+   Sequential mode requires the eligible codon positions inferred at
+   initialization to remain valid for every realized ORF. If gaps change those
+   positions, provide an explicit ``codon_positions`` list that is valid for
+   every realization; otherwise ``mutagenize_orf`` raises instead of enumerating
+   an inconsistent state space. This applies to the full sequence, named
+   regions, and explicit intervals. Random mode resolves eligible positions
+   independently for every realized full sequence, named region, or interval.
+
+.. note::
+
+   A named region must occur exactly once in every realized sequence.
+   ``mutagenize_orf`` raises if it is missing, duplicated, or malformed rather
+   than silently mutating the full sequence.
 
 Examples
 --------

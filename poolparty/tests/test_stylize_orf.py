@@ -405,6 +405,24 @@ class TestStylizeOrfRegion:
 class TestStylizeOrfSkipNonMolecular:
     """Test that non-molecular characters are skipped."""
 
+    def test_iupac_bases_are_molecular_but_gaps_are_not(self):
+        """IUPAC bases occupy codons without making gaps molecular."""
+        with pp.Party():
+            pool = stylize_orf(
+                "ATG-NNN-AAA",
+                style_codons=["c0", "c1", "c2"],
+            ).named("test")
+
+        df = pool.generate_library(num_seqs=1, _include_inline_styles=True)
+        seq_style = df["_inline_styles"].iloc[0]
+        positions_by_style = {spec: set(positions) for spec, positions in seq_style.style_list}
+
+        assert positions_by_style == {
+            "c0": {0, 1, 2},
+            "c1": {4, 5, 6},
+            "c2": {8, 9, 10},
+        }
+
     def test_skip_gaps(self):
         """Gap characters are skipped in frame calculation."""
         with pp.Party():
