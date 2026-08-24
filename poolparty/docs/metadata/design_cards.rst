@@ -158,6 +158,12 @@ invalid key raises ``ValueError``.
    * - ``from_seqs``
      - ``seq_name``, ``seq_index``
      - Name and index of the selected input sequence.
+   * - ``from_vcf``
+     - ``chrom``, ``pos``, ``ref``, ``alt``, ``allele``, ``variant_type``,
+       ``variant_id``, ``filter``, ``window_start``, ``window_stop``, plus
+       ``info_<KEY>`` for each requested INFO field
+     - Position, alleles, and annotation of the source variant. The
+       alternate-allele keys are ``None`` on a reference row.
    * - ``get_kmers``
      - ``kmer_index``, ``kmer``
      - Index and string of the generated k-mer.
