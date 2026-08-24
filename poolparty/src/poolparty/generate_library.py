@@ -217,6 +217,21 @@ def generate_library(
     return df
 
 
+def _draws_fresh_sequences(pool: Pool_type) -> bool:
+    """Whether some operation draws a new sequence for every row.
+
+    A random operation built without ``num_states`` is seeded from the row
+    counter rather than from its own state (see ``_compute_one``), so it yields
+    a different sequence each time the traversal passes it. Such a pool can
+    always produce more sequences, and its state count does not bound its
+    output.
+    """
+    return any(
+        op.mode == "random" and not op.action_uniquely_determined_by_state
+        for op in _topo_sort_operations(pool)
+    )
+
+
 def _topo_sort_operations(pool: Pool_type) -> list:
     """Topologically sort operations reachable from pool."""
     from .operation import Operation

@@ -188,6 +188,11 @@ Library Generation
 
 .. autofunction:: poolparty.generate_library
 
+Library Statistics
+------------------
+
+.. autofunction:: poolparty.stats
+
 Utility Functions
 -----------------
 

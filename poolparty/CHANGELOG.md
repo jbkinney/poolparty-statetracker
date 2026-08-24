@@ -64,6 +64,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pools and ORF-specific design cards.
 - `deletion_scan_orf`, a whole-codon deletion scan that supports all six
   reading frames, preserves orphan bases, and reports coding-aware design cards.
+- `pp.stats(pool)` and `pool.stats()` summarise the library a pool produces:
+  how many sequences are unique and how many are duplicates, the minimum, mean
+  and maximum pairwise Hamming distance, the range of GC content, the mean and
+  maximum DUST repetitiveness, and how often sequences carry a long homopolymer
+  run or a restriction site. Report only -- the pool is left exactly as it was, including
+  the cursor that decides which sequence `generate_library` returns next. The
+  result is a `dict` that prints as a formatted report.
+  A pool records how to build a library rather than the library itself, so
+  `stats` has to generate before it can measure. A design with a fixed size is
+  measured in full up to `Operation.max_num_sequential_states`; above that, and
+  for a design containing a random operation without `num_states` (which has no
+  total number of sequences at all), pass `num_seqs=`.
+- `pp.longest_homopolymer`, alongside the existing thresholded
+  `has_homopolymer`.
 - `orf_ops/_frame.py`, holding the single `frame_offset()` and `resolve_frame()`
   used by the three frame-aware operations (`translate`, `mutagenize_orf`,
   `stylize_orf`). `resolve_frame` was previously defined once per operation
@@ -102,6 +116,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   or codon counts.
 - Multiple deletion and replacement scans with different edit lengths can now
   coexist in one Party without colliding on internal region names.
+- `to_df` and `to_file` no longer re-emit sequences when `num_cycles` is used on
+  a pool containing a filter. A filter replaces rejected sequences with
+  `NullSeq` rather than removing them, so one cycle yields fewer rows than
+  `num_states`; the export path used to make up the shortfall by traversing the
+  states again, silently returning duplicates. `num_cycles` now counts states
+  traversed, so a cycle returns exactly the sequences that survive it.
+  `num_seqs` is unaffected and still samples until the requested count is met.
+- `to_file` now says when a FASTA export drops filtered-out sequences. FASTA
+  cannot represent a record with no sequence, so those rows were omitted even
+  with `discard_null_seqs=False`, and the returned count silently differed from
+  CSV, TSV and JSONL. One warning per call, naming how many were omitted.
+- `calc_dust` now cites Morgulis et al. (2006), which describes the DUST score
+  it computes, rather than the SIMPLE algorithm of Hancock and Armstrong (1994).
 - `mutagenize_orf` now honors `codon_positions` for named regions in
   random mode. Previously, explicit lists and slices were silently replaced
   with all available codons. Restrictions are now resolved against runtime

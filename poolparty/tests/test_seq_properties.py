@@ -10,6 +10,7 @@ from poolparty.utils.seq_properties import (
     get_sites_for_enzymes,
     has_homopolymer,
     has_restriction_site,
+    longest_homopolymer,
 )
 
 
@@ -167,6 +168,47 @@ class TestExpandIupac:
         result = _expand_iupac("AN")
         assert len(result) == 4
         assert set(result) == {"AA", "AC", "AG", "AT"}
+
+
+class TestLongestHomopolymer:
+    """Tests for longest_homopolymer function."""
+
+    def test_no_repeats(self):
+        """Test that a sequence with no repeats has a longest run of 1."""
+        assert longest_homopolymer("ACGTACGT") == 1
+
+    def test_finds_the_run(self):
+        """Test that the length of a single run is reported."""
+        assert longest_homopolymer("ACGTAAAACGT") == 4
+
+    def test_longest_run_wins_not_the_first(self):
+        """Test that a later, longer run is preferred over an earlier one."""
+        assert longest_homopolymer("AAACCCC") == 4
+
+    def test_run_at_either_end(self):
+        """Test runs at the start and end of the sequence."""
+        assert longest_homopolymer("AAAACGT") == 4
+        assert longest_homopolymer("ACGTTTTT") == 5
+
+    def test_case_insensitive(self):
+        """Test that a run is found regardless of the case of its bases."""
+        assert longest_homopolymer("acgtaaaacgt") == 4
+        assert longest_homopolymer("ACGTaAaAcgt") == 4
+
+    def test_whole_sequence_is_one_run(self):
+        """Test a sequence that is a single homopolymer."""
+        assert longest_homopolymer("AAAAA") == 5
+
+    def test_empty_sequence(self):
+        """Test that an empty sequence has no run."""
+        assert longest_homopolymer("") == 0
+
+    def test_agrees_with_has_homopolymer(self):
+        """Test that the length and the threshold check tell the same story."""
+        seq = "ACGTAAAACGT"
+
+        assert has_homopolymer(seq, longest_homopolymer(seq) - 1) is True
+        assert has_homopolymer(seq, longest_homopolymer(seq)) is False
 
 
 class TestHasRestrictionSite:

@@ -63,8 +63,10 @@ Properties
      - Human-readable name for this pool. Settable. Defaults to ``"pool[N]"``.
    * - ``num_states``
      - ``int``
-     - Number of distinct sequences this pool produces (the total across the
-       entire pipeline).
+     - Number of states this pool has (the total across the entire pipeline).
+       This is not the number of *distinct* sequences the pool produces, and is
+       neither an upper nor a lower bound on it -- see
+       :ref:`states-vs-sequences`. Use :ref:`stats <pool-stats>` to count them.
    * - ``seq_length``
      - ``int | None``
      - Fixed sequence length, or ``None`` for variable-length pools.
@@ -82,8 +84,11 @@ Properties
 
 Internally, each sequence is identified by a *state* -- an integer that,
 together with a random seed, uniquely determines the sequence content.
-``pool.num_states`` is the total number of distinct states (and therefore
-distinct sequences) the pool can produce.
+``pool.num_states`` is the total number of distinct states the pool can produce.
+
+Distinct states do not always mean distinct sequences; see
+:ref:`states-vs-sequences` for the cases, and :ref:`stats <pool-stats>` for what
+a pool actually produced.
 
 Note that ``pool.num_states`` and ``pool.operation.num_states`` are different
 values. The pool's ``num_states`` is the total across the entire pipeline,
@@ -412,6 +417,232 @@ Returns the number of sequences written. See :class:`~poolparty.Pool` in the
     >pool[0].2 GC=0.125
     AAAAAAAG
     ...
+
+----
+
+.. _pool-stats:
+
+Summarising a library — ``stats(...)``
+--------------------------------------
+
+Generate the library and report on it: how many sequences are unique and how
+many are duplicates, how far apart they are, and how often they carry features
+that complicate synthesis. Nothing about the pool or its library changes.
+
+.. code-block:: python
+
+    seqs = ["AAAATTTT", "GGGGCCCC", "AATTAATT", "GGCCGGCC", "ACGTACGT"]
+    pool = pp.from_seqs(seqs, mode="sequential").filter_gc(max_gc=0.5)
+    print(pool.stats())
+
+``filter_gc`` is one of the constraint filters on ``DnaPool``; see
+:doc:`operations/filter`.
+
+.. code-block:: text
+
+    pool.stats()  -  5 of 5 sequences in the design
+
+    Composition
+      design size (num_states)             5
+      generated                            5
+      filtered out                         2
+      unique sequences                     3
+      duplicate sequences                  0   (0.0%)
+      most-repeated sequence               1 copy
+
+    Length
+      min / max                        8 / 8
+
+    GC content
+      min / mean / max          0.000 / 0.167 / 0.500
+
+    Homopolymer runs
+      longest run                          4
+      sequences with a run > 6          0.0%
+
+    Repetitiveness (DUST)
+      mean / max                 0.33 / 0.33
+
+    Pairwise distance (Hamming)
+      exact, all 3 pairs
+      min / mean / max          4 / 4.7 / 6
+
+The result is a ``dict``, so individual numbers can be read out, saved as JSON,
+or collected into a table:
+
+.. code-block:: python
+
+    import pandas as pd
+
+    pool.stats()["frac_duplicate_seqs"]
+    pd.DataFrame([pool.stats(), other_pool.stats()])
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``num_seqs``
+     - ``int | None``
+     - ``None``
+     - Generate exactly this many sequences.
+   * - ``num_cycles``
+     - ``int | None``
+     - ``None``
+     - Generate this many complete passes through the state space. For a design
+       with a fixed size, ``num_cycles=1`` means the whole design; a design
+       without a fixed size has no passes to make, so ``num_cycles`` is
+       refused.
+   * - ``seed``
+     - ``int | None``
+     - ``None``
+     - Random seed. Fixes both the sequences a randomly-sampling pool produces
+       and the subsample used for pairwise distances.
+   * - ``max_hamming_seqs``
+     - ``int | None``
+     - ``2000``
+     - Compare at most this many sequences pairwise. ``None`` skips the
+       distance statistics.
+   * - ``max_homopolymer_run``
+     - ``int | None``
+     - ``6``
+     - Longest single-base run to tolerate. ``None`` omits
+       ``frac_seqs_with_long_homopolymer``.
+   * - ``enzymes``
+     - ``list[str] | None``
+     - ``None``
+     - Restriction enzyme names, or preset names such as ``'golden_gate'``.
+   * - ``sites``
+     - ``list[str] | None``
+     - ``None``
+     - Recognition sequences to look for, IUPAC codes allowed. Reverse
+       complements are checked as well.
+   * - ``show_progress``
+     - ``bool``
+     - ``True``
+     - Show a progress bar while generating.
+
+What the report contains
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * - Key
+     - Meaning
+   * - ``num_states``
+     - Size of the design, or ``None`` when it has no fixed size.
+   * - ``open_ended``
+     - Whether the design draws a fresh sequence for every row.
+   * - ``num_generated_seqs``
+     - Sequences generated, including those a filter rejected.
+   * - ``frac_design_covered``
+     - Sequences generated per state, so above 1 for more than one cycle.
+       ``None`` when the design has no fixed size.
+   * - ``num_filtered_out_seqs``
+     - Sequences a filter rejected.
+   * - ``num_valid_seqs``
+     - Sequences that survived.
+   * - ``num_unique_seqs``
+     - How many different sequences there are.
+   * - ``num_duplicate_seqs``
+     - Excess copies: a sequence appearing three times contributes two.
+   * - ``frac_duplicate_seqs``
+     - ``num_duplicate_seqs`` over ``num_valid_seqs``.
+   * - ``max_seq_copies``
+     - Most copies any single sequence has.
+   * - ``length_min``, ``length_max``
+     - Shortest and longest sequence length.
+   * - ``gc_min``, ``gc_mean``, ``gc_max``
+     - GC content as a fraction.
+   * - ``longest_homopolymer``
+     - Longest single-base run anywhere in the library.
+   * - ``frac_seqs_with_long_homopolymer``
+     - Fraction of sequences with a run longer than ``max_homopolymer_run``.
+       Absent when that argument is ``None``.
+   * - ``dust_mean``, ``dust_max``
+     - DUST repetitiveness score; higher is more repetitive.
+   * - ``frac_seqs_with_restriction_site``
+     - Fraction of sequences containing one of the requested sites. Absent
+       unless ``enzymes`` or ``sites`` was given.
+   * - ``hamming_exact``
+     - ``True`` when every pair was compared, ``False`` when a subsample was.
+   * - ``hamming_seqs_compared``
+     - How many sequences entered the comparison.
+   * - ``hamming_min``, ``hamming_mean``, ``hamming_max``
+     - Pairwise Hamming distance. Absent unless at least two sequences of
+       equal length survived.
+
+How much of the design is measured
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A pool records how to build a library rather than the library itself, and
+duplicates cannot be counted in a recipe, so ``stats`` generates sequences
+before measuring anything. How many it generates depends on the design:
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * - Design
+     - ``pool.stats()``
+   * - Fixed size, at most 1,000,000 sequences
+     - Measures all of it.
+   * - Fixed size, more than 1,000,000 sequences
+     - Raises, so an accidental call cannot start an enormous job. Pass
+       ``num_seqs=`` to measure part of it, or ``num_cycles=1`` to ask for all
+       of it deliberately.
+   * - No fixed size (a random operation without ``num_states``)
+     - Raises: there is no "all of it" to measure. Pass ``num_seqs=``.
+
+A count given explicitly is always honoured and never capped.
+
+.. note::
+
+   Many operations default to ``mode='random'`` -- among them ``mutagenize``,
+   ``shuffle_seq``, ``from_iupac``, ``get_kmers``, ``from_seqs`` and the
+   scans. Without ``num_states`` such an operation draws a fresh sequence for
+   every row, so the design has no fixed size and ``pool.stats()`` will ask for
+   a count. Either pass ``num_seqs=``, or build the design with
+   ``mode='sequential'`` or an explicit ``num_states=`` to give it a size.
+
+Reading the numbers
+~~~~~~~~~~~~~~~~~~~
+
+Everything except the pairwise distances is exact and linear in the number of
+sequences. Comparing every pair costs time quadratic in the number of
+sequences, so above ``max_hamming_seqs`` a random subsample is compared instead
+and ``hamming_exact`` is ``False``. A subsample estimates the mean
+well, but it sees only a small fraction of the pairs, so the reported minimum
+is an upper bound on the true minimum and the maximum a lower bound.
+``num_duplicate_seqs`` is always exact, so use it to answer whether any two
+sequences are identical.
+
+Region tags are stripped before measuring, and sequences are compared
+case-insensitively -- a library whose members differ only in case counts as one
+sequence. Gap characters left by a deletion operation count toward length,
+homopolymer runs and DUST, but not toward GC content.
+
+Keys that were not computed are absent from the result: there are no
+restriction-site keys unless ``enzymes`` or ``sites`` was given, and no distance
+keys when the sequences differ in length. Two keys are present but ``None`` when
+the design has no fixed size: ``num_states`` and ``frac_design_covered``.
+
+Calling ``stats`` leaves the pool exactly as it was, including the internal
+cursor that decides which sequence ``generate_library`` returns next.
+
+``stats`` is available on ``DnaPool``. Several of its statistics are
+DNA-specific, so ``ProteinPool`` is not supported.
+
+.. note::
+
+   Several of these numbers have a matching operation that acts on them --
+   see :doc:`operations/filter` for filtering on GC content, homopolymer runs,
+   repetitiveness and restriction sites.
 
 ----
 

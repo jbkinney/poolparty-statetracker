@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from ..generate_library import _draws_fresh_sequences
 from ..types import Callable, Integral, Literal, Optional, Union
 
 # Regex to strip region tags from sequences
@@ -108,7 +109,11 @@ class ExportMixin:
         num_seqs : int, optional
             Number of sequences to generate. Required if num_cycles not specified.
         num_cycles : int, optional
-            Number of complete cycles through state space.
+            Number of complete cycles through state space. Because a filtered
+            pool holds ``NullSeq`` in place of rejected sequences, a cycle
+            yields fewer rows than ``num_states``; the output then has fewer
+            than ``num_cycles * num_states`` rows rather than being topped up
+            with repeats.
         chunk_size : int, default 1000
             Number of sequences to generate per chunk. Larger values may be
             faster but use more memory during generation.
@@ -169,6 +174,18 @@ class ExportMixin:
         chunks = []
         generated = 0
 
+        # With num_cycles, target_count counts states traversed rather than rows
+        # collected, and the null rows are dropped here rather than by
+        # generate_library, so that every chunk consumes exactly the states it
+        # asked for. Without that, a filtered pool leaves the loop topping up,
+        # restarting the traversal and re-emitting sequences already returned.
+        #
+        # This only applies when the states determine the sequences. A pool
+        # containing a random operation without num_states draws afresh for
+        # every row, so topping up yields new sequences rather than repeats and
+        # must be left alone; num_seqs likewise asks for rows, not states.
+        target_is_states = num_seqs is None and not _draws_fresh_sequences(self)
+
         # Print export message
         if show_progress:
             print("Exporting to pandas dataframe ...")
@@ -183,12 +200,20 @@ class ExportMixin:
                 df = self.generate_library(
                     num_seqs=this_chunk,
                     seed=seed,
-                    discard_null_seqs=discard_null_seqs,
+                    discard_null_seqs=discard_null_seqs and not target_is_states,
                     _include_inline_styles=write_style,
                 )
 
                 if len(df) == 0:
                     break
+
+                # Measured before dropping nulls: with nulls kept, one row is one
+                # state, so this advances the state budget exactly.
+                consumed = len(df)
+                generated += consumed
+
+                if target_is_states and discard_null_seqs:
+                    df = df[df["seq"].notna()]
 
                 # Strip tags if requested
                 if not write_tags and "seq" in df.columns:
@@ -201,10 +226,9 @@ class ExportMixin:
                     df = df[available]
 
                 chunks.append(df)
-                generated += len(df)
 
                 if pbar is not None:
-                    pbar.update(len(df))
+                    pbar.update(consumed)
 
                 # Increment seed for next chunk to get different sequences
                 if seed is not None:
@@ -259,7 +283,11 @@ class ExportMixin:
         num_seqs : int, optional
             Number of sequences to export. Required if num_cycles not specified.
         num_cycles : int, optional
-            Number of complete cycles through state space.
+            Number of complete cycles through state space. Because a filtered
+            pool holds ``NullSeq`` in place of rejected sequences, a cycle
+            yields fewer rows than ``num_states``; the output then has fewer
+            than ``num_cycles * num_states`` rows rather than being topped up
+            with repeats.
         chunk_size : int, default 1000
             Number of sequences to generate per chunk. Larger values use more
             memory but may be faster.
@@ -274,7 +302,10 @@ class ExportMixin:
         seed : int, optional
             Random seed for reproducibility.
         discard_null_seqs : bool, default True
-            If True, skip sequences that were filtered out (NullSeq).
+            If True, skip sequences that were filtered out (NullSeq). FASTA has
+            no way to write a record with no sequence, so those records are
+            omitted from a FASTA file even when this is False, and the returned
+            count is lower than for CSV, TSV or JSONL.
         columns : list[str], optional
             For CSV/TSV: columns to include in the output. Default columns are
             ``'name'`` and ``'seq'``; operations with design cards add additional
@@ -359,6 +390,10 @@ class ExportMixin:
         else:
             target_count = int(num_cycles) * self.state.num_values
 
+        # See the note in to_df: with num_cycles the target counts states, but
+        # only for a pool whose states determine its sequences.
+        target_is_states = num_seqs is None and not _draws_fresh_sequences(self)
+
         # Print export message
         if show_progress:
             format_str = f"{file_type}.gz" if path.suffix == ".gz" else file_type
@@ -376,6 +411,7 @@ class ExportMixin:
                 discard_null_seqs=discard_null_seqs,
                 columns=columns,
                 sep=",",
+                target_is_states=target_is_states,
                 show_progress=show_progress,
                 **csv_kwargs,
             )
@@ -390,6 +426,7 @@ class ExportMixin:
                 discard_null_seqs=discard_null_seqs,
                 columns=columns,
                 sep="\t",
+                target_is_states=target_is_states,
                 show_progress=show_progress,
                 **csv_kwargs,
             )
@@ -404,6 +441,7 @@ class ExportMixin:
                 discard_null_seqs=discard_null_seqs,
                 line_width=line_width,
                 description=description,
+                target_is_states=target_is_states,
                 show_progress=show_progress,
             )
         else:  # jsonl
@@ -415,6 +453,7 @@ class ExportMixin:
                 write_style=write_style,
                 seed=seed,
                 discard_null_seqs=discard_null_seqs,
+                target_is_states=target_is_states,
                 show_progress=show_progress,
             )
 
@@ -429,29 +468,38 @@ class ExportMixin:
         discard_null_seqs: bool,
         columns: Optional[list[str]],
         sep: str,
+        target_is_states: bool,
         show_progress: bool = False,
         **csv_kwargs,
     ) -> int:
         """Export to CSV/TSV format."""
         written = 0
+        generated = 0
         first_chunk = True
 
         pbar = _make_progress_bar(target_count, "Generating sequences") if show_progress else None
 
         try:
-            while written < target_count:
-                remaining = target_count - written
+            while generated < target_count:
+                remaining = target_count - generated
                 this_chunk = min(chunk_size, remaining)
 
                 df = self.generate_library(
                     num_seqs=this_chunk,
                     seed=seed,
-                    discard_null_seqs=discard_null_seqs,
+                    discard_null_seqs=discard_null_seqs and not target_is_states,
                     _include_inline_styles=write_style,
                 )
 
                 if len(df) == 0:
                     break
+
+                # See the note in to_df: counted before nulls are dropped.
+                consumed = len(df)
+                generated += consumed
+
+                if target_is_states and discard_null_seqs:
+                    df = df[df["seq"].notna()]
 
                 # Strip tags if requested
                 if not write_tags and "seq" in df.columns:
@@ -477,7 +525,7 @@ class ExportMixin:
                 first_chunk = False
 
                 if pbar is not None:
-                    pbar.update(len(df))
+                    pbar.update(consumed)
 
                 # Increment seed for next chunk to get different sequences
                 if seed is not None:
@@ -499,6 +547,7 @@ class ExportMixin:
         discard_null_seqs: bool,
         line_width: Optional[int],
         description: Optional[Union[str, Callable]],
+        target_is_states: bool,
         show_progress: bool = False,
     ) -> int:
         """Export to FASTA format."""
@@ -512,6 +561,7 @@ class ExportMixin:
 
         written = 0
         processed = 0
+        omitted = 0
         first_chunk = True
 
         pbar = _make_progress_bar(target_count, "Generating sequences") if show_progress else None
@@ -524,14 +574,20 @@ class ExportMixin:
                 df = self.generate_library(
                     num_seqs=this_chunk,
                     seed=seed,
-                    discard_null_seqs=discard_null_seqs,
+                    discard_null_seqs=discard_null_seqs and not target_is_states,
                     _include_inline_styles=write_style,
                 )
 
                 if len(df) == 0:
                     break
 
-                chunk_written = 0
+                # See the note in to_df: counted before nulls are dropped.
+                consumed = len(df)
+                processed += consumed
+
+                if target_is_states and discard_null_seqs:
+                    df = df[df["seq"].notna()]
+
                 # Write FASTA entries
                 with _open_file(path, "w" if first_chunk else "a") as f:
                     for _, row in df.iterrows():
@@ -539,7 +595,7 @@ class ExportMixin:
                         seq = row.get("seq", "")
 
                         if seq is None:
-                            processed += 1
+                            omitted += 1
                             continue
 
                         # Strip tags if requested
@@ -565,13 +621,11 @@ class ExportMixin:
                             f.write(seq + "\n")
 
                         written += 1
-                        processed += 1
-                        chunk_written += 1
 
                 first_chunk = False
 
                 if pbar is not None:
-                    pbar.update(chunk_written)
+                    pbar.update(consumed)
 
                 # Increment seed for next chunk
                 if seed is not None:
@@ -579,6 +633,17 @@ class ExportMixin:
         finally:
             if pbar is not None:
                 pbar.close()
+
+        # One warning per call rather than per record, and only when something
+        # was actually lost. Mirrors the write_style warning above: the caller
+        # asked for something this format cannot represent.
+        if omitted:
+            warnings.warn(
+                f"Omitted {omitted:,} filtered-out sequences from the FASTA file: "
+                f"FASTA cannot represent a record with no sequence. Export to CSV, "
+                f"TSV or JSONL to keep them.",
+                stacklevel=3,
+            )
 
         return written
 
@@ -591,30 +656,38 @@ class ExportMixin:
         write_style: bool,
         seed: Optional[int],
         discard_null_seqs: bool,
+        target_is_states: bool,
         show_progress: bool = False,
     ) -> int:
         """Export to JSON Lines format."""
         written = 0
+        generated = 0
         first_chunk = True
 
         pbar = _make_progress_bar(target_count, "Generating sequences") if show_progress else None
 
         try:
-            while written < target_count:
-                remaining = target_count - written
+            while generated < target_count:
+                remaining = target_count - generated
                 this_chunk = min(chunk_size, remaining)
 
                 df = self.generate_library(
                     num_seqs=this_chunk,
                     seed=seed,
-                    discard_null_seqs=discard_null_seqs,
+                    discard_null_seqs=discard_null_seqs and not target_is_states,
                     _include_inline_styles=write_style,
                 )
 
                 if len(df) == 0:
                     break
 
-                chunk_written = 0
+                # See the note in to_df: counted before nulls are dropped.
+                consumed = len(df)
+                generated += consumed
+
+                if target_is_states and discard_null_seqs:
+                    df = df[df["seq"].notna()]
+
                 # Write JSONL entries
                 with _open_file(path, "w" if first_chunk else "a") as f:
                     for _, row in df.iterrows():
@@ -635,12 +708,11 @@ class ExportMixin:
 
                         f.write(json.dumps(record) + "\n")
                         written += 1
-                        chunk_written += 1
 
                 first_chunk = False
 
                 if pbar is not None:
-                    pbar.update(chunk_written)
+                    pbar.update(consumed)
 
                 # Increment seed for next chunk
                 if seed is not None:
