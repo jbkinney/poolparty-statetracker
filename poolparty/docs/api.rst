@@ -176,6 +176,26 @@ Operations that manipulate the state space of pools.
 
 .. autofunction:: poolparty.sync
 
+Filtering
+~~~~~~~~~
+
+The generic function and method accept a predicate. The remaining methods are
+ready-made checks that construct the same underlying filter operation.
+
+.. autofunction:: poolparty.filter
+
+.. automethod:: poolparty.Pool.filter_length
+
+.. automethod:: poolparty.DnaPool.filter_gc
+
+.. automethod:: poolparty.DnaPool.filter_homopolymer
+
+.. automethod:: poolparty.DnaPool.filter_complexity
+
+.. automethod:: poolparty.DnaPool.filter_dust
+
+.. automethod:: poolparty.DnaPool.filter_restriction_sites
+
 ORF Operations
 --------------
 
@@ -195,6 +215,20 @@ Library Statistics
 
 Utility Functions
 -----------------
+
+Sequence properties
+~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: poolparty.calc_gc
+
+.. autofunction:: poolparty.longest_homopolymer
+
+.. autofunction:: poolparty.calc_complexity
+
+.. autofunction:: poolparty.calc_dust
+
+Other utilities
+~~~~~~~~~~~~~~~
 
 .. autofunction:: poolparty.print_named_colors
 

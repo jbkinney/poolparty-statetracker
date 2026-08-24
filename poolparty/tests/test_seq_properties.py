@@ -86,6 +86,24 @@ class TestCalcComplexity:
         """Test that complexity is case-insensitive."""
         assert calc_complexity("ACGT") == calc_complexity("acgt")
 
+    @pytest.mark.parametrize(
+        "seq",
+        ["ACGTACGT", "ACGTMKWSRY", "A-C-G-T-", "NNNNNNNN", ""],
+    )
+    def test_score_stays_in_documented_range(self, seq):
+        """Test canonical, ambiguity, gap, repeat, and empty inputs."""
+        assert 0.0 <= calc_complexity(seq) <= 1.0
+
+    def test_literal_ambiguity_symbols_can_still_be_repetitive(self):
+        """Test that repeated ambiguity symbols are not treated as diversity."""
+        assert calc_complexity("NNNNNNNNNN") < 0.2
+
+    @pytest.mark.parametrize("k_range", [(), (0,), (-1,), (1, 0, 2)])
+    def test_invalid_k_range(self, k_range):
+        """Test that k_range is nonempty and positive."""
+        with pytest.raises(ValueError, match="positive integer"):
+            calc_complexity("ACGT", k_range=k_range)
+
 
 class TestCalcDust:
     """Tests for calc_dust function."""
