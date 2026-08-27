@@ -79,9 +79,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   library; BCF and indexed access are not supported.
 - `insertion_scan_orf`, supporting coding-boundary splices and whole-codon
   overwrites across all six reading frames, including coding-oriented insert
-  pools and ORF-specific design cards.
+  pools and ORF-specific design cards for inserted codons and amino acids.
+  Overwrite cards also report the replaced WT codons and amino acids.
 - `deletion_scan_orf`, a whole-codon deletion scan that supports all six
-  reading frames, preserves orphan bases, and reports coding-aware design cards.
+  reading frames, preserves orphan bases, and reports the deleted WT codons
+  and amino acids in coding orientation.
 - `pp.stats(pool)` and `pool.stats()` summarise the library a pool produces:
   how many sequences are unique and how many are duplicates, the minimum, mean
   and maximum pairwise Hamming distance, the range of GC content, the mean and

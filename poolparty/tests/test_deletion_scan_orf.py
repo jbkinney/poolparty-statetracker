@@ -8,23 +8,24 @@ from poolparty.utils.dna_utils import reverse_complement
 CARD_MAP = {
     "codon_positions": "codon_positions",
     "wt_codons": "wt_codons",
+    "wt_aas": "wt_aas",
     "start": "start",
     "end": "end",
 }
 
 
 @pytest.mark.parametrize(
-    ("frame", "start", "wt_codon", "expected"),
+    ("frame", "start", "wt_codon", "wt_aa", "expected"),
     [
-        (+1, 0, "AAC", "---CCGGGTTTA"),
-        (+2, 1, "ACC", "A---CGGGTTTA"),
-        (+3, 2, "CCC", "AA---GGGTTTA"),
-        (-1, 9, "TAA", "AACCCGGGT---"),
-        (-2, 8, "AAA", "AACCCGGG---A"),
-        (-3, 7, "AAC", "AACCCGG---TA"),
+        (+1, 0, "AAC", "N", "---CCGGGTTTA"),
+        (+2, 1, "ACC", "T", "A---CGGGTTTA"),
+        (+3, 2, "CCC", "P", "AA---GGGTTTA"),
+        (-1, 9, "TAA", "*", "AACCCGGGT---"),
+        (-2, 8, "AAA", "K", "AACCCGGG---A"),
+        (-3, 7, "AAC", "N", "AACCCGG---TA"),
     ],
 )
-def test_six_frame_hand_derived_codon_zero_anchor(frame, start, wt_codon, expected):
+def test_six_frame_hand_derived_codon_zero_anchor(frame, start, wt_codon, wt_aa, expected):
     with pp.Party():
         pool = pp.deletion_scan_orf(
             "AACCCGGGTTTA",
@@ -39,6 +40,7 @@ def test_six_frame_hand_derived_codon_zero_anchor(frame, start, wt_codon, expect
     assert row["seq"] == expected
     assert row["codon_positions"] == (0,)
     assert row["wt_codons"] == (wt_codon,)
+    assert row["wt_aas"] == (wt_aa,)
     assert (row["start"], row["end"]) == (start, start + 3)
 
 
@@ -70,6 +72,7 @@ def test_negative_frame_matches_positive_on_reverse_complement(
     assert negative_row["seq"] == reverse_complement(positive_row["seq"])
     assert negative_row["codon_positions"] == positive_row["codon_positions"]
     assert negative_row["wt_codons"] == positive_row["wt_codons"]
+    assert negative_row["wt_aas"] == positive_row["wt_aas"]
     assert negative_row["start"] == len(seq) - positive_row["end"]
     assert negative_row["end"] == len(seq) - positive_row["start"]
 
@@ -92,6 +95,7 @@ def test_named_negative_orf_preserves_flanks_orphans_and_translates():
     assert deleted_row["seq"] == "GG<orf>AATG---TTTC</orf>CC"
     assert deleted_row["codon_positions"] == (1,)
     assert deleted_row["wt_codons"] == ("TTT",)
+    assert deleted_row["wt_aas"] == ("F",)
     assert (deleted_row["start"], deleted_row["end"]) == (4, 7)
     assert translated_row["seq"] == "KH"
 
@@ -116,6 +120,7 @@ def test_interval_region_supports_first_and_last_deletion_windows():
     ]
     assert df["codon_positions"].tolist() == [(0,), (1,), (2,), (3,)]
     assert df["wt_codons"].tolist() == [("AAA",), ("CCC",), ("GGG",), ("TTT",)]
+    assert df["wt_aas"].tolist() == [("K",), ("P",), ("G",), ("F",)]
     assert list(zip(df["start"], df["end"])) == [(0, 3), (3, 6), (6, 9), (9, 12)]
 
 
@@ -134,6 +139,7 @@ def test_two_codon_cards_are_in_coding_order_on_negative_frame():
     assert row["seq"] == "ATG------TTT"
     assert row["codon_positions"] == (1, 2)
     assert row["wt_codons"] == ("GGG", "TTT")
+    assert row["wt_aas"] == ("G", "F")
     assert (row["start"], row["end"]) == (3, 9)
 
 
@@ -173,7 +179,7 @@ def test_true_deletion_composes_with_upstream_states_and_downstream_translate():
             deletion_marker=None,
             codon_positions=[1],
             mode="sequential",
-            cards={"wt_codons": "deleted_wt"},
+            cards={"wt_codons": "deleted_wt", "wt_aas": "deleted_wt_aa"},
         )
         deleted_df = deleted.generate_library()
         translated_df = deleted.translate().generate_library()
@@ -182,6 +188,7 @@ def test_true_deletion_composes_with_upstream_states_and_downstream_translate():
     assert deleted.seq_length == 6
     assert deleted_df["seq"].tolist() == ["ATGTTT", "ATGTTT"]
     assert deleted_df["deleted_wt"].tolist() == [("AAA",), ("CCC",)]
+    assert deleted_df["deleted_wt_aa"].tolist() == [("K",), ("P",)]
     assert translated_df["seq"].tolist() == ["MF", "MF"]
 
 
@@ -274,6 +281,36 @@ def test_generic_region_scan_cards_are_not_exposed_as_orf_cards():
         pp.deletion_scan_orf("AAACCC", 1, cards=["position_index"])
 
 
+def test_mutant_cards_are_not_available_for_deletions():
+    with pp.Party(), pytest.raises(ValueError, match="mut_aas"):
+        pp.deletion_scan_orf("AAACCC", 1, cards=["mut_aas"])
+
+
+def test_wt_amino_acid_cards_capture_the_party_codon_table_at_construction():
+    mitochondrial_subset = {"W": ["TGA"]}
+    with pp.Party():
+        standard = pp.deletion_scan_orf(
+            "TGA",
+            1,
+            codon_positions=[0],
+            mode="sequential",
+            cards={"wt_aas": "wt_aas"},
+        )
+        pp.set_genetic_code(mitochondrial_subset)
+        mitochondrial = pp.deletion_scan_orf(
+            "TGA",
+            1,
+            codon_positions=[0],
+            mode="sequential",
+            cards={"wt_aas": "wt_aas"},
+        )
+        standard_row = standard.generate_library().iloc[0]
+        mitochondrial_row = mitochondrial.generate_library().iloc[0]
+
+    assert standard_row["wt_aas"] == ("*",)
+    assert mitochondrial_row["wt_aas"] == ("W",)
+
+
 def test_universal_state_card_reports_selected_scan_state():
     with pp.Party():
         pool = pp.deletion_scan_orf(
@@ -311,10 +348,11 @@ def test_copy_operations_preserve_orf_deletion_behavior_and_cards(copy_method):
             "AAACCC",
             1,
             mode="sequential",
-            cards={"wt_codons": "wt"},
+            cards={"wt_codons": "wt", "wt_aas": "wt_aas"},
         )
         copied = getattr(original, copy_method)()
         copied_df = copied.generate_library()
 
     assert copied_df["seq"].tolist() == ["---CCC", "AAA---"]
     assert copied_df["wt"].tolist() == [("AAA",), ("CCC",)]
+    assert copied_df["wt_aas"].tolist() == [("K",), ("P",)]

@@ -7,12 +7,17 @@ from poolparty.utils.dna_utils import reverse_complement
 
 SPLICE_CARDS = {
     "codon_slot": "codon_slot",
+    "mut_codons": "mut_codons",
+    "mut_aas": "mut_aas",
     "start": "start",
     "end": "end",
 }
 OVERWRITE_CARDS = {
     "codon_positions": "codon_positions",
     "wt_codons": "wt_codons",
+    "wt_aas": "wt_aas",
+    "mut_codons": "mut_codons",
+    "mut_aas": "mut_aas",
     "start": "start",
     "end": "end",
 }
@@ -43,22 +48,24 @@ def test_six_frame_hand_derived_splice_slot_zero(frame, start, expected):
 
     assert row["seq"] == expected
     assert row["codon_slot"] == 0
+    assert row["mut_codons"] == ("TAG",)
+    assert row["mut_aas"] == ("*",)
     assert (row["start"], row["end"]) == (start, start)
 
 
 @pytest.mark.parametrize(
-    ("frame", "start", "wt_codon", "expected"),
+    ("frame", "start", "wt_codon", "wt_aa", "expected"),
     [
-        (+1, 0, "AAC", "TAGCCGGGTTTA"),
-        (+2, 1, "ACC", "ATAGCGGGTTTA"),
-        (+3, 2, "CCC", "AATAGGGGTTTA"),
-        (-1, 9, "TAA", "AACCCGGGTCTA"),
-        (-2, 8, "AAA", "AACCCGGGCTAA"),
-        (-3, 7, "AAC", "AACCCGGCTATA"),
+        (+1, 0, "AAC", "N", "TAGCCGGGTTTA"),
+        (+2, 1, "ACC", "T", "ATAGCGGGTTTA"),
+        (+3, 2, "CCC", "P", "AATAGGGGTTTA"),
+        (-1, 9, "TAA", "*", "AACCCGGGTCTA"),
+        (-2, 8, "AAA", "K", "AACCCGGGCTAA"),
+        (-3, 7, "AAC", "N", "AACCCGGCTATA"),
     ],
 )
 def test_six_frame_hand_derived_overwrite_codon_zero(
-    frame, start, wt_codon, expected
+    frame, start, wt_codon, wt_aa, expected
 ):
     with pp.Party():
         pool = pp.insertion_scan_orf(
@@ -75,6 +82,9 @@ def test_six_frame_hand_derived_overwrite_codon_zero(
     assert row["seq"] == expected
     assert row["codon_positions"] == (0,)
     assert row["wt_codons"] == (wt_codon,)
+    assert row["wt_aas"] == (wt_aa,)
+    assert row["mut_codons"] == ("TAG",)
+    assert row["mut_aas"] == ("*",)
     assert (row["start"], row["end"]) == (start, start + 3)
 
 
@@ -117,8 +127,11 @@ def test_negative_frame_matches_positive_on_reverse_complement(
             == positive_df["codon_positions"].tolist()
         )
         assert negative_df["wt_codons"].tolist() == positive_df["wt_codons"].tolist()
+        assert negative_df["wt_aas"].tolist() == positive_df["wt_aas"].tolist()
     else:
         assert negative_df["codon_slot"].tolist() == positive_df["codon_slot"].tolist()
+    assert negative_df["mut_codons"].tolist() == positive_df["mut_codons"].tolist()
+    assert negative_df["mut_aas"].tolist() == positive_df["mut_aas"].tolist()
     assert negative_df["start"].tolist() == [
         len(seq) - end for end in positive_df["end"]
     ]
@@ -143,6 +156,9 @@ def test_negative_multicodon_overwrite_reverses_the_whole_insert_once():
     assert row["seq"] == "ATGTTCCATTTT"
     assert row["codon_positions"] == (1, 2)
     assert row["wt_codons"] == ("GGG", "TTT")
+    assert row["wt_aas"] == ("G", "F")
+    assert row["mut_codons"] == ("ATG", "GAA")
+    assert row["mut_aas"] == ("M", "E")
     assert (row["start"], row["end"]) == (3, 9)
 
 
@@ -217,7 +233,7 @@ def test_negative_splice_cards_preserve_sliced_sparse_and_reordered_positions(
 def test_multistate_insert_pool_forms_product_and_preserves_provenance_and_names():
     with pp.Party():
         inserts = pp.from_seqs(
-            ["TAG", "TAA", "TGA"],
+            ["TAG", "ATG", "GAA"],
             mode="sequential",
             cards={"seq": "coding_insert"},
         )
@@ -230,7 +246,12 @@ def test_multistate_insert_pool_forms_product_and_preserves_provenance_and_names
             prefix="variant",
             prefix_position="slot",
             prefix_insert="insert",
-            cards={"codon_slot": "codon_slot", "state": "position_state"},
+            cards={
+                "codon_slot": "codon_slot",
+                "mut_codons": "mut_codons",
+                "mut_aas": "mut_aas",
+                "state": "position_state",
+            },
         )
         df = pool.generate_library()
 
@@ -238,12 +259,28 @@ def test_multistate_insert_pool_forms_product_and_preserves_provenance_and_names
     assert df["seq"].tolist() == [
         "GGGTTTCTA",
         "GGGCTATTT",
-        "GGGTTTTTA",
-        "GGGTTATTT",
-        "GGGTTTTCA",
-        "GGGTCATTT",
+        "GGGTTTCAT",
+        "GGGCATTTT",
+        "GGGTTTTTC",
+        "GGGTTCTTT",
     ]
-    assert df["coding_insert"].tolist() == ["TAG", "TAG", "TAA", "TAA", "TGA", "TGA"]
+    assert df["coding_insert"].tolist() == ["TAG", "TAG", "ATG", "ATG", "GAA", "GAA"]
+    assert df["mut_codons"].tolist() == [
+        ("TAG",),
+        ("TAG",),
+        ("ATG",),
+        ("ATG",),
+        ("GAA",),
+        ("GAA",),
+    ]
+    assert df["mut_aas"].tolist() == [
+        ("*",),
+        ("*",),
+        ("M",),
+        ("M",),
+        ("E",),
+        ("E",),
+    ]
     assert df["codon_slot"].tolist() == [0, 1, 0, 1, 0, 1]
     assert df["position_state"].tolist() == [0, 1, 0, 1, 0, 1]
     assert df["name"].tolist() == [
@@ -406,7 +443,12 @@ def test_splice_rejects_frame_offset_beyond_target_span():
 
 @pytest.mark.parametrize(
     ("replace", "invalid_card"),
-    [(False, "wt_codons"), (True, "codon_slot"), (False, "position_index")],
+    [
+        (False, "wt_codons"),
+        (False, "wt_aas"),
+        (True, "codon_slot"),
+        (False, "position_index"),
+    ],
 )
 def test_cards_are_specific_to_the_orf_insertion_mode(replace, invalid_card):
     with pp.Party(), pytest.raises(ValueError, match=invalid_card):
@@ -431,6 +473,78 @@ def test_public_function_and_mixin_are_both_exposed():
     assert chained.generate_library()["seq"].tolist() == ["AAATAGCCC"]
 
 
+def test_multistate_overwrite_cards_follow_realized_target_and_insert():
+    with pp.Party():
+        targets = pp.from_seqs(
+            ["AAA", "CCC"], mode="sequential", cards={"seq": "target_seq"}
+        )
+        inserts = pp.from_seqs(
+            ["TAG", "GAA"], mode="sequential", cards={"seq": "insert_seq"}
+        )
+        pool = pp.insertion_scan_orf(
+            targets,
+            inserts,
+            codon_positions=[0],
+            replace=True,
+            mode="sequential",
+            cards={
+                "wt_codons": "wt_codons",
+                "wt_aas": "wt_aas",
+                "mut_codons": "mut_codons",
+                "mut_aas": "mut_aas",
+            },
+        )
+        df = pool.generate_library()
+
+    observed = set(
+        zip(
+            df["target_seq"],
+            df["wt_codons"],
+            df["wt_aas"],
+            df["insert_seq"],
+            df["mut_codons"],
+            df["mut_aas"],
+        )
+    )
+    assert pool.num_states == 4
+    assert observed == {
+        ("AAA", ("AAA",), ("K",), "TAG", ("TAG",), ("*",)),
+        ("CCC", ("CCC",), ("P",), "TAG", ("TAG",), ("*",)),
+        ("AAA", ("AAA",), ("K",), "GAA", ("GAA",), ("E",)),
+        ("CCC", ("CCC",), ("P",), "GAA", ("GAA",), ("E",)),
+    }
+
+
+def test_amino_acid_cards_capture_the_party_codon_table_at_construction():
+    mitochondrial_subset = {"W": ["TGA"], "M": ["ATA"]}
+    cards = {"wt_aas": "wt_aas", "mut_aas": "mut_aas"}
+    with pp.Party():
+        standard = pp.insertion_scan_orf(
+            "TGA",
+            "ATA",
+            codon_positions=[0],
+            replace=True,
+            mode="sequential",
+            cards=cards,
+        )
+        pp.set_genetic_code(mitochondrial_subset)
+        mitochondrial = pp.insertion_scan_orf(
+            "TGA",
+            "ATA",
+            codon_positions=[0],
+            replace=True,
+            mode="sequential",
+            cards=cards,
+        )
+        standard_row = standard.generate_library().iloc[0]
+        mitochondrial_row = mitochondrial.generate_library().iloc[0]
+
+    assert standard_row["wt_aas"] == ("*",)
+    assert standard_row["mut_aas"] == ("I",)
+    assert mitochondrial_row["wt_aas"] == ("W",)
+    assert mitochondrial_row["mut_aas"] == ("M",)
+
+
 @pytest.mark.parametrize("copy_method", ["copy", "deepcopy"])
 def test_copy_operations_preserve_insertion_behavior_and_cards(copy_method):
     with pp.Party():
@@ -438,7 +552,7 @@ def test_copy_operations_preserve_insertion_behavior_and_cards(copy_method):
             "AAACCC",
             "TAG",
             mode="sequential",
-            cards={"codon_slot": "slot"},
+            cards={"codon_slot": "slot", "mut_aas": "inserted_aas"},
         )
         copied = getattr(original, copy_method)()
         copied_df = copied.generate_library()
@@ -449,3 +563,4 @@ def test_copy_operations_preserve_insertion_behavior_and_cards(copy_method):
         "AAACCCTAG",
     ]
     assert copied_df["slot"].tolist() == [0, 1, 2]
+    assert copied_df["inserted_aas"].tolist() == [("*",), ("*",), ("*",)]

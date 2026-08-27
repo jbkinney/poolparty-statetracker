@@ -22,6 +22,7 @@ from ..utils.parsing_utils import strip_all_tags, validate_single_region
 from ._frame import complete_codon_count, frame_offset, resolve_frame
 from ._scan import (
     codon_starts_to_nt,
+    codons_to_aas,
     get_target_start_and_seq,
     resolve_codon_starts,
     resolve_region_span,
@@ -29,17 +30,18 @@ from ._scan import (
 )
 
 
-def _split_cards(cards: CardsType, *, replace: bool) -> tuple[CardsType, CardsType]:
-    """Route universal cards to the stateful scan and ORF cards to the card op."""
+def _split_cards(cards: CardsType, *, replace: bool) -> tuple[CardsType, CardsType, CardsType]:
+    """Route cards to the position, insert-content, and target card ops."""
     if cards is None:
-        return None, None
+        return None, None, None
 
     mode_keys = (
-        {"codon_positions", "wt_codons", "start", "end"}
+        {"codon_positions", "wt_codons", "wt_aas", "start", "end"}
         if replace
         else {"codon_slot", "start", "end"}
     )
-    valid = {"seq", "state"} | mode_keys
+    content_keys = {"mut_codons", "mut_aas"}
+    valid = {"seq", "state"} | content_keys | mode_keys
     requested = set(cards if isinstance(cards, list) else cards.keys())
     invalid = requested - valid
     if invalid:
@@ -51,11 +53,13 @@ def _split_cards(cards: CardsType, *, replace: bool) -> tuple[CardsType, CardsTy
     if isinstance(cards, list):
         return (
             [key for key in cards if key in {"seq", "state"}],
-            [key for key in cards if key not in {"seq", "state"}],
+            [key for key in cards if key in content_keys],
+            [key for key in cards if key in mode_keys],
         )
     return (
         {key: value for key, value in cards.items() if key in {"seq", "state"}},
-        {key: value for key, value in cards.items() if key not in {"seq", "state"}},
+        {key: value for key, value in cards.items() if key in content_keys},
+        {key: value for key, value in cards.items() if key in mode_keys},
     )
 
 
@@ -80,9 +84,10 @@ def insertion_scan_orf(
 
     With ``replace=False``, ``codon_positions`` selects boundaries between
     codons and the card key is ``codon_slot``. With ``replace=True``, positions
-    select whole-codon overwrite windows and the cards include
-    ``codon_positions`` and ``wt_codons``. For negative frames, the complete
-    selected insert is reverse-complemented once before physical placement.
+    select whole-codon overwrite windows. Insert cards report ``mut_codons``
+    and ``mut_aas``; overwrite cards can additionally report ``wt_codons`` and
+    ``wt_aas``. For negative frames, the complete selected insert is
+    reverse-complemented once before physical placement.
 
     Parameters
     ----------
@@ -118,8 +123,10 @@ def insertion_scan_orf(
     iter_order : Optional[Real], default=None
         Enumeration priority when combined with other stateful operations.
     cards : CardsType, default=None
-        Splice keys: ``'codon_slot'``, ``'start'``, ``'end'``. Overwrite keys:
-        ``'codon_positions'``, ``'wt_codons'``, ``'start'``, ``'end'``.
+        Splice keys: ``'codon_slot'``, ``'mut_codons'``, ``'mut_aas'``,
+        ``'start'``, ``'end'``. Overwrite keys: ``'codon_positions'``,
+        ``'wt_codons'``, ``'wt_aas'``, ``'mut_codons'``, ``'mut_aas'``,
+        ``'start'``, ``'end'``.
 
     Returns
     -------
@@ -140,9 +147,7 @@ def insertion_scan_orf(
     if insertion_length <= 0:
         raise ValueError("insertion_pool must contain at least one complete codon")
     if insertion_length % 3 != 0:
-        raise ValueError(
-            f"insertion_pool.seq_length ({insertion_length}) must be divisible by 3"
-        )
+        raise ValueError(f"insertion_pool.seq_length ({insertion_length}) must be divisible by 3")
 
     resolved_frame = resolve_frame(region, frame)
     span = resolve_region_span(pool, region, "insertion_scan_orf")
@@ -171,7 +176,7 @@ def insertion_scan_orf(
         splice=not replace,
     )
     coding_position_by_nt = dict(zip(physical_positions, coding_starts))
-    scan_cards, orf_cards = _split_cards(cards, replace=replace)
+    scan_cards, content_cards, target_cards = _split_cards(cards, replace=replace)
 
     validated = validate_orf_scan_input(
         pool,
@@ -187,6 +192,7 @@ def insertion_scan_orf(
         insertion_pool,
         expected_length=insertion_length,
         reverse=resolved_frame < 0,
+        cards=content_cards,
         iter_order=iter_order,
     )
     oriented_insert = type(insertion_pool)(operation=oriented_op)
@@ -218,7 +224,7 @@ def insertion_scan_orf(
         coding_position_by_nt=coding_position_by_nt,
         target_region=region,
         replace=replace,
-        cards=orf_cards,
+        cards=target_cards,
         iter_order=iter_order,
     )
     carded = type(marked)(operation=card_op)
@@ -269,7 +275,7 @@ class _InsertionScanOrfContentOp(Operation):
     """Validate an insert state and orient it for physical placement."""
 
     factory_name = "insertion_scan_orf(orient_insert)"
-    design_card_keys = []
+    design_card_keys = ["mut_codons", "mut_aas"]
 
     def __init__(
         self,
@@ -277,11 +283,16 @@ class _InsertionScanOrfContentOp(Operation):
         *,
         expected_length: int,
         reverse: bool,
+        cards: CardsType,
         iter_order: Optional[Real],
         name: Optional[str] = None,
     ) -> None:
         self.expected_length = expected_length
         self.reverse = reverse
+        self.report_mut_cards = cards is not None and any(
+            key in cards for key in ("mut_codons", "mut_aas")
+        )
+        self.report_mut_aas = cards is not None and "mut_aas" in cards
         super().__init__(
             parent_pools=[parent_pool],
             num_states=1,
@@ -289,7 +300,9 @@ class _InsertionScanOrfContentOp(Operation):
             seq_length=parent_pool.seq_length,
             name=name,
             iter_order=iter_order,
+            cards=cards,
         )
+        self.codon_table = self._party.codon_table
 
     def _compute_core(
         self,
@@ -300,29 +313,39 @@ class _InsertionScanOrfContentOp(Operation):
         if "<" in parent.string or ">" in parent.string:
             raise ValueError("insertion_scan_orf does not support tagged insertion content")
         clean = strip_all_tags(parent.string)
-        if len(clean) != self.expected_length or any(
-            char not in "ACGTacgt" for char in clean
-        ):
+        if len(clean) != self.expected_length or any(char not in "ACGTacgt" for char in clean):
             raise ValueError(
                 "insertion_scan_orf requires every insertion state to contain "
                 "ungapped ACGT sequence"
             )
 
         insert = DnaSeq.from_string(parent.string, parent.style)
+        card = {}
+        if self.report_mut_cards:
+            coding_seq = clean.upper()
+            mut_codons = tuple(coding_seq[i : i + 3] for i in range(0, len(coding_seq), 3))
+            card["mut_codons"] = mut_codons
+            if self.report_mut_aas:
+                card["mut_aas"] = codons_to_aas(mut_codons, self.codon_table)
         if not self.reverse:
-            return insert, {}
+            return insert, card
 
         reversed_style = insert.style.reversed() if insert.style is not None else None
-        return DnaSeq.from_string(
-            reverse_complement(insert.string), reversed_style
-        ), {}
+        return DnaSeq.from_string(reverse_complement(insert.string), reversed_style), card
 
 
 class _InsertionScanOrfCardOp(Operation):
     """Pass through a marked ORF and report coding-aware insertion cards."""
 
     factory_name = "insertion_scan_orf(cards)"
-    design_card_keys = ["codon_slot", "codon_positions", "wt_codons", "start", "end"]
+    design_card_keys = [
+        "codon_slot",
+        "codon_positions",
+        "wt_codons",
+        "wt_aas",
+        "start",
+        "end",
+    ]
 
     def __init__(
         self,
@@ -347,6 +370,7 @@ class _InsertionScanOrfCardOp(Operation):
         self.coding_position_by_nt = coding_position_by_nt
         self.target_region = target_region
         self.replace = replace
+        self.report_wt_aas = cards is not None and "wt_aas" in cards
         super().__init__(
             parent_pools=[parent_pool],
             num_states=1,
@@ -356,6 +380,7 @@ class _InsertionScanOrfCardOp(Operation):
             iter_order=iter_order,
             cards=cards,
         )
+        self.codon_table = self._party.codon_table
 
     def _compute_core(
         self,
@@ -396,13 +421,15 @@ class _InsertionScanOrfCardOp(Operation):
         coding_seq = physical_seq
         if self.reverse:
             coding_seq = reverse_complement(physical_seq)
-        wt_codons = tuple(
-            coding_seq[i : i + 3] for i in range(0, len(coding_seq), 3)
+        wt_codons = tuple(coding_seq[i : i + 3] for i in range(0, len(coding_seq), 3))
+        wt_aas = (
+            codons_to_aas(wt_codons, self.codon_table) if self.report_wt_aas else tuple()
         )
         codon_positions = tuple(range(coding_start, coding_start + self.item_codons))
         return parent, {
             "codon_positions": codon_positions,
             "wt_codons": wt_codons,
+            "wt_aas": wt_aas,
             "start": start,
             "end": end,
         }

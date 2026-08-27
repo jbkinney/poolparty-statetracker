@@ -21,6 +21,7 @@ from ..utils.parsing_utils import strip_all_tags, validate_single_region
 from ._frame import complete_codon_count, resolve_frame
 from ._scan import (
     codon_starts_to_nt,
+    codons_to_aas,
     get_target_start_and_seq,
     resolve_codon_starts,
     resolve_region_span,
@@ -33,7 +34,15 @@ def _split_cards(cards: CardsType) -> tuple[CardsType, CardsType]:
     if cards is None:
         return None, None
     requested = set(cards if isinstance(cards, list) else cards.keys())
-    valid = {"seq", "state", "codon_positions", "wt_codons", "start", "end"}
+    valid = {
+        "seq",
+        "state",
+        "codon_positions",
+        "wt_codons",
+        "wt_aas",
+        "start",
+        "end",
+    }
     invalid = requested - valid
     if invalid:
         raise ValueError(
@@ -136,7 +145,7 @@ def deletion_scan_orf(
         Enumeration priority when combined with other stateful operations.
     cards : CardsType, default=None
         ORF design-card keys to include: ``'codon_positions'``, ``'wt_codons'``,
-        ``'start'``, and ``'end'``.
+        ``'wt_aas'``, ``'start'``, and ``'end'``.
 
     Returns
     -------
@@ -223,7 +232,13 @@ class _DeletionScanOrfCardOp(Operation):
     """Pass through a marked ORF and report coding-aware deletion cards."""
 
     factory_name = "deletion_scan_orf(cards)"
-    design_card_keys = ["codon_positions", "wt_codons", "start", "end"]
+    design_card_keys = [
+        "codon_positions",
+        "wt_codons",
+        "wt_aas",
+        "start",
+        "end",
+    ]
 
     def __init__(
         self,
@@ -246,6 +261,7 @@ class _DeletionScanOrfCardOp(Operation):
         self.reverse = frame < 0
         self.coding_position_by_nt = coding_position_by_nt
         self.target_region = target_region
+        self.report_wt_aas = cards is not None and "wt_aas" in cards
         super().__init__(
             parent_pools=[parent_pool],
             num_states=1,
@@ -257,6 +273,7 @@ class _DeletionScanOrfCardOp(Operation):
             remove_tags=False,
             cards=cards,
         )
+        self.codon_table = self._party.codon_table
 
     def _compute_core(
         self,
@@ -293,16 +310,16 @@ class _DeletionScanOrfCardOp(Operation):
             ) from exc
 
         coding_seq = reverse_complement(physical_seq) if self.reverse else physical_seq
-        wt_codons = tuple(
-            coding_seq[i : i + 3] for i in range(0, len(coding_seq), 3)
+        wt_codons = tuple(coding_seq[i : i + 3] for i in range(0, len(coding_seq), 3))
+        wt_aas = (
+            codons_to_aas(wt_codons, self.codon_table) if self.report_wt_aas else tuple()
         )
-        codon_positions = tuple(
-            range(coding_start, coding_start + self.deletion_codons)
-        )
+        codon_positions = tuple(range(coding_start, coding_start + self.deletion_codons))
 
         return parent, {
             "codon_positions": codon_positions,
             "wt_codons": wt_codons,
+            "wt_aas": wt_aas,
             "start": start,
             "end": end,
         }

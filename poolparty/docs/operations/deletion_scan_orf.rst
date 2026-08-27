@@ -90,7 +90,7 @@ Parameters
      - ``list[str] | dict[str, str] | None``
      - ``None``
      - Design card keys: ``seq``, ``state``, ``codon_positions``,
-       ``wt_codons``, ``start``, and ``end``.
+       ``wt_codons``, ``wt_aas``, ``start``, and ``end``.
 
 ----
 
@@ -192,7 +192,8 @@ orientation and maps coding codons onto physical intervals:
 
 Deleting coding codon 1 marks physical interval ``[6, 9)``. Its
 ``wt_codons`` card is ``('CCC',)`` because cards report coding orientation,
-not the literal plus-strand substring ``GGG``.
+not the literal plus-strand substring ``GGG``. Its ``wt_aas`` card is
+``('P',)``.
 
 The physical card coordinates are always relative to the operation's input
 region and describe the pre-edit sequence:
@@ -206,6 +207,9 @@ region and describe the pre-edit sequence:
      - A tuple of affected 0-based codon indices in coding order.
    * - ``wt_codons``
      - WT codons in coding orientation, aligned with ``codon_positions``.
+   * - ``wt_aas``
+     - Amino acids encoded by ``wt_codons`` using the Party codon table selected
+       when the Operation is created.
    * - ``start``
      - Inclusive physical plus/reference coordinate in the input region.
    * - ``end``
