@@ -97,8 +97,9 @@ Parameters
      - ``list[str] | dict[str, str] | None``
      - ``None``
      - Universal cards: ``seq`` and ``state``. Splice cards:
-       ``codon_slot``, ``start``, and ``end``. Overwrite cards:
-       ``codon_positions``, ``wt_codons``, ``start``, and ``end``.
+       ``codon_slot``, ``mut_codons``, ``mut_aas``, ``start``, and ``end``.
+       Overwrite cards: ``codon_positions``, ``wt_codons``, ``wt_aas``,
+       ``mut_codons``, ``mut_aas``, ``start``, and ``end``.
 
 ----
 
@@ -242,12 +243,22 @@ Coding cards and physical cards deliberately use different coordinate views:
      - Tuple of overwritten 0-based codon indices in coding order.
    * - ``wt_codons``
      - Overwritten WT codons in coding orientation.
+   * - ``wt_aas``
+     - Amino acids encoded by the overwritten WT codons.
+   * - ``mut_codons``
+     - Inserted codons in coding orientation.
+   * - ``mut_aas``
+     - Amino acids encoded by the inserted codons.
    * - ``start``, ``end``
      - Half-open physical plus/reference coordinates relative to the input
        region. A splice has ``start == end``.
 
-The insertion pool owns the inserted sequence and provenance cards. The ORF
-wrapper does not duplicate them:
+The insertion pool owns the raw inserted sequence and its provenance cards.
+The ORF wrapper does not duplicate those fields; ``mut_codons`` and
+``mut_aas`` provide the coding interpretation of each realized insert:
+
+The amino-acid cards use the Party codon table selected when the Operation is
+created.
 
 .. code-block:: python
 
@@ -260,7 +271,7 @@ wrapper does not duplicate them:
         inserts,
         region="orf",
         mode="sequential",
-        cards={"codon_slot": "slot"},
+        cards={"codon_slot": "slot", "mut_aas": "inserted_aas"},
     )
 
 On a negative frame, ``coding_insert`` remains ``TAG`` even though the stored

@@ -4,6 +4,7 @@ from numbers import Real
 
 import numpy as np
 
+from ..codon_table import CodonTable
 from ..operation import Operation
 from ..pool import Pool
 from ..types import Optional, PositionsType, RegionType, Seq
@@ -11,6 +12,11 @@ from ..utils import validate_positions
 from ..utils.dna_seq import DnaSeq
 from ..utils.parsing_utils import strip_all_tags, validate_single_region
 from ._frame import frame_offset
+
+
+def codons_to_aas(codons: tuple[str, ...], codon_table: CodonTable) -> tuple[str, ...]:
+    """Translate coding-oriented codons with an operation's codon table."""
+    return tuple(codon_table.codon_to_aa.get(codon, "?") for codon in codons)
 
 
 def resolve_region_span(pool: Pool, region: RegionType, operation_name: str) -> int:
@@ -164,9 +170,7 @@ class OrfScanValidateOp(Operation):
         else:
             start = int(self.target_region[0])
             literal_start = parsed_parent.nontag_to_literal(start)
-            literal_end = parsed_parent.nontag_to_literal(
-                start + self.target_span - 1
-            ) + 1
+            literal_end = parsed_parent.nontag_to_literal(start + self.target_span - 1) + 1
             target_literal = parent.string[literal_start:literal_end]
 
         if "<" in target_literal or ">" in target_literal:
@@ -180,8 +184,7 @@ class OrfScanValidateOp(Operation):
             char not in "ACGTacgt" for char in target_seq
         ):
             raise ValueError(
-                f"{self.operation_name} currently requires a fixed-length, "
-                "ungapped ACGT region"
+                f"{self.operation_name} currently requires a fixed-length, ungapped ACGT region"
             )
 
         return parent, {}
